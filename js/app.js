@@ -2738,6 +2738,9 @@ async function reportScreen(){
   const r = reportData(await loadHistory());
   const name = currentUser ? currentUser.name : '';
 
+  const now = new Date();
+  const genAt = `${fmtDM(now)}/${now.getFullYear()}`;
+  c.appendChild(h(`<div class="rp-print-only rp-print-top"><b>📊 Matemática Show</b><span>Relatório gerado em ${genAt}</span></div>`));
   const head = h(`<div class="rp-head"><div class="rp-k">Relatório para pais e professores</div><h2></h2><p>Últimos 7 dias · ${fmtDM(r.start)} a ${fmtDM(r.end)}</p></div>`);
   head.querySelector('h2').textContent = name || 'Meu relatório';
   c.appendChild(head);
@@ -2784,6 +2787,7 @@ async function reportScreen(){
   c.appendChild(tip);
   if(r.partialPrev) c.appendChild(h(`<p style="color:var(--ink-soft); font-size:12px; margin-top:10px;">A comparação com a semana anterior pode estar incompleta: o app guarda só as últimas ${HISTORY_LIMIT} respostas.</p>`));
 
+  c.appendChild(h(`<div class="rp-print-only rp-print-foot">Matemática Show · relatório dos últimos 7 dias (${fmtDM(r.start)} a ${fmtDM(r.end)}) · gerado em ${genAt}</div>`));
   const actions = h(`<div class="cta-row rp-actions" style="margin-top:18px"></div>`);
   const shareBtn = h(`<button class="btn primary">📤 Compartilhar resumo</button>`);
   shareBtn.onclick = async ()=>{
