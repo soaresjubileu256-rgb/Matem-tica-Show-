@@ -356,6 +356,17 @@ section.block h3{font-size:12.5px; text-transform:uppercase; color:var(--ink-sof
 .weak-toggle.active{border-color:rgba(51,210,227,.35); color:var(--pine); background:rgba(51,210,227,.08);}
 .weak-toggle.active .check{background:var(--pine); border-color:var(--pine); color:#0F0E1B;}
 .weak-toggle:active{transform:scale(0.99);}
+.subj-chip .acc-badge{font-family:'JetBrains Mono',monospace; font-size:10.5px; font-weight:800; padding:1px 6px; border-radius:8px; margin-left:2px;}
+.acc-badge.hi{background:rgba(51,210,227,.16); color:var(--pine);}
+.acc-badge.mid{background:rgba(255,184,0,.16); color:var(--amber);}
+.acc-badge.low{background:rgba(255,92,122,.16); color:var(--coral);}
+.acc-badge.new{background:rgba(255,255,255,.06); color:var(--ink-soft); font-weight:700;}
+.pt-note{font-size:12.5px; margin:-10px 0 14px;}
+.pt-summary{border:1px dashed var(--border); border-radius:14px; padding:11px 14px; margin-bottom:12px; font-size:13px; font-weight:700; color:var(--ink-soft); text-align:center;}
+.pt-summary b{color:var(--ink);}
+.pt-breakdown{margin-top:18px;}
+.pt-breakdown h3{font-size:12.5px; text-transform:uppercase; color:var(--ink-soft); font-weight:600; margin-bottom:8px; letter-spacing:.08em;}
+.pt-lvl{font-size:11px; font-weight:800; color:var(--amber); margin-left:6px;}
 
 /* ---------- exercise session ---------- */
 .progress-dots{display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap;}
@@ -4537,7 +4548,11 @@ function challengeSessionScreen(){
 }
 
 /* ---------------- TREINO PERSONALIZADO (gerador de exercícios sob medida, todos os assuntos) ---------------- */
-const PERSONALIZED_QTY_OPTIONS = [5,10,15,20];
+const PERSONALIZED_QTY_OPTIONS = [5,10,15,20,30];
+const PTRAIN_KEY_BASE = 'mathstudy-ptrain-v1'; // últimas escolhas do treino, por conta
+const PT_DIFFS = ['facil','medio','dificil'];
+const PT_DIFF_MODES = [['adaptativa','Adaptativa'],['facil','Fácil'],['medio','Médio'],['dificil','Difícil'],['misturada','Misturada']];
+const PT_WEAK_LIMIT = 0.7; // abaixo disso (em % de acerto) o assunto conta como ponto fraco
 
 function accuracyFor(progress, subjectId){
   const d = progress[subjectId];
@@ -4564,21 +4579,89 @@ function pickWeighted(items, weights){
   return items[items.length-1];
 }
 
-/* sorteia o próximo assunto; se "focusWeak" estiver ligado, assuntos com pior desempenho (ou nunca praticados) saem mais */
-function pickSubjectForSession(subjects, progress, focusWeak){
-  if(!focusWeak || subjects.length<=1) return pick(subjects);
-  const weights = subjects.map(s=>{
-    const acc = accuracyFor(progress, s.id);
+function shuffle(arr){
+  for(let i=arr.length-1; i>0; i--){ const j = Math.floor(Math.random()*(i+1)); [arr[i], arr[j]] = [arr[j], arr[i]]; }
+  return arr;
+}
+/* último treino montado, pra já abrir a tela com as mesmas escolhas */
+function loadLastTraining(){
+  try{ const raw = localStorage.getItem(`${PTRAIN_KEY_BASE}:${currentUserId()}`); return raw ? JSON.parse(raw) : null; }catch(e){ return null; }
+}
+function saveLastTraining(cfg){
+  try{ localStorage.setItem(`${PTRAIN_KEY_BASE}:${currentUserId()}`, JSON.stringify({subjectIds:cfg.subjectIds, difficultyMode:cfg.difficultyMode, qty:cfg.qty, focusWeak:cfg.focusWeak})); }catch(e){}
+}
+function weakSubjectIds(progress){
+  return SUBJECTS.filter(s=>{ const a = accuracyFor(progress, s.id); return a!==null && a < PT_WEAK_LIMIT; }).map(s=>s.id);
+}
+function accBadgeHTML(acc){
+  if(acc===null) return `<span class="acc-badge new">novo</span>`;
+  const cls = acc>=0.8 ? 'hi' : acc>=0.5 ? 'mid' : 'low';
+  return `<span class="acc-badge ${cls}">${Math.round(acc*100)}%</span>`;
+}
+
+/* sorteia o próximo assunto.
+   - normal: "saco embaralhado" — todos os assuntos escolhidos aparecem de forma equilibrada
+   - focusWeak: assuntos com pior desempenho (ou nunca praticados) saem mais
+   em ambos, evita repetir o mesmo assunto duas vezes seguidas quando há mais de um */
+function pickSubjectForSession(sess){
+  const subjects = sess.subjects;
+  if(subjects.length<=1) return subjects[0];
+  const last = sess.currentSubjectId;
+  if(!sess.config.focusWeak){
+    if(!sess.bag || !sess.bag.length){
+      sess.bag = shuffle(subjects.map(x=>x.id));
+      if(sess.bag[sess.bag.length-1]===last) sess.bag.unshift(sess.bag.pop()); // não começa o saco novo repetindo
+    }
+    const id = sess.bag.pop();
+    return subjects.find(x=>x.id===id);
+  }
+  const progress = sess.config.progress;
+  const pool = subjects.filter(x=>x.id!==last);
+  const weights = pool.map(x=>{
+    const acc = accuracyFor(progress, x.id);
     if(acc===null) return 2; // nunca praticado: peso médio-alto, pra incentivar a tentar
     return 1 + (1-acc)*3; // 100% acerto -> peso 1 · 0% acerto -> peso 4
   });
-  return pickWeighted(subjects, weights);
+  return pickWeighted(pool, weights);
 }
 
-function pickDifficultyForSubject(subjectId, mode, progress){
-  if(mode==='facil' || mode==='medio' || mode==='dificil') return mode;
-  if(mode==='misturada') return pick(['facil','medio','dificil']);
-  return adaptiveDifficultyFor(progress, subjectId); // 'adaptativa'
+/* dificuldade da próxima questão. No modo adaptativo, cada assunto começa pelo desempenho
+   histórico e se ajusta durante o treino: 2 acertos seguidos sobem um nível, 1 erro desce. */
+function pickDifficultyForSubject(sess, subjectId){
+  const mode = sess.config.difficultyMode;
+  if(PT_DIFFS.includes(mode)) return mode;
+  if(mode==='misturada') return pick(PT_DIFFS);
+  sess.lvl = sess.lvl || {};
+  if(!(subjectId in sess.lvl)) sess.lvl[subjectId] = {i: PT_DIFFS.indexOf(adaptiveDifficultyFor(sess.config.progress, subjectId)), run:0};
+  return PT_DIFFS[sess.lvl[subjectId].i];
+}
+function ptAfterAnswer(sess, correct){
+  sess.log = sess.log || [];
+  sess.log.push({sid: sess.currentSubjectId, diff: sess.difficulty, ok: correct});
+  sess.lvlMsg = '';
+  if(sess.config.difficultyMode!=='adaptativa' || !sess.lvl) return;
+  const L = sess.lvl[sess.currentSubjectId];
+  if(!L) return;
+  if(correct){
+    L.run++;
+    if(L.run>=2 && L.i<2){ L.i++; L.run=0; L.up = true; }
+  } else {
+    L.run = 0;
+    if(L.i>0){ L.i--; L.down = true; }
+  }
+}
+function ptNextQuestion(sess){
+  const subject = pickSubjectForSession(sess);
+  const difficulty = pickDifficultyForSubject(sess, subject.id);
+  const L2 = sess.lvl && sess.lvl[subject.id];
+  sess.lvlMsg = '';
+  if(L2 && L2.up){ sess.lvlMsg = '⬆ subiu'; L2.up = false; }
+  else if(L2 && L2.down){ sess.lvlMsg = '⬇ mais leve'; L2.down = false; }
+  const {ex, signature} = genQuestionAvoidingRepeat(subject, difficulty, sess.lastSignature);
+  sess.currentSubjectId = subject.id;
+  sess.difficulty = difficulty;
+  sess.current = ex;
+  sess.lastSignature = signature;
 }
 
 /* "assinatura" de uma questão gerada — serve pra comparar se duas questões são idênticas
@@ -4608,55 +4691,60 @@ async function personalizedSetupScreen(){
 
   const progress = await loadProgress();
   const settings = await loadSettings();
+  const last = loadLastTraining();
+  const validIds = new Set(SUBJECTS.map(s=>s.id));
+  const lastIds = last && Array.isArray(last.subjectIds) ? last.subjectIds.filter(id=>validIds.has(id)) : [];
   const levelIds = settings.schoolLevel ? LEVEL_SUBJECTS[settings.schoolLevel] : null;
-  const selected = new Set(levelIds || SUBJECTS.map(s=>s.id));
-  let difficultyMode = 'adaptativa';
-  let qty = 10;
-  let focusWeak = false;
+  const selected = new Set(lastIds.length ? lastIds : (levelIds || SUBJECTS.map(s=>s.id)));
+  let difficultyMode = last && PT_DIFF_MODES.some(([id])=>id===last.difficultyMode) ? last.difficultyMode : 'adaptativa';
+  let qty = last && PERSONALIZED_QTY_OPTIONS.includes(last.qty) ? last.qty : 10;
+  let focusWeak = !!(last && last.focusWeak);
+  const weakIds = weakSubjectIds(progress);
 
-  if(levelIds){
+  if(lastIds.length){
+    c.appendChild(h(`<p class="pt-note" style="color:var(--pine);">Suas escolhas do último treino já estão marcadas — ajuste à vontade.</p>`));
+  } else if(levelIds){
     const levelLabel = {fund1:'Fundamental 1', fund2:'Fundamental 2', medio:'Ensino Médio'}[settings.schoolLevel];
-    c.appendChild(h(`<p style="color:var(--pine); font-size:12.5px; margin:-10px 0 14px;">Pré-selecionado pro seu nível (${levelLabel}) — ajuste à vontade abaixo.</p>`));
+    c.appendChild(h(`<p class="pt-note" style="color:var(--pine);">Pré-selecionado pro seu nível (${levelLabel}) — ajuste à vontade abaixo.</p>`));
   }
 
   c.appendChild(h(`<h3 style="font-size:12.5px;text-transform:uppercase;color:var(--ink-soft);font-weight:600;margin-bottom:8px;letter-spacing:.08em;">Assuntos</h3>`));
-  const selLinks = h(`<div style="margin-bottom:10px;"><button type="button" class="link-btn">Selecionar todos</button> <span style="color:var(--border);">·</span> <button type="button" class="link-btn">Nenhum</button></div>`);
+  const selLinks = h(`<div style="margin-bottom:10px;"><button type="button" class="link-btn">Todos</button> <span style="color:var(--border);">·</span> <button type="button" class="link-btn">Nenhum</button>${weakIds.length?` <span style="color:var(--border);">·</span> <button type="button" class="link-btn">Só pontos fracos (${weakIds.length})</button>`:''}</div>`);
   c.appendChild(selLinks);
   const subjGrid = h(`<div class="subj-chip-grid"></div>`);
+  const chips = {};
   SUBJECTS.forEach(s=>{
-    const chip = h(`<button type="button" class="subj-chip ${selected.has(s.id)?'active':''}"><span class="sym">${s.sym}</span>${s.name}</button>`);
+    const chip = h(`<button type="button" class="subj-chip ${selected.has(s.id)?'active':''}"><span class="sym">${s.sym}</span>${s.name}${accBadgeHTML(accuracyFor(progress, s.id))}</button>`);
     chip.onclick = ()=>{
-      if(selected.has(s.id)){ selected.delete(s.id); chip.classList.remove('active'); }
-      else { selected.add(s.id); chip.classList.add('active'); }
+      if(selected.has(s.id)) selected.delete(s.id); else selected.add(s.id);
+      paintChips();
     };
+    chips[s.id] = chip;
     subjGrid.appendChild(chip);
   });
   c.appendChild(subjGrid);
-  const [selAllBtn, selNoneBtn] = selLinks.querySelectorAll('button');
-  selAllBtn.onclick = ()=>{
-    SUBJECTS.forEach(s=>selected.add(s.id));
-    subjGrid.querySelectorAll('.subj-chip').forEach(ch=>ch.classList.add('active'));
-  };
-  selNoneBtn.onclick = ()=>{
-    selected.clear();
-    subjGrid.querySelectorAll('.subj-chip').forEach(ch=>ch.classList.remove('active'));
-  };
+  c.appendChild(h(`<p style="color:var(--ink-soft); font-size:12px; margin:-12px 0 18px;">O selo mostra seu % de acerto em cada assunto.</p>`));
+  const [selAllBtn, selNoneBtn, selWeakBtn] = selLinks.querySelectorAll('button');
+  selAllBtn.onclick = ()=>{ SUBJECTS.forEach(s=>selected.add(s.id)); paintChips(); };
+  selNoneBtn.onclick = ()=>{ selected.clear(); paintChips(); };
+  if(selWeakBtn) selWeakBtn.onclick = ()=>{ selected.clear(); weakIds.forEach(id=>selected.add(id)); paintChips(); };
 
   c.appendChild(h(`<h3 style="font-size:12.5px;text-transform:uppercase;color:var(--ink-soft);font-weight:600;margin-bottom:8px;letter-spacing:.08em;">Dificuldade</h3>`));
   const diffRow = h(`<div class="diff-row" style="flex-wrap:wrap;"></div>`);
-  [['adaptativa','Adaptativa'],['facil','Fácil'],['medio','Médio'],['dificil','Difícil'],['misturada','Misturada']].forEach(([id,label])=>{
-    const dAttr = (id==='facil'||id==='medio'||id==='dificil') ? id : '';
+  PT_DIFF_MODES.forEach(([id,label])=>{
+    const dAttr = PT_DIFFS.includes(id) ? id : '';
     const chip = h(`<button type="button" class="diff-chip" data-d="${dAttr}" style="flex:1 1 28%;">${label}</button>`);
     if(id===difficultyMode) chip.classList.add('active');
     chip.onclick = ()=>{
       difficultyMode = id;
       diffRow.querySelectorAll('.diff-chip').forEach(ch=>ch.classList.remove('active'));
       chip.classList.add('active');
+      paintSummary();
     };
     diffRow.appendChild(chip);
   });
   c.appendChild(diffRow);
-  c.appendChild(h(`<p style="color:var(--ink-soft); font-size:12.5px; margin:-10px 0 18px;">"Adaptativa" calibra a dificuldade de cada assunto pelo seu desempenho nele; "Misturada" sorteia entre as três.</p>`));
+  c.appendChild(h(`<p style="color:var(--ink-soft); font-size:12.5px; margin:-10px 0 18px;">"Adaptativa" começa pelo seu desempenho em cada assunto e se ajusta durante o treino: 2 acertos seguidos sobem o nível, um erro desce. "Misturada" sorteia entre as três.</p>`));
 
   c.appendChild(h(`<h3 style="font-size:12.5px;text-transform:uppercase;color:var(--ink-soft);font-weight:600;margin-bottom:8px;letter-spacing:.08em;">Quantidade de questões</h3>`));
   const qtyRow = h(`<div class="diff-row"></div>`);
@@ -4667,29 +4755,50 @@ async function personalizedSetupScreen(){
       qty = n;
       qtyRow.querySelectorAll('.diff-chip').forEach(ch=>ch.classList.remove('active'));
       chip.classList.add('active');
+      paintSummary();
     };
     qtyRow.appendChild(chip);
   });
   c.appendChild(qtyRow);
 
-  const weakToggle = h(`<button type="button" class="weak-toggle"><span class="check">✓</span><span>Priorizar meus pontos fracos (mais questões nos assuntos onde eu mais erro)</span></button>`);
+  const weakToggle = h(`<button type="button" class="weak-toggle ${focusWeak?'active':''}"><span class="check">✓</span><span>Priorizar meus pontos fracos (mais questões nos assuntos onde eu mais erro)</span></button>`);
   weakToggle.onclick = ()=>{
     focusWeak = !focusWeak;
     weakToggle.classList.toggle('active', focusWeak);
   };
   c.appendChild(weakToggle);
 
+  const summary = h(`<div class="pt-summary"></div>`);
+  c.appendChild(summary);
   const errorBox = h(`<div class="authErrorBox"></div>`);
   c.appendChild(errorBox);
 
-  const genBtn = h(`<button class="btn primary" style="width:100%;">Gerar treino</button>`);
+  const genBtn = h(`<button class="btn primary" style="width:100%;"></button>`);
+  function paintSummary(){
+    const n = selected.size;
+    const modeLabel = PT_DIFF_MODES.find(([id])=>id===difficultyMode)[1];
+    summary.innerHTML = n
+      ? `📋 <b>${n}</b> assunto${n===1?'':'s'} · <b>${modeLabel}</b> · <b>${qty}</b> questões · ~${Math.max(1, Math.round(qty*0.6))} min`
+      : 'Escolha pelo menos um assunto pra montar o treino.';
+    genBtn.textContent = `Gerar treino (${qty} questões)`;
+    genBtn.disabled = n===0;
+    genBtn.style.opacity = n ? '' : '.5';
+    if(n) errorBox.innerHTML = '';
+  }
+  function paintChips(){
+    SUBJECTS.forEach(s=>chips[s.id].classList.toggle('active', selected.has(s.id)));
+    paintSummary();
+  }
+  paintSummary();
+
   genBtn.onclick = ()=>{
     if(selected.size===0){
       errorBox.innerHTML = `<div class="auth-error">Escolha pelo menos um assunto.</div>`;
       return;
     }
+    // mantém a ordem da lista de assuntos
     startPersonalizedSession({
-      subjectIds: Array.from(selected),
+      subjectIds: SUBJECTS.map(s=>s.id).filter(id=>selected.has(id)),
       difficultyMode, qty, focusWeak, progress,
     });
   };
@@ -4700,38 +4809,67 @@ async function personalizedSetupScreen(){
 }
 
 function startPersonalizedSession(config){
+  saveLastTraining(config);
   const subjects = SUBJECTS.filter(s=>config.subjectIds.includes(s.id));
-  const firstSubject = pickSubjectForSession(subjects, config.progress, config.focusWeak);
-  const firstDifficulty = pickDifficultyForSubject(firstSubject.id, config.difficultyMode, config.progress);
-  const {ex, signature} = genQuestionAvoidingRepeat(firstSubject, firstDifficulty, null);
   state.session = {
     config, subjects,
-    difficulty: firstDifficulty, // dificuldade da questão atual (pode mudar a cada questão)
-    currentSubjectId: firstSubject.id,
-    lastSignature: signature, // assinatura da questão atual, pra evitar repetir ela na próxima
+    difficulty: null, // dificuldade da questão atual (pode mudar a cada questão)
+    currentSubjectId: null,
+    lastSignature: null, // assinatura da questão atual, pra evitar repetir ela na próxima
     index:0, total: config.qty,
-    correct:0, wrong:0, results:[], checked:false, wasCorrect:null,
-    current: ex,
+    correct:0, wrong:0, results:[], log:[], checked:false, wasCorrect:null,
+    current: null,
   };
+  ptNextQuestion(state.session);
   go('personalizedSession');
+}
+
+/* resumo por assunto no fim do treino */
+function ptBreakdown(sess){
+  const by = {};
+  (sess.log||[]).forEach(r=>{ const b = by[r.sid] = by[r.sid] || {ok:0, n:0}; b.n++; if(r.ok) b.ok++; });
+  const box = h(`<div class="pt-breakdown"><h3>Seu desempenho por assunto</h3></div>`);
+  sess.subjects.filter(s=>by[s.id]).sort((a,b)=>(by[a.id].ok/by[a.id].n)-(by[b.id].ok/by[b.id].n)).forEach(s=>{
+    const b = by[s.id], pct = Math.round(b.ok/b.n*100);
+    const cls = pct>=80 ? '' : pct>=50 ? 'mid' : 'low';
+    box.appendChild(h(`<div class="mastery-row"><div class="top"><span class="name">${s.sym} ${s.name}</span><span class="pct">${b.ok}/${b.n}</span></div><div class="bar-track"><div class="bar-fill ${cls}" style="width:${pct}%"></div></div></div>`));
+  });
+  return {box, missedIds: sess.subjects.filter(s=>by[s.id] && by[s.id].ok<by[s.id].n).map(s=>s.id)};
 }
 
 function personalizedSessionScreen(){
   const sess = state.session;
   const wrap = document.createElement('div');
-  wrap.appendChild(topbar('🎯 Treino personalizado', true, ()=>go('personalizedSetup')));
+  // sair no meio do treino pede confirmação, pra não perder o progresso sem querer
+  wrap.appendChild(topbar('🎯 Treino personalizado', true, ()=>{
+    if(sess.index>0 && sess.index<sess.total){
+      showConfirm({icon:'🎯', title:'Sair do treino?', message:`Você já respondeu ${sess.index} de ${sess.total} questões. Os acertos ficam salvos, mas o treino não termina.`, ok:'Sair', cancel:'Continuar'})
+        .then(ok=>{ if(ok) go('personalizedSetup'); });
+    } else go('personalizedSetup');
+  }));
   const c = h(`<div class="content"></div>`);
 
   if(sess.index >= sess.total){
     const pct = Math.round((sess.correct/sess.total)*100);
     gameSessionEnd(c, sess.correct, sess.total, `Você acertou ${pct}% do seu treino personalizado.`);
+    const {box, missedIds} = ptBreakdown(sess);
     const actions = h(`<div class="cta-row" style="margin-top:14px"></div>`);
-    const again = h(`<button class="btn primary">Novo treino</button>`);
-    again.onclick = ()=>go('personalizedSetup');
+    if(missedIds.length){
+      const fix = h(`<button class="btn primary" style="flex:1 1 100%">🔁 Treinar o que errei (${missedIds.length} assunto${missedIds.length===1?'':'s'})</button>`);
+      fix.onclick = async ()=> startPersonalizedSession(Object.assign({}, sess.config, {
+        subjectIds: missedIds, focusWeak: missedIds.length>1, qty: Math.min(sess.config.qty, 10), progress: await loadProgress(),
+      }));
+      actions.appendChild(fix);
+    }
+    const again = h(`<button class="btn ${missedIds.length?'secondary':'primary'}">Repetir treino</button>`);
+    again.onclick = async ()=> startPersonalizedSession(Object.assign({}, sess.config, {progress: await loadProgress()}));
+    const setup = h(`<button class="btn secondary">Novo treino</button>`);
+    setup.onclick = ()=>go('personalizedSetup');
     const home = h(`<button class="btn secondary">Início</button>`);
     home.onclick = ()=> go('home');
-    actions.appendChild(again); actions.appendChild(home);
+    actions.appendChild(again); actions.appendChild(setup); actions.appendChild(home);
     c.appendChild(actions);
+    c.appendChild(box);
     wrap.appendChild(c);
     return wrap;
   }
@@ -4750,7 +4888,7 @@ function personalizedSessionScreen(){
   c.appendChild(sessionHud());
 
   const ex = sess.current;
-  const qcard = h(`<div class="question-card"><div class="qlabel">QUESTÃO ${sess.index+1} DE ${sess.total} · ${diffLabel} · ${s.sym} ${s.name}</div><div class="qtext mono"></div></div>`);
+  const qcard = h(`<div class="question-card"><div class="qlabel">QUESTÃO ${sess.index+1} DE ${sess.total} · ${diffLabel}${sess.lvlMsg?`<span class="pt-lvl">${sess.lvlMsg}</span>`:''} · ${s.sym} ${s.name}</div><div class="qtext mono"></div></div>`);
   const qtextEl = qcard.querySelector('.qtext');
   if(ex.columns){
     qtextEl.classList.add('stacked');
@@ -4793,6 +4931,7 @@ function personalizedSessionScreen(){
       giveAnswerFeedback(correct);
       sess.results.push(correct);
       if(correct) sess.correct++; else sess.wrong++;
+      ptAfterAnswer(sess, correct);
       await recordAnswer(sess.currentSubjectId, correct, {difficulty: sess.difficulty, ex});
       sess.config.progress = await loadProgress(); // atualiza pra próxima questão já considerar essa resposta
       render();
@@ -4825,15 +4964,7 @@ function personalizedSessionScreen(){
     nextBtn.onclick = ()=>{
       sess.index++;
       sess.checked=false; sess.wasCorrect=null;
-      if(sess.index < sess.total){
-        const nextSubject = pickSubjectForSession(sess.subjects, sess.config.progress, sess.config.focusWeak);
-        const nextDifficulty = pickDifficultyForSubject(nextSubject.id, sess.config.difficultyMode, sess.config.progress);
-        const {ex, signature} = genQuestionAvoidingRepeat(nextSubject, nextDifficulty, sess.lastSignature);
-        sess.currentSubjectId = nextSubject.id;
-        sess.difficulty = nextDifficulty;
-        sess.current = ex;
-        sess.lastSignature = signature;
-      }
+      if(sess.index < sess.total) ptNextQuestion(sess);
       render();
     };
     c.appendChild(nextBtn);
@@ -6810,7 +6941,7 @@ const HELP_TOPICS = [
   {ico:'🎤', t:'Quiz do Show', d:'10 perguntas de todos os assuntos, com 20 segundos cada. Quanto mais rápido você responde certo, mais pontos ganha, e acertos seguidos dão bônus. Pra sair no meio, toque no ✕ lá em cima.'},
   {ico:'⚡', t:'Relâmpago', d:'Você tem 60 segundos pra acertar o máximo de contas. Acertou: +1 ponto e +1 segundo. Errou: perde 3 segundos. Tente bater seu recorde!'},
   {ico:'∑', t:'Aprender', d:'A explicação de cada assunto, em linguagem simples e com exemplos resolvidos passo a passo. Também dá pra abrir pelo botão 📖 de cada episódio da Trilha.'},
-  {ico:'✎', t:'Exercícios, Desafios e Treino personalizado', d:'<b>Exercícios</b>: 5 questões de um assunto, você escolhe a dificuldade. <b>Desafios</b>: 10 questões misturadas. <b>Treino personalizado</b>: você escolhe os assuntos, a dificuldade e a quantidade. Aqui você digita a resposta (use o botão <b>/</b> pra frações).'},
+  {ico:'✎', t:'Exercícios, Desafios e Treino personalizado', d:'<b>Exercícios</b>: 5 questões de um assunto, você escolhe a dificuldade. <b>Desafios</b>: 10 questões misturadas. <b>Treino personalizado</b>: você escolhe os assuntos (cada um mostra seu % de acerto), a dificuldade e a quantidade; o app lembra suas últimas escolhas. No fim, veja seu desempenho por assunto e use <b>Treinar o que errei</b>. Aqui você digita a resposta (use o botão <b>/</b> pra frações).'},
   {ico:'💡', t:'Dicas e explicações', d:'Travou? Toque em "💡 Preciso de uma dica" pra lembrar o método. Depois de responder, sempre aparece a resolução passo a passo, e na Trilha é só tocar em "📖 Ver explicação".'},
   {ico:'🔁', t:'Revisar meus erros', d:'As questões que você errou ficam guardadas. Quando tiver alguma, aparece um aviso na tela inicial pra você tentar de novo. Acertou na revisão? Ela sai da lista.'},
   {ico:'?', t:'Resolver questão', d:'Digite uma conta, equação ou problema (ex.: <i>2x + 5 = 15</i> ou <i>25% de 300</i>) e o app mostra a resolução completa, passo a passo.'},
