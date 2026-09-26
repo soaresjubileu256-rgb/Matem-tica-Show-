@@ -1377,6 +1377,25 @@ function fmt(n){
   if (Math.abs(n - Math.round(n)) < 1e-9) return String(Math.round(n));
   return (Math.round(n*100)/100).toString().replace('.', ',');
 }
+function shuffle(arr){
+  for(let i=arr.length-1; i>0; i--){ const j = Math.floor(Math.random()*(i+1)); [arr[i], arr[j]] = [arr[j], arr[i]]; }
+  return arr;
+}
+/* decomposição em fatores primos: 12 → {2:2, 3:1} */
+function primeFactors(n){ const f = {}; let d = 2; while(n>1){ while(n%d===0){ f[d]=(f[d]||0)+1; n/=d; } d++; } return f; }
+function factorsStr(f){ const ks = Object.keys(f); return ks.length ? ks.map(k=>f[k]>1?`${k}<sup>${f[k]}</sup>`:k).join(' × ') : '1'; }
+function mmcSteps(a,b){
+  const fa = primeFactors(a), fb = primeFactors(b), keys = [...new Set([...Object.keys(fa), ...Object.keys(fb)])].sort((x,y)=>x-y);
+  const used = keys.map(k=>{ const e = Math.max(fa[k]||0, fb[k]||0); return e>1?`${k}<sup>${e}</sup>`:k; });
+  return [`Fatore: ${a} = ${factorsStr(fa)} · ${b} = ${factorsStr(fb)}`, `Pegue todos os fatores, cada um com o maior expoente: ${used.join(' × ')}`, `MMC(${a}, ${b}) = ${lcm(a,b)}`];
+}
+function mdcSteps(a,b){
+  const fa = primeFactors(a), fb = primeFactors(b), common = Object.keys(fa).filter(k=>fb[k]).sort((x,y)=>x-y);
+  const used = common.map(k=>{ const e = Math.min(fa[k], fb[k]); return e>1?`${k}<sup>${e}</sup>`:k; });
+  return [`Fatore: ${a} = ${factorsStr(fa)} · ${b} = ${factorsStr(fb)}`,
+    common.length ? `Pegue só os fatores em comum, cada um com o menor expoente: ${used.join(' × ')}` : 'Eles não têm fator primo em comum.',
+    `MDC(${a}, ${b}) = ${gcd(a,b)}`];
+}
 function fracStr(n,d){ const [a,b]=simplifyFrac(n,d); return b===1? String(a) : (a+"/"+b); }
 
 /* ---------------- MMC: lista os múltiplos de cada número lado a lado até achar o comum ---------------- */
@@ -2390,6 +2409,98 @@ const SUBJECTS = [
       dificil:()=>{ const a=randInt(2,9); let b=randInt(-40,40); if(b===0) b=7; const root=Math.round((-b/a)*100)/100; const fx=`f(x) = ${a}x ${fmtSigned(b)}`; return mkSingle(`${fx}. Qual é a raiz da função (valor de x que faz f(x) = 0)?`, root, [`Iguale a fórmula a 0: ${a}x ${fmtSigned(b)} = 0`, `Isole o x: ${a}x = ${-b}`, `x = ${-b} ÷ ${a} = ${fmt(root)}`], null, stepChain([fx, 'f(x) = 0 → ?']), stepChain([fx, `${a}x ${fmtSigned(b)} = 0`, `x = ${fmt(root)}`])); },
     }
   },
+  {
+    id:'mmcmdc', name:'MMC e MDC', sym:'mmc',
+    learn:`<p>Dois ônibus saem juntos do terminal: um volta a cada 4 minutos e o outro a cada 6. Depois de quanto tempo eles saem juntos de novo? Essa é uma pergunta de <b>MMC</b> (mínimo múltiplo comum): o <b>menor número</b> que está na tabuada dos dois. Resposta: 12 minutos.</p>
+    <p>Já o <b>MDC</b> (máximo divisor comum) é o <b>maior número</b> que divide os dois sem sobrar nada. Ex.: tenho 12 balas e 18 pirulitos e quero montar saquinhos iguais, sem sobrar nada. Quantos saquinhos, no máximo? MDC(12, 18) = 6.</p>
+    <p><b>Jeito rápido: decomponha em fatores primos</b> (divida por 2, 3, 5, 7... até chegar em 1).</p>
+    <ol style="margin:0 0 10px; padding-left:20px; line-height:1.7;">
+      <li><b>MMC:</b> multiplique <b>todos</b> os fatores que aparecem, cada um com a <b>maior</b> quantidade de vezes em que aparece.</li>
+      <li><b>MDC:</b> multiplique só os fatores <b>em comum</b>, cada um com a <b>menor</b> quantidade de vezes.</li>
+    </ol>
+    <p><b>Dica:</b> MMC × MDC = produto dos dois números. Ex.: 12 × 6 = 4 × 18 = 72.</p>`,
+    examples:[
+      {title:'Exemplo 1 (MMC)', text:'MMC(4, 6) = 12', steps:['Múltiplos de 4: 4, 8, <b>12</b>, 16...', 'Múltiplos de 6: 6, <b>12</b>, 18...', 'O primeiro que aparece nas duas listas é 12.']},
+      {title:'Exemplo 2 (MDC)', text:'MDC(12, 18) = 6', steps:mdcSteps(12,18)},
+      {title:'Exemplo 3 (por fatoração)', text:'MMC(12, 18) = 36', steps:mmcSteps(12,18)},
+    ],
+    gen:{
+      facil:()=>{ const g=randInt(2,6), a=g*randInt(1,5), b=g*randInt(2,6); const [x,y]=a===b?[a,b+g]:[a,b]; return mkSingle(`MDC(${x}, ${y}) = ?`, gcd(x,y), mdcSteps(x,y)); },
+      medio:()=>{ let a=randInt(2,12), b=randInt(3,15); if(a===b) b++; return mkSingle(`MMC(${a}, ${b}) = ?`, lcm(a,b), mmcSteps(a,b)); },
+      dificil:()=>{
+        if(Math.random()<0.5){ const a=pick([4,5,6,8,9,10,12,15]); let b=pick([6,8,10,12,14,15,18,20]); if(a===b) b+=2; const m=lcm(a,b);
+          return mkSingle(`Dois ônibus saem juntos do terminal. Um volta a cada ${a} minutos e o outro a cada ${b} minutos. Depois de quantos minutos eles saem juntos de novo?`, m, ['Queremos o primeiro momento em que os dois coincidem: é o <b>MMC</b>.', ...mmcSteps(a,b), `Eles saem juntos de novo depois de ${m} minutos.`]); }
+        const g=randInt(3,8), a=g*randInt(2,6); let b=g*randInt(3,7); if(a===b) b+=g;
+        return mkSingle(`Tenho ${a} balas e ${b} pirulitos e quero montar saquinhos iguais, sem sobrar nada. Qual é o maior número de saquinhos possível?`, gcd(a,b), ['Queremos o maior número que divide os dois ao mesmo tempo: é o <b>MDC</b>.', ...mdcSteps(a,b), `Dá pra montar ${gcd(a,b)} saquinhos.`]);
+      },
+    }
+  },
+  {
+    id:'geometria', name:'Áreas e perímetros', sym:'▭',
+    learn:`<p>O <b>perímetro</b> é o tamanho do "contorno" de uma figura: é o que você andaria dando uma volta completa nela. Pra calcular, some todos os lados.</p>
+    <p>A <b>área</b> é o tamanho da "parte de dentro": quanto de chão a figura cobre. Ela é medida em quadradinhos (cm², m²...).</p>
+    <ol style="margin:0 0 10px; padding-left:20px; line-height:1.7;">
+      <li><b>Retângulo:</b> área = base × altura · perímetro = 2 × (base + altura)</li>
+      <li><b>Quadrado:</b> área = lado × lado · perímetro = 4 × lado</li>
+      <li><b>Triângulo:</b> área = base × altura ÷ 2 (é metade de um retângulo)</li>
+      <li><b>Trapézio:</b> área = (base maior + base menor) × altura ÷ 2</li>
+      <li><b>Círculo:</b> área = π × raio², usando π ≈ 3,14</li>
+    </ol>`,
+    examples:[
+      {title:'Exemplo 1 (perímetro)', text:'Retângulo 8 cm × 3 cm → perímetro 22 cm', steps:['Some todos os lados: 8 + 3 + 8 + 3 = 22', 'Ou use a fórmula: 2 × (8 + 3) = 22 cm']},
+      {title:'Exemplo 2 (área do triângulo)', text:'Base 10 cm, altura 6 cm → área 30 cm²', steps:['Área = base × altura ÷ 2', '10 × 6 = 60', '60 ÷ 2 = 30 cm²']},
+      {title:'Exemplo 3 (círculo)', text:'Raio 5 cm → área 78,5 cm²', steps:['Área = π × r²', 'r² = 5 × 5 = 25', '3,14 × 25 = 78,5 cm²']},
+    ],
+    gen:{
+      facil:()=>{
+        if(Math.random()<0.5){ const b=randInt(3,15), a=randInt(2,12); return mkSingle(`Um retângulo tem ${b} cm de base e ${a} cm de altura. Qual é o perímetro (em cm)?`, 2*(a+b), ['Perímetro é a soma de todos os lados.', `${b} + ${a} + ${b} + ${a} = ${2*(a+b)} cm`]); }
+        const l=randInt(2,15); return mkSingle(`Um quadrado tem ${l} cm de lado. Qual é o perímetro (em cm)?`, 4*l, ['O quadrado tem 4 lados iguais.', `4 × ${l} = ${4*l} cm`]);
+      },
+      medio:()=>{
+        if(Math.random()<0.5){ const b=randInt(3,20), a=randInt(2,15); return mkSingle(`Qual é a área (em m²) de um terreno retangular de ${b} m por ${a} m?`, a*b, ['Área do retângulo = base × altura', `${b} × ${a} = ${a*b} m²`]); }
+        const b=2*randInt(2,10), a=randInt(3,14); return mkSingle(`Um triângulo tem base ${b} cm e altura ${a} cm. Qual é a área (em cm²)?`, b*a/2, ['Área do triângulo = base × altura ÷ 2', `${b} × ${a} = ${b*a}`, `${b*a} ÷ 2 = ${b*a/2} cm²`]);
+      },
+      dificil:()=>{
+        if(Math.random()<0.5){ const r=randInt(2,10); const A=Math.round(3.14*r*r*100)/100; return mkSingle(`Qual é a área (em cm²) de um círculo de raio ${r} cm? Use π = 3,14.`, A, ['Área do círculo = π × r²', `r² = ${r} × ${r} = ${r*r}`, `3,14 × ${r*r} = ${fmt(A)} cm²`]); }
+        const h=2*randInt(2,6), B=randInt(8,20), b=randInt(3,B-2); const A=(B+b)*h/2;
+        return mkSingle(`Um trapézio tem base maior ${B} cm, base menor ${b} cm e altura ${h} cm. Qual é a área (em cm²)?`, A, ['Área do trapézio = (base maior + base menor) × altura ÷ 2', `${B} + ${b} = ${B+b}`, `${B+b} × ${h} = ${(B+b)*h}`, `${(B+b)*h} ÷ 2 = ${A} cm²`]);
+      },
+    }
+  },
+  {
+    id:'estatistica', name:'Média, moda e mediana', sym:'x̄',
+    learn:`<p>Quando temos uma lista de números (notas, idades, gols...), às vezes queremos <b>um número só</b> que resuma todos eles. Existem três jeitos comuns:</p>
+    <ol style="margin:0 0 10px; padding-left:20px; line-height:1.7;">
+      <li><b>Média:</b> some todos os números e divida pela quantidade deles. É o "se fosse tudo igual, quanto daria pra cada um".</li>
+      <li><b>Mediana:</b> coloque os números em ordem e pegue o do <b>meio</b>. Se a quantidade for par, faça a média dos dois do meio.</li>
+      <li><b>Moda:</b> o número que <b>mais se repete</b> na lista.</li>
+    </ol>
+    <p><b>Dica:</b> a mediana não se deixa levar por um valor muito diferente dos outros. Em 2, 3, 3, 4, 100 a média é 22,4, mas a mediana é 3.</p>`,
+    examples:[
+      {title:'Exemplo 1 (média)', text:'Média de 6, 8 e 10 = 8', steps:['Some: 6 + 8 + 10 = 24', 'Divida pela quantidade (3): 24 ÷ 3 = 8']},
+      {title:'Exemplo 2 (mediana)', text:'Mediana de 7, 2, 9, 4, 5 = 5', steps:['Coloque em ordem: 2, 4, <b>5</b>, 7, 9', 'São 5 números, então o do meio é o 3º: 5']},
+      {title:'Exemplo 3 (moda)', text:'Moda de 3, 5, 3, 8, 5, 3 = 3', steps:['Conte quantas vezes cada um aparece: 3 → 3 vezes · 5 → 2 vezes · 8 → 1 vez', 'O que mais aparece é o 3.']},
+    ],
+    gen:{
+      facil:()=>{ const n=3, avg=randInt(3,20); const d=randInt(1,Math.min(5,avg-1)); const nums=shuffle([avg-d, avg, avg+d]); const sum=avg*n;
+        return mkSingle(`Qual é a média de ${nums.join(', ')}?`, avg, [`Some: ${nums.join(' + ')} = ${sum}`, `Divida pela quantidade (${n}): ${sum} ÷ ${n} = ${avg}`]); },
+      medio:()=>{
+        if(Math.random()<0.5){ const nums=Array.from({length:5},()=>randInt(1,30)); const sorted=[...nums].sort((a,b)=>a-b);
+          return mkSingle(`Qual é a mediana de ${nums.join(', ')}?`, sorted[2], [`Coloque em ordem: ${sorted.map((v,i)=>i===2?`<b>${v}</b>`:v).join(', ')}`, `São 5 números: o do meio é o 3º, ou seja, ${sorted[2]}.`]); }
+        const mode=randInt(1,12); const others=shuffle([...Array(12).keys()].map(i=>i+1).filter(v=>v!==mode)).slice(0,3);
+        const nums=shuffle([mode,mode,mode,others[0],others[0],others[1],others[2]]);
+        return mkSingle(`Qual é a moda de ${nums.join(', ')}?`, mode, [`Conte as repetições: ${mode} aparece 3 vezes, ${others[0]} aparece 2 vezes e os outros só 1.`, `O que mais aparece é o ${mode}.`]);
+      },
+      dificil:()=>{
+        if(Math.random()<0.5){ const target=randInt(6,8); const known=[randInt(4,10),randInt(4,10),randInt(4,10)]; const need=4*target-known.reduce((a,b)=>a+b,0);
+          if(need<0 || need>10) return SUBJECTS.find(x=>x.id==='estatistica').gen.dificil();
+          return mkSingle(`Nas 3 primeiras provas, Ana tirou ${known.join(', ')}. Que nota ela precisa tirar na 4ª prova pra ficar com média ${target}?`, need,
+            [`Pra ter média ${target} em 4 provas, a soma das notas precisa ser ${target} × 4 = ${4*target}.`, `Ela já tem ${known.join(' + ')} = ${4*target-need}.`, `Falta: ${4*target} − ${4*target-need} = ${need}.`]); }
+        const nums=Array.from({length:6},()=>randInt(1,20)); const sorted=[...nums].sort((a,b)=>a-b); const med=(sorted[2]+sorted[3])/2;
+        return mkSingle(`Qual é a mediana de ${nums.join(', ')}?`, med, [`Coloque em ordem: ${sorted.map((v,i)=>(i===2||i===3)?`<b>${v}</b>`:v).join(', ')}`, `São 6 números (quantidade par): faça a média dos dois do meio.`, `(${sorted[2]} + ${sorted[3]}) ÷ 2 = ${fmt(med)}`]);
+      },
+    }
+  },
 ];
 
 function fmtSigned(n){ return n>=0? `+ ${n}` : `− ${Math.abs(n)}`; }
@@ -3057,6 +3168,7 @@ async function recordAnswer(subjectId, correct, extra){
   if(!p[subjectId]) p[subjectId] = {attempted:0, correct:0};
   p[subjectId].attempted++;
   if(correct) p[subjectId].correct++;
+  p[subjectId].last = Date.now(); // usado pela revisão espaçada
   await saveProgress();
   gameOnAnswer(subjectId, correct, extra.difficulty);
 
@@ -3100,7 +3212,7 @@ const DEFAULT_SETTINGS = { theme:'dark', sound:true, vibration:true, dailyGoal:1
    usuário sempre pode marcar/desmarcar qualquer assunto depois. */
 const LEVEL_SUBJECTS = {
   fund1: ['adicao','subtracao','multiplicacao','divisao'],
-  fund2: ['adicao','subtracao','multiplicacao','divisao','fracoes','decimais','potenciacao','expressoes','regra3','porcentagem','eq1'],
+  fund2: ['adicao','subtracao','multiplicacao','divisao','fracoes','decimais','potenciacao','expressoes','regra3','porcentagem','eq1','mmcmdc','geometria','estatistica'],
   medio: SUBJECTS.map(s=>s.id),
 };
 let settingsCache = null, settingsCacheUid = null;
@@ -3328,6 +3440,7 @@ async function changeCurrentUserPassword(currentPass, newPass){
 
 /* baixa um .json com progresso, histórico, erros e configurações da conta logada */
 async function exportProgressData(){
+  saveBackupInfo({last: Date.now()});
   const [progress, history, errors, settings] = await Promise.all([loadProgress(), loadHistory(), loadErrors(), loadSettings()]);
   const payload = {
     exportedAt: new Date().toISOString(),
@@ -3764,7 +3877,7 @@ function h(html){ const d=document.createElement('div'); d.innerHTML=html.trim()
 function topbar(title, showBack, onBack){
   const bar = h(`<div class="topbar"></div>`);
   if(showBack){
-    const b = h(`<button class="back-btn">‹</button>`);
+    const b = h(`<button class="back-btn" aria-label="Voltar">‹</button>`);
     b.onclick = onBack || (()=>go('home'));
     bar.appendChild(b);
     const t = h(`<div class="screen-title"></div>`); t.textContent = title;
@@ -3800,7 +3913,7 @@ function homeScreen(){
   const wrap = document.createElement('div');
   const bar = topbar();
   const initial = (currentUser && currentUser.name) ? currentUser.name.trim().charAt(0).toUpperCase() : '?';
-  const profileBtn = h(`<button class="auth-logout profile-btn-avatar" title="Perfil">${escHTML(initial)}</button>`);
+  const profileBtn = h(`<button class="auth-logout profile-btn-avatar" title="Perfil" aria-label="Abrir meu perfil">${escHTML(initial)}</button>`);
   profileBtn.onclick = ()=> go('profile');
   const helpBtn = h(`<button class="auth-logout tut-help-btn" title="Como usar" aria-label="Como usar o app">?</button>`);
   helpBtn.onclick = ()=> go('help');
@@ -3883,6 +3996,24 @@ function homeScreen(){
     }
   });
 
+  // revisão espaçada — assuntos que já "venceram" e precisam ser relembrados
+  const spacedBanner = h(`
+    <button type="button" class="alert-banner" style="display:none">
+      <span class="sym">🧠</span>
+      <span class="txt"><span class="title">Revisão do dia</span><span class="sub spaced-text"></span></span>
+      <span class="chev">›</span>
+    </button>`);
+  spacedBanner.onclick = ()=> startSpacedReview();
+  wrap.appendChild(spacedBanner);
+  loadProgress().then(progress=>{
+    const due = dueReviewSubjects(progress);
+    if(!due.length) return;
+    spacedBanner.style.display = '';
+    const names = due.slice(0,3).map(s=>s.name).join(', ');
+    spacedBanner.querySelector('.spaced-text').textContent = `Hora de relembrar: ${names}${due.length>3?` e mais ${due.length-3}`:''}.`;
+  });
+  if(tutorialDone()) setTimeout(()=>{ if(state.screen==='home' && wrap.isConnected) maybeAskBackup(); }, 1500);
+
   // outras formas de praticar — acesso rápido, compacto
   wrap.appendChild(h(`<h3 style="font-size:12.5px;text-transform:uppercase;color:var(--ink-soft);font-weight:600;margin:0 20px 10px;letter-spacing:.08em;">Mais formas de praticar</h3>`));
   const quickGrid = h(`<div class="quick-grid six"></div>`);
@@ -3904,6 +4035,51 @@ function homeScreen(){
   // primeiro acesso: tour guiado pelo Pi
   if(!tutorialDone()) setTimeout(()=>{ if(state.screen==='home' && !tutorialDone() && wrap.isConnected) startTour(); }, 700);
   return wrap;
+}
+
+/* ---------- revisão espaçada ----------
+   Cada assunto já praticado "vence" depois de um intervalo que cresce com o % de acerto:
+   quem erra muito revê amanhã; quem domina, só daqui a uma semana. */
+const REVIEW_MIN_ATTEMPTS = 3;
+function reviewIntervalDays(acc){ return acc>=0.9 ? 7 : acc>=0.75 ? 4 : acc>=0.5 ? 2 : 1; }
+function dueReviewSubjects(progress){
+  const now = Date.now();
+  return SUBJECTS.filter(s=>{
+    const d = progress[s.id];
+    if(!d || d.attempted < REVIEW_MIN_ATTEMPTS) return false;
+    const acc = d.correct/d.attempted;
+    if(!d.last) return acc < 0.75; // dados antigos, sem data: revisa só o que ainda está fraco
+    return now - d.last >= reviewIntervalDays(acc)*864e5;
+  }).sort((a,b)=>(progress[a.id].correct/progress[a.id].attempted)-(progress[b.id].correct/progress[b.id].attempted));
+}
+async function startSpacedReview(){
+  const progress = await loadProgress();
+  const due = dueReviewSubjects(progress).slice(0,4);
+  if(!due.length) return;
+  startPersonalizedSession({subjectIds: due.map(s=>s.id), difficultyMode:'adaptativa', qty: Math.min(10, Math.max(5, due.length*3)), focusWeak: due.length>1, progress, isReview:true});
+}
+
+/* ---------- lembrete de backup ----------
+   o progresso fica só neste aparelho; de tempos em tempos lembramos de exportar uma cópia */
+const BACKUP_KEY_BASE = 'mathstudy-backup-v1';
+const BACKUP_EVERY_DAYS = 14, BACKUP_MIN_ANSWERS = 30;
+function backupInfo(){ try{ return JSON.parse(localStorage.getItem(`${BACKUP_KEY_BASE}:${currentUserId()}`)||'{}'); }catch(e){ return {}; } }
+function saveBackupInfo(o){ try{ localStorage.setItem(`${BACKUP_KEY_BASE}:${currentUserId()}`, JSON.stringify(Object.assign(backupInfo(), o))); }catch(e){} }
+let _backupAskedThisRun = false;
+async function maybeAskBackup(){
+  if(_backupAskedThisRun || !currentUser) return;
+  const progress = await loadProgress();
+  const total = Object.values(progress).reduce((a,d)=>a+(d.attempted||0), 0);
+  if(total < BACKUP_MIN_ANSWERS) return;
+  const info = backupInfo(), now = Date.now();
+  if(!info.since){ saveBackupInfo({since: now}); return; } // começa a contar a partir de agora
+  const ref = Math.max(info.last||0, info.since||0, info.snooze||0);
+  if(now - ref < BACKUP_EVERY_DAYS*864e5) return;
+  _backupAskedThisRun = true;
+  const ok = await showConfirm({icon:'💾', title:'Guarde uma cópia do seu progresso',
+    message:`Você já respondeu ${total} questões! Seu progresso fica salvo só neste aparelho: se limpar o navegador ou trocar de celular, ele se perde. Quer salvar uma cópia agora?`,
+    ok:'Salvar cópia', cancel:'Depois'});
+  if(ok) exportProgressData(); else saveBackupInfo({snooze: now});
 }
 
 /* ---------------- TABUADA (tela própria) ---------------- */
@@ -4035,6 +4211,9 @@ function exerciseDifficultyScreen(){
    ========================================================= */
 /* dica curta, por assunto: lembra o método geral, sem revelar o resultado da questão atual */
 const HINTS = {
+  mmcmdc: 'Decomponha os dois números em fatores primos. <b>MMC</b>: pegue todos os fatores com o maior expoente. <b>MDC</b>: pegue só os fatores em comum com o menor expoente.<br><b>Exemplo:</b> 12 = 2² × 3 e 18 = 2 × 3² → MMC = 2² × 3² = 36 · MDC = 2 × 3 = 6.',
+  geometria: 'Perímetro = soma de todos os lados. Área: retângulo = base × altura · triângulo = base × altura ÷ 2 · trapézio = (B + b) × h ÷ 2 · círculo = 3,14 × raio².<br><b>Exemplo:</b> triângulo de base 8 e altura 5 → 8 × 5 ÷ 2 = 20.',
+  estatistica: '<b>Média</b>: some tudo e divida pela quantidade. <b>Mediana</b>: coloque em ordem e pegue o do meio (se forem 2 no meio, faça a média deles). <b>Moda</b>: o que mais se repete.<br><b>Exemplo:</b> 2, 5, 5, 8 → média 5 · mediana 5 · moda 5.',
   adicao: 'Alinhe os números pela direita e some coluna por coluna, começando pelas unidades. Se a soma de uma coluna passar de 9, escreva só o último dígito e "leve" o resto pra próxima coluna.<br><b>Exemplo:</b> 27 + 15 → unidades: 7 + 5 = 12, escreve 2, vai 1. Dezenas: 2 + 1 + 1 = 4. Resultado: 42.',
   subtracao: 'Escreva o maior número em cima e o menor embaixo, alinhados pela direita. Subtraia coluna por coluna, da direita pra esquerda; se o de cima for menor, empreste 1 dezena da coluna vizinha.<br><b>Exemplo:</b> 52 − 28 → unidades: 2 é menor que 8, empresta 1 dezena → 12 − 8 = 4. Dezenas: 4 − 2 = 2. Resultado: 24.',
   multiplicacao: 'Números de um dígito só: pense na tabuada. Números maiores: multiplique dígito por dígito da direita pra esquerda, guardando os "vai um", e depois some os resultados parciais.<br><b>Exemplo:</b> 23 × 4 → 3 × 4 = 12, escreve 2, vai 1. 2 × 4 = 8 + 1 = 9. Resultado: 92.',
@@ -4579,10 +4758,6 @@ function pickWeighted(items, weights){
   return items[items.length-1];
 }
 
-function shuffle(arr){
-  for(let i=arr.length-1; i>0; i--){ const j = Math.floor(Math.random()*(i+1)); [arr[i], arr[j]] = [arr[j], arr[i]]; }
-  return arr;
-}
 /* último treino montado, pra já abrir a tela com as mesmas escolhas */
 function loadLastTraining(){
   try{ const raw = localStorage.getItem(`${PTRAIN_KEY_BASE}:${currentUserId()}`); return raw ? JSON.parse(raw) : null; }catch(e){ return null; }
@@ -4809,7 +4984,7 @@ async function personalizedSetupScreen(){
 }
 
 function startPersonalizedSession(config){
-  saveLastTraining(config);
+  if(!config.isReview) saveLastTraining(config);
   const subjects = SUBJECTS.filter(s=>config.subjectIds.includes(s.id));
   state.session = {
     config, subjects,
@@ -4841,7 +5016,7 @@ function personalizedSessionScreen(){
   const sess = state.session;
   const wrap = document.createElement('div');
   // sair no meio do treino pede confirmação, pra não perder o progresso sem querer
-  wrap.appendChild(topbar('🎯 Treino personalizado', true, ()=>{
+  wrap.appendChild(topbar(sess.config.isReview ? '🧠 Revisão do dia' : '🎯 Treino personalizado', true, ()=>{
     if(sess.index>0 && sess.index<sess.total){
       showConfirm({icon:'🎯', title:'Sair do treino?', message:`Você já respondeu ${sess.index} de ${sess.total} questões. Os acertos ficam salvos, mas o treino não termina.`, ok:'Sair', cancel:'Continuar'})
         .then(ok=>{ if(ok) go('personalizedSetup'); });
@@ -4851,7 +5026,7 @@ function personalizedSessionScreen(){
 
   if(sess.index >= sess.total){
     const pct = Math.round((sess.correct/sess.total)*100);
-    gameSessionEnd(c, sess.correct, sess.total, `Você acertou ${pct}% do seu treino personalizado.`);
+    gameSessionEnd(c, sess.correct, sess.total, sess.config.isReview ? `Você acertou ${pct}% da revisão. Os assuntos voltam pra revisão no tempo certo pra fixar de vez.` : `Você acertou ${pct}% do seu treino personalizado.`);
     const {box, missedIds} = ptBreakdown(sess);
     const actions = h(`<div class="cta-row" style="margin-top:14px"></div>`);
     if(missedIds.length){
@@ -5942,7 +6117,7 @@ function playerCard(){
   const name = currentUser ? currentUser.name : '';
   const got = Object.keys(g.ach).length;
   const card = h(`
-    <button type="button" class="player-card">
+    <button type="button" class="player-card" aria-label="Meu nível e conquistas">
       <div class="pc-top">
         <div class="pc-level" style="--lv-pct:${lv.pct}%"><span>${lv.level}</span><small>NÍVEL</small></div>
         <div class="pc-info">
@@ -6683,7 +6858,7 @@ function statusPills(){
   const bar = h(`<div class="status-pills">
     <button type="button" class="sp fire ${gameStreakNow()?'':'off'}" aria-label="Ver ofensiva">🔥 ${gameStreakNow()}</button>
     <span class="sp gem">🪙 ${gemsNow()}</span>
-    <button type="button" class="sp heart">❤️ ${hearts}${hearts<HEARTS_MAX?` <small>${fmtMinSec(nextHeartIn())}</small>`:''}</button>
+    <button type="button" class="sp heart" aria-label="Vidas">❤️ ${hearts}${hearts<HEARTS_MAX?` <small>${fmtMinSec(nextHeartIn())}</small>`:''}</button>
   </div>`);
   bar.querySelector('.heart').onclick = ()=>{ if(heartsNow()<HEARTS_MAX) showNoHearts(); };
   bar.querySelector('.fire').onclick = ()=> showStreakPanel();
@@ -6740,7 +6915,7 @@ function pathScreen(){
     const unitDone = unitNodes.every(n=>done[n.key]);
     const banner = h(`<div class="unit-banner" style="${color}">
       <div><div class="u-k">EPISÓDIO ${u+1}${unitDone?' · ✓ CONCLUÍDO':''}</div><div class="u-n">${s.name}</div></div>
-      <button type="button" class="u-guide" title="Ver conteúdo">📖</button></div>`);
+      <button type="button" class="u-guide" title="Ver conteúdo" aria-label="Ver conteúdo de ${s.name}">📖</button></div>`);
     banner.querySelector('.u-guide').onclick = ()=> go('subjectDetail', {subjectId:s.id});
     if(unitLocked){
       const jump = h(`<button type="button" class="u-jump">Pular pra cá ⏩</button>`);
@@ -6937,6 +7112,8 @@ const HELP_TOPICS = [
   {ico:'❤️', t:'Vidas e moedas', d:'Você tem 5 vidas. Errar uma pergunta da Trilha gasta uma (só o primeiro erro de cada pergunta — tentar de novo não gasta mais), e elas voltam sozinhas (1 a cada 20 minutos). Sem vidas? Recarregue com 50 🪙 moedas, ou continue treinando em Exercícios, Quiz e Relâmpago, que não gastam vidas. Você ganha moedas completando fases e abrindo prêmios.'},
   {ico:'⭐', t:'XP e níveis', d:'Todo acerto dá XP (fácil 10, médio 15, difícil 25). Acertos seguidos formam um <b>combo 🔥</b> que aumenta o XP. Junte XP pra subir de nível e ganhar títulos novos, de "Aprendiz dos Números" até "Lenda da Matemática".'},
   {ico:'🔥', t:'Ofensiva', d:'É quantos dias seguidos você jogou. Responda pelo menos uma pergunta por dia (ou jogue uma partida do Relâmpago) pra manter a chama acesa! Toque no 🔥 pra ver sua semana, seu recorde e o próximo marco: 3, 7, 14, 30 dias e além dão 🪙 moedas. O <b>protetor 🧊</b> salva sua ofensiva sozinho se você ficar um dia sem jogar (você começa com 1 e pode ter até 2; compre mais por 50 🪙).'},
+  {ico:'🧠', t:'Revisão do dia', d:'O app lembra quando você praticou cada assunto. Depois de um tempo (1 dia se você ainda erra muito, até 7 dias se já domina), o assunto aparece em <b>Revisão do dia</b> na tela inicial. Revisar no momento certo é o que faz a matéria ficar na cabeça.'},
+  {ico:'💾', t:'Backup do progresso', d:'Seu progresso fica salvo só neste aparelho. De vez em quando o app lembra você de salvar uma cópia. Você também pode fazer isso quando quiser em Configurações → <b>Exportar progresso</b>, e depois restaurar com <b>Importar</b>.'},
   {ico:'📜', t:'Missões e meta do dia', d:'Todo dia aparecem missões novas na tela inicial. Quando completar uma, toque em <b>Pegar</b> pra receber o XP. A meta diária (quantas questões responder) você pode mudar ali mesmo, em "Mudar meta".'},
   {ico:'🎤', t:'Quiz do Show', d:'10 perguntas de todos os assuntos, com 20 segundos cada. Quanto mais rápido você responde certo, mais pontos ganha, e acertos seguidos dão bônus. Pra sair no meio, toque no ✕ lá em cima.'},
   {ico:'⚡', t:'Relâmpago', d:'Você tem 60 segundos pra acertar o máximo de contas. Acertou: +1 ponto e +1 segundo. Errou: perde 3 segundos. Tente bater seu recorde!'},
@@ -7051,6 +7228,12 @@ if('serviceWorker' in navigator){
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   });
+}
+</script>
+<script>
+/* app instalável e offline: registra o service worker (só funciona em http/https, não abrindo o arquivo direto) */
+if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
+  window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
 }
 </script>
 </body>
