@@ -933,6 +933,30 @@ section.block h3{font-size:12.5px; text-transform:uppercase; color:var(--ink-sof
 .gm-modal p{color:#C9C4F0; font-size:14px; margin:0 0 18px;}
 .gm-modal button{border:none; width:100%; padding:14px; border-radius:999px; font-weight:800; font-size:15px; background:linear-gradient(135deg,#FFB800,#FF7A00); color:#2A1B00;}
 #gm-confetti{position:fixed; inset:0; pointer-events:none; z-index:9996;}
+/* painel da ofensiva */
+.sk-modal .big.sk-off{filter:grayscale(1); opacity:.55; animation:none;}
+.sk-week{display:grid; grid-template-columns:repeat(7,1fr); gap:5px; margin:0 0 14px;}
+.sk-day{border-radius:12px; padding:6px 0; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1);}
+.sk-day small{display:block; font-size:10px; font-weight:800; color:#C9C4F0;}
+.sk-day span{font-size:17px; line-height:1.4;}
+.sk-day.on{background:rgba(255,122,0,.22); border-color:rgba(255,160,60,.6);}
+.sk-day.frz{background:rgba(90,180,255,.2); border-color:rgba(120,200,255,.55);}
+.sk-day.today{border-style:dashed; border-color:rgba(255,212,92,.7);}
+.sk-stats{display:flex; gap:8px; margin-bottom:14px;}
+.sk-stats div{flex:1; background:rgba(255,255,255,.08); border-radius:12px; padding:8px 4px;}
+.sk-stats b{display:block; font-size:16px;} .sk-stats b i{font-style:normal;}
+.sk-stats span{font-size:11px; color:#C9C4F0; font-weight:600;}
+.sk-goal{text-align:left; margin-bottom:12px; font-size:13px; color:#C9C4F0;}
+.sk-goal b{color:#fff;}
+.sk-bar{height:8px; border-radius:99px; background:rgba(255,255,255,.12); overflow:hidden; margin:6px 0 3px;}
+.sk-bar i{display:block; height:100%; background:linear-gradient(90deg,#FFB800,#FF7A00); border-radius:99px;}
+.sk-goal small{font-size:11px;}
+.gm-modal p.sk-help{font-size:12px; margin-bottom:12px;}
+.gm-modal button:disabled{opacity:.5;}
+.pc-stat.warn{border-color:rgba(255,138,76,.8); animation:sk-pulse 1.6s ease-in-out infinite;}
+.pc-stat.warn span{color:#FFB38A;}
+@keyframes sk-pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,138,76,.0)}50%{box-shadow:0 0 0 4px rgba(255,138,76,.25)}}
+@media (prefers-reduced-motion: reduce){ .pc-stat.warn{animation:none;} }
 
 /* conquistas */
 .ach-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
@@ -1021,6 +1045,7 @@ section.block h3{font-size:12.5px; text-transform:uppercase; color:var(--ink-sof
 .status-pills{display:flex; gap:6px; margin-left:auto;}
 .status-pills .sp{background:var(--white); border:1px solid var(--border); border-radius:999px; padding:6px 10px; font-weight:800; font-size:13px; color:var(--ink); white-space:nowrap;}
 .status-pills .sp small{font-size:10px; color:var(--ink-soft); font-weight:700;}
+.status-pills button.sp{font-family:inherit; cursor:pointer;}
 .status-pills .fire{color:#FF8A4C;} .status-pills .fire.off{filter:grayscale(1); opacity:.6;}
 .status-pills .gem{color:var(--show-gold);} .status-pills .heart{color:var(--show-bad);}
 .topbar.sticky-top{position:sticky; top:0; z-index:50; background:var(--paper); background:color-mix(in srgb, var(--paper) 86%, transparent); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);}
@@ -3409,9 +3434,7 @@ function avatarHTML(u, cls){
 function peekGame(uid){
   try{
     const g = JSON.parse(localStorage.getItem(`${GAME_KEY_BASE}:${uid}`) || '{}');
-    const y = new Date(); y.setDate(y.getDate()-1);
-    const streak = (g.lastDay===dayKey() || g.lastDay===dayKey(y)) ? (g.streak||0) : 0;
-    return {level: levelInfo(g.xp||0).level, streak};
+    return {level: levelInfo(g.xp||0).level, streak: streakFromData(g)};
   }catch(e){ return {level:1, streak:0}; }
 }
 function authStageBg(){
@@ -3779,6 +3802,7 @@ function homeScreen(){
     ? `Olá${firstName? ', '+escHTML(firstName) : ''}! Jogue uma fase hoje pra não perder sua ofensiva de ${streakNow} dia${streakNow===1?'':'s'}! 🔥`
     : pick([`Olá${firstName? ', '+escHTML(firstName) : ''}! Bora subir de nível hoje? 🚀`, `E aí${firstName? ', '+escHTML(firstName) : ''}! O palco é seu hoje! 🎤`, `Oi${firstName? ', '+escHTML(firstName) : ''}! Luzes, câmera... matemática! 🎬`]);
   wrap.appendChild(mascotBubble(hello, 'happy'));
+  showStreakNote();
   wrap.appendChild(playerCard());
   wrap.appendChild(pathHero());
   wrap.appendChild(gameDuo());
@@ -5366,6 +5390,8 @@ const ACHIEVEMENTS = [
   {id:'perfect',   ico:'⭐', name:'Perfeição',         desc:'Sessão com 100% de acerto'},
   {id:'streak3',   ico:'📅', name:'Constância',        desc:'3 dias seguidos jogando'},
   {id:'streak7',   ico:'🗓️', name:'Semana de fogo',    desc:'7 dias seguidos jogando'},
+  {id:'streak14',  ico:'🌋', name:'Chama firme',       desc:'14 dias seguidos jogando'},
+  {id:'streak30',  ico:'☀️', name:'Mês em chamas',     desc:'30 dias seguidos jogando'},
   {id:'level5',    ico:'🚀', name:'Decolando',         desc:'Chegue ao nível 5'},
   {id:'level10',   ico:'🏅', name:'Veterano',          desc:'Chegue ao nível 10'},
   {id:'hard10',    ico:'💪', name:'Sem medo',          desc:'10 acertos no difícil'},
@@ -5396,6 +5422,7 @@ function loadGame(){
   gameCache = Object.assign({xp:0, streak:0, lastDay:null, bestCombo:0, hits:0, hardHits:0, fixed:0, boltBest:0, subjectsHit:{}, ach:{}, today:null}, g||{});
   gameCacheUid = uid;
   gameEnsureToday();
+  gameCheckStreak();
   return gameCache;
 }
 function saveGame(){
@@ -5405,24 +5432,146 @@ function gameEnsureToday(){
   const g = gameCache, k = dayKey();
   if(!g.today || g.today.day !== k) g.today = {day:k, answered:0, bestCombo:0, bolts:0, claimed:{}};
 }
+/* ---------- ofensiva (dias seguidos) ----------
+   - g.days guarda o histórico recente: 1 = jogou, 'f' = protegido por um protetor 🧊
+   - protetores (máx. STREAK_FREEZE_MAX) são gastos sozinhos quando a pessoa
+     pula dia(s); se não houver protetores suficientes, a ofensiva zera
+   - marcos (3, 7, 14, 30...) dão moedas e uma comemoração */
+const STREAK_FREEZE_MAX = 2, STREAK_FREEZE_COST = 50, STREAK_DAYS_KEEP = 70;
+const STREAK_MILESTONES = [[3,10],[7,25],[14,40],[30,75],[50,100],[100,200],[200,300],[365,500]];
+function keyToDate(k){ const [y,m,d] = String(k).split('-').map(Number); return new Date(y, m-1, d); }
+function dayDiff(a, b){ return Math.round((keyToDate(b) - keyToDate(a)) / 864e5); } // b - a, em dias
+function dayShift(n){ const d = new Date(); d.setDate(d.getDate()+n); return dayKey(d); }
+/* ofensiva "viva" a partir dos dados salvos, sem alterar nada (serve pra outras contas também) */
+function streakFromData(g){
+  if(!g || !g.lastDay || !g.streak) return 0;
+  const gap = dayDiff(g.lastDay, dayKey());
+  if(gap<=1) return g.streak;
+  return (g.freezes||0) >= gap-1 ? g.streak : 0;
+}
+/* ao abrir o jogo: cobre dias pulados com protetores ou zera a ofensiva */
+function gameCheckStreak(){
+  const g = gameCache;
+  if(g.days===undefined){
+    // conta antiga: reconstrói o histórico a partir da ofensiva atual
+    g.days = {};
+    if(g.lastDay && g.streak){
+      const last = keyToDate(g.lastDay);
+      for(let i=0; i<Math.min(g.streak, STREAK_DAYS_KEEP); i++){ const d = new Date(last); d.setDate(d.getDate()-i); g.days[dayKey(d)] = 1; }
+    }
+  }
+  if(g.freezes===undefined) g.freezes = 1; // todo mundo começa com 1 protetor de presente
+  if(g.bestStreak===undefined) g.bestStreak = g.streak||0;
+  if(!g.lastDay || !g.streak) return;
+  const gap = dayDiff(g.lastDay, dayKey());
+  if(gap<=1) return;
+  const missed = gap-1;
+  if(g.freezes >= missed){
+    for(let i=1; i<=missed; i++) g.days[dayShift(-i)] = 'f';
+    g.freezes -= missed;
+    g.lastDay = dayShift(-1);
+    g.streakNote = {type:'freeze', n:missed, streak:g.streak};
+  } else {
+    g.streakNote = {type:'lost', streak:g.streak};
+    g.streak = 0;
+  }
+  saveGame();
+}
+function streakNextMilestone(n){ return STREAK_MILESTONES.find(([d])=>d>n) || null; }
 /* marca que jogou hoje e atualiza a ofensiva de dias seguidos */
 function gameTouchDay(){
   const g = loadGame();
   gameEnsureToday();
   const k = dayKey();
   if(g.lastDay !== k){
-    const y = new Date(); y.setDate(y.getDate()-1);
-    g.streak = (g.lastDay===dayKey(y)) ? g.streak+1 : 1;
+    g.streak = (g.lastDay===dayShift(-1)) ? g.streak+1 : 1;
     g.lastDay = k;
+    g.days[k] = 1;
+    // mantém só o histórico recente
+    Object.keys(g.days).forEach(d=>{ if(dayDiff(d, k) > STREAK_DAYS_KEEP) delete g.days[d]; });
+    const record = g.streak > (g.bestStreak||0);
+    if(record) g.bestStreak = g.streak;
     if(g.streak>=3) gameUnlock('streak3');
     if(g.streak>=7) gameUnlock('streak7');
+    if(g.streak>=14) gameUnlock('streak14');
+    if(g.streak>=30) gameUnlock('streak30');
+    const ms = STREAK_MILESTONES.find(([d])=>d===g.streak);
+    if(ms){
+      g.gems = (g.gems||0) + ms[1];
+      queueToast('🔥', `Ofensiva de ${g.streak} dias!`, `Marco alcançado: +${ms[1]} 🪙 moedas`);
+      launchConfetti(140);
+    } else {
+      queueToast('🔥', g.streak===1 ? 'Ofensiva acesa!' : `${g.streak} dias seguidos!`,
+        record && g.streak>1 ? 'Novo recorde de ofensiva! 🏆' : 'Volte amanhã pra manter a chama acesa');
+    }
   }
 }
-/* ofensiva: vale se jogou hoje ou ontem; senão está apagada (0) */
-function gameStreakNow(){
-  const g = loadGame();
-  const y = new Date(); y.setDate(y.getDate()-1);
-  return (g.lastDay===dayKey() || g.lastDay===dayKey(y)) ? g.streak : 0;
+/* ofensiva: vale se jogou hoje ou ontem (ou se os protetores cobrem o intervalo); senão 0 */
+function gameStreakNow(){ return streakFromData(loadGame()); }
+function playedToday(){ return loadGame().lastDay===dayKey(); }
+function buyStreakFreeze(){
+  const g = loadGame(); heartsNow();
+  if(g.freezes >= STREAK_FREEZE_MAX || g.gems < STREAK_FREEZE_COST) return false;
+  g.gems -= STREAK_FREEZE_COST; g.freezes++;
+  saveGame(); playTones([523,784,1047], 0.08, 'triangle', 0.1);
+  return true;
+}
+/* avisos pendentes (protetor usado / ofensiva perdida), mostrados uma vez */
+function showStreakNote(){
+  const g = loadGame(), n = g.streakNote;
+  if(!n) return;
+  delete g.streakNote; saveGame();
+  if(n.type==='freeze') queueToast('🧊', n.n===1 ? 'Protetor usado!' : `${n.n} protetores usados!`, `Sua ofensiva de ${n.streak} dia${n.streak===1?'':'s'} foi salva`);
+  else if(n.streak>=2) queueToast('💔', 'A ofensiva apagou', `Você tinha ${n.streak} dias. Jogue hoje pra acender de novo!`);
+}
+/* painel da ofensiva: dias da semana, recorde, próximo marco e protetores */
+function showStreakPanel(){
+  const g = loadGame(), streak = gameStreakNow(), today = playedToday();
+  const WD = ['D','S','T','Q','Q','S','S'];
+  let week = '';
+  for(let i=-6; i<=0; i++){
+    const k = dayShift(i), v = g.days[k], wd = WD[keyToDate(k).getDay()];
+    const cls = v===1 ? 'on' : v==='f' ? 'frz' : i===0 ? 'today' : '';
+    const ico = v===1 ? '🔥' : v==='f' ? '🧊' : i===0 ? '⏳' : '·';
+    week += `<div class="sk-day ${cls}"><small>${wd}</small><span>${ico}</span></div>`;
+  }
+  const next = streakNextMilestone(streak);
+  const prev = [...STREAK_MILESTONES].reverse().find(([d])=>d<=streak);
+  const from = prev ? prev[0] : 0;
+  const pct = next ? Math.round((streak-from)/(next[0]-from)*100) : 100;
+  const bg = document.createElement('div');
+  bg.className = 'gm-modal-bg';
+  bg.innerHTML = `<div class="gm-modal sk-modal">
+    <div class="big ${streak?'':'sk-off'}">🔥</div>
+    <h2>${streak} dia${streak===1?'':'s'} de ofensiva</h2>
+    <p>${today ? 'Você já jogou hoje. A chama está garantida! ✅'
+      : streak ? 'Responda 1 pergunta hoje pra não perder sua ofensiva!'
+      : 'Responda 1 pergunta pra acender sua ofensiva!'}</p>
+    <div class="sk-week">${week}</div>
+    <div class="sk-stats">
+      <div><b>🏆 ${g.bestStreak||0}</b><span>recorde</span></div>
+      <div><b>🧊 <i class="sk-fz">${g.freezes}</i>/${STREAK_FREEZE_MAX}</b><span>protetores</span></div>
+    </div>
+    ${next ? `<div class="sk-goal"><div class="sk-goal-t">Próximo marco: <b>${next[0]} dias</b> · +${next[1]} 🪙</div><div class="sk-bar"><i style="width:${pct}%"></i></div><small>faltam ${next[0]-streak} dia${next[0]-streak===1?'':'s'}</small></div>` : ''}
+    <p class="sk-help">O protetor 🧊 salva sua ofensiva sozinho se você ficar um dia sem jogar.</p>
+    <button type="button" class="sk-buy"></button>
+    <button type="button" class="sk-close" style="margin-top:10px;background:rgba(255,255,255,.1);color:#fff">Fechar</button>
+  </div>`;
+  const buy = bg.querySelector('.sk-buy');
+  function paintBuy(){
+    const full = g.freezes >= STREAK_FREEZE_MAX, gems = gemsNow();
+    buy.disabled = full || gems < STREAK_FREEZE_COST;
+    buy.textContent = full ? 'Protetores no máximo 🧊' : `Comprar protetor 🧊 por ${STREAK_FREEZE_COST} 🪙 (você tem ${gems})`;
+    bg.querySelector('.sk-fz').textContent = g.freezes;
+  }
+  paintBuy();
+  let bought = false;
+  buy.onclick = ()=>{ if(buyStreakFreeze()){ bought = true; paintBuy(); showFloat('+1 protetor 🧊'); } };
+  // só redesenha a tela se as moedas mudaram (e só nas telas que mostram moedas/ofensiva)
+  const close = ()=>{ bg.remove(); if(bought && ['home','path','achievements'].includes(state.screen)) render(); };
+  bg.querySelector('.sk-close').onclick = close;
+  bg.addEventListener('click', e=>{ if(e.target===bg) close(); });
+  document.body.appendChild(bg);
 }
 function xpForLevel(lv){ return 100 + (lv-1)*50; } // XP pra ir do nível lv pro lv+1
 function levelInfo(xp){
@@ -5673,13 +5822,14 @@ function playerCard(){
         </div>
       </div>
       <div class="pc-stats four">
-        <div class="pc-stat ${streak?'':'off'}"><b><span class="flame">🔥</span> ${streak}</b><span>ofensiva</span></div>
+        <div class="pc-stat pc-streak ${streak?'':'off'} ${streak && !playedToday()?'warn':''}"><b><span class="flame">🔥</span> ${streak}</b><span>${streak && !playedToday()?'jogue hoje!':'ofensiva'}</span></div>
         <div class="pc-stat"><b>🪙 ${gemsNow()}</b><span>moedas</span></div>
         <div class="pc-stat"><b>❤️ ${heartsNow()}</b><span>vidas</span></div>
         <div class="pc-stat"><b>🏅 ${got}</b><span>medalhas</span></div>
       </div>
     </button>`);
   card.onclick = ()=> go('achievements');
+  card.querySelector('.pc-streak').onclick = e=>{ e.stopPropagation(); showStreakPanel(); };
   return card;
 }
 function missionsCard(){
@@ -5721,6 +5871,8 @@ function achievementsScreen(){
   grid.appendChild(h(`<div class="stat-card"><div class="num">${g.xp}</div><div class="lbl">XP total</div></div>`));
   grid.appendChild(h(`<div class="stat-card"><div class="num">${g.bestCombo}</div><div class="lbl">Maior combo</div></div>`));
   grid.appendChild(h(`<div class="stat-card"><div class="num">${g.boltBest}</div><div class="lbl">Recorde Relâmpago</div></div>`));
+  grid.appendChild(h(`<div class="stat-card"><div class="num">🔥 ${gameStreakNow()}</div><div class="lbl">Ofensiva atual</div></div>`));
+  grid.appendChild(h(`<div class="stat-card"><div class="num">🏆 ${g.bestStreak||0}</div><div class="lbl">Maior ofensiva</div></div>`));
   c.appendChild(grid);
   c.appendChild(h(`<section class="block"><h3>Medalhas (${Object.keys(g.ach).length}/${ACHIEVEMENTS.length})</h3></section>`));
   const ag = h(`<div class="ach-grid"></div>`);
@@ -6398,11 +6550,12 @@ function showNoHearts(onRefill){
 function statusPills(){
   const hearts = heartsNow();
   const bar = h(`<div class="status-pills">
-    <span class="sp fire ${gameStreakNow()?'':'off'}">🔥 ${gameStreakNow()}</span>
+    <button type="button" class="sp fire ${gameStreakNow()?'':'off'}" aria-label="Ver ofensiva">🔥 ${gameStreakNow()}</button>
     <span class="sp gem">🪙 ${gemsNow()}</span>
     <button type="button" class="sp heart">❤️ ${hearts}${hearts<HEARTS_MAX?` <small>${fmtMinSec(nextHeartIn())}</small>`:''}</button>
   </div>`);
   bar.querySelector('.heart').onclick = ()=>{ if(heartsNow()<HEARTS_MAX) showNoHearts(); };
+  bar.querySelector('.fire').onclick = ()=> showStreakPanel();
   return bar;
 }
 
@@ -6652,7 +6805,7 @@ const HELP_TOPICS = [
   {ico:'🗺️', t:'Trilha, episódios e fases', d:'Cada assunto é um episódio com 5 etapas: Fase 1 (fácil), Fase 2 (médio), Prêmio surpresa 🎁, Fase 3 (difícil) e a Grande final 🎤. Cada fase tem perguntas de múltipla escolha: toque numa resposta e depois em <b>CONFIRMAR</b>. Se errar, a resposta <b>não</b> é revelada: a alternativa errada fica riscada e você tenta de novo (tem o botão 💡 <b>Ver dica</b>). A explicação completa aparece quando você acertar. Já sabe um assunto? Use <b>Pular pra cá ⏩</b> e faça um teste de nivelamento.'},
   {ico:'❤️', t:'Vidas e moedas', d:'Você tem 5 vidas. Errar uma pergunta da Trilha gasta uma (só o primeiro erro de cada pergunta — tentar de novo não gasta mais), e elas voltam sozinhas (1 a cada 20 minutos). Sem vidas? Recarregue com 50 🪙 moedas, ou continue treinando em Exercícios, Quiz e Relâmpago, que não gastam vidas. Você ganha moedas completando fases e abrindo prêmios.'},
   {ico:'⭐', t:'XP e níveis', d:'Todo acerto dá XP (fácil 10, médio 15, difícil 25). Acertos seguidos formam um <b>combo 🔥</b> que aumenta o XP. Junte XP pra subir de nível e ganhar títulos novos, de "Aprendiz dos Números" até "Lenda da Matemática".'},
-  {ico:'🔥', t:'Ofensiva', d:'É quantos dias seguidos você jogou. Responda pelo menos uma pergunta por dia (ou jogue uma partida do Relâmpago) pra manter a chama acesa!'},
+  {ico:'🔥', t:'Ofensiva', d:'É quantos dias seguidos você jogou. Responda pelo menos uma pergunta por dia (ou jogue uma partida do Relâmpago) pra manter a chama acesa! Toque no 🔥 pra ver sua semana, seu recorde e o próximo marco: 3, 7, 14, 30 dias e além dão 🪙 moedas. O <b>protetor 🧊</b> salva sua ofensiva sozinho se você ficar um dia sem jogar (você começa com 1 e pode ter até 2; compre mais por 50 🪙).'},
   {ico:'📜', t:'Missões e meta do dia', d:'Todo dia aparecem missões novas na tela inicial. Quando completar uma, toque em <b>Pegar</b> pra receber o XP. A meta diária (quantas questões responder) você pode mudar ali mesmo, em "Mudar meta".'},
   {ico:'🎤', t:'Quiz do Show', d:'10 perguntas de todos os assuntos, com 20 segundos cada. Quanto mais rápido você responde certo, mais pontos ganha, e acertos seguidos dão bônus. Pra sair no meio, toque no ✕ lá em cima.'},
   {ico:'⚡', t:'Relâmpago', d:'Você tem 60 segundos pra acertar o máximo de contas. Acertou: +1 ponto e +1 segundo. Errou: perde 3 segundos. Tente bater seu recorde!'},
