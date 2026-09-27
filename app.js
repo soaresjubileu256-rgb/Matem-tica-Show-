@@ -2888,6 +2888,21 @@ function render(){
 }
 function h(html){ const d=document.createElement('div'); d.innerHTML=html.trim(); return d.firstElementChild; }
 
+/* recolhe as seções com esses títulos num bloco que abre ao tocar (nada é removido) */
+function foldSections(c, titles){
+  [...c.querySelectorAll('section.block')].forEach(sec=>{
+    const t = sec.querySelector('h3');
+    if(!t || !titles.includes(t.textContent.trim())) return;
+    const det = document.createElement('details');
+    det.className = 'set-fold';
+    det.innerHTML = `<summary><span></span><span class="sf-chev">›</span></summary><div class="sf-body"></div>`;
+    det.querySelector('summary span').textContent = t.textContent.trim();
+    const body = det.querySelector('.sf-body');
+    let n = sec.nextSibling;
+    while(n && !(n.matches && n.matches('section.block'))){ const nx = n.nextSibling; body.appendChild(n); n = nx; }
+    sec.replaceWith(det);
+  });
+}
 function topbar(title, showBack, onBack){
   const bar = h(`<div class="topbar"></div>`);
   if(showBack){
@@ -5364,10 +5379,10 @@ async function profileScreen(){
   const initial = name ? name.trim().charAt(0).toUpperCase() : '?';
 
   c.appendChild(h(`
-    <div class="profile-card">
+    <div class="profile-card pc-row">
       <div class="profile-avatar">${escHTML(initial)}</div>
-      <div class="profile-name">${escHTML(name)}</div>
-      <div class="profile-sub">Nível ${levelInfo(loadGame().xp).level} · ${levelInfo(loadGame().xp).title}</div>
+      <div><div class="profile-name">${escHTML(name)}</div>
+      <div class="profile-sub">Nível ${levelInfo(loadGame().xp).level} · ${levelInfo(loadGame().xp).title}</div></div>
     </div>`));
 
   const p = await loadProgress();
@@ -5384,7 +5399,7 @@ async function profileScreen(){
   const grid = h(`<div class="stat-grid"></div>`);
   grid.appendChild(h(`<div class="stat-card"><div class="num">${totalAttempted}</div><div class="lbl">Questões resolvidas</div></div>`));
   grid.appendChild(h(`<div class="stat-card acc"><div class="num">${pct}%</div><div class="lbl">Acerto geral</div></div>`));
-  grid.appendChild(h(`<div class="stat-card"><div class="num">${mastered}</div><div class="lbl">Assuntos proficientes ou dominados</div></div>`));
+  grid.appendChild(h(`<div class="stat-card"><div class="num">${mastered}</div><div class="lbl">Assuntos dominados</div></div>`));
   c.appendChild(grid);
 
   // menu em lista (antes era uma fileira de botões que ficava mais larga que a tela
@@ -5603,6 +5618,7 @@ async function settingsScreen(){
   };
   c.appendChild(resetBtn);
 
+  foldSections(c, ['Conta','Dados']);
   wrap.appendChild(c);
   return wrap;
 }
@@ -6237,14 +6253,18 @@ function achievementsScreen(){
   c.appendChild(h(`<section class="block"><h3>Medalhas (${Object.keys(g.ach).length}/${ACHIEVEMENTS.length})</h3></section>`));
   const ag = h(`<div class="ach-grid"></div>`);
   ACHIEVEMENTS.forEach(a=>{
-    ag.appendChild(h(`<div class="ach ${g.ach[a.id]?'got':'locked'}"><div class="ico">${a.ico}</div><div class="nm">${a.name}</div><div class="ds">${a.desc}</div></div>`));
+    const el = h(`<button type="button" class="ach ${g.ach[a.id]?'got':'locked'}" aria-label="${a.name}: ${a.desc}"><div class="ico">${a.ico}</div><div class="nm">${a.name}</div><div class="ds">${a.desc}</div></button>`);
+    el.onclick = ()=>{ ag.querySelectorAll('.ach.show').forEach(x=>{ if(x!==el) x.classList.remove('show'); }); el.classList.toggle('show'); };
+    ag.appendChild(el);
   });
   c.appendChild(ag);
+  c.appendChild(h(`<p class="ach-hint">Toque numa medalha pra ver como ganhar.</p>`));
   c.appendChild(h(`<section class="block" style="margin-top:20px"><h3>Títulos</h3></section>`));
   LEVEL_TITLES.forEach(([min,t])=>{
     const on = lv.level>=min;
     c.appendChild(h(`<div class="mastery-row" style="opacity:${on?1:.5}"><div class="top"><span class="name">${on?'':'🔒 '}${t}</span><span class="pct">Nível ${min}</span></div></div>`));
   });
+  foldSections(c, ['Títulos']);
   wrap.appendChild(c);
   return wrap;
 }
@@ -7189,14 +7209,13 @@ function helpScreen(){
   const wrap = document.createElement('div');
   wrap.appendChild(topbar('📘 Como usar', true, ()=>go('home')));
   const c = h(`<div class="content"></div>`);
-  c.appendChild(h(`<div class="help-hero">${mascotSVG('joy', 84)}<div><h2>Guia do Show</h2><p>Tudo que você precisa saber pra aproveitar o Matemática Show. Toque num tópico pra abrir.</p></div></div>`));
-  const tourBtn = h(`<button type="button" class="show-btn" style="margin-bottom:18px">🎬 Rever o tour guiado</button>`);
+  c.appendChild(h(`<div class="help-hero help-min"><div><p>Tudo que você precisa saber pra aproveitar o Matemática Show. Toque num tópico pra abrir.</p></div></div>`));
+  const tourBtn = h(`<button type="button" class="btn secondary" style="width:100%; margin-bottom:16px">🎬 Rever o tour guiado</button>`);
   tourBtn.onclick = ()=> startTour();
   c.appendChild(tourBtn);
   HELP_TOPICS.forEach((tp, idx)=>{
     const item = h(`<div class="help-item"><button type="button" class="hi-head"><span class="hi-ico">${tp.ico}</span><span class="hi-t">${tp.t}</span><span class="hi-chev">›</span></button><div class="hi-body">${tp.d}</div></div>`);
     item.querySelector('.hi-head').onclick = ()=> item.classList.toggle('open');
-    if(idx===0) item.classList.add('open');
     c.appendChild(item);
   });
   const reset = h(`<button type="button" class="link-btn" style="margin:18px auto 0;display:block;font-size:12.5px">Mostrar de novo as dicas de primeira vez</button>`);
