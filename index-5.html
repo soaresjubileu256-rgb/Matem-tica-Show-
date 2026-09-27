@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>Matemática Show</title>
+
+<!-- PWA: manifest + cor do tema + ícones -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#07070F">
+<link rel="icon" type="image/png" sizes="48x48" href="favicon-48.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<!-- iOS não lê o manifest.json pra isso, precisa dessas tags separadas -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mat. Show">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="description" content="Seu professor de matemática digital — aprenda, pratique e resolva questões passo a passo.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app"></div>
+
+<script src="app.js"></script>
+
+<script>
+// registra o service worker (funcionamento offline + instalação como app). Se o navegador
+// não suportar, ou se estiver rodando fora de um servidor (ex: abrindo o arquivo direto),
+// simplesmente não faz nada — o app continua funcionando normal, só sem o modo offline.
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
