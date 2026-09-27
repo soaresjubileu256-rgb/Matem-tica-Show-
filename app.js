@@ -2923,8 +2923,42 @@ function bottomNav(){
 }
 
 /* ---------------- HOME ---------------- */
+/* tela inicial minimalista: poucos blocos, tudo o que existia continua acessível
+   (status → toque abre detalhes; missões e meta ficam no cartão "Hoje";
+   todas as ferramentas ficam em "Tudo") */
+const HOME_TOOLS = [
+  {ico:'🎤', label:'Quiz do Show', screen:'quizSetup'},
+  {ico:'⚡', label:'Relâmpago', screen:'lightning'},
+  {ico:'🎯', label:'Treino personalizado', screen:'personalizedSetup'},
+  {ico:'✏️', label:'Caderno', screen:'notebook'},
+  {ico:'🏆', label:'Desafios', screen:'challengeDifficulty'},
+  {ico:'✖️', label:'Tabuada', screen:'tabuada'},
+  {ico:'❓', label:'Resolver questão', screen:'solve'},
+  {ico:'🧮', label:'Calculadora', screen:'calculator'},
+  {ico:'⚔️', label:'Duelo a dois', screen:'duel'},
+  {ico:'🔺', label:'Laboratório de Geometria', screen:'geoLab'},
+  {ico:'🏅', label:'Conquistas', screen:'achievements'},
+  {ico:'📜', label:'Certificados', screen:'certificates'},
+  {ico:'📝', label:'Relatório semanal', screen:'report'},
+];
+function showAllTools(){
+  const g = loadGame(), qb = g.quizBest || {};
+  const best = {quizSetup: Math.max(0, ...Object.values(qb)), lightning: g.boltBest};
+  const bg = document.createElement('div');
+  bg.className = 'gm-modal-bg sheet';
+  bg.innerHTML = `<div class="home-sheet" role="dialog" aria-label="Todas as formas de praticar"><div class="hs-grab"></div><div class="hs-title">Tudo</div><div class="hs-grid"></div></div>`;
+  const grid = bg.querySelector('.hs-grid');
+  HOME_TOOLS.forEach(t=>{
+    const b = h(`<button type="button" class="hs-item"><span class="hs-ico">${t.ico}</span><span class="hs-l">${t.label}</span>${best[t.screen]?`<span class="hs-best">🏆 ${best[t.screen].toLocaleString('pt-BR')}</span>`:''}</button>`);
+    b.onclick = ()=>{ bg.remove(); go(t.screen, t.screen==='geoLab' ? {geoBack:'home'} : {}); };
+    grid.appendChild(b);
+  });
+  bg.addEventListener('click', e=>{ if(e.target===bg) bg.remove(); });
+  document.body.appendChild(bg);
+}
 function homeScreen(){
   const wrap = document.createElement('div');
+  wrap.className = 'home-min';
   const bar = topbar();
   const initial = (currentUser && currentUser.name) ? currentUser.name.trim().charAt(0).toUpperCase() : '?';
   const profileBtn = h(`<button class="auth-logout profile-btn-avatar" title="Perfil" aria-label="Abrir meu perfil">${escHTML(initial)}</button>`);
@@ -2934,121 +2968,115 @@ function homeScreen(){
   bar.appendChild(helpBtn);
   bar.appendChild(profileBtn);
   wrap.appendChild(bar);
+
+  const g = loadGame(), lv = levelInfo(g.xp);
   const firstName = currentUser ? currentUser.name.split(' ')[0] : '';
   const streakNow = gameStreakNow();
-  const hello = streakNow>0 && loadGame().lastDay!==dayKey()
-    ? `Olá${firstName? ', '+escHTML(firstName) : ''}! Jogue uma fase hoje pra não perder sua ofensiva de ${streakNow} dia${streakNow===1?'':'s'}! 🔥`
-    : pick([`Olá${firstName? ', '+escHTML(firstName) : ''}! Bora subir de nível hoje? 🚀`, `E aí${firstName? ', '+escHTML(firstName) : ''}! O palco é seu hoje! 🎤`, `Oi${firstName? ', '+escHTML(firstName) : ''}! Luzes, câmera... matemática! 🎬`]);
-  wrap.appendChild(mascotBubble(hello, 'happy'));
+  const sub = streakNow>0 && !playedToday()
+    ? `Jogue hoje pra manter sua ofensiva de ${streakNow} dia${streakNow===1?'':'s'} 🔥`
+    : streakNow>0 ? 'Ofensiva garantida hoje. Bora continuar? ✨' : 'Bora aprender algo novo hoje?';
+  const hello = h(`<div class="home-hello"><h2></h2><p></p></div>`);
+  hello.querySelector('h2').textContent = firstName ? `Olá, ${firstName}` : 'Olá!';
+  hello.querySelector('p').textContent = sub;
+  wrap.appendChild(hello);
   showStreakNote();
-  wrap.appendChild(playerCard());
-  wrap.appendChild(pathHero());
-  wrap.appendChild(gameDuo());
 
-  // meta diária de questões — editável direto aqui, sem precisar ir em Configurações
-  const goalRow = h(`
-    <div class="mastery-row" style="display:none; margin:0 20px 16px;">
-      <div class="top">
-        <span class="name">🎯 Meta de hoje</span>
-        <span class="pct goal-num">0/0</span>
-      </div>
-      <div class="bar-track"><div class="bar-fill goal-bar" style="width:0%"></div></div>
-    </div>`);
-  const goalEditBtn = h(`<button type="button" class="link-btn" style="margin-top:8px; font-size:11.5px;">Mudar meta</button>`);
-  const goalEditRow = h(`<div class="diff-row" style="display:none; margin-top:8px; flex-wrap:wrap;"></div>`);
-  [5,10,15,20,30].forEach(n=>{
-    const chip = h(`<button type="button" class="diff-chip" style="flex:1 1 auto; padding:8px 14px; font-size:12.5px;">${n}</button>`);
-    chip.onclick = async ()=>{
-      const settings = await loadSettings();
-      settings.dailyGoal = n;
-      await saveSettings();
-      refreshGoal();
-      goalEditRow.style.display='none'; goalEditBtn.textContent='Mudar meta';
-    };
-    goalEditRow.appendChild(chip);
-  });
-  goalEditBtn.onclick = ()=>{
-    const open = goalEditRow.style.display==='none';
-    goalEditRow.style.display = open ? 'flex' : 'none';
-    goalEditBtn.textContent = open ? 'Fechar' : 'Mudar meta';
+  // status: nível + ofensiva, moedas, vidas, medalhas (cada um abre seus detalhes)
+  const hearts = heartsNow();
+  const stats = h(`<div class="home-stats">
+    <button type="button" class="hs-level" aria-label="Nível ${lv.level}: ver conquistas">
+      <span class="hl-top"><b>Nível ${lv.level}</b><span>${escHTML(lv.title)}</span><small>${lv.into}/${lv.need} XP</small></span>
+      <span class="hl-bar"><i style="width:${lv.pct}%"></i></span>
+    </button>
+    <div class="hs-chips">
+      <button type="button" class="hs-chip fire ${streakNow?'':'off'} ${streakNow && !playedToday()?'warn':''}" aria-label="Ofensiva: ${streakNow} dias">🔥 <b>${streakNow}</b></button>
+      <button type="button" class="hs-chip gem" aria-label="Moedas: ${gemsNow()}">🪙 <b>${gemsNow()}</b></button>
+      <button type="button" class="hs-chip heart" aria-label="Vidas: ${hearts}">❤️ <b>${hearts}</b>${hearts<HEARTS_MAX?` <small>${fmtMinSec(nextHeartIn())}</small>`:''}</button>
+      <button type="button" class="hs-chip medal" aria-label="Medalhas: ${Object.keys(g.ach).length}">🏅 <b>${Object.keys(g.ach).length}</b></button>
+    </div>
+  </div>`);
+  stats.querySelector('.hs-level').onclick = ()=> go('achievements');
+  stats.querySelector('.fire').onclick = ()=> showStreakPanel();
+  stats.querySelector('.gem').onclick = ()=> go('achievements');
+  stats.querySelector('.heart').onclick = ()=>{ if(heartsNow()<HEARTS_MAX) showNoHearts(); else showFloat('Vidas cheias ❤️'); };
+  stats.querySelector('.medal').onclick = ()=> go('achievements');
+  wrap.appendChild(stats);
+
+  // continuar a trilha
+  const all = allPathNodes(), cur = pathCurrentIndex();
+  const n = all[Math.min(cur, all.length-1)], finished = cur>=all.length;
+  const cont = h(`<button type="button" class="home-continue" style="${unitStyle(n.unit)}">
+    <span class="hc-txt"><span class="hc-k">${finished ? 'TEMPORADA COMPLETA' : `EPISÓDIO ${n.unit+1} · ${n.idx+1}/${PATH_NODES.length}`}</span>
+    <span class="hc-t">${finished ? 'Você zerou a trilha! 👑' : escHTML(n.subject.name)}</span>
+    <span class="hc-s">${finished ? 'Continue praticando pra ganhar XP' : n.label}</span></span>
+    <span class="hc-play" aria-hidden="true">▶</span>
+  </button>`);
+  cont.setAttribute('aria-label', finished ? 'Abrir a trilha' : `${cur===0?'Começar':'Continuar'} a trilha: ${n.subject.name}, ${n.label}`);
+  cont.onclick = ()=> go('path');
+  wrap.appendChild(cont);
+
+  // avisos (só aparecem quando existem)
+  const alerts = h(`<div class="home-alerts"></div>`);
+  wrap.appendChild(alerts);
+  const alertRow = (ico, title, subtxt, fn)=>{
+    const r = h(`<button type="button" class="home-alert"><span class="ha-ico">${ico}</span><span class="ha-t"><b></b><small></small></span><span class="ha-chev">›</span></button>`);
+    r.querySelector('b').textContent = title; r.querySelector('small').textContent = subtxt;
+    r.onclick = fn; alerts.appendChild(r);
   };
-  goalRow.appendChild(goalEditBtn);
-  goalRow.appendChild(goalEditRow);
-  wrap.appendChild(goalRow);
-  wrap.appendChild(missionsCard());
+  loadErrors().then(errs=>{
+    if(errs.length) alertRow('🔁', 'Revisar meus erros', errs.length===1 ? '1 questão pra refazer' : `${errs.length} questões pra refazer`, ()=>startReviewErrors());
+    return loadProgress();
+  }).then(progress=>{
+    const due = dueReviewSubjects(progress);
+    if(due.length) alertRow('🧠', 'Revisão do dia', due.slice(0,2).map(s=>s.name).join(', ') + (due.length>2?` e mais ${due.length-2}`:''), ()=>startSpacedReview());
+  });
+
+  // hoje: meta diária + missões (recolhidas)
+  const today = h(`<div class="home-today">
+    <div class="ht-head"><span class="ht-t">Hoje</span><span class="ht-n goal-num">0/0</span></div>
+    <div class="bar-track"><div class="bar-fill goal-bar" style="width:0%"></div></div>
+    <div class="ht-foot"><button type="button" class="link-btn ht-miss"></button><button type="button" class="link-btn ht-goal">Mudar meta</button></div>
+    <div class="ht-goal-row diff-row" style="display:none; margin-top:10px; flex-wrap:wrap;"></div>
+    <div class="ht-missions" style="display:none"></div>
+  </div>`);
+  const goalRow = today.querySelector('.ht-goal-row');
+  [5,10,15,20,30].forEach(v=>{
+    const chip = h(`<button type="button" class="diff-chip" style="flex:1 1 auto; padding:8px 12px; font-size:12.5px;">${v}</button>`);
+    chip.onclick = async ()=>{ const st = await loadSettings(); st.dailyGoal = v; await saveSettings(); goalRow.style.display = 'none'; refreshGoal(); };
+    goalRow.appendChild(chip);
+  });
+  today.querySelector('.ht-goal').onclick = ()=>{ goalRow.style.display = goalRow.style.display==='none' ? 'flex' : 'none'; };
+  const missBox = today.querySelector('.ht-missions'), missBtn = today.querySelector('.ht-miss');
+  const ms = missionState(), doneCount = ms.filter(m=>m.claimed).length, claimable = ms.filter(m=>m.done && !m.claimed).length;
+  missBtn.innerHTML = `📜 Missões ${doneCount}/${ms.length}${claimable?` <span class="ht-badge">${claimable} prêmio${claimable===1?'':'s'}!</span>`:''}`;
+  missBox.appendChild(missionsCard());
+  const openMissions = open=>{ missBox.style.display = open ? '' : 'none'; missBtn.classList.toggle('open', open); };
+  missBtn.onclick = ()=> openMissions(missBox.style.display==='none');
+  if(claimable) openMissions(true);
   function refreshGoal(){
     Promise.all([loadHistory(), loadSettings()]).then(([hist, settings])=>{
       const todayStr = new Date().toDateString();
       const doneToday = hist.filter(e=> new Date(e.ts).toDateString()===todayStr).length;
       const goal = settings.dailyGoal || 10;
-      const pct = Math.max(0, Math.min(100, Math.round(doneToday/goal*100)));
-      goalRow.style.display = '';
-      goalRow.querySelector('.goal-num').textContent = `${doneToday}/${goal}`;
-      goalRow.querySelector('.goal-bar').style.width = pct+'%';
-      goalRow.querySelector('.name').textContent = doneToday>=goal ? '🎉 Meta de hoje concluída!' : '🎯 Meta de hoje';
-      goalEditRow.querySelectorAll('.diff-chip').forEach(ch=>{
-        ch.classList.toggle('active', parseInt(ch.textContent)===goal);
-      });
+      today.querySelector('.goal-num').textContent = doneToday>=goal ? `🎉 ${doneToday}/${goal} questões` : `${doneToday}/${goal} questões`;
+      today.querySelector('.goal-bar').style.width = Math.max(0, Math.min(100, Math.round(doneToday/goal*100)))+'%';
+      goalRow.querySelectorAll('.diff-chip').forEach(ch=> ch.classList.toggle('active', parseInt(ch.textContent)===goal));
     });
   }
   refreshGoal();
+  wrap.appendChild(today);
 
-  // aviso de erros pendentes — banner compacto, só aparece quando existem, logo no topo por ser acionável
-  const reviewBanner = h(`
-    <button type="button" class="alert-banner" style="display:none">
-      <span class="sym">🔁</span>
-      <span class="txt"><span class="title">Revisar meus erros</span><span class="sub review-count-text">Volte nas questões que você errou e tente de novo.</span></span>
-      <span class="chev">›</span>
-    </button>`);
-  reviewBanner.onclick = ()=>startReviewErrors();
-  wrap.appendChild(reviewBanner);
-  loadErrors().then(errs=>{
-    if(errs.length>0){
-      reviewBanner.style.display = '';
-      reviewBanner.querySelector('.review-count-text').textContent =
-        errs.length===1 ? 'Você tem 1 questão errada pra revisar.' : `Você tem ${errs.length} questões erradas pra revisar.`;
-    }
+  // praticar: 4 atalhos + "Tudo" (todas as ferramentas)
+  const quick = h(`<div class="home-quick"><div class="hq-head"><span>Praticar</span><button type="button" class="link-btn hq-all">Tudo ›</button></div><div class="hq-row"></div></div>`);
+  HOME_TOOLS.slice(0,4).forEach(t=>{
+    const b = h(`<button type="button" class="hq-item"><span class="hq-ico">${t.ico}</span><span class="hq-l">${t.label.replace(' personalizado','').replace(' do Show','')}</span></button>`);
+    b.onclick = ()=> go(t.screen);
+    quick.querySelector('.hq-row').appendChild(b);
   });
+  quick.querySelector('.hq-all').onclick = showAllTools;
+  wrap.appendChild(quick);
 
-  // revisão espaçada — assuntos que já "venceram" e precisam ser relembrados
-  const spacedBanner = h(`
-    <button type="button" class="alert-banner" style="display:none">
-      <span class="sym">🧠</span>
-      <span class="txt"><span class="title">Revisão do dia</span><span class="sub spaced-text"></span></span>
-      <span class="chev">›</span>
-    </button>`);
-  spacedBanner.onclick = ()=> startSpacedReview();
-  wrap.appendChild(spacedBanner);
-  loadProgress().then(progress=>{
-    const due = dueReviewSubjects(progress);
-    if(!due.length) return;
-    spacedBanner.style.display = '';
-    const names = due.slice(0,3).map(s=>s.name).join(', ');
-    spacedBanner.querySelector('.spaced-text').textContent = `Hora de relembrar: ${names}${due.length>3?` e mais ${due.length-3}`:''}.`;
-  });
   if(tutorialDone()) setTimeout(()=>{ if(state.screen==='home' && wrap.isConnected) maybeAskBackup(); }, 1500);
-
-  // outras formas de praticar — acesso rápido, compacto
-  wrap.appendChild(h(`<h3 style="font-size:12.5px;text-transform:uppercase;color:var(--ink-soft);font-weight:600;margin:0 20px 10px;letter-spacing:.08em;">Mais formas de praticar</h3>`));
-  const quickGrid = h(`<div class="quick-grid six"></div>`);
-  [
-    {sym:'🎯', cls:'tile-train', label:'Treino personalizado', screen:'personalizedSetup'},
-    {sym:'🏆', cls:'challenge', label:'Desafios', screen:'challengeDifficulty'},
-    {sym:'×', cls:'tabuada', label:'Tabuada', screen:'tabuada'},
-    {sym:'?', cls:'solve', label:'Resolver questão', screen:'solve'},
-    {sym:'#', cls:'tile-calc', label:'Calculadora', screen:'calculator'},
-    {sym:'🏅', cls:'tile-ach', label:'Conquistas', screen:'achievements'},
-    {sym:'⚔️', cls:'tile-duel', label:'Duelo a dois', screen:'duel'},
-    {sym:'📜', cls:'tile-cert', label:'Certificados', screen:'certificates'},
-    {sym:'✏️', cls:'tile-report', label:'Caderno', screen:'notebook'},
-  ].forEach(item=>{
-    const tile = h(`<button type="button" class="quick-tile ${item.cls}"><span class="sym">${item.sym}</span><span class="label">${item.label}</span></button>`);
-    tile.onclick = ()=>go(item.screen);
-    quickGrid.appendChild(tile);
-  });
-  wrap.appendChild(quickGrid);
-
-  wrap.appendChild(h(`<div class="footer-note">Seu professor de matemática digital 📐</div>`));
   // primeiro acesso: tour guiado pelo Pi
   if(!tutorialDone()) setTimeout(()=>{ if(state.screen==='home' && !tutorialDone() && wrap.isConnected) startTour(); }, 700);
   return wrap;
@@ -7034,18 +7062,16 @@ function quizSetupScreen(){
 const TOUR_STEPS = [
   {sel:null, mood:'joy', title:'Bem-vindo ao Matemática Show! 🎬',
    text:'Eu sou o Pi, o apresentador do show! Vou te mostrar rapidinho como tudo funciona. Leva menos de 1 minuto.'},
-  {sel:'.player-card', title:'Seu cartão de jogador',
-   text:'Aqui ficam seu <b>nível</b> e sua barra de <b>XP</b>. Cada acerto dá XP e faz você subir de nível. Embaixo: 🔥 <b>ofensiva</b> (dias seguidos jogando), 🪙 <b>moedas</b>, ❤️ <b>vidas</b> e 🏅 <b>medalhas</b>.'},
-  {sel:'.path-hero', title:'A Trilha 🗺️',
+  {sel:'.home-stats', title:'Seu nível e seus pontos',
+   text:'Aqui ficam seu <b>nível</b> e sua barra de <b>XP</b>. Cada acerto dá XP e faz você subir de nível. Embaixo: 🔥 <b>ofensiva</b> (dias seguidos jogando), 🪙 <b>moedas</b>, ❤️ <b>vidas</b> e 🏅 <b>medalhas</b>. Toque em qualquer um pra ver os detalhes.'},
+  {sel:'.home-continue', title:'A Trilha 🗺️',
    text:'O caminho principal! Cada assunto é um <b>episódio</b> com fases do fácil ao difícil, um prêmio surpresa e uma grande final. Complete uma fase pra liberar a próxima.'},
-  {sel:'.game-duo', title:'Jogos rápidos',
-   text:'🎤 <b>Quiz do Show</b>: 10 perguntas com cronômetro — quanto mais rápido, mais pontos.<br>⚡ <b>Relâmpago</b>: 60 segundos pra acertar o máximo de contas.'},
-  {sel:'.missions', title:'Missões do dia 📜',
-   text:'Todo dia aparecem missões novas. Quando completar uma, toque em <b>Pegar</b> pra ganhar XP extra!'},
+  {sel:'.home-quick', title:'Praticar',
+   text:'🎤 <b>Quiz do Show</b>: 10 perguntas com cronômetro.<br>⚡ <b>Relâmpago</b>: 60 segundos de contas.<br>Toque em <b>Tudo</b> pra ver todas as ferramentas: desafios, tabuada, calculadora, duelo, caderno, geometria e mais.'},
+  {sel:'.home-today', title:'Hoje: meta e missões 📜',
+   text:'A barra mostra sua meta de questões do dia. Toque em <b>Missões</b> pra ver as missões novas de hoje e em <b>Pegar</b> pra ganhar XP extra!'},
   {sel:'.bottom-nav', title:'Menu principal',
    text:'<b>Trilha</b> leva direto pros episódios. <b>Aprender</b> tem a explicação de cada assunto com exemplos. <b>Exercícios</b> é pra treinar um assunto específico. <b>Progresso</b> mostra como você está indo.'},
-  {sel:'.quick-grid', title:'Mais ferramentas 🧰',
-   text:'Treino personalizado, desafios, tabuada, <b>Resolver questão</b> (digite uma conta e eu mostro o passo a passo), calculadora e suas conquistas.'},
   {sel:'.tut-help-btn', title:'Precisa de ajuda?',
    text:'Toque no <b>?</b> a qualquer momento pra abrir o guia "Como usar" ou rever este tour.'},
   {sel:null, mood:'joy', title:'Tudo pronto! 🌟', final:true,
