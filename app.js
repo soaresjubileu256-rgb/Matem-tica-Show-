@@ -1504,6 +1504,11 @@ const SUBJECTS = [
   },
 ];
 
+/* ordem dos assuntos no app (Trilha, Aprender, Exercícios...): a ordem em que aparecem na escola */
+const SUBJECT_ORDER = ['adicao','subtracao','multiplicacao','divisao','dinheiro','fracoes','decimais','porcentagem','geometria',
+  'mmcmdc','potenciacao','expressoes','estatistica','regra3','eq1','sistemas','eq2','func1grau'];
+SUBJECTS.sort((a,b)=>{ const ia = SUBJECT_ORDER.indexOf(a.id), ib = SUBJECT_ORDER.indexOf(b.id); return (ia<0?99:ia) - (ib<0?99:ib); });
+
 /* ano escolar em que cada assunto costuma aparecer, segundo a BNCC (referência aproximada) */
 const BNCC_ANO = {adicao:'1º ao 5º ano', subtracao:'1º ao 5º ano', multiplicacao:'2º ao 5º ano', divisao:'3º ao 5º ano',
   fracoes:'4º ao 6º ano', decimais:'4º ao 6º ano', porcentagem:'5º ao 7º ano', regra3:'7º ano', potenciacao:'6º ao 9º ano',
@@ -2944,7 +2949,7 @@ function homeScreen(){
   showStreakNote();
   wrap.appendChild(playerCard());
   wrap.appendChild(pathHero());
-  wrap.appendChild(gameDuo());
+  const duo = gameDuo();
 
   // meta diária de questões — editável direto aqui, sem precisar ir em Configurações
   const goalRow = h(`
@@ -3029,28 +3034,43 @@ function homeScreen(){
   });
   if(tutorialDone()) setTimeout(()=>{ if(state.screen==='home' && wrap.isConnected) maybeAskBackup(); }, 1500);
 
-  // outras formas de praticar — acesso rápido, compacto
-  wrap.appendChild(h(`<h3 class="home-sec" style="font-size:12.5px;text-transform:uppercase;color:var(--ink-soft);font-weight:600;margin:0 20px 10px;letter-spacing:.08em;">Mais formas de praticar</h3>`));
-  const quickGrid = h(`<div class="quick-grid six"></div>`);
-  [
+  // ordem da tela: continuar → pra fazer hoje → jogos rápidos → praticar → ferramentas e progresso
+  const secTitle = t=> h(`<h3 class="home-sec">${t}</h3>`);
+  const tileGrid = items=>{
+    const grid = h(`<div class="quick-grid six"></div>`);
+    items.forEach(item=>{
+      const tile = h(`<button type="button" class="quick-tile ${item.cls}"><span class="sym">${item.sym}</span><span class="label">${item.label}</span></button>`);
+      tile.onclick = ()=>go(item.screen, item.screen==='geoLab' ? {geoBack:'home'} : {});
+      grid.appendChild(tile);
+    });
+    return grid;
+  };
+  // "Pra fazer hoje": avisos (quando existem), meta e missões — appendChild move os blocos já criados pra cá
+  wrap.appendChild(secTitle('Pra fazer hoje'));
+  wrap.appendChild(reviewBanner);
+  wrap.appendChild(spacedBanner);
+  wrap.appendChild(goalRow);
+  wrap.appendChild(wrap.querySelector('.missions'));
+  wrap.appendChild(secTitle('Jogos rápidos'));
+  wrap.appendChild(duo);
+  wrap.appendChild(secTitle('Praticar'));
+  wrap.appendChild(tileGrid([
     {sym:'🎯', cls:'tile-train', label:'Treino personalizado', screen:'personalizedSetup'},
     {sym:'🏆', cls:'challenge', label:'Desafios', screen:'challengeDifficulty'},
     {sym:'×', cls:'tabuada', label:'Tabuada', screen:'tabuada'},
-    {sym:'?', cls:'solve', label:'Resolver questão', screen:'solve'},
-    {sym:'#', cls:'tile-calc', label:'Calculadora', screen:'calculator'},
-    {sym:'🏅', cls:'tile-ach', label:'Conquistas', screen:'achievements'},
     {sym:'⚔️', cls:'tile-duel', label:'Duelo a dois', screen:'duel'},
-    {sym:'📜', cls:'tile-cert', label:'Certificados', screen:'certificates'},
-    {sym:'✏️', cls:'tile-report', label:'Caderno', screen:'notebook'},
+    {sym:'?', cls:'solve', label:'Resolver questão', screen:'solve'},
     {sym:'🔺', cls:'tile-geo', label:'Laboratório de Geometria', screen:'geoLab'},
-    {sym:'📝', cls:'tile-rep', label:'Relatório semanal', screen:'report'},
+  ]));
+  wrap.appendChild(secTitle('Ferramentas e progresso'));
+  wrap.appendChild(tileGrid([
+    {sym:'✏️', cls:'tile-report', label:'Caderno', screen:'notebook'},
+    {sym:'#', cls:'tile-calc', label:'Calculadora', screen:'calculator'},
     {sym:'🕘', cls:'tile-hist', label:'Histórico', screen:'history'},
-  ].forEach(item=>{
-    const tile = h(`<button type="button" class="quick-tile ${item.cls}"><span class="sym">${item.sym}</span><span class="label">${item.label}</span></button>`);
-    tile.onclick = ()=>go(item.screen);
-    quickGrid.appendChild(tile);
-  });
-  wrap.appendChild(quickGrid);
+    {sym:'🏅', cls:'tile-ach', label:'Conquistas', screen:'achievements'},
+    {sym:'📜', cls:'tile-cert', label:'Certificados', screen:'certificates'},
+    {sym:'📝', cls:'tile-rep', label:'Relatório semanal', screen:'report'},
+  ]));
 
   wrap.appendChild(h(`<div class="footer-note">Seu professor de matemática digital 📐</div>`));
   // primeiro acesso: tour guiado pelo Pi
@@ -5373,11 +5393,16 @@ async function profileScreen(){
     b.onclick = fn;
     menu.appendChild(b);
   };
+  const group = t=> menu.appendChild(h(`<div class="pm-group">${t}</div>`));
+  group('Seu progresso');
   item('📊', 'Ver progresso detalhado', 'Acertos por assunto e histórico', ()=> go('progress'));
-  item('📝', 'Relatório semanal', 'Resumo pra pais e professores', ()=> go('report'));
   if(errs.length) item('🔁', `Revisar ${errs.length} erro${errs.length===1?'':'s'}`, 'Tente de novo as questões que errou', ()=> startReviewErrors());
-  item('✏️', 'Caderno', 'Suas anotações escritas à mão', ()=> go('notebook'));
   item('🏅', 'Conquistas', 'Suas medalhas e títulos', ()=> go('achievements'));
+  item('📜', 'Certificados', 'Episódios da trilha concluídos', ()=> go('certificates'));
+  item('📝', 'Relatório semanal', 'Resumo pra pais e professores', ()=> go('report'));
+  group('Ferramentas');
+  item('✏️', 'Caderno', 'Suas anotações escritas à mão', ()=> go('notebook'));
+  group('Ajuda e conta');
   item('📘', 'Como usar o app', 'Guia e tour guiado', ()=> go('help'));
   item('⚙️', 'Configurações', 'Tema, som, meta, senha e backup', ()=> go('settings'));
   item('🚪', 'Sair da conta', '', ()=> showConfirm({
@@ -6942,7 +6967,7 @@ function pathScreen(){
   SUBJECTS.forEach((s,u)=>{
     const color = unitStyle(u);
     const unitNodes = all.filter(n=>n.unit===u);
-    const unitLocked = all.indexOf(unitNodes[0]) > cur;
+    const unitLocked = all.indexOf(unitNodes[0]) > cur && !unitNodes.some(n=>done[n.key]);
     const unitDone = unitNodes.every(n=>done[n.key]);
     const banner = h(`<div class="unit-banner" style="${color}">
       <div><div class="u-k">EPISÓDIO ${u+1}${unitDone?' · ✓ CONCLUÍDO':''}</div><div class="u-n">${s.name}</div></div>
@@ -6960,7 +6985,7 @@ function pathScreen(){
     const col = h(`<div class="path-col"></div>`);
     unitNodes.forEach(n=>{
       const gi = all.indexOf(n);
-      const isDone = !!done[n.key], isCur = gi===cur, locked = gi>cur;
+      const isDone = !!done[n.key], isCur = gi===cur, locked = gi>cur && !isDone;
       const ico = locked ? '🔒' : n.type==='chest' ? (isDone?'✨':'🎁') : n.type==='trophy' ? '🎤' : (isDone?'✓':'★');
       const wrapN = h(`<div class="pnode-wrap ${isCur?'is-cur':''}" style="transform:translateX(${PATH_OFFSETS[gi % PATH_OFFSETS.length]}px)"></div>`);
       const btn = h(`<button type="button" class="pnode ${n.type} ${isDone?'done':''} ${isCur?'cur':''} ${locked?'locked':''}" style="${color}" aria-label="${n.label}">${ico}</button>`);
@@ -7163,6 +7188,15 @@ const HELP_TOPICS = [
   {ico:'🏅', t:'Conquistas', d:'Medalhas que você desbloqueia jogando: combos, dias seguidos, recordes e muito mais. Veja todas na tela de Conquistas.'},
   {ico:'⚙️', t:'Perfil e configurações', d:'No Perfil (o círculo com sua inicial, lá em cima) você vê suas estatísticas. Em Configurações dá pra trocar entre tema claro e escuro, ligar/desligar som e vibração, e <b>exportar/importar</b> seu progresso pra não perder nada ao trocar de celular.'},
 ];
+/* grupos do "Como usar", na ordem em que a pessoa usa o app */
+const HELP_GROUPS = [
+  ['🚀 Começando', ['Trilha, episódios e fases','Vidas e moedas','XP e níveis','Ofensiva','Missões e meta do dia']],
+  ['📚 Estudar', ['Aprender','Dicas e explicações','Exercícios, Desafios e Treino personalizado','Revisar meus erros','Revisão do dia','Nível de domínio']],
+  ['🎮 Jogar', ['Quiz do Show','Relâmpago','Duelo a dois']],
+  ['🧰 Ferramentas', ['Resolver questão','Laboratório de Geometria','Caderno (escrever à mão)','Ouvir a questão e tamanho do texto']],
+  ['🏆 Seu progresso', ['Conquistas','Certificados','Relatório semanal']],
+  ['⚙️ Conta e dados', ['Perfil e configurações','Backup do progresso']],
+];
 function helpScreen(){
   const wrap = document.createElement('div');
   wrap.appendChild(topbar('📘 Como usar', true, ()=>go('home')));
@@ -7171,7 +7205,13 @@ function helpScreen(){
   const tourBtn = h(`<button type="button" class="show-btn" style="margin-bottom:18px">🎬 Rever o tour guiado</button>`);
   tourBtn.onclick = ()=> startTour();
   c.appendChild(tourBtn);
-  HELP_TOPICS.forEach((tp, idx)=>{
+  // em grupos; algum tópico fora dos grupos entra no fim, pra nada sumir
+  const placed = new Set(HELP_GROUPS.flatMap(g=>g[1]));
+  const groups = HELP_GROUPS.map(([g,ts])=>[g, ts.map(t=>HELP_TOPICS.find(x=>x.t===t)).filter(Boolean)]);
+  const rest = HELP_TOPICS.filter(x=>!placed.has(x.t));
+  if(rest.length) groups.push(['Outros', rest]);
+  groups.flatMap(([g,list])=>[{group:g}, ...list]).forEach((tp, idx)=>{
+    if(tp.group){ c.appendChild(h(`<div class="help-group">${tp.group}</div>`)); return; }
     const item = h(`<div class="help-item"><button type="button" class="hi-head"><span class="hi-ico">${tp.ico}</span><span class="hi-t">${tp.t}</span><span class="hi-chev">›</span></button><div class="hi-body">${tp.d}</div></div>`);
     item.querySelector('.hi-head').onclick = ()=> item.classList.toggle('open');
     if(idx===0) item.classList.add('open');

@@ -1753,3 +1753,13 @@ section.block h3::before, .rp-sec::before, .hq-head span::before{content:''; wid
 .home-sec::before{content:''; width:14px; height:3px; border-radius:3px; background:var(--brand);}
 .footer-note{opacity:.8;}
 .alert-banner{width:100%; box-sizing:border-box;}
+
+/* =========================================================
+   ORGANIZAÇÃO: títulos de seção da tela inicial, grupos do Perfil e do Como usar
+   ========================================================= */
+.home-sec{font-size:12px; text-transform:uppercase; letter-spacing:.09em; color:var(--ink-soft); font-weight:700; font-family:'Inter',sans-serif; margin:22px 20px 10px;}
+.home-sec:first-of-type{margin-top:6px;}
+.pm-group{font-size:11.5px; text-transform:uppercase; letter-spacing:.09em; color:var(--ink-soft); font-weight:700; margin:14px 4px 2px; display:flex; align-items:center; gap:8px;}
+.pm-group::before, .help-group::before{content:''; width:14px; height:3px; border-radius:3px; background:var(--brand);}
+.pm-group:first-child{margin-top:0;}
+.help-group{font-size:12px; text-transform:uppercase; letter-spacing:.09em; color:var(--ink-soft); font-weight:800; margin:20px 2px 10px; display:flex; align-items:center; gap:8px;}
