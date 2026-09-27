@@ -2174,15 +2174,22 @@ function snapshotExercise(ex){
   try{ return JSON.parse(JSON.stringify(ex)); }catch(e){ return null; }
 }
 
+/* única forma de somar uma resposta no progresso do assunto (exercícios, trilha, Arena,
+   simulado, revisão de erros...): acertos, data da última prática e últimas 10 respostas */
+function bumpProgress(p, subjectId, correct, difficulty){
+  if(!p[subjectId]) p[subjectId] = {attempted:0, correct:0};
+  const d = p[subjectId];
+  d.attempted++;
+  if(correct) d.correct++;
+  d.last = Date.now(); // usado pela revisão espaçada
+  // últimas 10 respostas (ok + se era difícil), usadas no nível de domínio
+  d.recent = (d.recent || []).concat([{ok:!!correct, h:difficulty==='dificil'}]).slice(-10);
+  return d;
+}
 async function recordAnswer(subjectId, correct, extra){
   extra = extra || {};
   const p = await loadProgress();
-  if(!p[subjectId]) p[subjectId] = {attempted:0, correct:0};
-  p[subjectId].attempted++;
-  if(correct) p[subjectId].correct++;
-  p[subjectId].last = Date.now(); // usado pela revisão espaçada
-  // últimas 10 respostas (ok + se era difícil), usadas no nível de domínio
-  p[subjectId].recent = (p[subjectId].recent || []).concat([{ok:!!correct, h:extra.difficulty==='dificil'}]).slice(-10);
+  bumpProgress(p, subjectId, correct, extra.difficulty);
   await saveProgress();
   gameOnAnswer(subjectId, correct, extra.difficulty);
 
@@ -2202,18 +2209,59 @@ async function recordAnswer(subjectId, correct, extra){
   if(hist.length > HISTORY_LIMIT) hist.length = HISTORY_LIMIT;
   await saveHistory();
 
-  if(!correct && entry.ex){
-    const errs = await loadErrors();
-    errs.unshift(entry);
-    if(errs.length > ERRORS_LIMIT) errs.length = ERRORS_LIMIT;
-    await saveErrors();
-  }
+  if(!correct && entry.ex) await noteError(entry);
 }
 
-async function resolveError(errorId){
+/* ---------- caderno de erros inteligente (revisão espaçada por questão) ----------
+   Cada erro guarda assunto, dificuldade, quantas vezes foi errado e uma "caixa":
+   caixa 1 = revisar já; acertou na revisão → caixa 2 (volta em 3 dias) → caixa 3 (volta em 7 dias);
+   acertou na caixa 3 → sai do caderno (aprendido). Errou de novo → volta pra caixa 1 (amanhã). */
+const ERROR_BOX_DAYS = [0, 0, 3, 7];
+function errorQuestionKey(e){ return e && e.ex ? `${e.subjectId}|${e.ex.question}|${JSON.stringify(e.ex.answer)}` : ''; }
+function errorIsDue(e, now){ return !e.due || e.due <= (now || Date.now()); }
+async function noteError(entry){
+  const errs = await loadErrors();
+  const key = errorQuestionKey(entry);
+  const i = errs.findIndex(e=>errorQuestionKey(e)===key);
+  if(i >= 0){
+    // mesma questão errada de novo: não duplica, só conta mais um erro e volta pra caixa 1
+    const old = errs.splice(i,1)[0];
+    entry.count = (old.count||1) + 1;
+    entry.firstTs = old.firstTs || old.ts;
+  } else { entry.count = 1; entry.firstTs = entry.ts; }
+  entry.box = 1; entry.due = Date.now();
+  errs.unshift(entry);
+  if(errs.length > ERRORS_LIMIT) errs.length = ERRORS_LIMIT;
+  await saveErrors();
+}
+/* resultado da revisão de um erro. Devolve 'learned' (saiu do caderno), 'up' (subiu de caixa) ou 'again' */
+async function reviewErrorResult(errorId, correct){
   const errs = await loadErrors();
   const idx = errs.findIndex(e=>e.id===errorId);
-  if(idx>=0){ errs.splice(idx,1); await saveErrors(); }
+  if(idx < 0) return correct ? 'learned' : 'again';
+  const e = errs[idx];
+  let res;
+  if(correct){
+    const box = e.box || 1;
+    if(box >= 3){ errs.splice(idx,1); res = 'learned'; const g = loadGame(); g.errLearned = (g.errLearned||0) + 1; saveGame(); }
+    else { e.box = box + 1; e.due = Date.now() + ERROR_BOX_DAYS[e.box]*864e5; res = 'up'; }
+  } else {
+    e.box = 1; e.due = Date.now() + 864e5; e.count = (e.count||1) + 1; e.lastWrong = Date.now(); res = 'again';
+  }
+  await saveErrors();
+  return res;
+}
+/* recomendação: assuntos que mais precisam de treino, somando erros guardados (com peso pelas
+   vezes que a questão foi errada e pela dificuldade) e o % de acerto recente */
+function recommendSubjects(progress, errs, n){
+  const score = {};
+  (errs||[]).forEach(e=>{ score[e.subjectId] = (score[e.subjectId]||0) + (e.count||1) * (e.difficulty==='dificil' ? 1.5 : 1); });
+  Object.entries(progress||{}).forEach(([id,d])=>{
+    if(!d || !d.attempted) return;
+    const rec = d.recent && d.recent.length>=5 ? d.recent.filter(r=>r.ok).length/d.recent.length : d.correct/d.attempted;
+    if(d.attempted >= 3 && rec < .75) score[id] = (score[id]||0) + (1-rec)*6;
+  });
+  return Object.entries(score).filter(([id])=>SUBJECTS.some(s=>s.id===id)).sort((a,b)=>b[1]-a[1]).slice(0, n||3).map(([id])=>id);
 }
 
 /* =========================================================
@@ -2846,6 +2894,7 @@ function sessionInProgress(){
   if(state.screen==='lesson') return !s.finished && !s.failed && (s.asked>1 || s.checked);
   if(['exerciseSession','challengeSession','personalizedSession','reviewErrorsSession'].includes(state.screen))
     return s.index < s.total && (s.index>0 || s.checked);
+  if(state.screen==='examRun') return s.kind==='exam' && !s.submitted;
   return false;
 }
 window.addEventListener('beforeunload', (e)=>{
@@ -2911,10 +2960,11 @@ function topbar(title, showBack, onBack){
 
 /* ---------------- barra de navegação inferior ---------------- */
 const BOTTOM_NAV_ITEMS = [
-  {screen:'home', icon:'⌂', label:'Início', group:['home','achievements','lightning','quizSetup','calculator','help','duel','certificates','certificate','notebook','notePage','challengeDifficulty','challengeSession','personalizedSetup','personalizedSession','reviewErrorsSession','tabuada','solve','profile','settings']},
+  {screen:'home', icon:'⌂', label:'Início', group:['home','achievements','calculator','help','certificates','certificate','notebook','notePage','challengeDifficulty','challengeSession','personalizedSetup','personalizedSession','reviewErrorsSession','tabuada','solve','profile','settings','errors','placement','plan']},
   {screen:'path', icon:'★', label:'Trilha', group:['path']},
-  {screen:'content', icon:'∑', label:'Aprender', group:['content','subjectDetail','geoLab']},
+  {screen:'content', icon:'∑', label:'Aprender', group:['content','subjectDetail','geoLab','cardsDeck']},
   {screen:'exercisesSubjects', icon:'✎', label:'Exercícios', group:['exercisesSubjects','exerciseDifficulty','exerciseSession']},
+  {screen:'arena', icon:'⚔', label:'Arena', group:['arena','arenaDaily','examSetup','examResult','lightning','quizSetup','duel']},
   {screen:'progress', icon:'↑', label:'Progresso', group:['progress','report','history']},
 ];
 function bottomNav(){
@@ -3006,15 +3056,50 @@ function homeScreen(){
       <span class="txt"><span class="title">Revisar meus erros</span><span class="sub review-count-text">Volte nas questões que você errou e tente de novo.</span></span>
       <span class="chev">›</span>
     </button>`);
-  reviewBanner.onclick = ()=>startReviewErrors();
+  reviewBanner.onclick = ()=> go('errors');
   wrap.appendChild(reviewBanner);
   loadErrors().then(errs=>{
-    if(errs.length>0){
+    // só aparece quando tem erro "vencido" hoje (os outros esperam o dia certo no caderno)
+    const due = errs.filter(e=>errorIsDue(e)).length;
+    if(due>0){
       reviewBanner.style.display = '';
+      reviewBanner.querySelector('.title').textContent = 'Caderno de erros';
       reviewBanner.querySelector('.review-count-text').textContent =
-        errs.length===1 ? 'Você tem 1 questão errada pra revisar.' : `Você tem ${errs.length} questões erradas pra revisar.`;
+        due===1 ? '1 questão errada pra revisar hoje.' : `${due} questões erradas pra revisar hoje.`;
     }
   });
+
+  // Arena: Desafio do Dia (igual pra todo mundo) e plano de estudos até a prova
+  const dk = isoDay(), dailyDone = arenaData().daily[dk];
+  const dailyBanner = h(`<button type="button" class="alert-banner ${dailyDone?'':'purple'}"><span class="sym">📅</span>
+    <span class="txt"><span class="title">Desafio do Dia #${dailyNumber(dk)}</span><span class="sub">${dailyDone ? `Feito: ${dailyDone.marks} ${dailyDone.ok}/${dailyDone.n}` : `${DAILY_N} perguntas, as mesmas pra todo mundo hoje · +${DAILY_BONUS_XP} XP`}</span></span><span class="chev">${dailyDone?'✓':'›'}</span></button>`);
+  dailyBanner.onclick = ()=> startDaily();
+  const pt = planToday(), plan = studyData().plan;
+  let planBanner = null;
+  if(plan){
+    const left = Math.round((new Date(plan.examDate+'T12:00') - new Date(dk+'T12:00'))/864e5);
+    planBanner = h(`<button type="button" class="alert-banner"><span class="sym">🗺️</span><span class="txt"><span class="title">${left>0 ? `Prova em ${left} dia${left===1?'':'s'}` : left===0 ? 'A prova é hoje!' : 'Plano de estudos'}</span>
+      <span class="sub">${pt ? 'Hoje: ' + (pt.subjects.map(id=>(SUBJECTS.find(x=>x.id===id)||{}).name).filter(Boolean).join(' + ') || '') + (pt.exam ? (pt.subjects.length?' + ':'')+'simulado' : '') : 'Ver o plano'}</span></span><span class="chev">›</span></button>`);
+    planBanner.onclick = ()=> go('plan');
+  }
+  // conta nova: sugere o teste de nivelamento; aparelho com o antigo Arena: oferece trazer o progresso
+  let placementCard = null;
+  if(!studyData().placement && totalAnswered() < 5){
+    placementCard = h(`<button type="button" class="alert-banner purple"><span class="sym">🧭</span><span class="txt"><span class="title">Descubra seu nível</span><span class="sub">Teste de nivelamento com 10 perguntas: mostra por onde começar</span></span><span class="chev">›</span></button>`);
+    placementCard.onclick = ()=> startPlacement();
+  }
+  let importCard = null;
+  const arenaOld = arenaV2Pending();
+  if(arenaOld){
+    importCard = h(`<div class="card ar-import"><b>📦 Encontramos progresso do Matemática Show Arena</b><p>${arenaOld.answered} questões e ${arenaOld.xp} XP guardados neste aparelho. Quer juntar tudo nesta conta? (XP, estrelas, simulados, caderno de erros e conquistas)</p>
+      <div class="cta-row"><button type="button" class="btn secondary" data-a="no">Agora não</button><button type="button" class="btn primary" data-a="yes">Trazer meu progresso</button></div></div>`);
+    importCard.querySelector('[data-a=no]').onclick = ()=>{ arenaV2Dismiss(); importCard.remove(); };
+    importCard.querySelector('[data-a=yes]').onclick = async ()=>{
+      const r = await arenaV2Import();
+      if(r){ queueToast('📦', 'Progresso do Arena trazido!', `+${r.xp} XP · ${r.answered} questões`); launchConfetti(120); }
+      render();
+    };
+  }
 
   // revisão espaçada — assuntos que já "venceram" e precisam ser relembrados
   const spacedBanner = h(`
@@ -3040,13 +3125,17 @@ function homeScreen(){
     const grid = h(`<div class="quick-grid six"></div>`);
     items.forEach(item=>{
       const tile = h(`<button type="button" class="quick-tile ${item.cls}"><span class="sym">${item.sym}</span><span class="label">${item.label}</span></button>`);
-      tile.onclick = ()=>go(item.screen, item.screen==='geoLab' ? {geoBack:'home'} : {});
+      tile.onclick = ()=> item.screen==='placement' ? startPlacement() : go(item.screen, item.screen==='geoLab' ? {geoBack:'home'} : {});
       grid.appendChild(tile);
     });
     return grid;
   };
   // "Pra fazer hoje": avisos (quando existem), meta e missões — appendChild move os blocos já criados pra cá
   wrap.appendChild(secTitle('Pra fazer hoje'));
+  if(importCard) wrap.appendChild(importCard);
+  if(placementCard) wrap.appendChild(placementCard);
+  wrap.appendChild(dailyBanner);
+  if(planBanner) wrap.appendChild(planBanner);
   wrap.appendChild(reviewBanner);
   wrap.appendChild(spacedBanner);
   wrap.appendChild(goalRow);
@@ -3061,6 +3150,9 @@ function homeScreen(){
     {sym:'⚔️', cls:'tile-duel', label:'Duelo a dois', screen:'duel'},
     {sym:'?', cls:'solve', label:'Resolver questão', screen:'solve'},
     {sym:'🔺', cls:'tile-geo', label:'Laboratório de Geometria', screen:'geoLab'},
+    {sym:'📝', cls:'tile-exam', label:'Simulado', screen:'examSetup'},
+    {sym:'🗺️', cls:'tile-plan', label:'Plano de estudos', screen:'plan'},
+    {sym:'🧭', cls:'tile-place', label:'Teste de nivelamento', screen:'placement'},
   ]));
   wrap.appendChild(secTitle('Ferramentas e progresso'));
   wrap.appendChild(tileGrid([
@@ -3859,7 +3951,9 @@ function runDuel(names, level){
     });
     sc.textContent = w===-1 ? 'Empate!' : `${names[w]} venceu!`;
     launchConfetti(140);
-    gameTouchDay(); saveGame();
+    gameTouchDay();
+    const gd = loadGame(); gd.duels = (gd.duels||0) + 1; gameUnlock('duelist');
+    saveGame();
   }
   next();
 }
@@ -4184,8 +4278,9 @@ function subjectDetailScreen(){
   }).join('');
   explain.innerHTML = s.learn + boxesHtml;
   c.appendChild(explain);
-  const cta = h(`<div class="cta-row"><button class="btn primary sd-practice">Praticar este assunto</button><button class="btn secondary sd-note">✏️ Anotar no caderno</button></div>`);
+  const cta = h(`<div class="cta-row"><button class="btn primary sd-practice">Praticar este assunto</button><button class="btn secondary sd-cards">🃏 Cartões de revisão</button><button class="btn secondary sd-note">✏️ Anotar no caderno</button></div>`);
   cta.querySelector('.sd-practice').onclick = ()=>go('exerciseDifficulty', {subjectId:s.id});
+  cta.querySelector('.sd-cards').onclick = ()=> chooseCardsLevel(s.id);
   if(s.id==='geometria'){
     const labBtn = h(`<button class="btn secondary sd-lab" style="flex-basis:100%">🔺 Abrir o Laboratório de Geometria</button>`);
     labBtn.onclick = ()=> go('geoLab', {geoBack:'subjectDetail'});
@@ -4457,12 +4552,20 @@ function exerciseSessionScreen(){
 }
 
 /* ---------------- REVISAR MEUS ERROS ---------------- */
-async function startReviewErrors(){
+const REVIEW_ERRORS_MAX = 15;
+async function startReviewErrors(opts){
+  opts = opts || {};
   const errs = await loadErrors();
   if(!errs.length){ go('home'); return; }
+  // primeiro os que venceram hoje (caixa menor = mais urgente), depois os demais se a pessoa pediu tudo
+  const now = Date.now();
+  let pool = errs.filter(e=>errorIsDue(e, now) && (!opts.subjectId || e.subjectId===opts.subjectId));
+  if(!pool.length || opts.all) pool = errs.filter(e=>!opts.subjectId || e.subjectId===opts.subjectId);
+  if(!pool.length){ go('home'); return; }
+  pool = pool.slice().sort((a,b)=>(a.box||1)-(b.box||1) || (b.count||1)-(a.count||1)).slice(0, REVIEW_ERRORS_MAX);
   state.session = {
-    errorQueue: errs.map(e=>({...e})),
-    index:0, total: errs.length,
+    errorQueue: pool.map(e=>({...e})),
+    index:0, total: pool.length,
     correct:0, wrong:0, results:[], checked:false, wasCorrect:null,
   };
   go('reviewErrorsSession');
@@ -4479,12 +4582,10 @@ async function recordReviewAnswer(item, correct){
   await saveHistory();
 
   const p = await loadProgress();
-  if(!p[item.subjectId]) p[item.subjectId] = {attempted:0, correct:0};
-  p[item.subjectId].attempted++;
-  if(correct) p[item.subjectId].correct++;
+  bumpProgress(p, item.subjectId, correct, item.difficulty);
   await saveProgress();
 
-  if(correct) await resolveError(item.id);
+  item.reviewResult = await reviewErrorResult(item.id, correct);
   gameOnAnswer(item.subjectId, correct, item.difficulty, {review:true});
 }
 
@@ -4520,7 +4621,7 @@ function reviewErrorsSessionScreen(){
   c.appendChild(sessionHud());
 
   const diffLabel = ({facil:'FÁCIL',medio:'MÉDIO',dificil:'DIFÍCIL'})[item.difficulty] || '';
-  const qcard = h(`<div class="question-card"><div class="qlabel">ERRO ${sess.index+1} DE ${sess.total} · ${item.subjectName}${diffLabel? ' · '+diffLabel : ''}</div><div class="qtext mono"></div></div>`);
+  const qcard = h(`<div class="question-card"><div class="qlabel">ERRO ${sess.index+1} DE ${sess.total} · ${item.subjectName}${diffLabel? ' · '+diffLabel : ''}${(item.count||1)>1? ` · ERRADA ${item.count}x` : ''}</div><div class="qtext mono"></div></div>`);
   const qtextEl = qcard.querySelector('.qtext');
   addSpeakButton(qcard, ex); addScratchButton(qcard, ex);
   if(ex.columns){
@@ -4574,7 +4675,7 @@ function reviewErrorsSessionScreen(){
     wireSlashButtons(form);
   } else {
     const correct = sess.wasCorrect;
-    const fb = h(`<div class="feedback ${correct?'correct':'wrong'}"><div class="fb-title">${correct? '✓ Certinho! Esse erro foi resolvido.' : '✕ Ainda não foi — continua salvo pra tentar de novo depois:'}</div><div class="fb-explain"></div></div>`);
+    const fb = h(`<div class="feedback ${correct?'correct':'wrong'}"><div class="fb-title">${correct? (item.reviewResult==='learned' ? '✓ Aprendido! Essa questão saiu do seu caderno de erros.' : `✓ Certinho! Ela volta em ${ERROR_BOX_DAYS[Math.min(3,(item.box||1)+1)]} dias pra fixar de vez.`) : '✕ Ainda não foi — ela volta amanhã pra você tentar de novo:'}</div><div class="fb-explain"></div></div>`);
     let stepsList = ex.steps;
     if(ex.columns){
       stepsList = [contaArmada(ex.columns.nums, ex.columns.op, fmt(ex.answer), ex.columns.carries, ex.columns.marks), ...ex.steps];
@@ -5243,6 +5344,9 @@ function solveScreen(){
         <div class="sec-label"><span class="n">4</span>Resposta final</div>
         <div class="final-answer-box"><div class="lbl">RESULTADO</div><div class="val">${r.final}</div></div>
       </div>`));
+    const practice = solvePracticeCard(val);
+    if(practice) resultBox.appendChild(practice);
+    const gs = loadGame(); gs.solves = (gs.solves||0) + 1; gameCheckAchievements(); saveGame();
   };
   c.appendChild(card);
   wrap.appendChild(c);
@@ -5412,7 +5516,10 @@ async function profileScreen(){
   const group = t=> menu.appendChild(h(`<div class="pm-group">${t}</div>`));
   group('Seu progresso');
   item('📊', 'Ver progresso detalhado', 'Acertos por assunto e histórico', ()=> go('progress'));
-  if(errs.length) item('🔁', `Revisar ${errs.length} erro${errs.length===1?'':'s'}`, 'Tente de novo as questões que errou', ()=> startReviewErrors());
+  item('🔁', 'Caderno de erros', errs.length ? `${errs.length} questão(ões) guardada(s) · ${errs.filter(e=>errorIsDue(e)).length} pra hoje` : 'As questões que você errar aparecem aqui', ()=> go('errors'));
+  item('⚔️', 'Arena', `⭐ ${arenaTotalStars()} estrelas · Desafio do Dia, simulados e fases`, ()=> go('arena'));
+  item('🧭', 'Teste de nivelamento', studyData().placement ? `Último: ${studyData().placement.ok}/${studyData().placement.n}` : 'Descubra por onde começar', ()=> startPlacement());
+  item('🗺️', 'Plano de estudos', studyData().plan ? `Prova em ${studyData().plan.examDate.split('-').reverse().join('/')}` : 'Monte um plano até o dia da prova', ()=> go('plan'));
   item('🏅', 'Conquistas', 'Suas medalhas e títulos', ()=> go('achievements'));
   item('📜', 'Certificados', 'Episódios da trilha concluídos', ()=> go('certificates'));
   item('📝', 'Relatório semanal', 'Resumo pra pais e professores', ()=> go('report'));
@@ -5781,7 +5888,30 @@ const ACHIEVEMENTS = [
   {id:'unit',      ico:'🗺️', name:'Desbravador',       desc:'Vença a grande final de um episódio'},
   {id:'chests',    ico:'🎁', name:'Caça-prêmios',      desc:'Abra 5 prêmios surpresa'},
   {id:'quiz5000',  ico:'🎤', name:'Estrela do Quiz',   desc:'Faça 10.000 pontos no Quiz do Show'},
+  // --- fusão com o Arena: conquistas novas. As que têm check() são conferidas sozinhas
+  //     (gameCheckAchievements); para criar outra basta acrescentar uma linha aqui.
+  {id:'ans10',     ico:'✏️', name:'Aquecendo',         desc:'Responda 10 questões',       check:g=>totalAnswered()>=10},
+  {id:'ans100',    ico:'💯', name:'Cem questões',      desc:'Responda 100 questões',      check:g=>totalAnswered()>=100},
+  {id:'arenaWin',  ico:'⚔️', name:'Primeira vitória na Arena', desc:'Ganhe estrela numa fase da Arena'},
+  {id:'arenaPerfect', ico:'🌟', name:'Fase perfeita',  desc:'3 estrelas numa fase da Arena'},
+  {id:'arenaStars30', ico:'🌌', name:'Constelação',    desc:'Junte 30 estrelas na Arena', check:g=>arenaTotalStars()>=30},
+  {id:'daily1',    ico:'📅', name:'Desafiante',        desc:'Complete um Desafio do Dia'},
+  {id:'daily7',    ico:'🗓️', name:'Desafio da semana', desc:'Complete 7 Desafios do Dia'},
+  {id:'exam1',     ico:'📝', name:'Primeira prova',    desc:'Faça um simulado'},
+  {id:'exam10',    ico:'🏆', name:'Nota 10',           desc:'Tire 10 num simulado de 10+ questões'},
+  {id:'notebook5', ico:'🩹', name:'Aprendi com o erro', desc:'Tire 5 questões do caderno de erros', check:g=>(g.errLearned||0)>=5},
+  {id:'masterFrac', ico:'🍕', name:'Mestre das frações', desc:'Chegue a Dominado em Frações', check:g=>masteryOf(progressSync().fracoes).lvl>=4},
+  {id:'placement', ico:'🧭', name:'Ponto de partida',  desc:'Faça o teste de nivelamento'},
+  {id:'plan',      ico:'🗺️', name:'Estrategista',      desc:'Crie um plano de estudos'},
+  {id:'solver10',  ico:'🔍', name:'Detetive',          desc:'Resolva 10 contas no Resolver', check:g=>(g.solves||0)>=10},
+  {id:'duelist',   ico:'🤝', name:'Duelista',          desc:'Jogue um duelo a dois'},
 ];
+function totalAnswered(){ return Object.values(progressSync()).reduce((a,d)=>a+((d&&d.attempted)||0),0); }
+/* confere as conquistas automáticas (as que têm check) */
+function gameCheckAchievements(){
+  const g = loadGame();
+  ACHIEVEMENTS.forEach(a=>{ if(a.check && !g.ach[a.id]){ try{ if(a.check(g)) gameUnlock(a.id); }catch(e){} } });
+}
 const DAILY_MISSIONS = [
   {id:'lesson', ico:'🗺️', reward:30, title:()=>'Complete 1 fase da trilha', progress:g=>[Math.min(g.today.lessons||0,1), 1]},
   {id:'goal',  ico:'🎯', reward:40, title:g=>`Responda ${g.goal} questões`,   progress:g=>[g.today.answered, g.goal]},
@@ -5891,7 +6021,7 @@ function checkDayChange(){
   _dayWatchKey = k;
   if(!currentUser) return;
   loadGame(); gameEnsureToday(); gameCheckStreak(); saveGame();
-  const busy = ['lesson','exerciseSession','challengeSession','personalizedSession','reviewErrorsSession','notePage','lightning','duel'].includes(state.screen);
+  const busy = ['lesson','exerciseSession','challengeSession','personalizedSession','reviewErrorsSession','notePage','lightning','duel','examRun','placement','cardsDeck'].includes(state.screen);
   if(!busy && typeof render==='function') render();
   showStreakNote();
 }
@@ -5998,14 +6128,15 @@ function gameOnAnswer(subjectId, correct, difficulty, opts){
     if(Object.keys(g.subjectsHit).length>=6) gameUnlock('explorer');
     if(sess) sess.xp = (sess.xp||0) + gain;
     gameAddXP(gain);
-    const inLesson = sess && (sess.kind==='lesson' || sess.kind==='quiz');
+    const inLesson = sess && (sess.kind==='lesson' || sess.kind==='quiz' || sess.kind==='placement');
     if(!inLesson) showFloat(`+${gain} XP${combo>=2? ` · 🔥x${combo}`:''}`);
     if(combo>=3) playComboSound(combo);
-  } else if(prevCombo>=2 && !(sess && (sess.kind==='lesson' || sess.kind==='quiz'))){
+  } else if(prevCombo>=2 && !(sess && (sess.kind==='lesson' || sess.kind==='quiz' || sess.kind==='placement'))){
     showFloat('Combo perdido 💔', true);
   }
   const goal = (currentSettingsSync().dailyGoal)||10;
   if(g.today.answered>=goal) gameUnlock('goal');
+  gameCheckAchievements();
   saveGame();
 }
 
@@ -6605,7 +6736,8 @@ function startQuiz(difficulty){
 function lessonAdvance(sess){
   sess.selected = null; sess.checked = false; sess.wasCorrect = null; sess.tryAgain = false;
   if(sess.kind==='quiz'){
-    if(sess.asked >= sess.needed){ sess.finished = true; return; }
+    if(sess.asked >= sess.needed || sess.outOfLives){ sess.finished = true; return; }
+    if(sess.mode){ arenaNextQuestion(sess); return; } // Arena: fase de um assunto ou Desafio do Dia
     sess.subjectId = pick(SUBJECTS).id;
     sess.q = newLessonQuestion(sess); sess.asked++; sess.qStart = Date.now();
     return;
@@ -6626,16 +6758,16 @@ function lessonScreen(){
   const isQuiz = sess.kind==='quiz';
   if(sess.finished || sess.failed){ lessonEnd(wrap, sess); return wrap; }
 
-  const exitTo = isQuiz ? 'quizSetup' : 'path';
+  const exitTo = sess.exitTo || (isQuiz ? 'quizSetup' : 'path');
   const top = h(`<div class="lesson-top"><button class="lesson-x" aria-label="Sair">✕</button><div class="lesson-prog"><i style="width:${Math.round((isQuiz? (sess.asked-1+(sess.checked?1:0)) : sess.cleared)/sess.needed*100)}%"></i></div>${
-    isQuiz ? `<span class="lesson-score">🏅 ${sess.score}</span>` : sess.maxWrong!==null ? `<span class="lesson-hearts">🛡️ ${Math.max(0,sess.maxWrong+1-sess.wrong)}</span>` : `<span class="lesson-hearts">❤️ ${heartsNow()}</span>`
+    isQuiz ? `${sess.lives!==undefined ? `<span class="lesson-hearts" aria-label="${sess.lives} vidas">❤️ ${sess.lives}</span>` : ''}<span class="lesson-score">🏅 ${sess.score}</span>` : sess.maxWrong!==null ? `<span class="lesson-hearts">🛡️ ${Math.max(0,sess.maxWrong+1-sess.wrong)}</span>` : `<span class="lesson-hearts">❤️ ${heartsNow()}</span>`
   }</div>`);
   top.querySelector('.lesson-x').onclick = ()=>{
     showConfirm({
-      icon:'🚪', title: isQuiz ? 'Sair do quiz?' : 'Sair da fase?',
-      message: isQuiz ? 'Sua pontuação desta partida será perdida.' : 'Você vai perder o progresso desta fase.',
+      icon:'🚪', title: sess.mode==='daily' ? 'Sair do desafio?' : isQuiz && !sess.mode ? 'Sair do quiz?' : 'Sair da fase?',
+      message: sess.mode==='daily' ? 'O Desafio do Dia vale uma tentativa: se sair agora, conta só o que você já respondeu.' : isQuiz && !sess.mode ? 'Sua pontuação desta partida será perdida.' : 'Você vai perder o progresso desta fase.',
       ok:'Sair', cancel: isQuiz ? 'Continuar jogando' : 'Continuar a fase', danger:true,
-    }).then(ok=>{ if(ok) go(exitTo); });
+    }).then(ok=>{ if(ok){ if(sess.mode) arenaQuit(sess); go(exitTo); } });
   };
   wrap.appendChild(top);
   const c = h(`<div class="content lesson-body"></div>`);
@@ -6644,7 +6776,7 @@ function lessonScreen(){
   const q = sess.q, ex = q.ex;
   const subj = SUBJECTS.find(s=>s.id===q.subjectId);
   if(isQuiz){
-    const meta = h(`<div class="quiz-meta"><div class="qm-t">PERGUNTA ${sess.asked} DE ${sess.needed}<br>${subj.sym} ${subj.name}</div>
+    const meta = h(`<div class="quiz-meta"><div class="qm-t">${sess.mode==='daily' ? `DESAFIO DO DIA · ${sess.asked}/${sess.needed}` : `PERGUNTA ${sess.asked} DE ${sess.needed}`}<br>${subj.sym} ${subj.name}${sess.mode==='arena' ? ` · ${({facil:'Fácil',medio:'Médio',dificil:'Difícil'})[sess.diff]}` : ''}</div>
       <div class="quiz-ring"><svg viewBox="0 0 58 58"><defs><linearGradient id="qr-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4C7DFF"/><stop offset="1" stop-color="#B23FE0"/></linearGradient></defs>
       <circle class="trk" cx="29" cy="29" r="25" fill="none" stroke-width="6"/><circle class="bar" cx="29" cy="29" r="25" fill="none" stroke-width="6" stroke-linecap="round" stroke-dasharray="157.08"/></svg><span></span></div></div>`);
     c.appendChild(meta);
@@ -6787,6 +6919,7 @@ async function lessonCheck(sess, idx){
     if(ok){ sess.qStreak++; sess.lastPoints = Math.round(500 + 500*left/QUIZ_SECONDS) + Math.min(sess.qStreak-1,5)*100; sess.score += sess.lastPoints; sess.correct++; }
     else { sess.qStreak = 0; sess.lastPoints = 0; sess.wrong++; }
     sess.cleared++;
+    if(sess.mode) arenaAfterCheck(sess, ok);
   } else {
     // acertou: conta como resolvida; só conta "de primeira" (e dá XP) se não tinha errado antes
     sess.cleared++;
@@ -6798,6 +6931,7 @@ async function lessonCheck(sess, idx){
 function lessonEnd(wrap, sess){
   const c = h(`<div class="content lesson-end"></div>`);
   wrap.appendChild(c);
+  if(sess.kind==='quiz' && sess.mode){ arenaQuizEnd(c, sess); return; }
   const secs = Math.round((Date.now()-sess.startTs)/1000);
   const answered = sess.correct + sess.wrong;
   const acc = answered ? Math.round(sess.correct/answered*100) : 0;
@@ -7255,6 +7389,15 @@ const SCREENS = {
   tabuada: tabuadaScreen,
   solve: solveScreen,
   calculator: calculatorScreen,
+  arena: arenaScreen,
+  arenaDaily: arenaDailyScreen,
+  examSetup: examSetupScreen,
+  examRun: examRunScreen,
+  examResult: examResultScreen,
+  placement: placementScreen,
+  plan: planScreen,
+  cardsDeck: cardsDeckScreen,
+  errors: errorsScreen,
   profile: null, // async, handled specially below
   progress: null, // async, handled specially below
   history: null, // async, handled specially below
@@ -7308,7 +7451,7 @@ function renderAsyncSafe(){
   }
   const fn = SCREENS[state.screen] || homeScreen;
   app.appendChild(fn());
-  if(state.screen !== 'lesson' && state.screen !== 'notePage') app.appendChild(bottomNav());
+  if(!['lesson','notePage','examRun'].includes(state.screen)) app.appendChild(bottomNav());
 }
 render = renderAsyncSafe;
 
