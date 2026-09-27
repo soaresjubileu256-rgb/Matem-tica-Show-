@@ -2795,6 +2795,7 @@ function go(screen, extra={}){
   Object.assign(state, {screen}, extra);
   pushHistoryState();
   render();
+  try{ const f = app.firstElementChild; if(f && !['lesson','exerciseSession','challengeSession','personalizedSession','reviewErrorsSession','notePage'].includes(screen)) f.classList.add('screen-in'); }catch(e){}
   window.scrollTo(0,0);
 }
 
@@ -2991,7 +2992,8 @@ function homeScreen(){
     ? `Jogue hoje pra manter sua ofensiva de ${streakNow} dia${streakNow===1?'':'s'} 🔥`
     : streakNow>0 ? 'Ofensiva garantida hoje. Bora continuar? ✨' : 'Bora aprender algo novo hoje?';
   const hello = h(`<div class="home-hello"><h2></h2><p></p></div>`);
-  hello.querySelector('h2').textContent = firstName ? `Olá, ${firstName}` : 'Olá!';
+  hello.querySelector('h2').textContent = firstName ? `Olá, ${firstName} ` : 'Olá! ';
+  hello.querySelector('h2').appendChild(h(`<span class="wave" aria-hidden="true">👋</span>`));
   hello.querySelector('p').textContent = sub;
   wrap.appendChild(hello);
   showStreakNote();
@@ -4159,8 +4161,8 @@ function contentScreen(){
   const lab = h(`<button type="button" class="alert-banner" style="margin:0 0 14px"><span class="sym">🔺</span><span class="txt"><span class="title">Laboratório de Geometria</span><span class="sub">Mexa nas figuras e veja área, perímetro, volume e ângulos mudando</span></span><span class="chev">›</span></button>`);
   lab.onclick = ()=> go('geoLab', {geoBack:'content'});
   c.appendChild(lab);
-  SUBJECTS.forEach(s=>{
-    const row = h(`<button class="subject-row"><span class="sym">${s.sym}</span><span class="txt"><span class="name">${s.name}</span><span class="subj-meta">${BNCC_ANO[s.id]?`📚 ${BNCC_ANO[s.id]} · `:''}${masteryChip(masterySync(s.id))}</span></span><span class="chev">›</span></button>`);
+  SUBJECTS.forEach((s,u)=>{
+    const row = h(`<button class="subject-row" style="${unitStyle(u)}"><span class="sym">${s.sym}</span><span class="txt"><span class="name">${s.name}</span><span class="subj-meta">${BNCC_ANO[s.id]?`📚 ${BNCC_ANO[s.id]} · `:''}${masteryChip(masterySync(s.id))}</span></span><span class="chev">›</span></button>`);
     row.onclick = ()=>go('subjectDetail', {subjectId:s.id});
     c.appendChild(row);
   });
@@ -4215,8 +4217,8 @@ function exercisesSubjectsScreen(){
   wrap.appendChild(topbar('Exercícios', true, ()=>go('home')));
   const c = h(`<div class="content"></div>`);
   c.appendChild(h(`<p style="color:var(--ink-soft); font-size:14px; margin:2px 0 16px;">Escolha um assunto para praticar.</p>`));
-  SUBJECTS.forEach(s=>{
-    const row = h(`<button class="subject-row"><span class="sym">${s.sym}</span><span class="txt"><span class="name">${s.name}</span><span class="subj-meta">${masteryChip(masterySync(s.id))}</span></span><span class="chev">›</span></button>`);
+  SUBJECTS.forEach((s,u)=>{
+    const row = h(`<button class="subject-row" style="${unitStyle(u)}"><span class="sym">${s.sym}</span><span class="txt"><span class="name">${s.name}</span><span class="subj-meta">${masteryChip(masterySync(s.id))}</span></span><span class="chev">›</span></button>`);
     row.onclick = ()=>go('exerciseDifficulty', {subjectId:s.id});
     c.appendChild(row);
   });
