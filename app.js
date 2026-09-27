@@ -33,6 +33,8 @@ function mdcSteps(a,b){
     common.length ? `Pegue só os fatores em comum, cada um com o menor expoente: ${used.join(' × ')}` : 'Eles não têm fator primo em comum.',
     `MDC(${a}, ${b}) = ${gcd(a,b)}`];
 }
+function brl(cents){ return 'R$ ' + (cents/100).toFixed(2).replace('.', ','); }
+function cap(t){ return t.charAt(0).toUpperCase() + t.slice(1); }
 function fracStr(n,d){ const [a,b]=simplifyFrac(n,d); return b===1? String(a) : (a+"/"+b); }
 
 /* ---------------- MMC: lista os múltiplos de cada número lado a lado até achar o comum ---------------- */
@@ -1138,7 +1140,41 @@ const SUBJECTS = [
       },
     }
   },
+  {
+    id:'dinheiro', name:'Dinheiro e troco', sym:'R$',
+    learn:`<p>Fazer compras, conferir o troco, dividir a conta da pizza... o dinheiro é a matemática que a gente mais usa no dia a dia! No Brasil, a moeda é o <b>real (R$)</b>, e cada real tem <b>100 centavos</b>. Por isso R$ 2,50 é "2 reais e 50 centavos".</p>
+    <p><b>Truque pra não errar:</b> pense tudo em <b>centavos</b>, faça a conta com números inteiros e só no fim volte pra reais.</p>
+    <ol style="margin:0 0 10px; padding-left:20px; line-height:1.7;">
+      <li><b>Total da compra:</b> some os preços (ou multiplique preço × quantidade).</li>
+      <li><b>Troco:</b> valor pago − total da compra.</li>
+      <li><b>Dividir a conta:</b> total ÷ número de pessoas.</li>
+    </ol>`,
+    examples:[
+      {title:'Exemplo 1 (somar preços)', text:'R$ 3,50 + R$ 2,75 = R$ 6,25', steps:['Em centavos: 350 + 275 = 625', '625 centavos = R$ 6,25']},
+      {title:'Exemplo 2 (troco)', text:'Pagou R$ 20 numa compra de R$ 13,40 → troco R$ 6,60', steps:['Em centavos: 2000 − 1340 = 660', 'Troco: R$ 6,60']},
+      {title:'Exemplo 3 (várias unidades)', text:'3 cadernos de R$ 7,90 = R$ 23,70', steps:['Em centavos: 3 × 790 = 2370', 'Total: R$ 23,70']},
+    ],
+    gen:{
+      facil:()=>{ const itens=shuffle(['um lápis','uma borracha','um suco','um pão','uma bala','um picolé']).slice(0,2);
+        const a=randInt(2,20)*25, b=randInt(2,20)*25;
+        return mkSingle(`${cap(itens[0])} custa ${brl(a)} e ${itens[1]} custa ${brl(b)}. Quanto custam os dois juntos (em reais)?`, (a+b)/100, [`Em centavos: ${a} + ${b} = ${a+b}`, `${a+b} centavos = ${brl(a+b)}`]); },
+      medio:()=>{ const nota=pick([1000,2000,5000]); const preco=randInt(Math.round(nota*0.3/10), Math.round(nota*0.95/10))*10;
+        return mkSingle(`Você comprou algo de ${brl(preco)} e pagou com uma nota de ${brl(nota)}. Qual é o troco (em reais)?`, (nota-preco)/100, ['Troco = valor pago − preço', `Em centavos: ${nota} − ${preco} = ${nota-preco}`, `Troco: ${brl(nota-preco)}`]); },
+      dificil:()=>{
+        if(Math.random()<0.5){ const q=randInt(2,5), preco=randInt(15,120)*10, total=q*preco; const pago=Math.ceil((total+1)/5000)*5000;
+          return mkSingle(`Você comprou ${q} cadernos de ${brl(preco)} cada e pagou com ${brl(pago)}. Qual é o troco (em reais)?`, (pago-total)/100, [`Total: ${q} × ${brl(preco)} = ${brl(total)}`, `Troco: ${brl(pago)} − ${brl(total)} = ${brl(pago-total)}`]); }
+        const n=randInt(2,6), each=randInt(8,40)*50, total=n*each;
+        return mkSingle(`A conta da pizzaria deu ${brl(total)} e vai ser dividida igualmente entre ${n} amigos. Quanto cada um paga (em reais)?`, each/100, ['Cada um paga = total ÷ número de pessoas', `Em centavos: ${total} ÷ ${n} = ${each}`, `Cada um paga ${brl(each)}`]);
+      },
+    }
+  },
 ];
+
+/* ano escolar em que cada assunto costuma aparecer, segundo a BNCC (referência aproximada) */
+const BNCC_ANO = {adicao:'1º ao 5º ano', subtracao:'1º ao 5º ano', multiplicacao:'2º ao 5º ano', divisao:'3º ao 5º ano',
+  fracoes:'4º ao 6º ano', decimais:'4º ao 6º ano', porcentagem:'5º ao 7º ano', regra3:'7º ano', potenciacao:'6º ao 9º ano',
+  expressoes:'6º ano', eq1:'7º ano', eq2:'9º ano', sistemas:'8º ano', func1grau:'9º ano e 1º do EM', mmcmdc:'6º ano',
+  geometria:'5º ao 7º ano', estatistica:'6º ao 8º ano', dinheiro:'2º ao 5º ano'};
 
 function fmtSigned(n){ return n>=0? `+ ${n}` : `− ${Math.abs(n)}`; }
 
@@ -1806,6 +1842,8 @@ async function recordAnswer(subjectId, correct, extra){
   p[subjectId].attempted++;
   if(correct) p[subjectId].correct++;
   p[subjectId].last = Date.now(); // usado pela revisão espaçada
+  // últimas 10 respostas (ok + se era difícil), usadas no nível de domínio
+  p[subjectId].recent = (p[subjectId].recent || []).concat([{ok:!!correct, h:extra.difficulty==='dificil'}]).slice(-10);
   await saveProgress();
   gameOnAnswer(subjectId, correct, extra.difficulty);
 
@@ -1843,13 +1881,13 @@ async function resolveError(errorId){
    Configurações — também separadas por conta
    ========================================================= */
 const SETTINGS_KEY_BASE = 'mathstudy-settings-v1';
-const DEFAULT_SETTINGS = { theme:'dark', sound:true, vibration:true, dailyGoal:10, schoolLevel:null };
+const DEFAULT_SETTINGS = { theme:'dark', sound:true, vibration:true, dailyGoal:10, schoolLevel:null, tts:true, textScale:'normal' };
 /* assuntos "esperados" pra cada nível escolar — cumulativo (médio inclui tudo, fund2 inclui fund1).
    Usado só pra pré-selecionar os assuntos no Treino personalizado, nunca esconde nada: o
    usuário sempre pode marcar/desmarcar qualquer assunto depois. */
 const LEVEL_SUBJECTS = {
-  fund1: ['adicao','subtracao','multiplicacao','divisao'],
-  fund2: ['adicao','subtracao','multiplicacao','divisao','fracoes','decimais','potenciacao','expressoes','regra3','porcentagem','eq1','mmcmdc','geometria','estatistica'],
+  fund1: ['adicao','subtracao','multiplicacao','divisao','dinheiro'],
+  fund2: ['adicao','subtracao','multiplicacao','divisao','fracoes','decimais','potenciacao','expressoes','regra3','porcentagem','eq1','mmcmdc','geometria','estatistica','dinheiro'],
   medio: SUBJECTS.map(s=>s.id),
 };
 let settingsCache = null, settingsCacheUid = null;
@@ -2021,7 +2059,7 @@ function doLogout(){
   if(typeof _toastQueue!=='undefined') _toastQueue.length = 0;
   currentUser = null;
   settingsCache = null; settingsCacheUid = null;
-  applyTheme('dark');
+  applyTheme('dark'); applyTextScale('normal');
   try{ localStorage.removeItem(CURRENT_USER_KEY); }catch(e){}
   boot();
 }
@@ -2157,7 +2195,7 @@ async function importProgressData(file){
   }
   if(data.settings && typeof data.settings === 'object'){
     settingsCache = Object.assign({}, DEFAULT_SETTINGS, data.settings); settingsCacheUid = uid; await saveSettings();
-    applyTheme(settingsCache.theme);
+    applyTheme(settingsCache.theme); applyTextScale(settingsCache.textScale);
   }
   if(data.game && typeof data.game === 'object'){
     gameCache = null; gameCacheUid = null;
@@ -2317,6 +2355,7 @@ function authScreen(mode, users){
     await setCurrentUserId(acc.id);
     await loadSettings();
     applyTheme(settingsCache.theme);
+    applyTextScale(settingsCache.textScale);
     enterApp();
     const st = gameStreakNow();
     queueToast('👋', 'Bem-vindo de volta!', `${acc.name}${st?` · 🔥 ${st} dia${st===1?'':'s'}`:''}`);
@@ -2372,6 +2411,7 @@ function authScreen(mode, users){
     await setCurrentUserId(id);
     await loadSettings();
     applyTheme(settingsCache.theme);
+    applyTextScale(settingsCache.textScale);
     enterApp();
   }
 
@@ -2395,6 +2435,7 @@ async function boot(){
     currentUser = {id: saved.id, name: saved.name};
     await loadSettings();
     applyTheme(settingsCache.theme);
+    applyTextScale(settingsCache.textScale);
     enterApp();
   } else if(users.length){
     renderAuth('login', users);
@@ -2528,7 +2569,7 @@ function topbar(title, showBack, onBack){
 
 /* ---------------- barra de navegação inferior ---------------- */
 const BOTTOM_NAV_ITEMS = [
-  {screen:'home', icon:'⌂', label:'Início', group:['home','achievements','lightning','quizSetup','calculator','help']},
+  {screen:'home', icon:'⌂', label:'Início', group:['home','achievements','lightning','quizSetup','calculator','help','duel','certificates','certificate']},
   {screen:'path', icon:'★', label:'Trilha', group:['path']},
   {screen:'content', icon:'∑', label:'Aprender', group:['content','subjectDetail']},
   {screen:'exercisesSubjects', icon:'✎', label:'Exercícios', group:['exercisesSubjects','exerciseDifficulty','exerciseSession']},
@@ -2661,6 +2702,9 @@ function homeScreen(){
     {sym:'?', cls:'solve', label:'Resolver questão', screen:'solve'},
     {sym:'#', cls:'tile-calc', label:'Calculadora', screen:'calculator'},
     {sym:'🏅', cls:'tile-ach', label:'Conquistas', screen:'achievements'},
+    {sym:'⚔️', cls:'tile-duel', label:'Duelo a dois', screen:'duel'},
+    {sym:'📜', cls:'tile-cert', label:'Certificados', screen:'certificates'},
+    {sym:'📝', cls:'tile-report', label:'Relatório semanal', screen:'report'},
   ].forEach(item=>{
     const tile = h(`<button type="button" class="quick-tile ${item.cls}"><span class="sym">${item.sym}</span><span class="label">${item.label}</span></button>`);
     tile.onclick = ()=>go(item.screen);
@@ -2671,6 +2715,215 @@ function homeScreen(){
   wrap.appendChild(h(`<div class="footer-note">Seu professor de matemática digital 📐</div>`));
   // primeiro acesso: tour guiado pelo Pi
   if(!tutorialDone()) setTimeout(()=>{ if(state.screen==='home' && !tutorialDone() && wrap.isConnected) startTour(); }, 700);
+  return wrap;
+}
+
+/* ---------- nível de domínio por assunto ----------
+   Olha as últimas 10 respostas (não o histórico inteiro), pra refletir o que a pessoa sabe hoje. */
+const MASTERY_LEVELS = [
+  {lvl:0, ico:'⚪', name:'Não iniciado', next:'Responda 5 questões pra descobrir seu nível.'},
+  {lvl:1, ico:'🌱', name:'Aprendendo',   next:'Chegue a 60% de acerto nas últimas questões.'},
+  {lvl:2, ico:'📘', name:'Praticando',   next:'Chegue a 80% de acerto nas últimas questões.'},
+  {lvl:3, ico:'⭐', name:'Proficiente',  next:'Acerte 9 das últimas 10, com pelo menos 2 no difícil.'},
+  {lvl:4, ico:'👑', name:'Dominado',     next:'Você domina este assunto! Revise de vez em quando pra não esquecer.'},
+];
+function masteryOf(d){
+  if(!d || !d.attempted) return MASTERY_LEVELS[0];
+  const rec = d.recent || [];
+  const n = rec.length >= 5 ? rec.length : d.attempted;
+  const ok = rec.length >= 5 ? rec.filter(r=>r.ok).length : d.correct;
+  if(n < 5) return MASTERY_LEVELS[1];
+  const acc = ok/n;
+  const hardOk = rec.filter(r=>r.ok && r.h).length;
+  if(rec.length>=10 && acc>=0.9 && hardOk>=2) return MASTERY_LEVELS[4];
+  if(acc>=0.8) return MASTERY_LEVELS[3];
+  if(acc>=0.6) return MASTERY_LEVELS[2];
+  return MASTERY_LEVELS[1];
+}
+function masterySync(subjectId){ return masteryOf(progressCache && progressCacheUid===currentUserId() ? progressCache[subjectId] : null); }
+function masteryChip(m){ return `<span class="mst-chip mst-${m.lvl}" title="${m.name}">${m.ico} ${m.name}</span>`; }
+
+/* ---------- ouvir a questão (leitura em voz alta) ---------- */
+function speechText(ex){
+  let t = String((ex && (ex.question || ex.text)) || '').replace(/<[^>]+>/g,' ');
+  t = t.replace(/(\d+)\/(\d+)/g, '$1 sobre $2')
+       .replace(/×/g,' vezes ').replace(/÷/g,' dividido por ').replace(/−/g,' menos ').replace(/\+/g,' mais ')
+       .replace(/²/g,' ao quadrado').replace(/³/g,' ao cubo').replace(/√/g,' raiz quadrada de ')
+       .replace(/=\s*\?/g,' é igual a quanto?').replace(/=/g,' igual a ').replace(/R\$\s*/g,'').replace(/\s+/g,' ');
+  return t.trim();
+}
+function speak(text){
+  try{
+    if(!('speechSynthesis' in window) || !text) return false;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'pt-BR'; u.rate = 0.95;
+    const v = speechSynthesis.getVoices().find(v=>/pt[-_]BR/i.test(v.lang));
+    if(v) u.voice = v;
+    speechSynthesis.speak(u);
+    return true;
+  }catch(e){ return false; }
+}
+function addSpeakButton(card, ex){
+  if(!('speechSynthesis' in window) || currentSettingsSync().tts===false) return;
+  const text = speechText(ex);
+  if(!text) return;
+  const b = h(`<button type="button" class="tts-btn" aria-label="Ouvir a questão" title="Ouvir a questão">🔊</button>`);
+  b.onclick = e=>{ e.stopPropagation(); speak(text); };
+  card.classList.add('has-tts');
+  card.appendChild(b);
+}
+/* tamanho do texto das questões/explicações: normal, grande, enorme */
+const TEXT_SCALES = {normal:1, grande:1.15, enorme:1.3};
+function applyTextScale(v){ document.documentElement.style.setProperty('--fs', TEXT_SCALES[v] || 1); }
+
+/* ---------------- DUELO A DOIS (mesmo aparelho) ----------------
+   Tela dividida: o jogador de cima vê tudo de cabeça pra baixo, pra jogar frente a frente
+   com o celular deitado na mesa. Mesma conta pros dois; quem tocar primeiro na certa
+   leva o ponto. Errou? Fica travado até a próxima conta. */
+const DUEL_ROUNDS = 10;
+function duelScreen(){
+  const wrap = document.createElement('div');
+  wrap.appendChild(topbar('⚔️ Duelo a dois', true, ()=>go('home')));
+  const c = h(`<div class="content"></div>`);
+  wrap.appendChild(c);
+  let level = 0, names = ['Jogador 1','Jogador 2'];
+  try{ const saved = JSON.parse(localStorage.getItem('mathstudy-duel-names')||'null'); if(Array.isArray(saved)) names = saved; }catch(e){}
+
+  c.appendChild(h(`<div class="lt-start"><div class="big">⚔️</div><h2>Duelo a dois</h2><p>Dois jogadores no mesmo celular, frente a frente. Deite o aparelho na mesa: cada um fica com uma metade da tela. Quem acertar primeiro leva o ponto! São ${DUEL_ROUNDS} contas.</p></div>`));
+  const form = h(`<div class="answer-form">
+    <div><label>Jogador de baixo</label><input class="duel-n1" maxlength="14"></div>
+    <div><label>Jogador de cima</label><input class="duel-n2" maxlength="14"></div>
+  </div>`);
+  form.querySelector('.duel-n1').value = names[0]; form.querySelector('.duel-n2').value = names[1];
+  c.appendChild(form);
+  c.appendChild(h(`<h3 style="font-size:12.5px;text-transform:uppercase;color:var(--ink-soft);font-weight:600;margin:6px 0 8px;letter-spacing:.08em;">Nível das contas</h3>`));
+  const lvRow = h(`<div class="diff-row"></div>`);
+  [['Fácil',0],['Médio',8],['Difícil',16]].forEach(([label,v],i)=>{
+    const chip = h(`<button type="button" class="diff-chip ${i===0?'active':''}">${label}</button>`);
+    chip.onclick = ()=>{ level = v; lvRow.querySelectorAll('.diff-chip').forEach(x=>x.classList.remove('active')); chip.classList.add('active'); };
+    lvRow.appendChild(chip);
+  });
+  c.appendChild(lvRow);
+  const start = h(`<button class="btn primary" style="width:100%">Começar duelo ⚔️</button>`);
+  start.onclick = ()=>{
+    names = [form.querySelector('.duel-n1').value.trim()||'Jogador 1', form.querySelector('.duel-n2').value.trim()||'Jogador 2'];
+    try{ localStorage.setItem('mathstudy-duel-names', JSON.stringify(names)); }catch(e){}
+    runDuel(names, level);
+  };
+  c.appendChild(start);
+  return wrap;
+}
+function runDuel(names, level){
+  const score = [0,0];
+  let round = 0, q = null, locked = [false,false], done = false;
+  const root = h(`<div class="duel-root" role="application">
+    <div class="duel-half top" data-p="1"></div>
+    <div class="duel-mid"><span class="duel-sc"></span><button type="button" class="duel-quit" aria-label="Sair do duelo">✕</button></div>
+    <div class="duel-half bottom" data-p="0"></div>
+  </div>`);
+  const halves = [root.querySelector('.bottom'), root.querySelector('.top')];
+  const sc = root.querySelector('.duel-sc');
+  root.querySelector('.duel-quit').onclick = ()=>{ done = true; root.remove(); };
+  document.body.appendChild(root);
+
+  function paintScore(){ sc.textContent = `${names[0]} ${score[0]} × ${score[1]} ${names[1]} · ${Math.min(round+1,DUEL_ROUNDS)}/${DUEL_ROUNDS}`; }
+  function next(){
+    if(done) return;
+    if(round >= DUEL_ROUNDS) return finish();
+    q = boltQuestion(level + round); locked = [false,false];
+    paintScore();
+    halves.forEach((el,p)=>{
+      el.innerHTML = `<div class="duel-name">${escHTML(names[p])} · ${score[p]} pts</div><div class="duel-q mono">${q.text} = ?</div><div class="duel-opts"></div>`;
+      const box = el.querySelector('.duel-opts');
+      q.opts.forEach(v=>{
+        const b = h(`<button type="button" class="duel-opt mono">${v}</button>`);
+        b.onclick = ()=> answer(p, v, b);
+        box.appendChild(b);
+      });
+    });
+  }
+  function answer(p, v, btn){
+    if(done || locked[p] || locked[2]) return;
+    if(v === q.ans){
+      locked[2] = true; score[p]++; paintScore();
+      btn.classList.add('ok');
+      halves[p].classList.add('win'); halves[1-p].classList.add('lose');
+      playTones([660,990], 0.06, 'triangle', 0.08);
+      halves[1-p].querySelectorAll('.duel-opt').forEach(b=>{ if(Number(b.textContent)===q.ans) b.classList.add('ok'); });
+      setTimeout(()=>{ halves.forEach(x=>x.classList.remove('win','lose')); round++; next(); }, 1100);
+    } else {
+      locked[p] = true; btn.classList.add('bad'); halves[p].classList.add('lock');
+      playTones([220], 0.12, 'sawtooth', 0.05);
+      if(locked[0] && locked[1]){ locked[2] = true; setTimeout(()=>{ halves.forEach(x=>x.classList.remove('lock')); round++; next(); }, 1100); }
+      else setTimeout(()=> halves[p].classList.remove('lock'), 1100);
+    }
+  }
+  function finish(){
+    const w = score[0]===score[1] ? -1 : (score[0]>score[1] ? 0 : 1);
+    halves.forEach((el,p)=>{
+      el.innerHTML = `<div class="duel-end"><div class="big">${w===-1?'🤝':w===p?'🏆':'💪'}</div><div class="duel-q">${w===-1?'Empate!':w===p?'Você venceu!':'Quase! Revanche?'}</div><div class="duel-name">${score[p]} × ${score[1-p]}</div><div class="duel-actions"><button type="button" class="duel-opt again">Revanche</button><button type="button" class="duel-opt exit">Sair</button></div></div>`;
+      el.querySelector('.again').onclick = ()=>{ score[0]=score[1]=0; round=0; next(); };
+      el.querySelector('.exit').onclick = ()=>{ done = true; root.remove(); };
+    });
+    sc.textContent = w===-1 ? 'Empate!' : `${names[w]} venceu!`;
+    launchConfetti(140);
+    gameTouchDay(); saveGame();
+  }
+  next();
+}
+
+/* ---------------- CERTIFICADOS ----------------
+   Cada episódio da trilha concluído (grande final vencida) libera um certificado
+   que dá pra imprimir ou salvar em PDF. */
+function completedUnits(){
+  const done = pathDone(), all = allPathNodes();
+  return SUBJECTS.filter(s=>all.filter(n=>n.subject.id===s.id).every(n=>done[n.key]));
+}
+function certificatesScreen(){
+  const wrap = document.createElement('div');
+  wrap.appendChild(topbar('📜 Certificados', true, ()=>go('home')));
+  const c = h(`<div class="content"></div>`);
+  const units = completedUnits();
+  c.appendChild(h(`<p style="color:var(--ink-soft); font-size:14px; margin:2px 0 16px;">Vença a <b>Grande final</b> de um episódio da Trilha pra ganhar o certificado daquele assunto. Dá pra imprimir ou salvar em PDF.</p>`));
+  SUBJECTS.forEach(s=>{
+    const got = units.includes(s);
+    const row = h(`<button class="subject-row" ${got?'':'disabled style="opacity:.5"'}><span class="sym">${got?'📜':'🔒'}</span><span class="txt"><span class="name">${s.name}</span><span class="subj-meta">${got?'Certificado liberado · toque pra ver':'Complete o episódio na Trilha'}</span></span><span class="chev">›</span></button>`);
+    if(got) row.onclick = ()=> go('certificate', {subjectId:s.id});
+    c.appendChild(row);
+  });
+  wrap.appendChild(c);
+  return wrap;
+}
+function certificateScreen(){
+  const s = SUBJECTS.find(x=>x.id===state.subjectId) || SUBJECTS[0];
+  const wrap = document.createElement('div');
+  wrap.appendChild(topbar('Certificado', true, ()=>go('certificates')));
+  const c = h(`<div class="content"></div>`);
+  const name = currentUser ? currentUser.name : '';
+  const g = loadGame();
+  const when = new Date(); const dt = `${String(when.getDate()).padStart(2,'0')}/${String(when.getMonth()+1).padStart(2,'0')}/${when.getFullYear()}`;
+  const cert = h(`<div class="cert">
+    <div class="cert-in">
+      <img src="${LOGO_URI}" alt="" class="cert-logo">
+      <div class="cert-k">Matemática Show</div>
+      <h2>Certificado de Conclusão</h2>
+      <p>Certificamos que</p>
+      <div class="cert-name"></div>
+      <p>concluiu com sucesso o episódio</p>
+      <div class="cert-subj">${s.sym} ${escHTML(s.name)}</div>
+      <p class="cert-small">passando pelas fases fácil, média e difícil e vencendo a Grande final.<br>Nível ${levelInfo(g.xp).level} · ${escHTML(levelInfo(g.xp).title)}</p>
+      <div class="cert-foot"><span>${dt}</span><span>🎤 Pi, o apresentador</span></div>
+    </div>
+  </div>`);
+  cert.querySelector('.cert-name').textContent = name || 'Estudante';
+  c.appendChild(cert);
+  const actions = h(`<div class="cta-row rp-actions" style="margin-top:16px"></div>`);
+  const pr = h(`<button class="btn primary">🖨️ Imprimir / PDF</button>`);
+  pr.onclick = ()=> window.print();
+  actions.appendChild(pr);
+  c.appendChild(actions);
+  wrap.appendChild(c);
   return wrap;
 }
 
@@ -2904,7 +3157,7 @@ function contentScreen(){
   const c = h(`<div class="content"></div>`);
   c.appendChild(h(`<p style="color:var(--ink-soft); font-size:14px; margin:2px 0 16px;">Escolha um assunto para estudar a teoria e ver exemplos.</p>`));
   SUBJECTS.forEach(s=>{
-    const row = h(`<button class="subject-row"><span class="sym">${s.sym}</span><span class="txt"><span class="name">${s.name}</span></span><span class="chev">›</span></button>`);
+    const row = h(`<button class="subject-row"><span class="sym">${s.sym}</span><span class="txt"><span class="name">${s.name}</span><span class="subj-meta">${BNCC_ANO[s.id]?`📚 ${BNCC_ANO[s.id]} · `:''}${masteryChip(masterySync(s.id))}</span></span><span class="chev">›</span></button>`);
     row.onclick = ()=>go('subjectDetail', {subjectId:s.id});
     c.appendChild(row);
   });
@@ -2927,6 +3180,8 @@ function subjectDetailScreen(){
   wrap.appendChild(topbar(s.name, true, ()=>go('content')));
   const c = h(`<div class="content"></div>`);
   c.appendChild(h(`<div class="learn-hero"><span class="sym-big mono">${s.sym}</span><h2>${s.name}</h2></div>`));
+  { const m = masterySync(s.id);
+    c.appendChild(h(`<div class="mst-box"><div>${masteryChip(m)}${BNCC_ANO[s.id]?`<span class="bncc-tag">📚 BNCC · ${BNCC_ANO[s.id]}</span>`:''}</div><p>${m.next}</p></div>`)); }
   const explain = h(`<div class="explain-card"></div>`);
   const examplesList = s.examples || [s.example];
   const boxesHtml = examplesList.map(ex=>{
@@ -2949,7 +3204,7 @@ function exercisesSubjectsScreen(){
   const c = h(`<div class="content"></div>`);
   c.appendChild(h(`<p style="color:var(--ink-soft); font-size:14px; margin:2px 0 16px;">Escolha um assunto para praticar.</p>`));
   SUBJECTS.forEach(s=>{
-    const row = h(`<button class="subject-row"><span class="sym">${s.sym}</span><span class="txt"><span class="name">${s.name}</span></span><span class="chev">›</span></button>`);
+    const row = h(`<button class="subject-row"><span class="sym">${s.sym}</span><span class="txt"><span class="name">${s.name}</span><span class="subj-meta">${masteryChip(masterySync(s.id))}</span></span><span class="chev">›</span></button>`);
     row.onclick = ()=>go('exerciseDifficulty', {subjectId:s.id});
     c.appendChild(row);
   });
@@ -2979,6 +3234,7 @@ function exerciseDifficultyScreen(){
    ========================================================= */
 /* dica curta, por assunto: lembra o método geral, sem revelar o resultado da questão atual */
 const HINTS = {
+  dinheiro: 'Transforme tudo em <b>centavos</b> (R$ 2,50 = 250), faça a conta com números inteiros e volte pra reais no fim. Troco = valor pago − total.<br><b>Exemplo:</b> pagou R$ 10 numa compra de R$ 6,30 → 1000 − 630 = 370 → troco R$ 3,70.',
   mmcmdc: 'Decomponha os dois números em fatores primos. <b>MMC</b>: pegue todos os fatores com o maior expoente. <b>MDC</b>: pegue só os fatores em comum com o menor expoente.<br><b>Exemplo:</b> 12 = 2² × 3 e 18 = 2 × 3² → MMC = 2² × 3² = 36 · MDC = 2 × 3 = 6.',
   geometria: 'Perímetro = soma de todos os lados. Área: retângulo = base × altura · triângulo = base × altura ÷ 2 · trapézio = (B + b) × h ÷ 2 · círculo = 3,14 × raio².<br><b>Exemplo:</b> triângulo de base 8 e altura 5 → 8 × 5 ÷ 2 = 20.',
   estatistica: '<b>Média</b>: some tudo e divida pela quantidade. <b>Mediana</b>: coloque em ordem e pegue o do meio (se forem 2 no meio, faça a média deles). <b>Moda</b>: o que mais se repete.<br><b>Exemplo:</b> 2, 5, 5, 8 → média 5 · mediana 5 · moda 5.',
@@ -3109,6 +3365,7 @@ function exerciseSessionScreen(){
   const ex = sess.current;
   const qcard = h(`<div class="question-card"><div class="qlabel">QUESTÃO ${sess.index+1} DE ${sess.total} · ${({facil:'FÁCIL',medio:'MÉDIO',dificil:'DIFÍCIL'})[sess.difficulty]}</div><div class="qtext mono"></div></div>`);
   const qtextEl = qcard.querySelector('.qtext');
+  addSpeakButton(qcard, ex);
   if(ex.columns){
     qtextEl.classList.add('stacked');
     qtextEl.innerHTML = contaArmada(ex.columns.nums, ex.columns.op) + `<div class="ca-caption">= ?</div>`;
@@ -3261,6 +3518,7 @@ function reviewErrorsSessionScreen(){
   const diffLabel = ({facil:'FÁCIL',medio:'MÉDIO',dificil:'DIFÍCIL'})[item.difficulty] || '';
   const qcard = h(`<div class="question-card"><div class="qlabel">ERRO ${sess.index+1} DE ${sess.total} · ${item.subjectName}${diffLabel? ' · '+diffLabel : ''}</div><div class="qtext mono"></div></div>`);
   const qtextEl = qcard.querySelector('.qtext');
+  addSpeakButton(qcard, ex);
   if(ex.columns){
     qtextEl.classList.add('stacked');
     qtextEl.innerHTML = contaArmada(ex.columns.nums, ex.columns.op) + `<div class="ca-caption">= ?</div>`;
@@ -3406,6 +3664,7 @@ function challengeSessionScreen(){
   const ex = sess.current;
   const qcard = h(`<div class="question-card"><div class="qlabel">QUESTÃO ${sess.index+1} DE ${sess.total} · ${({facil:'FÁCIL',medio:'MÉDIO',dificil:'DIFÍCIL'})[sess.difficulty]} · ${s.sym} ${s.name}</div><div class="qtext mono"></div></div>`);
   const qtextEl = qcard.querySelector('.qtext');
+  addSpeakButton(qcard, ex);
   if(ex.columns){
     qtextEl.classList.add('stacked');
     qtextEl.innerHTML = contaArmada(ex.columns.nums, ex.columns.op) + `<div class="ca-caption">= ?</div>`;
@@ -3833,6 +4092,7 @@ function personalizedSessionScreen(){
   const ex = sess.current;
   const qcard = h(`<div class="question-card"><div class="qlabel">QUESTÃO ${sess.index+1} DE ${sess.total} · ${diffLabel}${sess.lvlMsg?`<span class="pt-lvl">${sess.lvlMsg}</span>`:''} · ${s.sym} ${s.name}</div><div class="qtext mono"></div></div>`);
   const qtextEl = qcard.querySelector('.qtext');
+  addSpeakButton(qcard, ex);
   if(ex.columns){
     qtextEl.classList.add('stacked');
     qtextEl.innerHTML = contaArmada(ex.columns.nums, ex.columns.op) + `<div class="ca-caption">= ?</div>`;
@@ -4119,7 +4379,7 @@ async function profileScreen(){
   ids.forEach(id=>{
     totalAttempted += p[id].attempted; totalCorrect += p[id].correct;
     const acc = p[id].attempted? (p[id].correct/p[id].attempted*100) : 0;
-    if(p[id].attempted>=5 && acc>=80) mastered++;
+    if(masteryOf(p[id]).lvl>=3) mastered++;
   });
   const pct = totalAttempted? Math.round(totalCorrect/totalAttempted*100) : 0;
   const errs = await loadErrors();
@@ -4127,7 +4387,7 @@ async function profileScreen(){
   const grid = h(`<div class="stat-grid"></div>`);
   grid.appendChild(h(`<div class="stat-card"><div class="num">${totalAttempted}</div><div class="lbl">Questões resolvidas</div></div>`));
   grid.appendChild(h(`<div class="stat-card acc"><div class="num">${pct}%</div><div class="lbl">Acerto geral</div></div>`));
-  grid.appendChild(h(`<div class="stat-card"><div class="num">${mastered}</div><div class="lbl">Assuntos dominados</div></div>`));
+  grid.appendChild(h(`<div class="stat-card"><div class="num">${mastered}</div><div class="lbl">Assuntos proficientes ou dominados</div></div>`));
   c.appendChild(grid);
 
   // menu em lista (antes era uma fileira de botões que ficava mais larga que a tela
@@ -4180,6 +4440,30 @@ async function settingsScreen(){
     themeRow.appendChild(chip);
   });
   c.appendChild(themeRow);
+
+  // --- Acessibilidade ---
+  c.appendChild(h(`<section class="block"><h3>Leitura e acessibilidade</h3></section>`));
+  c.appendChild(h(`<p style="color:var(--ink-soft); font-size:12.5px; margin:-6px 0 8px;">Tamanho do texto das questões e explicações</p>`));
+  const scaleRow = h(`<div class="diff-row"></div>`);
+  [['normal','A'],['grande','A+'],['enorme','A++']].forEach(([id,label],i)=>{
+    const chip = h(`<button type="button" class="diff-chip" style="font-size:${13+i*3}px" aria-label="Texto ${id}">${label}</button>`);
+    if((settings.textScale||'normal')===id) chip.classList.add('active');
+    chip.onclick = async ()=>{
+      settings.textScale = id; await saveSettings(); applyTextScale(id);
+      scaleRow.querySelectorAll('.diff-chip').forEach(ch=>ch.classList.remove('active')); chip.classList.add('active');
+    };
+    scaleRow.appendChild(chip);
+  });
+  c.appendChild(scaleRow);
+  if('speechSynthesis' in window){
+    const ttsToggle = h(`<button type="button" class="weak-toggle ${settings.tts!==false?'active':''}"><span class="check">✓</span><span>🔊 Botão de ouvir as questões em voz alta</span></button>`);
+    ttsToggle.onclick = async ()=>{
+      settings.tts = settings.tts===false; await saveSettings();
+      ttsToggle.classList.toggle('active', settings.tts);
+      if(settings.tts) speak('Pronto! Agora você pode ouvir as questões.');
+    };
+    c.appendChild(ttsToggle);
+  }
 
   // --- Som e vibração ---
   c.appendChild(h(`<section class="block"><h3>Som e vibração</h3></section>`));
@@ -4355,12 +4639,12 @@ async function progressScreen(){
       if(!s) return;
       const d = p[id];
       const acc = d.attempted? Math.round(d.correct/d.attempted*100) : 0;
-      const mastered = d.attempted>=5 && acc>=80;
+      const mst = masteryOf(d);
       const barCls = acc>=80? '' : acc>=50? 'mid':'low';
       const row = h(`
         <div class="mastery-row">
           <div class="top">
-            <span class="name">${s.sym} &nbsp;${s.name} ${mastered? '<span class="mastered-badge" style="margin-left:6px">DOMINA</span>':''}</span>
+            <span class="name">${s.sym} &nbsp;${s.name} ${masteryChip(mst)}</span>
             <span class="pct">${acc}%</span>
           </div>
           <div class="bar-track"><div class="bar-fill ${barCls}" style="width:${acc}%"></div></div>
@@ -5384,6 +5668,7 @@ function lessonScreen(){
   }
   const qv = questionHTML(ex);
   const qcard = h(`<div class="question-card lesson-q"><div class="qtext mono ${qv.stacked?'stacked':''}">${qv.html}</div></div>`);
+  addSpeakButton(qcard, ex);
   if(!isQuiz){
     const row = h(`<div class="lesson-q-row"></div>`);
     row.appendChild(h(`<div class="lesson-mascot">${mascotSVG(sess.checked ? (sess.wasCorrect?'joy':'sad') : (sess.tryAgain ? 'sad' : 'happy'), 64)}</div>`));
@@ -5543,7 +5828,7 @@ function lessonEnd(wrap, sess){
       } else {
         pathDone()[sess.nodeKey] = true;
         const node = allPathNodes().find(n=>n.key===sess.nodeKey);
-        if(node && node.type==='trophy') gameUnlock('unit');
+        if(node && node.type==='trophy'){ gameUnlock('unit'); queueToast('📜', 'Certificado liberado!', `${node.subject.name}: veja em Certificados`); }
         gems = sess.wrong===0 ? 15 : 10;
       }
       g.lessonsDone = (g.lessonsDone||0) + 1;
@@ -5886,6 +6171,10 @@ const HELP_TOPICS = [
   {ico:'🔥', t:'Ofensiva', d:'É quantos dias seguidos você jogou. Responda pelo menos uma pergunta por dia (ou jogue uma partida do Relâmpago) pra manter a chama acesa! Toque no 🔥 pra ver sua semana, seu recorde e o próximo marco: 3, 7, 14, 30 dias e além dão 🪙 moedas. O <b>protetor 🧊</b> salva sua ofensiva sozinho se você ficar um dia sem jogar (você começa com 1 e pode ter até 2; compre mais por 50 🪙).'},
   {ico:'🧠', t:'Revisão do dia', d:'O app lembra quando você praticou cada assunto. Depois de um tempo (1 dia se você ainda erra muito, até 7 dias se já domina), o assunto aparece em <b>Revisão do dia</b> na tela inicial. Revisar no momento certo é o que faz a matéria ficar na cabeça.'},
   {ico:'📝', t:'Relatório semanal', d:'Em Perfil → <b>Relatório semanal</b> você vê um resumo dos últimos 7 dias: dias estudados, questões, % de acerto, comparação com a semana anterior e sugestões. Dá pra <b>compartilhar</b> (WhatsApp, e-mail) ou <b>imprimir / salvar em PDF</b> pra mostrar a pais e professores.'},
+  {ico:'👑', t:'Nível de domínio', d:'Cada assunto mostra seu nível: 🌱 Aprendendo, 📘 Praticando, ⭐ Proficiente e 👑 Dominado. Ele olha as suas <b>últimas 10 respostas</b>, então mostra o que você sabe hoje. Pra chegar em Dominado, acerte 9 de 10 com pelo menos 2 no difícil.'},
+  {ico:'🔊', t:'Ouvir a questão e tamanho do texto', d:'Toque no 🔊 no canto da questão pra ouvir em voz alta. Em Configurações → <b>Leitura e acessibilidade</b> você aumenta o tamanho do texto (A, A+, A++) ou desliga o botão de ouvir.'},
+  {ico:'⚔️', t:'Duelo a dois', d:'Dois jogadores no mesmo celular, frente a frente: deite o aparelho na mesa e cada um fica com metade da tela. Quem acertar primeiro leva o ponto; errou, fica travado até a próxima conta.'},
+  {ico:'📜', t:'Certificados', d:'Venceu a Grande final de um episódio? Ganha um certificado com seu nome, que dá pra imprimir ou salvar em PDF. Veja em <b>Certificados</b>, na tela inicial.'},
   {ico:'💾', t:'Backup do progresso', d:'Seu progresso fica salvo só neste aparelho. De vez em quando o app lembra você de salvar uma cópia. Você também pode fazer isso quando quiser em Configurações → <b>Exportar progresso</b>, e depois restaurar com <b>Importar</b>.'},
   {ico:'📜', t:'Missões e meta do dia', d:'Todo dia aparecem missões novas na tela inicial. Quando completar uma, toque em <b>Pegar</b> pra receber o XP. A meta diária (quantas questões responder) você pode mudar ali mesmo, em "Mudar meta".'},
   {ico:'🎤', t:'Quiz do Show', d:'10 perguntas de todos os assuntos, com 20 segundos cada. Quanto mais rápido você responde certo, mais pontos ganha, e acertos seguidos dão bônus. Pra sair no meio, toque no ✕ lá em cima.'},
@@ -5932,6 +6221,9 @@ const SCREENS = {
   challengeSession: challengeSessionScreen,
   personalizedSession: personalizedSessionScreen,
   achievements: achievementsScreen,
+  duel: duelScreen,
+  certificates: certificatesScreen,
+  certificate: certificateScreen,
   lightning: lightningScreen,
   path: pathScreen,
   lesson: lessonScreen,
