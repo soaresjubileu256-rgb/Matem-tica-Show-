@@ -1785,3 +1785,27 @@ section.block h3::before, .rp-sec::before, .hq-head span::before{content:''; wid
 :root.theme-light .lesson-kicker{color:#7B2FC4; background:rgba(178,63,224,.10); border-color:rgba(178,63,224,.3);}
 :root.theme-light .hint-btn{color:#4A5BD8;}
 :root.theme-light .link-btn{color:#3F55D6;}
+
+/* =========================================================
+   IMPRESSÃO / PDF — fica no fim do arquivo de propósito, pra ganhar
+   de todo o acabamento visual (no tema escuro os cartões saíam escuros)
+   ========================================================= */
+@media print{
+  @page{size:A4; margin:12mm 12mm;}
+  html, body{background:#fff !important; background-image:none !important; color:#000 !important; min-height:0 !important; height:auto !important;}
+  #app{padding:0 !important; min-height:0 !important; max-width:none !important;}
+  .topbar, .bottom-nav, .rp-actions, .gm-toast, .gm-modal-bg, #gm-confetti, .tour-root{display:none !important;}
+  .screen-in .content > *{animation:none !important; opacity:1 !important; transform:none !important;}
+  .rp-head, .stat-card, .mastery-row, .rp-days, .rp-tip{
+    background:#fff !important; background-image:none !important; color:#000 !important;
+    border:1px solid #c9c9d6 !important; box-shadow:none !important; break-inside:avoid;}
+  .rp-head h2, .stat-card .num, .mastery-row .name, .mastery-row .pct, .rp-day .n, .rp-tip, .rp-list, .rp-list b{color:#000 !important;}
+  .rp-head .rp-k, .rp-head p, .stat-card .lbl, .rp-day .d, .rp-sec{color:#555 !important;}
+  .stat-card.acc .num{color:#2F55D4 !important;}
+  .rp-sec::before{background:#4C7DFF !important;}
+  .bar-track{background:#e6e6ee !important;}
+  .rp-day.zero .bar{background:#dcdce6 !important;}
+  /* certificado: só ele na folha */
+  .cert{box-shadow:none !important;}
+  .content > *:last-child{margin-bottom:0 !important;}
+}

@@ -5810,11 +5810,10 @@ function gameEnsureToday(){
   if(!g.today || g.today.day !== k) g.today = {day:k, answered:0, bestCombo:0, bolts:0, claimed:{}};
 }
 /* ---------- ofensiva (dias seguidos) ----------
-   - g.days guarda o histórico recente: 1 = jogou, 'f' = protegido por um protetor 🧊
-   - protetores (máx. STREAK_FREEZE_MAX) são gastos sozinhos quando a pessoa
-     pula dia(s); se não houver protetores suficientes, a ofensiva zera
+   - g.days guarda o histórico recente: 1 = jogou ('f' = dia salvo por protetor, só em dados antigos)
+   - passou um dia inteiro sem jogar, a ofensiva volta pra zero (não existe mais protetor)
    - marcos (3, 7, 14, 30...) dão moedas e uma comemoração */
-const STREAK_FREEZE_MAX = 2, STREAK_FREEZE_COST = 50, STREAK_DAYS_KEEP = 70;
+const STREAK_DAYS_KEEP = 70;
 const STREAK_MILESTONES = [[3,10],[7,25],[14,40],[30,75],[50,100],[100,200],[200,300],[365,500]];
 function keyToDate(k){ const [y,m,d] = String(k).split('-').map(Number); return new Date(y, m-1, d); }
 function dayDiff(a, b){ return Math.round((keyToDate(b) - keyToDate(a)) / 864e5); } // b - a, em dias
@@ -5823,10 +5822,9 @@ function dayShift(n){ const d = new Date(); d.setDate(d.getDate()+n); return day
 function streakFromData(g){
   if(!g || !g.lastDay || !g.streak) return 0;
   const gap = dayDiff(g.lastDay, dayKey());
-  if(gap<=1) return g.streak;
-  return (g.freezes||0) >= gap-1 ? g.streak : 0;
+  return gap<=1 ? g.streak : 0; // jogou hoje ou ontem: vale; pulou um dia inteiro: zerou
 }
-/* ao abrir o jogo: cobre dias pulados com protetores ou zera a ofensiva */
+/* ao abrir o jogo (e quando o dia vira): se pulou um dia inteiro, a ofensiva zera */
 function gameCheckStreak(){
   const g = gameCache;
   if(g.days===undefined){
@@ -5837,21 +5835,12 @@ function gameCheckStreak(){
       for(let i=0; i<Math.min(g.streak, STREAK_DAYS_KEEP); i++){ const d = new Date(last); d.setDate(d.getDate()-i); g.days[dayKey(d)] = 1; }
     }
   }
-  if(g.freezes===undefined) g.freezes = 1; // todo mundo começa com 1 protetor de presente
   if(g.bestStreak===undefined) g.bestStreak = g.streak||0;
   if(!g.lastDay || !g.streak) return;
   const gap = dayDiff(g.lastDay, dayKey());
   if(gap<=1) return;
-  const missed = gap-1;
-  if(g.freezes >= missed){
-    for(let i=1; i<=missed; i++) g.days[dayShift(-i)] = 'f';
-    g.freezes -= missed;
-    g.lastDay = dayShift(-1);
-    g.streakNote = {type:'freeze', n:missed, streak:g.streak};
-  } else {
-    g.streakNote = {type:'lost', streak:g.streak};
-    g.streak = 0;
-  }
+  g.streakNote = {type:'lost', streak:g.streak};
+  g.streak = 0;
   saveGame();
 }
 function streakNextMilestone(n){ return STREAK_MILESTONES.find(([d])=>d>n) || null; }
@@ -5883,25 +5872,34 @@ function gameTouchDay(){
     }
   }
 }
-/* ofensiva: vale se jogou hoje ou ontem (ou se os protetores cobrem o intervalo); senão 0 */
+/* ofensiva: vale se jogou hoje ou ontem; senão 0 */
 function gameStreakNow(){ return streakFromData(loadGame()); }
 function playedToday(){ return loadGame().lastDay===dayKey(); }
-function buyStreakFreeze(){
-  const g = loadGame(); heartsNow();
-  if(g.freezes >= STREAK_FREEZE_MAX || g.gems < STREAK_FREEZE_COST) return false;
-  g.gems -= STREAK_FREEZE_COST; g.freezes++;
-  saveGame(); playTones([523,784,1047], 0.08, 'triangle', 0.1);
-  return true;
-}
-/* avisos pendentes (protetor usado / ofensiva perdida), mostrados uma vez */
+/* aviso pendente de ofensiva perdida, mostrado uma vez */
 function showStreakNote(){
   const g = loadGame(), n = g.streakNote;
   if(!n) return;
   delete g.streakNote; saveGame();
-  if(n.type==='freeze') queueToast('🧊', n.n===1 ? 'Protetor usado!' : `${n.n} protetores usados!`, `Sua ofensiva de ${n.streak} dia${n.streak===1?'':'s'} foi salva`);
-  else if(n.streak>=2) queueToast('💔', 'A ofensiva apagou', `Você tinha ${n.streak} dias. Jogue hoje pra acender de novo!`);
+  if(n.type==='lost' && n.streak>=2) queueToast('💔', 'A ofensiva apagou', `Você tinha ${n.streak} dias. Jogue hoje pra acender de novo!`);
 }
-/* painel da ofensiva: dias da semana, recorde, próximo marco e protetores */
+/* o app pode ficar aberto de um dia pro outro: quando o dia muda, zera a meta e as missões
+   do dia, confere a ofensiva e redesenha a tela (menos no meio de uma atividade) */
+let _dayWatchKey = dayKey();
+function checkDayChange(){
+  const k = dayKey();
+  if(k === _dayWatchKey) return;
+  _dayWatchKey = k;
+  if(!currentUser) return;
+  loadGame(); gameEnsureToday(); gameCheckStreak(); saveGame();
+  const busy = ['lesson','exerciseSession','challengeSession','personalizedSession','reviewErrorsSession','notePage','lightning','duel'].includes(state.screen);
+  if(!busy && typeof render==='function') render();
+  showStreakNote();
+}
+setInterval(checkDayChange, 30000);
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) checkDayChange(); });
+window.addEventListener('focus', checkDayChange);
+
+/* painel da ofensiva: dias da semana, recorde e próximo marco */
 function showStreakPanel(){
   const g = loadGame(), streak = gameStreakNow(), today = playedToday();
   const WD = ['D','S','T','Q','Q','S','S'];
@@ -5922,30 +5920,18 @@ function showStreakPanel(){
     <div class="big ${streak?'':'sk-off'}">🔥</div>
     <h2>${streak} dia${streak===1?'':'s'} de ofensiva</h2>
     <p>${today ? 'Você já jogou hoje. A chama está garantida! ✅'
-      : streak ? 'Responda 1 pergunta hoje pra não perder sua ofensiva!'
+      : streak ? 'Responda 1 pergunta hoje! Se passar o dia sem jogar, a ofensiva volta pra zero.'
       : 'Responda 1 pergunta pra acender sua ofensiva!'}</p>
     <div class="sk-week">${week}</div>
     <div class="sk-stats">
       <div><b>🏆 ${g.bestStreak||0}</b><span>recorde</span></div>
-      <div><b>🧊 <i class="sk-fz">${g.freezes}</i>/${STREAK_FREEZE_MAX}</b><span>protetores</span></div>
+      <div><b>📅 ${Object.keys(g.days||{}).filter(k=>g.days[k]===1 && dayDiff(k, dayKey())<7).length}/7</b><span>dias nesta semana</span></div>
     </div>
     ${next ? `<div class="sk-goal"><div class="sk-goal-t">Próximo marco: <b>${next[0]} dias</b> · +${next[1]} 🪙</div><div class="sk-bar"><i style="width:${pct}%"></i></div><small>faltam ${next[0]-streak} dia${next[0]-streak===1?'':'s'}</small></div>` : ''}
-    <p class="sk-help">O protetor 🧊 salva sua ofensiva sozinho se você ficar um dia sem jogar.</p>
-    <button type="button" class="sk-buy"></button>
+    <p class="sk-help">Jogue pelo menos 1 pergunta todo dia. Ficou um dia inteiro sem jogar, a ofensiva volta pra zero.</p>
     <button type="button" class="sk-close" style="margin-top:10px;background:rgba(255,255,255,.1);color:#fff">Fechar</button>
   </div>`;
-  const buy = bg.querySelector('.sk-buy');
-  function paintBuy(){
-    const full = g.freezes >= STREAK_FREEZE_MAX, gems = gemsNow();
-    buy.disabled = full || gems < STREAK_FREEZE_COST;
-    buy.textContent = full ? 'Protetores no máximo 🧊' : `Comprar protetor 🧊 por ${STREAK_FREEZE_COST} 🪙 (você tem ${gems})`;
-    bg.querySelector('.sk-fz').textContent = g.freezes;
-  }
-  paintBuy();
-  let bought = false;
-  buy.onclick = ()=>{ if(buyStreakFreeze()){ bought = true; paintBuy(); showFloat('+1 protetor 🧊'); } };
-  // só redesenha a tela se as moedas mudaram (e só nas telas que mostram moedas/ofensiva)
-  const close = ()=>{ bg.remove(); if(bought && ['home','path','achievements'].includes(state.screen)) render(); };
+  const close = ()=> bg.remove();
   bg.querySelector('.sk-close').onclick = close;
   bg.addEventListener('click', e=>{ if(e.target===bg) close(); });
   document.body.appendChild(bg);
@@ -7185,7 +7171,7 @@ const HELP_TOPICS = [
   {ico:'🗺️', t:'Trilha, episódios e fases', d:'Cada assunto é um episódio com 5 etapas: Fase 1 (fácil), Fase 2 (médio), Prêmio surpresa 🎁, Fase 3 (difícil) e a Grande final 🎤. Cada fase tem perguntas de múltipla escolha: toque numa resposta e depois em <b>CONFIRMAR</b>. Se errar, a resposta <b>não</b> é revelada: a alternativa errada fica riscada e você tenta de novo (tem o botão 💡 <b>Ver dica</b>). A explicação completa aparece quando você acertar. Já sabe um assunto? Use <b>Pular pra cá ⏩</b> e faça um teste de nivelamento.'},
   {ico:'❤️', t:'Vidas e moedas', d:'Você tem 5 vidas. Errar uma pergunta da Trilha gasta uma (só o primeiro erro de cada pergunta — tentar de novo não gasta mais), e elas voltam sozinhas (1 a cada 20 minutos). Sem vidas? Recarregue com 50 🪙 moedas, ou continue treinando em Exercícios, Quiz e Relâmpago, que não gastam vidas. Você ganha moedas completando fases e abrindo prêmios.'},
   {ico:'⭐', t:'XP e níveis', d:'Todo acerto dá XP (fácil 10, médio 15, difícil 25). Acertos seguidos formam um <b>combo 🔥</b> que aumenta o XP. Junte XP pra subir de nível e ganhar títulos novos, de "Aprendiz dos Números" até "Lenda da Matemática".'},
-  {ico:'🔥', t:'Ofensiva', d:'É quantos dias seguidos você jogou. Responda pelo menos uma pergunta por dia (ou jogue uma partida do Relâmpago) pra manter a chama acesa! Toque no 🔥 pra ver sua semana, seu recorde e o próximo marco: 3, 7, 14, 30 dias e além dão 🪙 moedas. O <b>protetor 🧊</b> salva sua ofensiva sozinho se você ficar um dia sem jogar (você começa com 1 e pode ter até 2; compre mais por 50 🪙).'},
+  {ico:'🔥', t:'Ofensiva', d:'É quantos dias seguidos você jogou. Responda pelo menos uma pergunta por dia (ou jogue uma partida do Relâmpago) pra manter a chama acesa. <b>Se passar um dia inteiro sem jogar, a ofensiva volta pra zero.</b> Toque no 🔥 pra ver sua semana, seu recorde e o próximo marco: 3, 7, 14, 30 dias e além dão 🪙 moedas.'},
   {ico:'🧠', t:'Revisão do dia', d:'O app lembra quando você praticou cada assunto. Depois de um tempo (1 dia se você ainda erra muito, até 7 dias se já domina), o assunto aparece em <b>Revisão do dia</b> na tela inicial. Revisar no momento certo é o que faz a matéria ficar na cabeça.'},
   {ico:'📝', t:'Relatório semanal', d:'Em Perfil → <b>Relatório semanal</b> você vê um resumo dos últimos 7 dias: dias estudados, questões, % de acerto, comparação com a semana anterior e sugestões. Dá pra <b>compartilhar</b> (WhatsApp, e-mail) ou <b>imprimir / salvar em PDF</b> pra mostrar a pais e professores.'},
   {ico:'👑', t:'Nível de domínio', d:'Cada assunto mostra seu nível: 🌱 Aprendendo, 📘 Praticando, ⭐ Proficiente e 👑 Dominado. Ele olha as suas <b>últimas 10 respostas</b>, então mostra o que você sabe hoje. Pra chegar em Dominado, acerte 9 de 10 com pelo menos 2 no difícil.'},
