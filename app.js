@@ -1467,7 +1467,7 @@ const SUBJECTS = [
       dificil:()=>{
         if(Math.random()<0.5){ const target=randInt(6,8); const known=[randInt(4,10),randInt(4,10),randInt(4,10)]; const need=4*target-known.reduce((a,b)=>a+b,0);
           if(need<0 || need>10) return SUBJECTS.find(x=>x.id==='estatistica').gen.dificil();
-          return mkSingle(`Nas 3 primeiras provas, Ana tirou ${known.join(', ')}. Que nota ela precisa tirar na 4ª prova pra ficar com média ${target}?`, need,
+          return mkSingle(`Nas 3 primeiras provas, um aluno tirou ${known.join(', ')}. Que nota ele precisa tirar na 4ª prova pra ficar com média ${target}?`, need,
             [`Pra ter média ${target} em 4 provas, a soma das notas precisa ser ${target} × 4 = ${4*target}.`, `Ela já tem ${known.join(' + ')} = ${4*target-need}.`, `Falta: ${4*target} − ${4*target-need} = ${need}.`]); }
         const nums=Array.from({length:6},()=>randInt(1,20)); const sorted=[...nums].sort((a,b)=>a-b); const med=(sorted[2]+sorted[3])/2;
         return mkSingle(`Qual é a mediana de ${nums.join(', ')}?`, med, [`Coloque em ordem: ${sorted.map((v,i)=>(i===2||i===3)?`<b>${v}</b>`:v).join(', ')}`, `São 6 números (quantidade par): faça a média dos dois do meio.`, `(${sorted[2]} + ${sorted[3]}) ÷ 2 = ${fmt(med)}`]);
