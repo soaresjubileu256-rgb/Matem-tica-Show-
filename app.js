@@ -2911,11 +2911,11 @@ function topbar(title, showBack, onBack){
 
 /* ---------------- barra de navegação inferior ---------------- */
 const BOTTOM_NAV_ITEMS = [
-  {screen:'home', icon:'⌂', label:'Início', group:['home','achievements','lightning','quizSetup','calculator','help','duel','certificates','certificate','notebook','notePage']},
+  {screen:'home', icon:'⌂', label:'Início', group:['home','achievements','lightning','quizSetup','calculator','help','duel','certificates','certificate','notebook','notePage','challengeDifficulty','challengeSession','personalizedSetup','personalizedSession','reviewErrorsSession','tabuada','solve','profile','settings']},
   {screen:'path', icon:'★', label:'Trilha', group:['path']},
   {screen:'content', icon:'∑', label:'Aprender', group:['content','subjectDetail','geoLab']},
   {screen:'exercisesSubjects', icon:'✎', label:'Exercícios', group:['exercisesSubjects','exerciseDifficulty','exerciseSession']},
-  {screen:'progress', icon:'↑', label:'Progresso', group:['progress','report']},
+  {screen:'progress', icon:'↑', label:'Progresso', group:['progress','report','history']},
 ];
 function bottomNav(){
   const bar = h(`<div class="bottom-nav"></div>`);
@@ -3001,7 +3001,7 @@ function homeScreen(){
 
   // aviso de erros pendentes — banner compacto, só aparece quando existem, logo no topo por ser acionável
   const reviewBanner = h(`
-    <button type="button" class="alert-banner" style="display:none">
+    <button type="button" class="alert-banner danger" style="display:none">
       <span class="sym">🔁</span>
       <span class="txt"><span class="title">Revisar meus erros</span><span class="sub review-count-text">Volte nas questões que você errou e tente de novo.</span></span>
       <span class="chev">›</span>
@@ -3100,7 +3100,17 @@ function masteryOf(d){
   if(acc>=0.6) return MASTERY_LEVELS[2];
   return MASTERY_LEVELS[1];
 }
-function masterySync(subjectId){ return masteryOf(progressCache && progressCacheUid===currentUserId() ? progressCache[subjectId] : null); }
+/* versão síncrona pras telas que desenham na hora: se o progresso ainda não foi carregado
+   na memória, lê direto do armazenamento (antes aparecia "Não iniciado" pra tudo) */
+function progressSync(){
+  const uid = currentUserId();
+  if(!(progressCache && progressCacheUid===uid)){
+    try{ const raw = localStorage.getItem(`${PROGRESS_KEY_BASE}:${uid}`); progressCache = raw ? JSON.parse(raw) : {}; }catch(e){ progressCache = {}; }
+    progressCacheUid = uid;
+  }
+  return progressCache;
+}
+function masterySync(subjectId){ return masteryOf(progressSync()[subjectId]); }
 function masteryChip(m){ return `<span class="mst-chip mst-${m.lvl}" title="${m.name}">${m.ico} ${m.name}</span>`; }
 
 /* ---------- ouvir a questão (leitura em voz alta) ---------- */
@@ -3773,8 +3783,8 @@ function duelScreen(){
 
   c.appendChild(h(`<div class="lt-start"><div class="big">⚔️</div><h2>Duelo a dois</h2><p>Dois jogadores no mesmo celular, frente a frente. Deite o aparelho na mesa: cada um fica com uma metade da tela. Quem acertar primeiro leva o ponto! São ${DUEL_ROUNDS} contas.</p></div>`));
   const form = h(`<div class="answer-form">
-    <div><label>Jogador de baixo</label><input class="duel-n1" maxlength="14"></div>
-    <div><label>Jogador de cima</label><input class="duel-n2" maxlength="14"></div>
+    <div><label>Jogador de baixo</label><input class="duel-n1" maxlength="14" aria-label="Nome do jogador de baixo"></div>
+    <div><label>Jogador de cima</label><input class="duel-n2" maxlength="14" aria-label="Nome do jogador de cima"></div>
   </div>`);
   form.querySelector('.duel-n1').value = names[0]; form.querySelector('.duel-n2').value = names[1];
   c.appendChild(form);
@@ -4163,7 +4173,7 @@ function subjectDetailScreen(){
   const wrap = document.createElement('div');
   wrap.appendChild(topbar(s.name, true, ()=>go('content')));
   const c = h(`<div class="content"></div>`);
-  c.appendChild(h(`<div class="learn-hero"><span class="sym-big mono">${s.sym}</span><h2>${s.name}</h2></div>`));
+  c.appendChild(h(`<div class="learn-hero" style="${unitStyle(Math.max(0, SUBJECTS.indexOf(s)))}"><span class="sym-big mono">${s.sym}</span><h2>${s.name}</h2></div>`));
   { const m = masterySync(s.id);
     c.appendChild(h(`<div class="mst-box"><div>${masteryChip(m)}${BNCC_ANO[s.id]?`<span class="bncc-tag">📚 BNCC · ${BNCC_ANO[s.id]}</span>`:''}</div><p>${m.next}</p></div>`)); }
   const explain = h(`<div class="explain-card"></div>`);
@@ -5287,7 +5297,8 @@ function calculatorScreen(){
   ];
   keys.forEach(([label,cls])=>{
     if(cls==='ghost'){ grid.appendChild(h(`<div></div>`)); return; }
-    const btn = h(`<button class="calc-key ${cls}">${label}</button>`);
+    const CALC_NAMES = {'⌫':'Apagar','%':'Porcentagem','÷':'Dividir','×':'Multiplicar','−':'Menos','+':'Mais',',':'Vírgula','=':'Igual','C':'Limpar tudo'};
+    const btn = h(`<button class="calc-key ${cls}"${CALC_NAMES[label]?` aria-label="${CALC_NAMES[label]}"`:''}>${label}</button>`);
     btn.onclick = ()=> calcPress(label);
     grid.appendChild(btn);
   });
@@ -5520,7 +5531,7 @@ async function settingsScreen(){
 
   // --- Conta ---
   c.appendChild(h(`<section class="block" style="margin-top:22px"><h3>Conta</h3></section>`));
-  const nameBox = h(`<div class="auth-field"><label>Nome</label><input type="text" class="settingsNameInput" value="${escHTML((currentUser&&currentUser.name)||'')}"></div>`);
+  const nameBox = h(`<div class="auth-field"><label>Nome</label><input type="text" class="settingsNameInput" aria-label="Nome" value="${escHTML((currentUser&&currentUser.name)||'')}"></div>`);
   c.appendChild(nameBox);
   const nameErrBox = h(`<div class="authErrorBox"></div>`);
   c.appendChild(nameErrBox);
@@ -5533,12 +5544,12 @@ async function settingsScreen(){
   };
   c.appendChild(saveNameBtn);
 
-  c.appendChild(h(`<div class="auth-field"><label>Senha atual</label><input type="password" class="settingsCurPass"></div>`));
-  const newPassField = h(`<div class="auth-field"><label>Nova senha</label><input type="password" class="settingsNewPass" autocomplete="new-password"></div>`);
+  c.appendChild(h(`<div class="auth-field"><label>Senha atual</label><input type="password" class="settingsCurPass" aria-label="Senha atual"></div>`));
+  const newPassField = h(`<div class="auth-field"><label>Nova senha</label><input type="password" class="settingsNewPass" autocomplete="new-password" aria-label="Nova senha"></div>`);
   const newPassMeter = attachStrengthMeter(newPassField.querySelector('input'), ()=> currentUser ? currentUser.name : '');
   newPassField.appendChild(newPassMeter);
   c.appendChild(newPassField);
-  c.appendChild(h(`<div class="auth-field"><label>Confirmar nova senha</label><input type="password" class="settingsNewPass2"></div>`));
+  c.appendChild(h(`<div class="auth-field"><label>Confirmar nova senha</label><input type="password" class="settingsNewPass2" aria-label="Confirmar nova senha"></div>`));
   const passErrBox = h(`<div class="authErrorBox"></div>`);
   c.appendChild(passErrBox);
   const savePassBtn = h(`<button class="btn secondary" style="width:100%;margin-bottom:20px;">Alterar senha</button>`);
