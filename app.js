@@ -5211,7 +5211,11 @@ function solveScreen(){
     const val = card.querySelector('#solveInput').value.trim();
     const resultBox = card.querySelector('#solveResult');
     resultBox.innerHTML = '';
-    if(!val){ return; }
+    if(!val){
+      resultBox.appendChild(h(`<div class="unrecognized">✏️ Digite uma conta ou equação primeiro, ou toque num dos exemplos acima.</div>`));
+      card.querySelector('#solveInput').focus();
+      return;
+    }
     const r = solveQuestion(val);
     if(!r){
       resultBox.appendChild(h(`<div class="unrecognized">Não consegui entender essa questão. 🤔<br>Tente reescrever de forma mais simples, como nos exemplos acima.</div>`));
@@ -5596,7 +5600,7 @@ async function settingsScreen(){
       importMsgBox.innerHTML = `<div class="auth-error">${res.error}</div>`;
     } else {
       importMsgBox.innerHTML = `<div class="auth-error" style="color:var(--pine);border-color:rgba(51,210,227,.3);background:rgba(51,210,227,.08);">Progresso importado! Atualizando…</div>`;
-      setTimeout(()=> go('profile'), 900);
+      setTimeout(()=>{ if(state.screen==='settings') go('profile'); }, 900); // só se a pessoa ainda estiver aqui
     }
   };
   c.appendChild(importBtn);
@@ -6928,7 +6932,7 @@ function statusPills(){
     <span class="sp gem">🪙 ${gemsNow()}</span>
     <button type="button" class="sp heart" aria-label="Vidas">❤️ ${hearts}${hearts<HEARTS_MAX?` <small>${fmtMinSec(nextHeartIn())}</small>`:''}</button>
   </div>`);
-  bar.querySelector('.heart').onclick = ()=>{ if(heartsNow()<HEARTS_MAX) showNoHearts(); };
+  bar.querySelector('.heart').onclick = ()=>{ if(heartsNow()<HEARTS_MAX) showNoHearts(); else showFloat('Vidas cheias ❤️'); };
   bar.querySelector('.fire').onclick = ()=> showStreakPanel();
   return bar;
 }
@@ -7099,7 +7103,9 @@ function markTutorialDone(){ const g = loadGame(); g.tutorialDone = true; saveGa
 
 function startTour(){
   if(_tourActive) return;
-  if(state.screen!=='home'){ go('home'); setTimeout(startTour, 400); return; }
+  // vai pro Início e começa o tour lá — mas só se a pessoa ainda estiver no Início
+  // (antes, se ela trocasse de tela nesse meio-tempo, era puxada de volta à força)
+  if(state.screen!=='home'){ go('home'); setTimeout(()=>{ if(state.screen==='home' && !_tourActive) startTour(); }, 400); return; }
   _tourActive = true;
   let i = 0;
   const root = document.createElement('div');
