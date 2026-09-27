@@ -59,7 +59,7 @@ function arenaScreen(){
   const total = SUBJECTS.length * 9, stars = arenaTotalStars();
   const quizBest = Math.max(0, ...Object.values(g.quizBest||{}));
   c.appendChild(h(`<div class="ar-hero">
-    <div class="ar-hero-t"><h2>Arena</h2><p>Jogue contra o relógio, ganhe estrelas e dispute com os amigos. Tudo aqui soma no seu XP, na ofensiva e no progresso.</p></div>
+    <div class="ar-hero-t"><h2>Desafie seus conhecimentos</h2><p>Uma área para quem gosta de competir: contra o relógio, por estrelas ou com um amigo. Tudo conta no seu progresso.</p></div>
     <div class="ar-hero-stats">
       <div><b>⭐ ${stars}</b><span>de ${total} estrelas</span></div>
       <div><b>⚡ ${g.boltBest||0}</b><span>recorde relâmpago</span></div>

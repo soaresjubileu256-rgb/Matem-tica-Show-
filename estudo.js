@@ -333,42 +333,47 @@ function chooseCardsLevel(subjectId){
    ========================================================= */
 function errorsScreen(){
   const wrap = document.createElement('div');
-  wrap.appendChild(topbar('🔁 Caderno de erros', true, ()=>go('home')));
-  const c = h(`<div class="content"><div class="ar-muted" style="padding:20px 0;text-align:center">Carregando…</div></div>`);
+  wrap.appendChild(topbar('Caderno de erros', true, ()=>go('home')));
+  const c = h(`<div class="content edu-content"><div class="ar-muted" style="padding:20px 0;text-align:center">Carregando…</div></div>`);
   wrap.appendChild(c);
   Promise.all([loadErrors(), loadProgress()]).then(([errs, progress])=>{
     if(!wrap.isConnected) return;
     c.innerHTML = '';
     const now = Date.now(), due = errs.filter(e=>errorIsDue(e, now)), learned = loadGame().errLearned || 0;
-    c.appendChild(h(`<div class="greeting"><h2>${due.length ? `${due.length} para revisar hoje` : errs.length ? 'Tudo em dia ✓' : 'Caderno vazio'}</h2>
-      <p>Toda questão que você erra vem para cá. Acertou na revisão, ela volta daqui a 3 e depois 7 dias. Acertou de novo, ela sai do caderno: você aprendeu.</p></div>`));
-    c.appendChild(h(`<div class="stat-grid ar-stats3"><div class="stat-card"><div class="num">${errs.length}</div><div class="lbl">no caderno</div></div><div class="stat-card"><div class="num">${due.length}</div><div class="lbl">para hoje</div></div><div class="stat-card acc"><div class="num">${learned}</div><div class="lbl">aprendidas</div></div></div>`));
-    if(!errs.length){ c.appendChild(h(`<div class="empty-note">Quando você errar uma questão em qualquer parte do app, ela aparece aqui para revisar.</div>`)); return; }
-    const acts = h(`<div class="cta-row" style="margin:6px 0 4px"></div>`);
-    const rv = h(`<button type="button" class="btn primary">${due.length ? `Revisar os ${Math.min(due.length, REVIEW_ERRORS_MAX)} de hoje` : 'Revisar mesmo assim'}</button>`);
+    if(!errs.length){
+      c.appendChild(h(`<div class="edu-hello"><h1>Nada para revisar</h1><p>Quando você errar uma questão em qualquer parte do app, ela aparece aqui com a explicação, para você aprender com ela.</p></div>`));
+      if(learned) c.appendChild(h(`<p class="edu-lead">Você já aprendeu ${learned} questão(ões) que tinha errado. 👏</p>`));
+      return;
+    }
+    c.appendChild(h(`<div class="edu-hello"><h1>Vamos revisar</h1><p>Errar faz parte de aprender. Estes são os assuntos em que você teve mais dificuldade.</p></div>`));
+    const by = {};
+    errs.forEach(e=>{ (by[e.subjectId] = by[e.subjectId] || []).push(e); });
+    const sec = eduSection('Você teve dificuldade em');
+    const l = h(`<div class="edu-list"></div>`);
+    Object.entries(by).sort((a,b)=> b[1].reduce((x,e)=>x+(e.count||1),0) - a[1].reduce((x,e)=>x+(e.count||1),0)).forEach(([id,arr])=>{
+      const s = subjById(id); if(!s) return;
+      const d = progress[id], acc = d && d.attempted ? Math.round(d.correct/d.attempted*100) : 0;
+      const dn = arr.filter(e=>errorIsDue(e, now)).length, times = arr.reduce((x,e)=>x+(e.count||1),0);
+      const r = h(`<button type="button" class="edu-row edu-row-bar"><span class="edu-ico">${s.sym}</span><span class="edu-row-t"><b></b><small>${acc}% de acerto · ${arr.length} questão(ões) para rever${times>arr.length?` · errou ${times}x`:''}${dn?` · ${dn} hoje`:''}</small>${eduBar(acc, `${s.name}: ${acc}% de acerto`)}</span><span class="edu-chev">›</span></button>`);
+      r.querySelector('b').textContent = s.name;
+      r.setAttribute('aria-label', `Revisar ${s.name}: ${arr.length} questões, ${acc}% de acerto`);
+      r.onclick = ()=> startReviewErrors({subjectId:id, all:!dn});
+      l.appendChild(r);
+    });
+    sec.appendChild(l);
+    c.appendChild(sec);
+    const acts = h(`<div class="edu-actions"></div>`);
+    const rv = h(`<button type="button" class="btn primary">${due.length ? 'Começar revisão' : 'Revisar mesmo assim'}</button>`);
     rv.onclick = ()=> startReviewErrors({all: !due.length});
     acts.appendChild(rv);
     const rec = recommendSubjects(progress, errs, 3);
     if(rec.length){
-      const tr = h(`<button type="button" class="btn secondary">Treino recomendado</button>`);
+      const tr = h(`<button type="button" class="btn secondary">Praticar questões novas desses assuntos</button>`);
       tr.onclick = ()=> startPersonalizedSession({subjectIds:rec, difficultyMode:'adaptativa', qty:10, focusWeak:rec.length>1, progress});
       acts.appendChild(tr);
     }
     c.appendChild(acts);
-    if(rec.length) c.appendChild(h(`<p class="ar-muted">Recomendado para você agora: <b>${rec.map(id=>subjById(id).name).join(', ')}</b> (pelos erros guardados e pelo acerto recente).</p>`));
-    const by = {};
-    errs.forEach(e=>{ (by[e.subjectId] = by[e.subjectId] || []).push(e); });
-    c.appendChild(h(`<h3 class="ar-label">Por assunto</h3>`));
-    Object.entries(by).sort((a,b)=> b[1].length - a[1].length).forEach(([id,arr])=>{
-      const s = subjById(id); if(!s) return;
-      const d = arr.filter(e=>errorIsDue(e, now)).length, times = arr.reduce((x,e)=>x+(e.count||1),0);
-      const diffs = ['facil','medio','dificil'].map(k=>[k, arr.filter(e=>e.difficulty===k).length]).filter(x=>x[1]);
-      const row = h(`<div class="ar-err"><div class="ar-err-h"><span class="ar-sym">${s.sym}</span><span class="ar-row-t"><b>${s.name}</b><small>${arr.length} questão(ões) · errou ${times}x · ${d} para hoje${diffs.length?' · '+diffs.map(([k,n])=>`${n} ${({facil:'fácil',medio:'média',dificil:'difícil'})[k]}`).join(', '):''}</small></span></div>
-        <div class="cta-row"><button type="button" class="btn secondary" data-a="t">Ver explicação</button><button type="button" class="btn primary" data-a="r">Revisar</button></div></div>`);
-      row.querySelector('[data-a=t]').onclick = ()=> go('subjectDetail', {subjectId:id});
-      row.querySelector('[data-a=r]').onclick = ()=> startReviewErrors({subjectId:id, all:!d});
-      c.appendChild(row);
-    });
+    c.appendChild(h(`<p class="edu-lead edu-small-note">${due.length} para revisar hoje · ${errs.length} no caderno · ${learned} já aprendida(s).<br>Como funciona: acertou na revisão, a questão volta em 3 dias e depois em 7 para fixar; acertou de novo, sai do caderno.</p>`));
   });
   return wrap;
 }

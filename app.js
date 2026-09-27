@@ -2268,7 +2268,7 @@ function recommendSubjects(progress, errs, n){
    Configurações — também separadas por conta
    ========================================================= */
 const SETTINGS_KEY_BASE = 'mathstudy-settings-v1';
-const DEFAULT_SETTINGS = { theme:'dark', sound:true, vibration:true, dailyGoal:10, schoolLevel:null, tts:true, textScale:'normal' };
+const DEFAULT_SETTINGS = { theme:'light', sound:true, vibration:true, dailyGoal:10, schoolLevel:null, tts:true, textScale:'normal' };
 /* assuntos "esperados" pra cada nível escolar — cumulativo (médio inclui tudo, fund2 inclui fund1).
    Usado só pra pré-selecionar os assuntos no Treino personalizado, nunca esconde nada: o
    usuário sempre pode marcar/desmarcar qualquer assunto depois. */
@@ -2285,6 +2285,8 @@ async function loadSettings(){
   try{
     const raw = localStorage.getItem(`${SETTINGS_KEY_BASE}:${uid}`);
     settingsCache = raw ? Object.assign({}, DEFAULT_SETTINGS, JSON.parse(raw)) : Object.assign({}, DEFAULT_SETTINGS);
+    // visual educacional (claro) vira o padrão uma vez para todo mundo; quem quiser volta ao escuro em Configurações
+    if(!settingsCache.eduUI){ settingsCache.eduUI = 1; settingsCache.theme = 'light'; try{ localStorage.setItem(`${SETTINGS_KEY_BASE}:${uid}`, JSON.stringify(settingsCache)); }catch(e){} }
   }catch(e){ settingsCache = Object.assign({}, DEFAULT_SETTINGS); }
   settingsCacheUid = uid;
   return settingsCache;
@@ -2816,6 +2818,7 @@ function renderAuth(mode, users){
 }
 
 async function boot(){
+  applyTheme('light'); // tela de entrada já no visual claro
   app.innerHTML = '<div class="content" style="padding-top:60px;text-align:center;color:var(--ink-soft)">Carregando…</div>';
   const users = await loadUsers();
   const savedId = await getSavedCurrentUserId();
@@ -2960,12 +2963,11 @@ function topbar(title, showBack, onBack){
 
 /* ---------------- barra de navegação inferior ---------------- */
 const BOTTOM_NAV_ITEMS = [
-  {screen:'home', icon:'⌂', label:'Início', group:['home','achievements','calculator','help','certificates','certificate','notebook','notePage','challengeDifficulty','challengeSession','personalizedSetup','personalizedSession','reviewErrorsSession','tabuada','solve','profile','settings','errors','placement','plan']},
-  {screen:'path', icon:'★', label:'Trilha', group:['path']},
-  {screen:'content', icon:'∑', label:'Aprender', group:['content','subjectDetail','geoLab','cardsDeck']},
-  {screen:'exercisesSubjects', icon:'✎', label:'Exercícios', group:['exercisesSubjects','exerciseDifficulty','exerciseSession']},
-  {screen:'arena', icon:'⚔', label:'Arena', group:['arena','arenaDaily','examSetup','examResult','lightning','quizSetup','duel']},
-  {screen:'progress', icon:'↑', label:'Progresso', group:['progress','report','history']},
+  {screen:'home', icon:'⌂', label:'Início', group:['home','help']},
+  {screen:'content', icon:'∑', label:'Aprender', group:['content','subjectDetail','geoLab','cardsDeck','notebook','notePage']},
+  {screen:'practice', icon:'✎', label:'Praticar', group:['practice','exercisesSubjects','exerciseDifficulty','exerciseSession','personalizedSetup','personalizedSession','reviewErrorsSession','errors','tabuada','challengeDifficulty','challengeSession','examSetup','examResult','placement','plan','solve']},
+  {screen:'progress', icon:'↗', label:'Progresso', group:['progress','report','history','achievements','certificates','certificate']},
+  {screen:'more', icon:'☰', label:'Mais', group:['more','arena','arenaDaily','lightning','quizSetup','duel','path','calculator','profile','settings']},
 ];
 function bottomNav(){
   const bar = h(`<div class="bottom-nav"></div>`);
@@ -2976,198 +2978,6 @@ function bottomNav(){
     bar.appendChild(btn);
   });
   return bar;
-}
-
-/* ---------------- HOME ---------------- */
-function homeScreen(){
-  const wrap = document.createElement('div');
-  const bar = topbar();
-  const initial = (currentUser && currentUser.name) ? currentUser.name.trim().charAt(0).toUpperCase() : '?';
-  const profileBtn = h(`<button class="auth-logout profile-btn-avatar" title="Perfil" aria-label="Abrir meu perfil">${escHTML(initial)}</button>`);
-  profileBtn.onclick = ()=> go('profile');
-  const helpBtn = h(`<button class="auth-logout tut-help-btn" title="Como usar" aria-label="Como usar o app">?</button>`);
-  helpBtn.onclick = ()=> go('help');
-  bar.appendChild(helpBtn);
-  bar.appendChild(profileBtn);
-  wrap.appendChild(bar);
-  const firstName = currentUser ? currentUser.name.split(' ')[0] : '';
-  const streakNow = gameStreakNow();
-  const hello = streakNow>0 && loadGame().lastDay!==dayKey()
-    ? `Olá${firstName? ', '+escHTML(firstName) : ''}! Jogue uma fase hoje pra não perder sua ofensiva de ${streakNow} dia${streakNow===1?'':'s'}! 🔥`
-    : pick([`Olá${firstName? ', '+escHTML(firstName) : ''}! Bora subir de nível hoje? 🚀`, `E aí${firstName? ', '+escHTML(firstName) : ''}! O palco é seu hoje! 🎤`, `Oi${firstName? ', '+escHTML(firstName) : ''}! Luzes, câmera... matemática! 🎬`]);
-  wrap.appendChild(mascotBubble(hello, 'happy'));
-  showStreakNote();
-  wrap.appendChild(playerCard());
-  wrap.appendChild(pathHero());
-  const duo = gameDuo();
-
-  // meta diária de questões — editável direto aqui, sem precisar ir em Configurações
-  const goalRow = h(`
-    <div class="mastery-row" style="display:none; margin:0 20px 16px;">
-      <div class="top">
-        <span class="name">🎯 Meta de hoje</span>
-        <span class="pct goal-num">0/0</span>
-      </div>
-      <div class="bar-track"><div class="bar-fill goal-bar" style="width:0%"></div></div>
-    </div>`);
-  const goalEditBtn = h(`<button type="button" class="link-btn" style="margin-top:8px; font-size:11.5px;">Mudar meta</button>`);
-  const goalEditRow = h(`<div class="diff-row" style="display:none; margin-top:8px; flex-wrap:wrap;"></div>`);
-  [5,10,15,20,30].forEach(n=>{
-    const chip = h(`<button type="button" class="diff-chip" style="flex:1 1 auto; padding:8px 14px; font-size:12.5px;">${n}</button>`);
-    chip.onclick = async ()=>{
-      const settings = await loadSettings();
-      settings.dailyGoal = n;
-      await saveSettings();
-      refreshGoal();
-      goalEditRow.style.display='none'; goalEditBtn.textContent='Mudar meta';
-    };
-    goalEditRow.appendChild(chip);
-  });
-  goalEditBtn.onclick = ()=>{
-    const open = goalEditRow.style.display==='none';
-    goalEditRow.style.display = open ? 'flex' : 'none';
-    goalEditBtn.textContent = open ? 'Fechar' : 'Mudar meta';
-  };
-  goalRow.appendChild(goalEditBtn);
-  goalRow.appendChild(goalEditRow);
-  wrap.appendChild(goalRow);
-  wrap.appendChild(missionsCard());
-  function refreshGoal(){
-    Promise.all([loadHistory(), loadSettings()]).then(([hist, settings])=>{
-      const todayStr = new Date().toDateString();
-      const doneToday = hist.filter(e=> new Date(e.ts).toDateString()===todayStr).length;
-      const goal = settings.dailyGoal || 10;
-      const pct = Math.max(0, Math.min(100, Math.round(doneToday/goal*100)));
-      goalRow.style.display = '';
-      goalRow.querySelector('.goal-num').textContent = `${doneToday}/${goal}`;
-      goalRow.querySelector('.goal-bar').style.width = pct+'%';
-      goalRow.querySelector('.name').textContent = doneToday>=goal ? '🎉 Meta de hoje concluída!' : '🎯 Meta de hoje';
-      goalEditRow.querySelectorAll('.diff-chip').forEach(ch=>{
-        ch.classList.toggle('active', parseInt(ch.textContent)===goal);
-      });
-    });
-  }
-  refreshGoal();
-
-  // aviso de erros pendentes — banner compacto, só aparece quando existem, logo no topo por ser acionável
-  const reviewBanner = h(`
-    <button type="button" class="alert-banner danger" style="display:none">
-      <span class="sym">🔁</span>
-      <span class="txt"><span class="title">Revisar meus erros</span><span class="sub review-count-text">Volte nas questões que você errou e tente de novo.</span></span>
-      <span class="chev">›</span>
-    </button>`);
-  reviewBanner.onclick = ()=> go('errors');
-  wrap.appendChild(reviewBanner);
-  loadErrors().then(errs=>{
-    // só aparece quando tem erro "vencido" hoje (os outros esperam o dia certo no caderno)
-    const due = errs.filter(e=>errorIsDue(e)).length;
-    if(due>0){
-      reviewBanner.style.display = '';
-      reviewBanner.querySelector('.title').textContent = 'Caderno de erros';
-      reviewBanner.querySelector('.review-count-text').textContent =
-        due===1 ? '1 questão errada pra revisar hoje.' : `${due} questões erradas pra revisar hoje.`;
-    }
-  });
-
-  // Arena: Desafio do Dia (igual pra todo mundo) e plano de estudos até a prova
-  const dk = isoDay(), dailyDone = arenaData().daily[dk];
-  const dailyBanner = h(`<button type="button" class="alert-banner ${dailyDone?'':'purple'}"><span class="sym">📅</span>
-    <span class="txt"><span class="title">Desafio do Dia #${dailyNumber(dk)}</span><span class="sub">${dailyDone ? `Feito: ${dailyDone.marks} ${dailyDone.ok}/${dailyDone.n}` : `${DAILY_N} perguntas, as mesmas pra todo mundo hoje · +${DAILY_BONUS_XP} XP`}</span></span><span class="chev">${dailyDone?'✓':'›'}</span></button>`);
-  dailyBanner.onclick = ()=> startDaily();
-  const pt = planToday(), plan = studyData().plan;
-  let planBanner = null;
-  if(plan){
-    const left = Math.round((new Date(plan.examDate+'T12:00') - new Date(dk+'T12:00'))/864e5);
-    planBanner = h(`<button type="button" class="alert-banner"><span class="sym">🗺️</span><span class="txt"><span class="title">${left>0 ? `Prova em ${left} dia${left===1?'':'s'}` : left===0 ? 'A prova é hoje!' : 'Plano de estudos'}</span>
-      <span class="sub">${pt ? 'Hoje: ' + (pt.subjects.map(id=>(SUBJECTS.find(x=>x.id===id)||{}).name).filter(Boolean).join(' + ') || '') + (pt.exam ? (pt.subjects.length?' + ':'')+'simulado' : '') : 'Ver o plano'}</span></span><span class="chev">›</span></button>`);
-    planBanner.onclick = ()=> go('plan');
-  }
-  // conta nova: sugere o teste de nivelamento; aparelho com o antigo Arena: oferece trazer o progresso
-  let placementCard = null;
-  if(!studyData().placement && totalAnswered() < 5){
-    placementCard = h(`<button type="button" class="alert-banner purple"><span class="sym">🧭</span><span class="txt"><span class="title">Descubra seu nível</span><span class="sub">Teste de nivelamento com 10 perguntas: mostra por onde começar</span></span><span class="chev">›</span></button>`);
-    placementCard.onclick = ()=> startPlacement();
-  }
-  let importCard = null;
-  const arenaOld = arenaV2Pending();
-  if(arenaOld){
-    importCard = h(`<div class="card ar-import"><b>📦 Encontramos progresso do Matemática Show Arena</b><p>${arenaOld.answered} questões e ${arenaOld.xp} XP guardados neste aparelho. Quer juntar tudo nesta conta? (XP, estrelas, simulados, caderno de erros e conquistas)</p>
-      <div class="cta-row"><button type="button" class="btn secondary" data-a="no">Agora não</button><button type="button" class="btn primary" data-a="yes">Trazer meu progresso</button></div></div>`);
-    importCard.querySelector('[data-a=no]').onclick = ()=>{ arenaV2Dismiss(); importCard.remove(); };
-    importCard.querySelector('[data-a=yes]').onclick = async ()=>{
-      const r = await arenaV2Import();
-      if(r){ queueToast('📦', 'Progresso do Arena trazido!', `+${r.xp} XP · ${r.answered} questões`); launchConfetti(120); }
-      render();
-    };
-  }
-
-  // revisão espaçada — assuntos que já "venceram" e precisam ser relembrados
-  const spacedBanner = h(`
-    <button type="button" class="alert-banner purple" style="display:none">
-      <span class="sym">🧠</span>
-      <span class="txt"><span class="title">Revisão do dia</span><span class="sub spaced-text"></span></span>
-      <span class="chev">›</span>
-    </button>`);
-  spacedBanner.onclick = ()=> startSpacedReview();
-  wrap.appendChild(spacedBanner);
-  loadProgress().then(progress=>{
-    const due = dueReviewSubjects(progress);
-    if(!due.length) return;
-    spacedBanner.style.display = '';
-    const names = due.slice(0,3).map(s=>s.name).join(', ');
-    spacedBanner.querySelector('.spaced-text').textContent = `Hora de relembrar: ${names}${due.length>3?` e mais ${due.length-3}`:''}.`;
-  });
-  if(tutorialDone()) setTimeout(()=>{ if(state.screen==='home' && wrap.isConnected) maybeAskBackup(); }, 1500);
-
-  // ordem da tela: continuar → pra fazer hoje → jogos rápidos → praticar → ferramentas e progresso
-  const secTitle = t=> h(`<h3 class="home-sec">${t}</h3>`);
-  const tileGrid = items=>{
-    const grid = h(`<div class="quick-grid six"></div>`);
-    items.forEach(item=>{
-      const tile = h(`<button type="button" class="quick-tile ${item.cls}"><span class="sym">${item.sym}</span><span class="label">${item.label}</span></button>`);
-      tile.onclick = ()=> item.screen==='placement' ? startPlacement() : go(item.screen, item.screen==='geoLab' ? {geoBack:'home'} : {});
-      grid.appendChild(tile);
-    });
-    return grid;
-  };
-  // "Pra fazer hoje": avisos (quando existem), meta e missões — appendChild move os blocos já criados pra cá
-  wrap.appendChild(secTitle('Pra fazer hoje'));
-  if(importCard) wrap.appendChild(importCard);
-  if(placementCard) wrap.appendChild(placementCard);
-  wrap.appendChild(dailyBanner);
-  if(planBanner) wrap.appendChild(planBanner);
-  wrap.appendChild(reviewBanner);
-  wrap.appendChild(spacedBanner);
-  wrap.appendChild(goalRow);
-  wrap.appendChild(wrap.querySelector('.missions'));
-  wrap.appendChild(secTitle('Jogos rápidos'));
-  wrap.appendChild(duo);
-  wrap.appendChild(secTitle('Praticar'));
-  wrap.appendChild(tileGrid([
-    {sym:'🎯', cls:'tile-train', label:'Treino personalizado', screen:'personalizedSetup'},
-    {sym:'🏆', cls:'challenge', label:'Desafios', screen:'challengeDifficulty'},
-    {sym:'×', cls:'tabuada', label:'Tabuada', screen:'tabuada'},
-    {sym:'⚔️', cls:'tile-duel', label:'Duelo a dois', screen:'duel'},
-    {sym:'?', cls:'solve', label:'Resolver questão', screen:'solve'},
-    {sym:'🔺', cls:'tile-geo', label:'Laboratório de Geometria', screen:'geoLab'},
-    {sym:'📝', cls:'tile-exam', label:'Simulado', screen:'examSetup'},
-    {sym:'🗺️', cls:'tile-plan', label:'Plano de estudos', screen:'plan'},
-    {sym:'🧭', cls:'tile-place', label:'Teste de nivelamento', screen:'placement'},
-  ]));
-  wrap.appendChild(secTitle('Ferramentas e progresso'));
-  wrap.appendChild(tileGrid([
-    {sym:'✏️', cls:'tile-report', label:'Caderno', screen:'notebook'},
-    {sym:'#', cls:'tile-calc', label:'Calculadora', screen:'calculator'},
-    {sym:'🕘', cls:'tile-hist', label:'Histórico', screen:'history'},
-    {sym:'🏅', cls:'tile-ach', label:'Conquistas', screen:'achievements'},
-    {sym:'📜', cls:'tile-cert', label:'Certificados', screen:'certificates'},
-    {sym:'📝', cls:'tile-rep', label:'Relatório semanal', screen:'report'},
-  ]));
-
-  wrap.appendChild(h(`<div class="footer-note">Seu professor de matemática digital 📐</div>`));
-  // primeiro acesso: tour guiado pelo Pi
-  if(!tutorialDone()) setTimeout(()=>{ if(state.screen==='home' && !tutorialDone() && wrap.isConnected) startTour(); }, 700);
-  return wrap;
 }
 
 /* ---------- nível de domínio por assunto ----------
@@ -4236,23 +4046,6 @@ function buildTabuadaSection(){
 }
 
 /* ---------------- CONTENT LIST ---------------- */
-function contentScreen(){
-  const wrap = document.createElement('div');
-  wrap.appendChild(topbar('Aprender', true, ()=>go('home')));
-  const c = h(`<div class="content"></div>`);
-  c.appendChild(h(`<p style="color:var(--ink-soft); font-size:14px; margin:2px 0 16px;">Escolha um assunto para estudar a teoria e ver exemplos.</p>`));
-  const lab = h(`<button type="button" class="alert-banner" style="margin:0 0 14px"><span class="sym">🔺</span><span class="txt"><span class="title">Laboratório de Geometria</span><span class="sub">Mexa nas figuras e veja área, perímetro, volume e ângulos mudando</span></span><span class="chev">›</span></button>`);
-  lab.onclick = ()=> go('geoLab', {geoBack:'content'});
-  c.appendChild(lab);
-  SUBJECTS.forEach((s,u)=>{
-    const row = h(`<button class="subject-row" style="${unitStyle(u)}"><span class="sym">${s.sym}</span><span class="txt"><span class="name">${s.name}</span><span class="subj-meta">${BNCC_ANO[s.id]?`📚 ${BNCC_ANO[s.id]} · `:''}${masteryChip(masterySync(s.id))}</span></span><span class="chev">›</span></button>`);
-    row.onclick = ()=>go('subjectDetail', {subjectId:s.id});
-    c.appendChild(row);
-  });
-  wrap.appendChild(c);
-  return wrap;
-}
-
 function renderExampleBody(ex){
   return ex.columns
     ? contaArmada(ex.columns.nums, ex.columns.op, ex.columns.result, ex.columns.carries, ex.columns.marks)
@@ -4262,41 +4055,6 @@ function renderExampleBody(ex){
     ? ex.qVisual
     : `<div class="mono">${ex.text}</div>`;
 }
-function subjectDetailScreen(){
-  const s = SUBJECTS.find(x=>x.id===state.subjectId) || SUBJECTS[0];
-  const wrap = document.createElement('div');
-  wrap.appendChild(topbar(s.name, true, ()=>go('content')));
-  const c = h(`<div class="content"></div>`);
-  c.appendChild(h(`<div class="learn-hero" style="${unitStyle(Math.max(0, SUBJECTS.indexOf(s)))}"><span class="sym-big mono">${s.sym}</span><h2>${s.name}</h2></div>`));
-  { const m = masterySync(s.id);
-    c.appendChild(h(`<div class="mst-box"><div>${masteryChip(m)}${BNCC_ANO[s.id]?`<span class="bncc-tag">📚 BNCC · ${BNCC_ANO[s.id]}</span>`:''}</div><p>${m.next}</p></div>`)); }
-  const explain = h(`<div class="explain-card"></div>`);
-  const examplesList = s.examples || [s.example];
-  const boxesHtml = examplesList.map(ex=>{
-    const stepsHtml = ex.steps ? `<div class="example-steps">${ex.steps.map((st,i)=>`<div class="ex-step"><span class="num">${i+1}</span><span class="txt">${st}</span></div>`).join('')}</div>` : '';
-    return `<div class="example-box"><div class="lbl">${ex.title}</div>${renderExampleBody(ex)}${stepsHtml}</div>`;
-  }).join('');
-  explain.innerHTML = s.learn + boxesHtml;
-  c.appendChild(explain);
-  const cta = h(`<div class="cta-row"><button class="btn primary sd-practice">Praticar este assunto</button><button class="btn secondary sd-cards">🃏 Cartões de revisão</button><button class="btn secondary sd-note">✏️ Anotar no caderno</button></div>`);
-  cta.querySelector('.sd-practice').onclick = ()=>go('exerciseDifficulty', {subjectId:s.id});
-  cta.querySelector('.sd-cards').onclick = ()=> chooseCardsLevel(s.id);
-  if(s.id==='geometria'){
-    const labBtn = h(`<button class="btn secondary sd-lab" style="flex-basis:100%">🔺 Abrir o Laboratório de Geometria</button>`);
-    labBtn.onclick = ()=> go('geoLab', {geoBack:'subjectDetail'});
-    cta.prepend(labBtn);
-  }
-  // cada botão pelo seu próprio nome (antes o ".secondary" pegava o do Laboratório e abria o caderno)
-  cta.querySelector('.sd-note').onclick = ()=>{
-    const mine = notesIndex().filter(n=>n.subjectId===s.id);
-    if(mine.length){ state.noteFilter = s.id; go('notebook'); } else chooseNewPage(s.id);
-  };
-  c.appendChild(cta);
-  wrap.appendChild(c);
-  return wrap;
-}
-
-/* ---------------- EXERCISES: subject list ---------------- */
 function exercisesSubjectsScreen(){
   const wrap = document.createElement('div');
   wrap.appendChild(topbar('Exercícios', true, ()=>go('home')));
@@ -4373,7 +4131,7 @@ function renderHintButton(container, subjectId){
 function renderDrillButton(container, subjectId, difficulty){
   if(!difficulty) return;
   const subj = SUBJECTS.find(s=>s.id===subjectId);
-  const btn = h(`<button type="button" class="drill-btn">🎯 Praticar mais ${subj? subj.name.toLowerCase() : 'esse assunto'} (5 questões)</button>`);
+  const btn = h(`<button type="button" class="drill-btn">↻ Tentar questões parecidas de ${subj? subj.name.toLowerCase() : 'esse assunto'} (5)</button>`);
   btn.onclick = ()=> startSession(subjectId, difficulty);
   container.appendChild(btn);
 }
@@ -4462,7 +4220,7 @@ function exerciseSessionScreen(){
   c.appendChild(sessionHud());
 
   const ex = sess.current;
-  const qcard = h(`<div class="question-card"><div class="qlabel">QUESTÃO ${sess.index+1} DE ${sess.total} · ${({facil:'FÁCIL',medio:'MÉDIO',dificil:'DIFÍCIL'})[sess.difficulty]}</div><div class="qtext mono"></div></div>`);
+  const qcard = h(`<div class="question-card"><div class="qlabel">Questão ${sess.index+1} de ${sess.total} · ${s.name} · ${({facil:'Fácil',medio:'Médio',dificil:'Difícil'})[sess.difficulty]}</div><div class="qtext mono"></div></div>`);
   const qtextEl = qcard.querySelector('.qtext');
   addSpeakButton(qcard, ex); addScratchButton(qcard, ex);
   if(ex.columns){
@@ -4516,21 +4274,7 @@ function exerciseSessionScreen(){
     wireSlashButtons(form);
   } else {
     const correct = sess.wasCorrect;
-    const fb = h(`<div class="feedback ${correct?'correct':'wrong'}"><div class="fb-title">${correct? cheerLine() : '✕ Quase! Veja como resolver:'}</div><div class="fb-explain"></div></div>`);
-    let stepsList = ex.steps;
-    if(ex.columns){
-      stepsList = [contaArmada(ex.columns.nums, ex.columns.op, fmt(ex.answer), ex.columns.carries, ex.columns.marks), ...ex.steps];
-    } else if(ex.visual){
-      const [ansN, ansD] = String(ex.displayAnswer).includes('/') ? ex.displayAnswer.split('/') : [ex.displayAnswer, null];
-      const ansToken = ansD ? {n:ansN, d:ansD} : ex.displayAnswer;
-      const visualWithResult = ex.visual.slice(0, -2).concat(['=', ansToken]);
-      stepsList = [fracRow(visualWithResult), ...ex.steps];
-    } else if(ex.solvedVisual){
-      stepsList = [ex.solvedVisual, ...ex.steps];
-    }
-    const stepsHtml = stepsList.map(st=>`<div class="step">${st}</div>`).join('');
-    const finalTxt = ex.displayAnswer ? ex.displayAnswer : (ex.type==='pair'? `x' = ${ex.answer[0]}  e  x'' = ${ex.answer[1]}` : ex.type==='xy'? `x = ${ex.answer.x}  e  y = ${ex.answer.y}` : fmt(ex.answer));
-    fb.querySelector('.fb-explain').innerHTML = stepsHtml + `<div class="step" style="margin-top:8px"><b>Resposta: ${finalTxt}</b></div>`;
+    const fb = learnFeedback(ex, correct, sess.subjectId);
     c.appendChild(fb);
     if(!correct) renderDrillButton(c, sess.subjectId, sess.difficulty);
     const nextBtn = h(`<button class="next-btn">${sess.index+1<sess.total? 'Próxima questão':'Ver resultado'}</button>`);
@@ -4675,21 +4419,7 @@ function reviewErrorsSessionScreen(){
     wireSlashButtons(form);
   } else {
     const correct = sess.wasCorrect;
-    const fb = h(`<div class="feedback ${correct?'correct':'wrong'}"><div class="fb-title">${correct? (item.reviewResult==='learned' ? '✓ Aprendido! Essa questão saiu do seu caderno de erros.' : `✓ Certinho! Ela volta em ${ERROR_BOX_DAYS[Math.min(3,(item.box||1)+1)]} dias pra fixar de vez.`) : '✕ Ainda não foi — ela volta amanhã pra você tentar de novo:'}</div><div class="fb-explain"></div></div>`);
-    let stepsList = ex.steps;
-    if(ex.columns){
-      stepsList = [contaArmada(ex.columns.nums, ex.columns.op, fmt(ex.answer), ex.columns.carries, ex.columns.marks), ...ex.steps];
-    } else if(ex.visual){
-      const [ansN, ansD] = String(ex.displayAnswer).includes('/') ? ex.displayAnswer.split('/') : [ex.displayAnswer, null];
-      const ansToken = ansD ? {n:ansN, d:ansD} : ex.displayAnswer;
-      const visualWithResult = ex.visual.slice(0, -2).concat(['=', ansToken]);
-      stepsList = [fracRow(visualWithResult), ...ex.steps];
-    } else if(ex.solvedVisual){
-      stepsList = [ex.solvedVisual, ...ex.steps];
-    }
-    const stepsHtml = stepsList.map(st=>`<div class="step">${st}</div>`).join('');
-    const finalTxt = ex.displayAnswer ? ex.displayAnswer : (ex.type==='pair'? `x' = ${ex.answer[0]}  e  x'' = ${ex.answer[1]}` : ex.type==='xy'? `x = ${ex.answer.x}  e  y = ${ex.answer.y}` : fmt(ex.answer));
-    fb.querySelector('.fb-explain').innerHTML = stepsHtml + `<div class="step" style="margin-top:8px"><b>Resposta: ${finalTxt}</b></div>`;
+    const fb = learnFeedback(ex, correct, item.subjectId, {okTitle: item.reviewResult==='learned' ? 'Aprendido! Essa questão saiu do seu caderno de erros.' : `Correto! Ela volta em ${ERROR_BOX_DAYS[Math.min(3,(item.box||1)+1)]} dias para fixar.`, badTitle:'Vamos entender o erro (ela volta amanhã para você tentar de novo)'});
     c.appendChild(fb);
     if(!correct) renderDrillButton(c, item.subjectId, item.difficulty);
     const nextBtn = h(`<button class="next-btn">${sess.index+1<sess.total? 'Próximo erro':'Ver resultado'}</button>`);
@@ -4821,21 +4551,7 @@ function challengeSessionScreen(){
     wireSlashButtons(form);
   } else {
     const correct = sess.wasCorrect;
-    const fb = h(`<div class="feedback ${correct?'correct':'wrong'}"><div class="fb-title">${correct? cheerLine() : '✕ Quase! Veja como resolver:'}</div><div class="fb-explain"></div></div>`);
-    let stepsList = ex.steps;
-    if(ex.columns){
-      stepsList = [contaArmada(ex.columns.nums, ex.columns.op, fmt(ex.answer), ex.columns.carries, ex.columns.marks), ...ex.steps];
-    } else if(ex.visual){
-      const [ansN, ansD] = String(ex.displayAnswer).includes('/') ? ex.displayAnswer.split('/') : [ex.displayAnswer, null];
-      const ansToken = ansD ? {n:ansN, d:ansD} : ex.displayAnswer;
-      const visualWithResult = ex.visual.slice(0, -2).concat(['=', ansToken]);
-      stepsList = [fracRow(visualWithResult), ...ex.steps];
-    } else if(ex.solvedVisual){
-      stepsList = [ex.solvedVisual, ...ex.steps];
-    }
-    const stepsHtml = stepsList.map(st=>`<div class="step">${st}</div>`).join('');
-    const finalTxt = ex.displayAnswer ? ex.displayAnswer : (ex.type==='pair'? `x' = ${ex.answer[0]}  e  x'' = ${ex.answer[1]}` : ex.type==='xy'? `x = ${ex.answer.x}  e  y = ${ex.answer.y}` : fmt(ex.answer));
-    fb.querySelector('.fb-explain').innerHTML = stepsHtml + `<div class="step" style="margin-top:8px"><b>Resposta: ${finalTxt}</b></div>`;
+    const fb = learnFeedback(ex, correct, sess.currentSubjectId);
     c.appendChild(fb);
     if(!correct) renderDrillButton(c, sess.currentSubjectId, sess.difficulty);
     const nextBtn = h(`<button class="next-btn">${sess.index+1<sess.total? 'Próxima questão':'Ver resultado'}</button>`);
@@ -5251,21 +4967,7 @@ function personalizedSessionScreen(){
     wireSlashButtons(form);
   } else {
     const correct = sess.wasCorrect;
-    const fb = h(`<div class="feedback ${correct?'correct':'wrong'}"><div class="fb-title">${correct? cheerLine() : '✕ Quase! Veja como resolver:'}</div><div class="fb-explain"></div></div>`);
-    let stepsList = ex.steps;
-    if(ex.columns){
-      stepsList = [contaArmada(ex.columns.nums, ex.columns.op, fmt(ex.answer), ex.columns.carries, ex.columns.marks), ...ex.steps];
-    } else if(ex.visual){
-      const [ansN, ansD] = String(ex.displayAnswer).includes('/') ? ex.displayAnswer.split('/') : [ex.displayAnswer, null];
-      const ansToken = ansD ? {n:ansN, d:ansD} : ex.displayAnswer;
-      const visualWithResult = ex.visual.slice(0, -2).concat(['=', ansToken]);
-      stepsList = [fracRow(visualWithResult), ...ex.steps];
-    } else if(ex.solvedVisual){
-      stepsList = [ex.solvedVisual, ...ex.steps];
-    }
-    const stepsHtml = stepsList.map(st=>`<div class="step">${st}</div>`).join('');
-    const finalTxt = ex.displayAnswer ? ex.displayAnswer : (ex.type==='pair'? `x' = ${ex.answer[0]}  e  x'' = ${ex.answer[1]}` : ex.type==='xy'? `x = ${ex.answer.x}  e  y = ${ex.answer.y}` : fmt(ex.answer));
-    fb.querySelector('.fb-explain').innerHTML = stepsHtml + `<div class="step" style="margin-top:8px"><b>Resposta: ${finalTxt}</b></div>`;
+    const fb = learnFeedback(ex, correct, sess.currentSubjectId);
     c.appendChild(fb);
     if(!correct) renderDrillButton(c, sess.currentSubjectId, sess.difficulty);
     const nextBtn = h(`<button class="next-btn">${sess.index+1<sess.total? 'Próxima questão':'Ver resultado'}</button>`);
@@ -5732,55 +5434,87 @@ async function settingsScreen(){
 }
 
 async function progressScreen(){
+  // aprendizagem primeiro: resumo, evolução, dificuldades e domínio por assunto; XP e conquistas em segundo plano
   const wrap = document.createElement('div');
   wrap.appendChild(topbar('Meu progresso', true, ()=>go('home')));
-  const c = h(`<div class="content"></div>`);
-  const p = await loadProgress();
-  const ids = Object.keys(p);
-  let totalAttempted=0, totalCorrect=0;
-  ids.forEach(id=>{ totalAttempted += p[id].attempted; totalCorrect += p[id].correct; });
-  const totalWrong = totalAttempted-totalCorrect;
-  const pct = totalAttempted? Math.round(totalCorrect/totalAttempted*100) : 0;
+  const c = h(`<div class="content edu-content"></div>`);
+  const [p, hist, errs] = await Promise.all([loadProgress(), loadHistory(), loadErrors()]);
+  let att = 0, ok = 0;
+  Object.values(p).forEach(d=>{ att += d.attempted||0; ok += d.correct||0; });
+  const strong = SUBJECTS.filter(s=>masteryOf(p[s.id]).lvl>=3).length;
+  const studied = SUBJECTS.filter(s=>(p[s.id]&&p[s.id].attempted) || (studyRead()[s.id]||[]).length).length;
+  const streak = gameStreakNow();
+  c.appendChild(h(`<p class="edu-lead">Como está o seu aprendizado.</p>`));
+  c.appendChild(h(`<div class="edu-stats edu-stats4"><div><b>${att}</b><span>exercícios feitos</span></div><div><b>${att ? Math.round(ok/att*100)+'%' : '—'}</b><span>de acerto</span></div>
+    <div><b>${studied}</b><span>assuntos estudados</span></div><div><b>${strong}</b><span>proficientes ou dominados</span></div></div>`));
 
-  const grid = h(`<div class="stat-grid"></div>`);
-  grid.appendChild(h(`<div class="stat-card"><div class="num">${totalAttempted}</div><div class="lbl">Questões resolvidas</div></div>`));
-  grid.appendChild(h(`<div class="stat-card acc"><div class="num">${pct}%</div><div class="lbl">Acerto geral</div></div>`));
-  grid.appendChild(h(`<div class="stat-card"><div class="num">${totalCorrect}</div><div class="lbl">Acertos</div></div>`));
-  grid.appendChild(h(`<div class="stat-card"><div class="num">${totalWrong}</div><div class="lbl">Erros</div></div>`));
-  c.appendChild(grid);
-  const reportBtn = h(`<button type="button" class="alert-banner" style="margin:0 0 16px"><span class="sym">📝</span><span class="txt"><span class="title">Relatório semanal</span><span class="sub">Resumo dos últimos 7 dias pra pais e professores</span></span><span class="chev">›</span></button>`);
-  reportBtn.onclick = ()=> go('report');
-  c.appendChild(reportBtn);
+  // evolução: últimos 7 dias
+  const days = [];
+  for(let i=6;i>=0;i--){ const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()-i); days.push({d, n:0, ok:0}); }
+  const t0 = days[0].d.getTime(), prevStart = t0 - 7*864e5;
+  let prevN = 0, prevOk = 0;
+  hist.forEach(e=>{
+    if(e.ts >= t0){ const k = Math.floor((new Date(e.ts).setHours(0,0,0,0) - t0)/864e5); if(days[k]){ days[k].n++; if(e.correct) days[k].ok++; } }
+    else if(e.ts >= prevStart){ prevN++; if(e.correct) prevOk++; }
+  });
+  const wN = days.reduce((a,x)=>a+x.n,0), wOk = days.reduce((a,x)=>a+x.ok,0), max = Math.max(1, ...days.map(x=>x.n));
+  const WD = ['dom','seg','ter','qua','qui','sex','sáb'];
+  const ev = h(`<section class="edu-sec"><div class="edu-sec-h"><h2>Evolução da semana</h2></div>
+    <div class="edu-card"><p class="edu-week-sum"></p><div class="edu-chart" role="img"></div></div></section>`);
+  const wAcc = wN ? Math.round(wOk/wN*100) : null, pAcc = prevN ? Math.round(prevOk/prevN*100) : null;
+  ev.querySelector('.edu-week-sum').innerHTML = wN
+    ? `<b>${wN}</b> questões nos últimos 7 dias, <b>${wAcc}%</b> de acerto${pAcc!==null ? ` (semana anterior: ${pAcc}%${wAcc>pAcc?' — melhorou!':''})` : ''}. Sequência atual: <b>${streak} dia${streak===1?'':'s'}</b>.`
+    : 'Nenhuma questão nos últimos 7 dias. Que tal começar hoje?';
+  const chart = ev.querySelector('.edu-chart');
+  chart.setAttribute('aria-label', 'Questões por dia: ' + days.map(x=>`${WD[x.d.getDay()]} ${x.n}`).join(', '));
+  days.forEach((x,i)=>{ chart.appendChild(h(`<div class="edu-col"><span class="edu-col-v">${x.n||''}</span><i style="height:${x.n ? Math.max(6, Math.round(x.n/max*100)) : 2}%"></i><span class="edu-col-l">${i===6?'hoje':WD[x.d.getDay()]}</span></div>`)); });
+  c.appendChild(ev);
 
-  c.appendChild(h(`<section class="block"><h3>Assuntos praticados</h3></section>`));
-  if(ids.length===0){
-    c.appendChild(h(`<div class="empty-note">Você ainda não praticou nenhum exercício.<br>Vá em "Exercícios" para começar! 🚀</div>`));
-  } else {
-    ids.forEach(id=>{
-      const s = SUBJECTS.find(x=>x.id===id);
-      if(!s) return;
-      const d = p[id];
-      const acc = d.attempted? Math.round(d.correct/d.attempted*100) : 0;
-      const mst = masteryOf(d);
-      const barCls = acc>=80? '' : acc>=50? 'mid':'low';
-      const row = h(`
-        <div class="mastery-row">
-          <div class="top">
-            <span class="name">${s.sym} &nbsp;${s.name} ${masteryChip(mst)}</span>
-            <span class="pct">${acc}%</span>
-          </div>
-          <div class="bar-track"><div class="bar-fill ${barCls}" style="width:${acc}%"></div></div>
-        </div>`);
-      c.appendChild(row);
+  // onde você tem dificuldade
+  const rec = recommendSubjects(p, errs, 3);
+  const dif = h(`<section class="edu-sec"><div class="edu-sec-h"><h2>Onde você tem dificuldade</h2></div></section>`);
+  if(rec.length){
+    const l = h(`<div class="edu-list"></div>`);
+    rec.forEach(id=>{
+      const s = SUBJECTS.find(x=>x.id===id), d = p[id], acc = d && d.attempted ? Math.round(d.correct/d.attempted*100) : 0, ne = errs.filter(e=>e.subjectId===id).length;
+      const r = h(`<button type="button" class="edu-row edu-row-bar"><span class="edu-ico">${s.sym}</span><span class="edu-row-t"><b></b><small>${acc}% de acerto${ne?` · ${ne} erro(s) guardado(s)`:''}</small>${eduBar(acc, s.name)}</span><span class="edu-chev">›</span></button>`);
+      r.querySelector('b').textContent = s.name;
+      r.onclick = ()=> go('subjectDetail', {subjectId:id});
+      l.appendChild(r);
     });
-  }
+    dif.appendChild(l);
+    const b = h(`<button type="button" class="btn primary edu-go">Revisar esses assuntos</button>`);
+    b.onclick = ()=> startPersonalizedSession({subjectIds:rec, difficultyMode:'adaptativa', qty:10, focusWeak:rec.length>1, progress:p});
+    dif.appendChild(b);
+  } else dif.appendChild(h(`<p class="edu-lead">${att ? 'Nenhuma dificuldade forte agora. Continue praticando!' : 'Responda alguns exercícios e aqui aparecem os assuntos que mais precisam de atenção.'}</p>`));
+  c.appendChild(dif);
 
-  if(totalAttempted>0){
-    const histBtn = h(`<button class="btn secondary" style="margin-top:6px;width:100%;">Ver histórico de questões respondidas</button>`);
-    histBtn.onclick = ()=> go('history');
-    c.appendChild(histBtn);
-  }
+  // domínio por assunto
+  const dm = h(`<section class="edu-sec"><div class="edu-sec-h"><h2>Domínio por assunto</h2></div></section>`);
+  LEARN_AREAS.forEach(a=>{
+    dm.appendChild(h(`<div class="edu-area-t">${a.name}</div>`));
+    const l = h(`<div class="edu-list"></div>`);
+    a.ids.forEach(id=>{
+      const s = SUBJECTS.find(x=>x.id===id); if(!s) return;
+      const d = p[id], m = masteryOf(d), acc = d && d.attempted ? Math.round(d.correct/d.attempted*100) : null;
+      const r = h(`<button type="button" class="edu-row edu-row-bar mastery-row"><span class="edu-ico">${s.sym}</span><span class="edu-row-t"><b></b><small>${m.ico} ${m.name}${acc!==null ? ` · ${acc}% de acerto em ${d.attempted}` : ''}</small>${eduBar(Math.round(m.lvl/4*100), `${s.name}: ${m.name}`)}</span><span class="edu-chev">›</span></button>`);
+      r.querySelector('b').textContent = s.name;
+      r.onclick = ()=> go('subjectDetail', {subjectId:id});
+      l.appendChild(r);
+    });
+    dm.appendChild(l);
+  });
+  c.appendChild(dm);
 
+  // secundário: nível, conquistas, relatório e histórico
+  const g = loadGame(), L = levelInfo(g.xp), nAch = Object.keys(g.ach||{}).length;
+  const more = eduSection('Mais sobre você');
+  const l2 = h(`<div class="edu-list"></div>`);
+  l2.appendChild(eduRow({ico:'★', title:`Nível ${L.level} · ${g.xp} XP`, sub:`${L.title} · ${nAch} conquista${nAch===1?'':'s'}`, go:()=>go('achievements')}));
+  l2.appendChild(eduRow({ico:'📝', title:'Relatório semanal', sub:'Resumo para pais e professores', go:()=>go('report')}));
+  if(att) l2.appendChild(eduRow({ico:'🕘', title:'Histórico de questões', sub:'Tudo o que você respondeu', go:()=>go('history')}));
+  more.appendChild(l2);
+  c.appendChild(more);
   wrap.appendChild(c);
   return wrap;
 }
@@ -6198,7 +5932,7 @@ function showLevelUp(info){
 function launchConfetti(count){
   try{
     if(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    count = count || 110;
+    count = Math.round((count || 110) * 0.4); // comemoração discreta
     const cv = document.createElement('canvas');
     cv.id = 'gm-confetti';
     const dpr = window.devicePixelRatio || 1;
@@ -6260,9 +5994,10 @@ function cheerLine(){
   return CHEERS[(sess.index||0) % CHEERS.length];
 }
 function sessionHud(){
+  // discreto: nada de XP competindo com a questão; só avisa quando há uma sequência de acertos
   const sess = state.session || {};
   const combo = sess.combo || 0;
-  return h(`<div class="sess-hud"><span class="combo ${combo>=2?'hot':''}">${combo>=2? `<span class="flame">🔥</span> Combo x${combo}` : '🔥 Combo x0'}</span><span class="xp">⭐ +${sess.xp||0} XP</span></div>`);
+  return h(`<div class="sess-hud" aria-live="polite">${combo>=3 ? `<span class="combo">${combo} acertos seguidos</span>` : ''}</div>`);
 }
 /* card de fim de sessão com estrelas, título e recompensas (substitui o placar simples) */
 function gameSessionEnd(c, correct, total, msg){
@@ -6297,35 +6032,6 @@ function gameSessionEnd(c, correct, total, msg){
     </div>`));
 }
 
-/* ---------- cartão do jogador + missões (home) ---------- */
-function playerCard(){
-  const g = loadGame();
-  const lv = levelInfo(g.xp);
-  const streak = gameStreakNow();
-  const name = currentUser ? currentUser.name : '';
-  const got = Object.keys(g.ach).length;
-  const card = h(`
-    <button type="button" class="player-card" aria-label="Meu nível e conquistas">
-      <div class="pc-top">
-        <div class="pc-level" style="--lv-pct:${lv.pct}%"><span>${lv.level}</span><small>NÍVEL</small></div>
-        <div class="pc-info">
-          <div class="pc-name">${escHTML(name)}</div>
-          <div class="pc-title">${escHTML(lv.title)}</div>
-          <div class="pc-xpbar"><i style="width:${lv.pct}%"></i></div>
-          <div class="pc-xptext">${lv.into}/${lv.need} XP pro nível ${lv.level+1}</div>
-        </div>
-      </div>
-      <div class="pc-stats four">
-        <div class="pc-stat pc-streak ${streak?'':'off'} ${streak && !playedToday()?'warn':''}"><b><span class="flame">🔥</span> ${streak}</b><span>${streak && !playedToday()?'jogue hoje!':'ofensiva'}</span></div>
-        <div class="pc-stat"><b>🪙 ${gemsNow()}</b><span>moedas</span></div>
-        <div class="pc-stat"><b>❤️ ${heartsNow()}</b><span>vidas</span></div>
-        <div class="pc-stat"><b>🏅 ${got}</b><span>medalhas</span></div>
-      </div>
-    </button>`);
-  card.onclick = ()=> go('achievements');
-  card.querySelector('.pc-streak').onclick = e=>{ e.stopPropagation(); showStreakPanel(); };
-  return card;
-}
 function missionsCard(){
   const box = h(`<div class="missions"><h3>📜 Missões do dia</h3></div>`);
   function paint(){
@@ -6628,7 +6334,7 @@ function mascotSVG(mood, size){
       <ellipse cx="50" cy="32" rx="25" ry="5" fill="url(#${id}h)"/>
       <rect x="36" y="6" width="28" height="26" rx="4" fill="url(#${id}h)"/>
       <rect x="36" y="23" width="28" height="5" fill="#B23FE0"/>
-      <text x="50" y="20" text-anchor="middle" font-family="Fraunces,serif" font-weight="700" font-size="13" fill="#FFB800">π</text>
+      <text x="50" y="20" text-anchor="middle" font-family="Inter,sans-serif" font-weight="700" font-size="13" fill="#FFB800">π</text>
     </g>
   </svg>`;
 }
@@ -7075,17 +6781,6 @@ function pathHero(){
   el.querySelector('button').onclick = ()=> go('path');
   return el;
 }
-function gameDuo(){
-  const g = loadGame(); const qb = g.quizBest || {};
-  const best = Math.max(0, ...Object.values(qb));
-  const el = h(`<div class="game-duo">
-    <button type="button" class="game-card quiz"><span class="gc-best">🏆 ${best.toLocaleString('pt-BR')}</span><div class="gc-ico">🎤</div><div class="gc-t">Quiz do Show</div><div class="gc-s">Responda rápido, ganhe mais pontos!</div></button>
-    <button type="button" class="game-card bolt"><span class="gc-best">🏆 ${g.boltBest}</span><div class="gc-ico">⚡</div><div class="gc-t">Relâmpago</div><div class="gc-s">60 segundos de contas sem parar!</div></button>
-  </div>`);
-  el.querySelector('.quiz').onclick = ()=> go('quizSetup');
-  el.querySelector('.bolt').onclick = ()=> go('lightning');
-  return el;
-}
 
 /* ---------- tela da trilha ---------- */
 function pathScreen(){
@@ -7197,24 +6892,22 @@ function quizSetupScreen(){
    primeira vez nas fases/quiz e a tela "Como usar".
    ========================================================= */
 const TOUR_STEPS = [
-  {sel:null, mood:'joy', title:'Bem-vindo ao Matemática Show! 🎬',
-   text:'Eu sou o Pi, o apresentador do show! Vou te mostrar rapidinho como tudo funciona. Leva menos de 1 minuto.'},
-  {sel:'.player-card', title:'Seu cartão de jogador',
-   text:'Aqui ficam seu <b>nível</b> e sua barra de <b>XP</b>. Cada acerto dá XP e faz você subir de nível. Embaixo: 🔥 <b>ofensiva</b> (dias seguidos jogando), 🪙 <b>moedas</b>, ❤️ <b>vidas</b> e 🏅 <b>medalhas</b>.'},
-  {sel:'.path-hero', title:'A Trilha 🗺️',
-   text:'O caminho principal! Cada assunto é um <b>episódio</b> com fases do fácil ao difícil, um prêmio surpresa e uma grande final. Complete uma fase pra liberar a próxima.'},
-  {sel:'.game-duo', title:'Jogos rápidos',
-   text:'🎤 <b>Quiz do Show</b>: 10 perguntas com cronômetro — quanto mais rápido, mais pontos.<br>⚡ <b>Relâmpago</b>: 60 segundos pra acertar o máximo de contas.'},
-  {sel:'.missions', title:'Missões do dia 📜',
-   text:'Todo dia aparecem missões novas. Quando completar uma, toque em <b>Pegar</b> pra ganhar XP extra!'},
-  {sel:'.bottom-nav', title:'Menu principal',
-   text:'<b>Trilha</b> leva direto pros episódios. <b>Aprender</b> tem a explicação de cada assunto com exemplos. <b>Exercícios</b> é pra treinar um assunto específico. <b>Progresso</b> mostra como você está indo.'},
-  {sel:'.quick-grid', title:'Mais ferramentas 🧰',
-   text:'Treino personalizado, desafios, tabuada, <b>Resolver questão</b> (digite uma conta e eu mostro o passo a passo), calculadora e suas conquistas.'},
+  {sel:null, mood:'joy', title:'Bem-vindo ao Matemática Show!',
+   text:'Aqui você aprende matemática de verdade: explicação, exemplos passo a passo, exercícios e correção que mostra onde você errou. Vamos conhecer o app em menos de 1 minuto.'},
+  {sel:'.edu-continue', title:'Continue de onde parou',
+   text:'Aqui aparece o assunto que você está estudando, a <b>próxima lição</b> e quanto já concluiu. Um toque e você volta exatamente de onde parou.'},
+  {sel:'.edu-areas', title:'Aprenda matemática',
+   text:'Os assuntos estão organizados em quatro áreas. Cada assunto tem <b>explicação</b>, <b>exemplos resolvidos</b>, <b>como resolver</b>, um exercício pra <b>tentar</b> e prática.'},
+  {sel:'.edu-list', title:'Pratique',
+   text:'Exercícios rápidos, <b>revisão dos seus erros</b> (o app explica o que deu errado) e o Resolver, que mostra o passo a passo de qualquer conta.'},
+  {sel:'.edu-today', title:'Desafio de hoje',
+   text:'Sua meta de questões do dia, as missões e o Desafio do Dia. Cada acerto dá XP e mantém sua 🔥 sequência de dias.'},
+  {sel:'.bottom-nav', title:'Menu',
+   text:'<b>Aprender</b> tem os conteúdos. <b>Praticar</b> reúne exercícios, revisão, simulados e plano de estudos. <b>Progresso</b> mostra sua evolução. Em <b>Mais</b> ficam a Arena, a Trilha, a calculadora e as conquistas.'},
   {sel:'.tut-help-btn', title:'Precisa de ajuda?',
    text:'Toque no <b>?</b> a qualquer momento pra abrir o guia "Como usar" ou rever este tour.'},
-  {sel:null, mood:'joy', title:'Tudo pronto! 🌟', final:true,
-   text:'Que tal começar pela primeira fase da Trilha? Errar faz parte — você pode tentar de novo e pedir uma dica sempre que precisar.'},
+  {sel:null, mood:'joy', title:'Tudo pronto!', final:true,
+   text:'Que tal começar pela primeira lição? Errar faz parte: a correção sempre mostra o caminho certo.'},
 ];
 let _tourActive = false;
 let _tourClose = null; // fecha o tour se a tela mudar (ex.: botão voltar do celular)
@@ -7238,7 +6931,7 @@ function startTour(){
     if(!keepPending) markTutorialDone();
     window.removeEventListener('resize', place); window.removeEventListener('scroll', place);
     root.remove();
-    if(goPath) go('path');
+    if(goPath){ const cs = continueStudying(), sb = cs ? cs.subject : firstSubjectToStudy(), tp = (cs && cs.topic) || subjectTopics(sb)[0]; go('subjectDetail', {subjectId:sb.id, topicId:tp.id}); }
   }
   function place(){
     const st = TOUR_STEPS[i];
@@ -7302,7 +6995,7 @@ function firstTimeTip(key, html){
 
 /* ---------- tela "Como usar" ---------- */
 const HELP_TOPICS = [
-  {ico:'🗺️', t:'Trilha, episódios e fases', d:'Cada assunto é um episódio com 5 etapas: Fase 1 (fácil), Fase 2 (médio), Prêmio surpresa 🎁, Fase 3 (difícil) e a Grande final 🎤. Cada fase tem perguntas de múltipla escolha: toque numa resposta e depois em <b>CONFIRMAR</b>. Se errar, a resposta <b>não</b> é revelada: a alternativa errada fica riscada e você tenta de novo (tem o botão 💡 <b>Ver dica</b>). A explicação completa aparece quando você acertar. Já sabe um assunto? Use <b>Pular pra cá ⏩</b> e faça um teste de nivelamento.'},
+  {ico:'🗺️', t:'Trilha, episódios e fases', d:'A Trilha (em <b>Praticar</b> ou <b>Mais</b>) é um jeito de praticar em forma de jogo. Cada assunto é um episódio com 5 etapas: Fase 1 (fácil), Fase 2 (médio), Prêmio surpresa 🎁, Fase 3 (difícil) e a Grande final 🎤. Se errar, a alternativa errada fica riscada e você tenta de novo (tem o botão 💡 <b>Ver dica</b>). Já sabe um assunto? Use <b>Pular pra cá ⏩</b> e faça um teste de nivelamento.'},
   {ico:'❤️', t:'Vidas e moedas', d:'Você tem 5 vidas. Errar uma pergunta da Trilha gasta uma (só o primeiro erro de cada pergunta — tentar de novo não gasta mais), e elas voltam sozinhas (1 a cada 20 minutos). Sem vidas? Recarregue com 50 🪙 moedas, ou continue treinando em Exercícios, Quiz e Relâmpago, que não gastam vidas. Você ganha moedas completando fases e abrindo prêmios.'},
   {ico:'⭐', t:'XP e níveis', d:'Todo acerto dá XP (fácil 10, médio 15, difícil 25). Acertos seguidos formam um <b>combo 🔥</b> que aumenta o XP. Junte XP pra subir de nível e ganhar títulos novos, de "Aprendiz dos Números" até "Lenda da Matemática".'},
   {ico:'🔥', t:'Ofensiva', d:'É quantos dias seguidos você jogou. Responda pelo menos uma pergunta por dia (ou jogue uma partida do Relâmpago) pra manter a chama acesa. <b>Se passar um dia inteiro sem jogar, a ofensiva volta pra zero.</b> Toque no 🔥 pra ver sua semana, seu recorde e o próximo marco: 3, 7, 14, 30 dias e além dão 🪙 moedas.'},
@@ -7313,24 +7006,27 @@ const HELP_TOPICS = [
   {ico:'✏️', t:'Caderno (escrever à mão)', d:'Funciona como uma mesa digitalizadora: escreva com o dedo ou com uma caneta stylus (ela sente a pressão: aperte mais pra um traço mais grosso). Com caneta, o dedo passa a só mover a página, então você pode apoiar a mão na tela. Dois dedos movem e dão zoom. Tem caneta, marca-texto, borracha, linha reta (fica reta sozinha na horizontal/vertical), retângulo, círculo, texto com símbolos (², √, π...) e papel quadriculado, pautado, pontilhado ou <b>plano cartesiano</b>. Nas questões, o botão ✏️ abre um <b>rascunho</b> pra fazer a conta à mão.'},
   {ico:'🔺', t:'Laboratório de Geometria', d:'Em Aprender → <b>Laboratório de Geometria</b>. <b>Áreas</b>: escolha a figura (quadrado, retângulo, triângulo, paralelogramo, trapézio, losango, círculo), mexa nas medidas e veja os quadradinhos de 1 cm², a área e o perímetro mudando, com a explicação de onde vem cada fórmula. <b>Sólidos</b>: cubo, paralelepípedo e cilindro com volume e área total. <b>Ângulos</b>: arraste os cantos do triângulo e veja que os ângulos sempre somam 180°.'},
   {ico:'⚔️', t:'Duelo a dois', d:'Dois jogadores no mesmo celular, frente a frente: deite o aparelho na mesa e cada um fica com metade da tela. Quem acertar primeiro leva o ponto; errou, fica travado até a próxima conta.'},
-  {ico:'📜', t:'Certificados', d:'Venceu a Grande final de um episódio? Ganha um certificado com seu nome, que dá pra imprimir ou salvar em PDF. Veja em <b>Certificados</b>, na tela inicial.'},
+  {ico:'📜', t:'Certificados', d:'Venceu a Grande final de um episódio da Trilha? Ganha um certificado com seu nome, que dá pra imprimir ou salvar em PDF. Veja em <b>Mais → Certificados</b>.'},
   {ico:'💾', t:'Backup do progresso', d:'Seu progresso fica salvo só neste aparelho. De vez em quando o app lembra você de salvar uma cópia. Você também pode fazer isso quando quiser em Configurações → <b>Exportar progresso</b>, e depois restaurar com <b>Importar</b>.'},
-  {ico:'📜', t:'Missões e meta do dia', d:'Todo dia aparecem missões novas na tela inicial. Quando completar uma, toque em <b>Pegar</b> pra receber o XP. A meta diária (quantas questões responder) você pode mudar ali mesmo, em "Mudar meta".'},
+  {ico:'📜', t:'Missões e meta do dia', d:'Na tela inicial, em <b>Desafio de hoje</b>: a meta de questões do dia (toque em "Mudar" pra ajustar), as <b>missões do dia</b> (toque pra ver e pegar o XP) e o Desafio do Dia.'},
   {ico:'🎤', t:'Quiz do Show', d:'10 perguntas de todos os assuntos, com 20 segundos cada. Quanto mais rápido você responde certo, mais pontos ganha, e acertos seguidos dão bônus. Pra sair no meio, toque no ✕ lá em cima.'},
   {ico:'⚡', t:'Relâmpago', d:'Você tem 60 segundos pra acertar o máximo de contas. Acertou: +1 ponto e +1 segundo. Errou: perde 3 segundos. Tente bater seu recorde!'},
-  {ico:'∑', t:'Aprender', d:'A explicação de cada assunto, em linguagem simples e com exemplos resolvidos passo a passo. Também dá pra abrir pelo botão 📖 de cada episódio da Trilha.'},
+  {ico:'∑', t:'Aprender', d:'Em <b>Aprender</b> os assuntos estão em quatro áreas. Cada assunto é uma sequência: <b>1. Explicação</b> (dividida em lições curtas), <b>2. Exemplos resolvidos</b> passo a passo, <b>3. Como resolver</b>, <b>4. Tente você</b> (uma questão com correção) e <b>5. Pratique</b>. Toque em "Entendi, próxima lição" pra marcar o que já estudou: o Início mostra de onde continuar.'},
   {ico:'✎', t:'Exercícios, Desafios e Treino personalizado', d:'<b>Exercícios</b>: 5 questões de um assunto, você escolhe a dificuldade. <b>Desafios</b>: 10 questões misturadas. <b>Treino personalizado</b>: você escolhe os assuntos (cada um mostra seu % de acerto), a dificuldade e a quantidade; o app lembra suas últimas escolhas. No fim, veja seu desempenho por assunto e use <b>Treinar o que errei</b>. Aqui você digita a resposta (use o botão <b>/</b> pra frações).'},
   {ico:'💡', t:'Dicas e explicações', d:'Travou? Toque em "💡 Preciso de uma dica" pra lembrar o método. Depois de responder, sempre aparece a resolução passo a passo, e na Trilha é só tocar em "📖 Ver explicação".'},
-  {ico:'🔁', t:'Revisar meus erros', d:'As questões que você errou ficam guardadas. Quando tiver alguma, aparece um aviso na tela inicial pra você tentar de novo. Acertou na revisão? Ela sai da lista.'},
+  {ico:'🔁', t:'Revisar meus erros', d:'Toda questão errada vai para o <b>Caderno de erros</b> (Praticar → Caderno de erros), com o assunto e a dificuldade. Na revisão, a correção mostra o raciocínio e a ideia principal. Acertou, ela volta em 3 dias e depois em 7 pra fixar; acertou de novo, sai do caderno. A mesma questão errada de novo não se repete: o app conta quantas vezes você errou e usa isso pra recomendar o que treinar.'},
+  {ico:'📝', t:'Simulado, plano e nivelamento', d:'Em <b>Praticar</b>: o <b>Simulado</b> é uma prova com tempo e nota de 0 a 10, com correção comentada; o <b>Plano de estudos</b> divide os assuntos até a data da prova, começando pelos mais fracos; o <b>Teste de nivelamento</b> tem 10 perguntas e mostra por onde começar.'},
+  {ico:'⚔️', t:'Arena', d:'Em <b>Mais → Arena</b>, pra quem gosta de competir: fases com estrelas (10 perguntas, 3 vidas e relógio), o <b>Desafio do Dia</b> (7 perguntas iguais pra todo mundo, com resultado pra compartilhar), Relâmpago, Quiz e Duelo.'},
+  {ico:'☰', t:'O menu do app', d:'<b>Início</b>: de onde continuar e o que fazer hoje. <b>Aprender</b>: os conteúdos. <b>Praticar</b>: exercícios, caderno de erros, revisão, simulado e plano de estudos. <b>Progresso</b>: sua evolução por assunto. <b>Mais</b>: Arena, Trilha, jogos, calculadora, caderno, conquistas, perfil e configurações.'},
   {ico:'?', t:'Resolver questão', d:'Digite uma conta, equação ou problema (ex.: <i>2x + 5 = 15</i> ou <i>25% de 300</i>) e o app mostra a resolução completa, passo a passo.'},
   {ico:'🏅', t:'Conquistas', d:'Medalhas que você desbloqueia jogando: combos, dias seguidos, recordes e muito mais. Veja todas na tela de Conquistas.'},
   {ico:'⚙️', t:'Perfil e configurações', d:'No Perfil (o círculo com sua inicial, lá em cima) você vê suas estatísticas. Em Configurações dá pra trocar entre tema claro e escuro, ligar/desligar som e vibração, e <b>exportar/importar</b> seu progresso pra não perder nada ao trocar de celular.'},
 ];
 /* grupos do "Como usar", na ordem em que a pessoa usa o app */
 const HELP_GROUPS = [
-  ['🚀 Começando', ['Trilha, episódios e fases','Vidas e moedas','XP e níveis','Ofensiva','Missões e meta do dia']],
-  ['📚 Estudar', ['Aprender','Dicas e explicações','Exercícios, Desafios e Treino personalizado','Revisar meus erros','Revisão do dia','Nível de domínio']],
-  ['🎮 Jogar', ['Quiz do Show','Relâmpago','Duelo a dois']],
+  ['📚 Estudar', ['O menu do app','Aprender','Dicas e explicações','Exercícios, Desafios e Treino personalizado','Revisar meus erros','Revisão do dia','Nível de domínio','Simulado, plano e nivelamento']],
+  ['🎯 Motivação', ['Missões e meta do dia','Ofensiva','XP e níveis']],
+  ['🎮 Jogar', ['Arena','Trilha, episódios e fases','Vidas e moedas','Quiz do Show','Relâmpago','Duelo a dois']],
   ['🧰 Ferramentas', ['Resolver questão','Laboratório de Geometria','Caderno (escrever à mão)','Ouvir a questão e tamanho do texto']],
   ['🏆 Seu progresso', ['Conquistas','Certificados','Relatório semanal']],
   ['⚙️ Conta e dados', ['Perfil e configurações','Backup do progresso']],
@@ -7364,9 +7060,11 @@ function helpScreen(){
 
 /* ---------------- router table ---------------- */
 const SCREENS = {
-  home: homeScreen,
-  content: contentScreen,
-  subjectDetail: subjectDetailScreen,
+  home: eduHomeScreen,
+  content: eduContentScreen,
+  subjectDetail: studyScreen,
+  practice: practiceScreen,
+  more: moreScreen,
   exercisesSubjects: exercisesSubjectsScreen,
   exerciseDifficulty: exerciseDifficultyScreen,
   exerciseSession: exerciseSessionScreen,
@@ -7449,7 +7147,7 @@ function renderAsyncSafe(){
     settingsScreen().then(el=>{ app.innerHTML=''; app.appendChild(el); app.appendChild(bottomNav()); });
     return;
   }
-  const fn = SCREENS[state.screen] || homeScreen;
+  const fn = SCREENS[state.screen] || eduHomeScreen;
   app.appendChild(fn());
   if(!['lesson','notePage','examRun'].includes(state.screen)) app.appendChild(bottomNav());
 }
