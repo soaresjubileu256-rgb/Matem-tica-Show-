@@ -3,7 +3,7 @@
    ========================================================= */
 
 /* ---------------- logo ---------------- */
-const LOGO_URI = 'icons/logo.png';
+const LOGO_URI = 'logo.png';
 
 function randInt(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
 function pick(arr){ return arr[randInt(0,arr.length-1)]; }
