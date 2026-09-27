@@ -4184,14 +4184,15 @@ function subjectDetailScreen(){
   }).join('');
   explain.innerHTML = s.learn + boxesHtml;
   c.appendChild(explain);
-  const cta = h(`<div class="cta-row"><button class="btn primary">Praticar este assunto</button><button class="btn secondary">✏️ Anotar no caderno</button></div>`);
-  cta.querySelector('.primary').onclick = ()=>go('exerciseDifficulty', {subjectId:s.id});
+  const cta = h(`<div class="cta-row"><button class="btn primary sd-practice">Praticar este assunto</button><button class="btn secondary sd-note">✏️ Anotar no caderno</button></div>`);
+  cta.querySelector('.sd-practice').onclick = ()=>go('exerciseDifficulty', {subjectId:s.id});
   if(s.id==='geometria'){
-    const labBtn = h(`<button class="btn secondary" style="flex-basis:100%">🔺 Abrir o Laboratório de Geometria</button>`);
+    const labBtn = h(`<button class="btn secondary sd-lab" style="flex-basis:100%">🔺 Abrir o Laboratório de Geometria</button>`);
     labBtn.onclick = ()=> go('geoLab', {geoBack:'subjectDetail'});
     cta.prepend(labBtn);
   }
-  cta.querySelector('.secondary').onclick = ()=>{
+  // cada botão pelo seu próprio nome (antes o ".secondary" pegava o do Laboratório e abria o caderno)
+  cta.querySelector('.sd-note').onclick = ()=>{
     const mine = notesIndex().filter(n=>n.subjectId===s.id);
     if(mine.length){ state.noteFilter = s.id; go('notebook'); } else chooseNewPage(s.id);
   };
