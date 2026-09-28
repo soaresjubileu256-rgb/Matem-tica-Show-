@@ -9,10 +9,10 @@
      se algum download falhar, a instalação falha e a versão antiga continua funcionando
    - o cache antigo só é apagado quando a versão nova assume (activate), com o cache novo pronto
    REGRA: a cada versão publicada, mude APP_VERSION aqui e o ?v= no index.html (senão quem já tem o app continua com os arquivos antigos). */
-const APP_VERSION = '23';            // o mesmo número vai no index.html (?v=23) — o teste confere
+const APP_VERSION = '24';            // o mesmo número vai no index.html (?v=24) — o teste confere
 const CACHE_VERSION = 'mat-show-v' + APP_VERSION;
 // JS e CSS levam a versão no endereço: um index.html novo nunca usa um script velho do cache
-const VERSIONED = ['style.css', 'storage.js', 'seguranca.js', 'arena.js', 'estudo.js', 'ensino.js', 'aprendizagem.js', 'app.js'].map(f=> `./${f}?v=${APP_VERSION}`);
+const VERSIONED = ['style.css', 'storage.js', 'seguranca.js', 'ui.js', 'arena.js', 'estudo.js', 'ensino.js', 'aprendizagem.js', 'app.js'].map(f=> `./${f}?v=${APP_VERSION}`);
 const APP_SHELL = [
   './', './index.html', ...VERSIONED,
   './manifest.json', './logo.png', './favicon-48.png', './apple-touch-icon.png', './icon-192.png', './icon-512.png', './maskable-512.png',

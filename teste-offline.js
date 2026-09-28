@@ -31,7 +31,7 @@ const URL = `http://127.0.0.1:${PORT}/index.html`;
   const tags = [...html.matchAll(/(?:src|href)="([a-z-]+\.(?:js|css))(\?v=(\d+))?"/g)];
   ok(tags.length >= 8 && tags.every(t=>t[3]===v), `index.html e sw.js na mesma versão (v${v}) em todos os ${tags.length} scripts/estilos`);
   const listed = [...sw.matchAll(/'\.\/([^'?]+)'/g)].map(m=>m[1]).concat([...sw.matchAll(/'([a-z-]+\.(?:js|css))'/g)].map(m=>m[1]));
-  const needed = fs.readdirSync(SRC).filter(f=>/\.(js|css|png|woff2|json)$/.test(f) && !/^teste-|^sw\.js$|^antes-e-depois/.test(f));
+  const needed = fs.readdirSync(SRC).filter(f=>/\.(js|css|png|woff2|json)$/.test(f) && !/^teste-|^rodar-testes|^sw\.js$|^antes-e-depois/.test(f));
   ok(needed.every(f=>listed.includes(f)), 'todo arquivo do app está na lista do service worker '+needed.filter(f=>!listed.includes(f)).join(','));
 
   await p.goto(URL); await W(1200);

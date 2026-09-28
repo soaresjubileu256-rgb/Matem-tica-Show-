@@ -158,9 +158,9 @@ function eduHomeScreen(){
   wrap.className = 'edu-home';
   const bar = topbar();
   const initial = (currentUser && currentUser.name) ? currentUser.name.trim().charAt(0).toUpperCase() : '?';
-  const helpBtn = h(`<button class="auth-logout tut-help-btn" title="Como usar" aria-label="Como usar o app">?</button>`);
+  const helpBtn = h(`<button type="button" class="auth-logout tut-help-btn" title="Como usar" aria-label="Como usar o app">?</button>`);
   helpBtn.onclick = ()=> go('help');
-  const profileBtn = h(`<button class="auth-logout profile-btn-avatar" title="Perfil" aria-label="Abrir meu perfil">${escHTML(initial)}</button>`);
+  const profileBtn = h(`<button type="button" class="auth-logout profile-btn-avatar" title="Perfil" aria-label="Abrir meu perfil">${escHTML(initial)}</button>`);
   profileBtn.onclick = ()=> go('profile');
   bar.appendChild(helpBtn); bar.appendChild(profileBtn);
   wrap.appendChild(bar);

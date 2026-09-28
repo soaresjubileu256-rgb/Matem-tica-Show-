@@ -232,12 +232,12 @@ function arenaQuizEnd(c, sess){
     c.appendChild(h(`<p class="le-sub">+${DAILY_BONUS_XP} XP de bônus pelo desafio. As perguntas que você errou foram para o seu caderno de erros.</p>`));
   }
   const foot = h(`<div class="lesson-footer static"></div>`);
-  const cont = h(`<button class="show-btn">CONTINUAR</button>`);
+  const cont = h(`<button type="button" class="show-btn">CONTINUAR</button>`);
   cont.onclick = ()=> go('arena');
   foot.appendChild(cont);
   if(!isDaily){
     const nextD = sess.unlockedNext;
-    const again = h(`<button class="show-btn ghost">${nextD ? `JOGAR NO ${ARENA_DIFF_NAME[nextD].toUpperCase()}` : 'JOGAR DE NOVO'}</button>`);
+    const again = h(`<button type="button" class="show-btn ghost">${nextD ? `JOGAR NO ${ARENA_DIFF_NAME[nextD].toUpperCase()}` : 'JOGAR DE NOVO'}</button>`);
     again.onclick = ()=> startArenaPhase(sess.subjectId, nextD || sess.diff);
     foot.appendChild(again);
   }
@@ -283,7 +283,7 @@ function arenaDailyScreen(){
     hist.forEach(([dk, x])=> l.appendChild(h(`<div class="ar-drow"><span>#${dailyNumber(dk)} · ${dk.split('-').reverse().slice(0,2).join('/')}</span><span class="ar-dm">${x.marks}</span><b>${x.ok}/${x.n}</b></div>`)));
     c.appendChild(l);
   }
-  const b = h(`<div class="lesson-footer static"><button class="show-btn">VOLTAR À ARENA</button></div>`);
+  const b = h(`<div class="lesson-footer static"><button type="button" class="show-btn">VOLTAR À ARENA</button></div>`);
   b.querySelector('button').onclick = ()=> go('arena');
   c.appendChild(b);
   return wrap;

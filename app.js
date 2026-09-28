@@ -1013,7 +1013,7 @@ function geoAngleTab(c){
   svg.addEventListener('pointerup', end); svg.addEventListener('pointercancel', end);
   const presets = h(`<div class="cta-row" style="margin-top:12px"></div>`);
   [['Equilátero',[[60,205],[260,205],[160,32]]],['Retângulo',[[70,200],[250,200],[70,60]]],['Obtusângulo',[[40,190],[280,190],[90,120]]]].forEach(([n,pts])=>{
-    const b = h(`<button class="btn secondary" style="flex:1; padding:10px 6px; font-size:13px">${n}</button>`);
+    const b = h(`<button type="button" class="btn secondary" style="flex:1; padding:10px 6px; font-size:13px">${n}</button>`);
     b.onclick = ()=>{ pts.forEach((p,i)=>{ P[i] = p.slice(); }); paint(); };
     presets.appendChild(b);
   });
@@ -2206,6 +2206,7 @@ async function recordAnswer(subjectId, correct, extra){
   return {ok};
 }
 async function recordAnswerNow(subjectId, correct, extra){
+  noteLearningMetric(subjectId, correct, false);
   const p = await loadProgress();
   bumpProgress(p, subjectId, correct, extra.difficulty);
   await saveProgress();
@@ -2228,6 +2229,43 @@ async function recordAnswerNow(subjectId, correct, extra){
   await saveHistory();
 
   if(!correct && entry.ex) await noteError(entry);
+}
+
+/* ---------- métricas educacionais (preparação; nada sai do aparelho) ----------
+   Por dia: questões respondidas, acertos, revisões feitas, tempo de estudo estimado e assuntos.
+   Tempo estimado = intervalo entre respostas seguidas, contando no máximo 3 minutos por intervalo
+   (quem parou para fazer outra coisa não "estuda" por horas). Guardado nos dados de jogo da conta
+   (entra no backup, some no reset) e limitado aos últimos 120 dias. */
+const METRICS_DAYS_KEEP = 120, METRICS_GAP_MAX = 180;
+function noteLearningMetric(subjectId, correct, isReview){
+  const g = loadGame();
+  const m = g.metrics = g.metrics || {days:{}, lastTs:0};
+  const now = Date.now(), k = isoDay();
+  const d = m.days[k] = m.days[k] || {answered:0, correct:0, reviews:0, secs:0, subjects:{}};
+  d.answered++; if(correct) d.correct++; if(isReview) d.reviews++;
+  const gap = m.lastTs ? (now - m.lastTs)/1000 : 0;
+  if(gap > 0) d.secs += Math.round(Math.min(gap, METRICS_GAP_MAX));
+  m.lastTs = now;
+  const sd = d.subjects[subjectId] = d.subjects[subjectId] || [0,0]; sd[0]++; if(correct) sd[1]++;
+  const keys = Object.keys(m.days).sort(); while(keys.length > METRICS_DAYS_KEEP) delete m.days[keys.shift()];
+  saveGame();
+}
+/* resumo pronto para telas futuras (tempo de estudo, acerto, fortes/fracos, evolução) */
+function learningMetrics(days){
+  const m = (loadGame().metrics || {days:{}}), since = isoDay(new Date(Date.now() - ((days||30)-1)*864e5));
+  const list = Object.entries(m.days).filter(([k])=> k >= since).sort(([a],[b])=> a < b ? -1 : 1);
+  const tot = {answered:0, correct:0, reviews:0, secs:0}, bySubject = {};
+  list.forEach(([,d])=>{ tot.answered += d.answered; tot.correct += d.correct; tot.reviews += d.reviews; tot.secs += d.secs;
+    Object.entries(d.subjects).forEach(([id,[n,ok]])=>{ const x = bySubject[id] = bySubject[id] || {n:0, ok:0}; x.n += n; x.ok += ok; }); });
+  const rated = Object.entries(bySubject).filter(([,x])=> x.n >= 5).map(([id,x])=> ({id, acc:x.ok/x.n, n:x.n})).sort((a,b)=> b.acc - a.acc);
+  const errs = (errorsCache && errorsCacheUid===currentUserId()) ? errorsCache : [];
+  return {
+    days: list.map(([day,d])=> ({day, answered:d.answered, correct:d.correct, reviews:d.reviews, minutes:Math.round(d.secs/60)})),
+    total: Object.assign(tot, {accuracy: tot.answered ? tot.correct/tot.answered : null, minutes: Math.round(tot.secs/60)}),
+    strong: rated.filter(x=> x.acc >= .8).map(x=> x.id),
+    weak: rated.filter(x=> x.acc < .6).map(x=> x.id).reverse(),
+    recurringErrors: errs.filter(e=> (e.count||1) >= 2).map(e=> ({subjectId:e.subjectId, question:e.ex && e.ex.question, count:e.count})),
+  };
 }
 
 /* ---------- caderno de erros inteligente (revisão espaçada por questão) ----------
@@ -2749,7 +2787,7 @@ function authScreen(mode, users){
   }
   function showError(msg){
     const box = card.querySelector('.authErrorBox');
-    if(box) box.innerHTML = `<div class="auth-error">${msg}</div>`;
+    if(box) box.innerHTML = `<div class="auth-error" role="alert">${msg}</div>`;
     card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
   }
   function wirePassToggles(){
@@ -2988,7 +3026,7 @@ function askExitApp(){
     // tenta sair de verdade (volta pra página anterior / fecha o app instalado);
     // se o navegador não deixar, mostra a tela de despedida
     app.innerHTML = '';
-    const bye = h(`<div class="content lesson-end"><div class="le-mascot">${mascotSVG('joy',120)}</div><h2 class="le-title">Até logo! 👋</h2><p class="le-sub">Seu progresso está salvo. Pode fechar o app.</p><div class="lesson-footer static"><button class="show-btn">Voltar pro app</button></div></div>`);
+    const bye = h(`<div class="content lesson-end"><div class="le-mascot">${mascotSVG('joy',120)}</div><h2 class="le-title">Até logo! 👋</h2><p class="le-sub">Seu progresso está salvo. Pode fechar o app.</p><div class="lesson-footer static"><button type="button" class="show-btn">Voltar pro app</button></div></div>`);
     bye.querySelector('button').onclick = ()=>{ pushHistoryState(); render(); };
     app.appendChild(bye);
     try{ history.back(); }catch(e){}
@@ -3062,7 +3100,7 @@ function h(html){ const d=document.createElement('div'); d.innerHTML=html.trim()
 function topbar(title, showBack, onBack){
   const bar = h(`<div class="topbar"></div>`);
   if(showBack){
-    const b = h(`<button class="back-btn" aria-label="Voltar">‹</button>`);
+    const b = h(`<button type="button" class="back-btn" aria-label="Voltar">‹</button>`);
     b.onclick = onBack || (()=>go('home'));
     bar.appendChild(b);
     const t = h(`<div class="screen-title"></div>`); t.textContent = title;
@@ -3086,7 +3124,7 @@ function bottomNav(){
   const bar = h(`<div class="bottom-nav"></div>`);
   BOTTOM_NAV_ITEMS.forEach(item=>{
     const active = item.group.includes(state.screen);
-    const btn = h(`<button class="bn-item ${active?'active':''}" ${active?'aria-current="page"':''}><span class="bn-icon" aria-hidden="true">${item.icon}</span><span class="bn-label">${item.label}</span></button>`);
+    const btn = h(`<button type="button" class="bn-item ${active?'active':''}" ${active?'aria-current="page"':''}><span class="bn-icon" aria-hidden="true">${item.icon}</span><span class="bn-label">${item.label}</span></button>`);
     btn.onclick = ()=>{ if(state.screen !== item.screen) go(item.screen); };
     bar.appendChild(btn);
   });
@@ -3625,7 +3663,7 @@ function notebookScreen(){
   const list = notesIndex();
   let filter = state.noteFilter || 'all';
   c.appendChild(h(`<p style="color:var(--ink-soft); font-size:14px; margin:2px 0 14px;">Escreva à mão como numa mesa digitalizadora: com o dedo ou com uma caneta (stylus). Use dois dedos pra mover e dar zoom.</p>`));
-  const newBtn = h(`<button class="btn primary" style="width:100%; margin-bottom:14px">＋ Nova página</button>`);
+  const newBtn = h(`<button type="button" class="btn primary" style="width:100%; margin-bottom:14px">＋ Nova página</button>`);
   newBtn.onclick = ()=> chooseNewPage();
   c.appendChild(newBtn);
 
@@ -3687,7 +3725,7 @@ function notePageScreen(){
   const saveSoon = ()=>{ clearTimeout(saveTimer); saveTimer = setTimeout(()=>saveNotePage(page), 500); paintUndo(); };
 
   const head = h(`<div class="nb-head">
-    <button class="back-btn" aria-label="Voltar">‹</button>
+    <button type="button" class="back-btn" aria-label="Voltar">‹</button>
     <input class="nb-title" maxlength="60" aria-label="Título da página">
     <button type="button" class="nb-icon nb-undo" aria-label="Desfazer" title="Desfazer">↶</button>
     <button type="button" class="nb-icon nb-redo" aria-label="Refazer" title="Refazer">↷</button>
@@ -3816,7 +3854,7 @@ function duelScreen(){
     lvRow.appendChild(chip);
   });
   c.appendChild(lvRow);
-  const start = h(`<button class="btn primary" style="width:100%">Começar duelo ⚔️</button>`);
+  const start = h(`<button type="button" class="btn primary" style="width:100%">Começar duelo ⚔️</button>`);
   start.onclick = ()=>{
     names = [form.querySelector('.duel-n1').value.trim()||'Jogador 1', form.querySelector('.duel-n2').value.trim()||'Jogador 2'];
     storage.set(`${DUEL_NAMES_KEY_BASE}:${currentUserId()}`, names);
@@ -3901,7 +3939,7 @@ function certificatesScreen(){
   c.appendChild(h(`<p style="color:var(--ink-soft); font-size:14px; margin:2px 0 16px;">Vença a <b>Grande final</b> de um episódio da Trilha pra ganhar o certificado daquele assunto. Dá pra imprimir ou salvar em PDF.</p>`));
   SUBJECTS.forEach(s=>{
     const got = units.includes(s);
-    const row = h(`<button class="subject-row" ${got?'':'disabled style="opacity:.5"'}><span class="sym">${got?'📜':'🔒'}</span><span class="txt"><span class="name">${s.name}</span><span class="subj-meta">${got?'Certificado liberado · toque pra ver':'Complete o episódio na Trilha'}</span></span><span class="chev">›</span></button>`);
+    const row = h(`<button type="button" class="subject-row" ${got?'':'disabled style="opacity:.5"'}><span class="sym">${got?'📜':'🔒'}</span><span class="txt"><span class="name">${s.name}</span><span class="subj-meta">${got?'Certificado liberado · toque pra ver':'Complete o episódio na Trilha'}</span></span><span class="chev">›</span></button>`);
     if(got) row.onclick = ()=> go('certificate', {subjectId:s.id});
     c.appendChild(row);
   });
@@ -3932,7 +3970,7 @@ function certificateScreen(){
   cert.querySelector('.cert-name').textContent = name || 'Estudante';
   c.appendChild(cert);
   const actions = h(`<div class="cta-row rp-actions" style="margin-top:16px"></div>`);
-  const pr = h(`<button class="btn primary">🖨️ Imprimir / PDF</button>`);
+  const pr = h(`<button type="button" class="btn primary">🖨️ Imprimir / PDF</button>`);
   pr.onclick = ()=> window.print();
   actions.appendChild(pr);
   c.appendChild(actions);
@@ -4055,14 +4093,14 @@ async function reportScreen(){
 
   c.appendChild(h(`<div class="rp-print-only rp-print-foot">Matemática Show · relatório dos últimos 7 dias (${fmtDM(r.start)} a ${fmtDM(r.end)}) · gerado em ${genAt}</div>`));
   const actions = h(`<div class="cta-row rp-actions" style="margin-top:18px"></div>`);
-  const shareBtn = h(`<button class="btn primary">📤 Compartilhar resumo</button>`);
+  const shareBtn = h(`<button type="button" class="btn primary">📤 Compartilhar resumo</button>`);
   shareBtn.onclick = async ()=>{
     const text = reportText(r);
     try{ if(navigator.share){ await navigator.share({title:'Relatório semanal — Matemática Show', text}); return; } }catch(e){ if(e && e.name==='AbortError') return; }
     try{ await navigator.clipboard.writeText(text); queueToast('📋', 'Resumo copiado!', 'Cole no WhatsApp, e-mail ou onde quiser'); }
     catch(e){ showConfirm({icon:'📋', title:'Copie o resumo', message:text, ok:'Ok', cancel:'Fechar'}); }
   };
-  const printBtn = h(`<button class="btn secondary">🖨️ Imprimir / PDF</button>`);
+  const printBtn = h(`<button type="button" class="btn secondary">🖨️ Imprimir / PDF</button>`);
   printBtn.onclick = ()=> window.print();
   actions.appendChild(shareBtn); actions.appendChild(printBtn);
   c.appendChild(actions);
@@ -4139,7 +4177,7 @@ function buildTabuadaSection(){
   let current = 1;
 
   for(let n=1;n<=10;n++){
-    const chip = h(`<button class="tabuada-chip">${n}</button>`);
+    const chip = h(`<button type="button" class="tabuada-chip">${n}</button>`);
     chip.onclick = ()=> selectN(n);
     chipsWrap.appendChild(chip);
   }
@@ -4179,7 +4217,7 @@ function exercisesSubjectsScreen(){
   const c = h(`<div class="content"></div>`);
   c.appendChild(h(`<p style="color:var(--ink-soft); font-size:14px; margin:2px 0 16px;">Escolha um assunto para praticar.</p>`));
   SUBJECTS.forEach((s,u)=>{
-    const row = h(`<button class="subject-row" style="${unitStyle(u)}"><span class="sym">${s.sym}</span><span class="txt"><span class="name">${s.name}</span><span class="subj-meta">${masteryChip(masterySync(s.id))}</span></span><span class="chev">›</span></button>`);
+    const row = h(`<button type="button" class="subject-row" style="${unitStyle(u)}"><span class="sym">${s.sym}</span><span class="txt"><span class="name">${s.name}</span><span class="subj-meta">${masteryChip(masterySync(s.id))}</span></span><span class="chev">›</span></button>`);
     row.onclick = ()=>go('exerciseDifficulty', {subjectId:s.id});
     c.appendChild(row);
   });
@@ -4195,7 +4233,7 @@ function exerciseDifficultyScreen(){
   c.appendChild(h(`<p style="color:var(--ink-soft); font-size:14px; margin:2px 0 16px;">Escolha a dificuldade para começar 5 exercícios.</p>`));
   const row = h(`<div class="diff-row"></div>`);
   [['facil','Fácil'],['medio','Médio'],['dificil','Difícil']].forEach(([id,label])=>{
-    const chip = h(`<button class="diff-chip" data-d="${id}">${label}</button>`);
+    const chip = h(`<button type="button" class="diff-chip" data-d="${id}">${label}</button>`);
     chip.onclick = ()=> startSession(s.id, id);
     row.appendChild(chip);
   });
@@ -4317,9 +4355,9 @@ function exerciseSessionScreen(){
     const pct = Math.round((sess.correct/sess.total)*100);
     gameSessionEnd(c, sess.correct, sess.total, `Você acertou ${pct}% dos exercícios de ${s.name}.`);
     const actions = h(`<div class="cta-row" style="margin-top:14px"></div>`);
-    const again = h(`<button class="btn primary">Praticar de novo</button>`);
+    const again = h(`<button type="button" class="btn primary">Praticar de novo</button>`);
     again.onclick = ()=> startSession(sess.subjectId, sess.difficulty);
-    const home = h(`<button class="btn secondary">Início</button>`);
+    const home = h(`<button type="button" class="btn secondary">Início</button>`);
     home.onclick = ()=> go('home');
     actions.appendChild(again); actions.appendChild(home);
     c.appendChild(actions);
@@ -4364,7 +4402,7 @@ function exerciseSessionScreen(){
     } else if(ex.type==='xy'){
       form.appendChild(h(`<div class="pair-row"><div style="flex:1"><label>x</label>${answerInputHTML('ans1','valor de x')}</div><div style="flex:1"><label>y</label>${answerInputHTML('ans2','valor de y')}</div></div>`));
     }
-    const btn = h(`<button class="check-btn">Corrigir</button>`);
+    const btn = h(`<button type="button" class="check-btn">Corrigir</button>`);
     btn.onclick = async ()=>{
       if(sess.checked || btn.disabled) return; // clique duplo / Enter repetido: corrige uma vez só
       btn.disabled = true;
@@ -4396,7 +4434,7 @@ function exerciseSessionScreen(){
     const correct = sess.wasCorrect;
     const fb = learnFeedback(ex, correct, sess.subjectId, {difficulty: sess.difficulty});
     c.appendChild(fb);
-    const nextBtn = h(`<button class="next-btn">${sess.index+1<sess.total? (correct ? 'Próxima questão' : 'Tentar uma questão parecida') : 'Ver resultado'}</button>`);
+    const nextBtn = h(`<button type="button" class="next-btn">${sess.index+1<sess.total? (correct ? 'Próxima questão' : 'Tentar uma questão parecida') : 'Ver resultado'}</button>`);
     nextBtn.onclick = ()=>{
       sess.index++;
       sess.checked=false; sess.wasCorrect=null;
@@ -4440,6 +4478,7 @@ async function recordReviewAnswer(item, correct){
   return {ok};
 }
 async function recordReviewAnswerNow(item, correct){
+  noteLearningMetric(item.subjectId, correct, true);
   const hist = await loadHistory();
   hist.unshift({
     id: `${Date.now()}_${Math.random().toString(36).slice(2,8)}`,
@@ -4467,7 +4506,7 @@ function reviewErrorsSessionScreen(){
     const pct = (sess && sess.total)? Math.round((sess.correct/sess.total)*100) : 0;
     gameSessionEnd(c, sess? sess.correct : 0, sess? sess.total : 0, `Você acertou ${pct}% na revisão dos seus erros.`);
     const actions = h(`<div class="cta-row" style="margin-top:14px"></div>`);
-    const home = h(`<button class="btn primary">Início</button>`);
+    const home = h(`<button type="button" class="btn primary">Início</button>`);
     home.onclick = ()=> go('home');
     actions.appendChild(home);
     c.appendChild(actions);
@@ -4515,7 +4554,7 @@ function reviewErrorsSessionScreen(){
     } else if(ex.type==='xy'){
       form.appendChild(h(`<div class="pair-row"><div style="flex:1"><label>x</label>${answerInputHTML('ans1','valor de x')}</div><div style="flex:1"><label>y</label>${answerInputHTML('ans2','valor de y')}</div></div>`));
     }
-    const btn = h(`<button class="check-btn">Corrigir</button>`);
+    const btn = h(`<button type="button" class="check-btn">Corrigir</button>`);
     btn.onclick = async ()=>{
       if(sess.checked || btn.disabled) return; // clique duplo / Enter repetido: corrige uma vez só
       btn.disabled = true;
@@ -4548,7 +4587,7 @@ function reviewErrorsSessionScreen(){
     const fb = learnFeedback(ex, correct, item.subjectId, {difficulty: item.difficulty, okTitle: item.reviewResult==='learned' ? 'Aprendido! Essa questão saiu do seu caderno de erros.' : `Correto! Ela volta em ${ERROR_BOX_DAYS[Math.min(3,(item.box||1)+1)]} dias para fixar.`, badTitle:'Vamos entender o erro (ela volta amanhã para você tentar de novo)'});
     c.appendChild(fb);
     if(!correct) renderDrillButton(c, item.subjectId, item.difficulty);
-    const nextBtn = h(`<button class="next-btn">${sess.index+1<sess.total? 'Próximo erro':'Ver resultado'}</button>`);
+    const nextBtn = h(`<button type="button" class="next-btn">${sess.index+1<sess.total? 'Próximo erro':'Ver resultado'}</button>`);
     nextBtn.onclick = ()=>{
       sess.index++;
       sess.checked=false; sess.wasCorrect=null;
@@ -4569,7 +4608,7 @@ function challengeDifficultyScreen(){
   c.appendChild(h(`<div class="greeting" style="margin-bottom:4px"><h2>🏆 Desafios</h2><p>10 questões sorteadas de todos os assuntos. Escolha a dificuldade.</p></div>`));
   const row = h(`<div class="diff-row"></div>`);
   [['facil','Fácil'],['medio','Médio'],['dificil','Difícil']].forEach(([id,label])=>{
-    const chip = h(`<button class="diff-chip" data-d="${id}">${label}</button>`);
+    const chip = h(`<button type="button" class="diff-chip" data-d="${id}">${label}</button>`);
     chip.onclick = ()=> startChallenge(id);
     row.appendChild(chip);
   });
@@ -4600,9 +4639,9 @@ function challengeSessionScreen(){
     const pct = Math.round((sess.correct/sess.total)*100);
     gameSessionEnd(c, sess.correct, sess.total, `Você acertou ${pct}% do desafio ${({facil:'fácil',medio:'médio',dificil:'difícil'})[sess.difficulty]}.`);
     const actions = h(`<div class="cta-row" style="margin-top:14px"></div>`);
-    const again = h(`<button class="btn primary">Novo desafio</button>`);
+    const again = h(`<button type="button" class="btn primary">Novo desafio</button>`);
     again.onclick = ()=> startChallenge(sess.difficulty);
-    const home = h(`<button class="btn secondary">Início</button>`);
+    const home = h(`<button type="button" class="btn secondary">Início</button>`);
     home.onclick = ()=> go('home');
     actions.appendChild(again); actions.appendChild(home);
     c.appendChild(actions);
@@ -4649,7 +4688,7 @@ function challengeSessionScreen(){
     } else if(ex.type==='xy'){
       form.appendChild(h(`<div class="pair-row"><div style="flex:1"><label>x</label>${answerInputHTML('ans1','valor de x')}</div><div style="flex:1"><label>y</label>${answerInputHTML('ans2','valor de y')}</div></div>`));
     }
-    const btn = h(`<button class="check-btn">Corrigir</button>`);
+    const btn = h(`<button type="button" class="check-btn">Corrigir</button>`);
     btn.onclick = async ()=>{
       if(sess.checked || btn.disabled) return; // clique duplo / Enter repetido: corrige uma vez só
       btn.disabled = true;
@@ -4682,7 +4721,7 @@ function challengeSessionScreen(){
     const fb = learnFeedback(ex, correct, sess.currentSubjectId, {difficulty: sess.difficulty});
     c.appendChild(fb);
     if(!correct) renderDrillButton(c, sess.currentSubjectId, sess.difficulty);
-    const nextBtn = h(`<button class="next-btn">${sess.index+1<sess.total? 'Próxima questão':'Ver resultado'}</button>`);
+    const nextBtn = h(`<button type="button" class="next-btn">${sess.index+1<sess.total? 'Próxima questão':'Ver resultado'}</button>`);
     nextBtn.onclick = ()=>{
       sess.index++;
       sess.checked=false; sess.wasCorrect=null;
@@ -4924,7 +4963,7 @@ async function personalizedSetupScreen(){
   const errorBox = h(`<div class="authErrorBox"></div>`);
   c.appendChild(errorBox);
 
-  const genBtn = h(`<button class="btn primary" style="width:100%;"></button>`);
+  const genBtn = h(`<button type="button" class="btn primary" style="width:100%;"></button>`);
   function paintSummary(){
     const n = selected.size;
     const modeLabel = PT_DIFF_MODES.find(([id])=>id===difficultyMode)[1];
@@ -5006,17 +5045,17 @@ function personalizedSessionScreen(){
     const {box, missedIds} = ptBreakdown(sess);
     const actions = h(`<div class="cta-row" style="margin-top:14px"></div>`);
     if(missedIds.length){
-      const fix = h(`<button class="btn primary" style="flex:1 1 100%">🔁 Treinar o que errei (${missedIds.length} assunto${missedIds.length===1?'':'s'})</button>`);
+      const fix = h(`<button type="button" class="btn primary" style="flex:1 1 100%">🔁 Treinar o que errei (${missedIds.length} assunto${missedIds.length===1?'':'s'})</button>`);
       fix.onclick = async ()=> startPersonalizedSession(Object.assign({}, sess.config, {
         subjectIds: missedIds, focusWeak: missedIds.length>1, qty: Math.min(sess.config.qty, 10), progress: await loadProgress(),
       }));
       actions.appendChild(fix);
     }
-    const again = h(`<button class="btn ${missedIds.length?'secondary':'primary'}">Repetir treino</button>`);
+    const again = h(`<button type="button" class="btn ${missedIds.length?'secondary':'primary'}">Repetir treino</button>`);
     again.onclick = async ()=> startPersonalizedSession(Object.assign({}, sess.config, {progress: await loadProgress()}));
-    const setup = h(`<button class="btn secondary">Novo treino</button>`);
+    const setup = h(`<button type="button" class="btn secondary">Novo treino</button>`);
     setup.onclick = ()=>go('personalizedSetup');
-    const home = h(`<button class="btn secondary">Início</button>`);
+    const home = h(`<button type="button" class="btn secondary">Início</button>`);
     home.onclick = ()=> go('home');
     actions.appendChild(again); actions.appendChild(setup); actions.appendChild(home);
     c.appendChild(actions);
@@ -5065,7 +5104,7 @@ function personalizedSessionScreen(){
     } else if(ex.type==='xy'){
       form.appendChild(h(`<div class="pair-row"><div style="flex:1"><label>x</label>${answerInputHTML('ans1','valor de x')}</div><div style="flex:1"><label>y</label>${answerInputHTML('ans2','valor de y')}</div></div>`));
     }
-    const btn = h(`<button class="check-btn">Corrigir</button>`);
+    const btn = h(`<button type="button" class="check-btn">Corrigir</button>`);
     btn.onclick = async ()=>{
       if(sess.checked || btn.disabled) return; // clique duplo / Enter repetido: corrige uma vez só
       btn.disabled = true;
@@ -5100,7 +5139,7 @@ function personalizedSessionScreen(){
     const fb = learnFeedback(ex, correct, sess.currentSubjectId, {difficulty: sess.difficulty});
     c.appendChild(fb);
     if(!correct) renderDrillButton(c, sess.currentSubjectId, sess.difficulty);
-    const nextBtn = h(`<button class="next-btn">${sess.index+1<sess.total? 'Próxima questão':'Ver resultado'}</button>`);
+    const nextBtn = h(`<button type="button" class="next-btn">${sess.index+1<sess.total? 'Próxima questão':'Ver resultado'}</button>`);
     nextBtn.onclick = ()=>{
       sess.index++;
       sess.checked=false; sess.wasCorrect=null;
@@ -5132,7 +5171,7 @@ function solveScreen(){
           <span class="ex-chip">1/2 + 1/3</span>
           <span class="ex-chip">3/6 = 5/x</span>
         </div>
-        <button class="solve-btn">Resolver</button>
+        <button type="button" class="solve-btn">Resolver</button>
       </div>
       <div id="solveResult"></div>
     </div>
@@ -5195,33 +5234,33 @@ function calculatorScreen(){
   c.appendChild(disp);
 
   const toggleRow = h(`<div class="calc-toggle-row"></div>`);
-  const basicChip = h(`<button class="calc-toggle-chip ${!st.sciMode?'active':''}">🔢 Básica</button>`);
+  const basicChip = h(`<button type="button" class="calc-toggle-chip ${!st.sciMode?'active':''}">🔢 Básica</button>`);
   basicChip.onclick = ()=>{ st.sciMode=false; render(); };
-  const sciChip = h(`<button class="calc-toggle-chip ${st.sciMode?'active':''}">🔬 Científica</button>`);
+  const sciChip = h(`<button type="button" class="calc-toggle-chip ${st.sciMode?'active':''}">🔬 Científica</button>`);
   sciChip.onclick = ()=>{ st.sciMode=true; render(); };
   toggleRow.appendChild(basicChip); toggleRow.appendChild(sciChip);
   c.appendChild(toggleRow);
 
   if(st.sciMode){
     const sciGrid = h(`<div class="calc-sci-grid"></div>`);
-    const angleBtn = h(`<button class="calc-key sci active-mode">${st.angleMode}</button>`);
+    const angleBtn = h(`<button type="button" class="calc-key sci active-mode">${st.angleMode}</button>`);
     angleBtn.onclick = ()=>{ st.angleMode = st.angleMode==='DEG' ? 'RAD' : 'DEG'; render(); };
     sciGrid.appendChild(angleBtn);
     const sciKeys1 = ['π','e','xʸ','±'];
     sciKeys1.forEach(label=>{
-      const btn = h(`<button class="calc-key sci">${label}</button>`);
+      const btn = h(`<button type="button" class="calc-key sci">${label}</button>`);
       btn.onclick = ()=> calcPress(label);
       sciGrid.appendChild(btn);
     });
     const sciKeys2 = ['sin','cos','tan','√'];
     sciKeys2.forEach(label=>{
-      const btn = h(`<button class="calc-key sci">${label}</button>`);
+      const btn = h(`<button type="button" class="calc-key sci">${label}</button>`);
       btn.onclick = ()=> calcPress(label);
       sciGrid.appendChild(btn);
     });
     const sciKeys3 = ['x²','1/x','ln','log'];
     sciKeys3.forEach(label=>{
-      const btn = h(`<button class="calc-key sci">${label}</button>`);
+      const btn = h(`<button type="button" class="calc-key sci">${label}</button>`);
       btn.onclick = ()=> calcPress(label);
       sciGrid.appendChild(btn);
     });
@@ -5239,7 +5278,7 @@ function calculatorScreen(){
   keys.forEach(([label,cls])=>{
     if(cls==='ghost'){ grid.appendChild(h(`<div></div>`)); return; }
     const CALC_NAMES = {'⌫':'Apagar','%':'Porcentagem','÷':'Dividir','×':'Multiplicar','−':'Menos','+':'Mais',',':'Vírgula','=':'Igual','C':'Limpar tudo'};
-    const btn = h(`<button class="calc-key ${cls}"${CALC_NAMES[label]?` aria-label="${CALC_NAMES[label]}"`:''}>${label}</button>`);
+    const btn = h(`<button type="button" class="calc-key ${cls}"${CALC_NAMES[label]?` aria-label="${CALC_NAMES[label]}"`:''}>${label}</button>`);
     btn.onclick = ()=> calcPress(label);
     grid.appendChild(btn);
   });
@@ -5479,7 +5518,7 @@ async function settingsScreen(){
   c.appendChild(nameBox);
   const nameErrBox = h(`<div class="authErrorBox"></div>`);
   c.appendChild(nameErrBox);
-  const saveNameBtn = h(`<button class="btn secondary" style="width:100%;margin-bottom:20px;">Salvar nome</button>`);
+  const saveNameBtn = h(`<button type="button" class="btn secondary" style="width:100%;margin-bottom:20px;">Salvar nome</button>`);
   saveNameBtn.onclick = async ()=>{
     const newName = nameBox.querySelector('.settingsNameInput').value;
     const res = await renameCurrentUser(newName);
@@ -5496,7 +5535,7 @@ async function settingsScreen(){
   c.appendChild(h(`<div class="auth-field"><label>Confirmar nova senha</label><input type="password" class="settingsNewPass2" aria-label="Confirmar nova senha"></div>`));
   const passErrBox = h(`<div class="authErrorBox"></div>`);
   c.appendChild(passErrBox);
-  const savePassBtn = h(`<button class="btn secondary" style="width:100%;margin-bottom:20px;">Alterar senha</button>`);
+  const savePassBtn = h(`<button type="button" class="btn secondary" style="width:100%;margin-bottom:20px;">Alterar senha</button>`);
   savePassBtn.onclick = async ()=>{
     const cur = c.querySelector('.settingsCurPass').value;
     const n1 = c.querySelector('.settingsNewPass').value;
@@ -5515,7 +5554,7 @@ async function settingsScreen(){
 
   // --- Dados ---
   c.appendChild(h(`<section class="block"><h3>Dados</h3></section>`));
-  const exportBtn = h(`<button class="btn secondary" style="width:100%;margin-bottom:10px;">Exportar progresso</button>`);
+  const exportBtn = h(`<button type="button" class="btn secondary" style="width:100%;margin-bottom:10px;">Exportar progresso</button>`);
   exportBtn.onclick = async ()=>{
     const ok = await exportProgressData();
     exportBtn.textContent = ok ? 'Exportado! ✓' : 'Não foi possível exportar';
@@ -5525,7 +5564,7 @@ async function settingsScreen(){
 
   const importInput = h(`<input type="file" accept="application/json,.json" style="display:none">`);
   c.appendChild(importInput);
-  const importBtn = h(`<button class="btn secondary" style="width:100%;margin-bottom:10px;">Importar progresso</button>`);
+  const importBtn = h(`<button type="button" class="btn secondary" style="width:100%;margin-bottom:10px;">Importar progresso</button>`);
   const importMsgBox = h(`<div class="authErrorBox"></div>`);
   importBtn.onclick = ()=> importInput.click();
   importInput.onchange = async ()=>{
@@ -5545,7 +5584,7 @@ async function settingsScreen(){
   c.appendChild(importBtn);
   c.appendChild(importMsgBox);
 
-  const resetBtn = h(`<button class="btn secondary" style="width:100%; border-color:rgba(255,92,122,.3); color:var(--coral-deep, #FF5C7A);">Resetar progresso</button>`);
+  const resetBtn = h(`<button type="button" class="btn secondary" style="width:100%; border-color:rgba(255,92,122,.3); color:var(--coral-deep, #FF5C7A);">Resetar progresso</button>`);
   let confirmingReset = false;
   resetBtn.onclick = async ()=>{
     if(!confirmingReset){
@@ -5691,7 +5730,7 @@ async function historyScreen(){
 
   const list = h(`<div class="history-list"></div>`);
   c.appendChild(list);
-  const moreBtn = h(`<button class="btn secondary" style="margin-top:4px;width:100%;">Ver mais</button>`);
+  const moreBtn = h(`<button type="button" class="btn secondary" style="margin-top:4px;width:100%;">Ver mais</button>`);
   c.appendChild(moreBtn);
 
   const PAGE = 30;
@@ -6269,7 +6308,7 @@ function lightningScreen(){
         <h2 style="font-size:26px;margin:14px 0 4px">Modo Relâmpago</h2>
         <p style="color:var(--ink-soft);margin:0">Recorde: <b style="color:#E0A000">${g.boltBest} pontos</b></p>
         <div class="lt-rules">⏱️ Você tem <b>${BOLT_SECONDS} segundos</b><br>✅ Acertou: <b>+1 ponto</b> e <b>+1s</b><br>❌ Errou: <b>−3 segundos</b><br>📈 Fica mais difícil a cada acerto!</div>
-        <button class="btn primary" style="width:100%;padding:16px;font-size:16px">Começar! 🚀</button>
+        <button type="button" class="btn primary" style="width:100%;padding:16px;font-size:16px">Começar! 🚀</button>
       </div>`);
     box.querySelector('button').onclick = countdown;
     c.appendChild(box);
@@ -6361,9 +6400,9 @@ function lightningScreen(){
       </div>`);
     c.appendChild(end);
     const actions = h(`<div class="cta-row" style="margin-top:14px"></div>`);
-    const again = h(`<button class="btn primary">Jogar de novo ⚡</button>`);
+    const again = h(`<button type="button" class="btn primary">Jogar de novo ⚡</button>`);
     again.onclick = countdown;
-    const home = h(`<button class="btn secondary">Início</button>`);
+    const home = h(`<button type="button" class="btn secondary">Início</button>`);
     home.onclick = ()=> go('home');
     actions.appendChild(again); actions.appendChild(home);
     c.appendChild(actions);
@@ -6604,7 +6643,7 @@ function lessonScreen(){
   if(sess.finished || sess.failed){ lessonEnd(wrap, sess); return wrap; }
 
   const exitTo = sess.exitTo || (isQuiz ? 'quizSetup' : 'path');
-  const top = h(`<div class="lesson-top"><button class="lesson-x" aria-label="Sair">✕</button><div class="lesson-prog"><i style="width:${Math.round((isQuiz? (sess.asked-1+(sess.checked?1:0)) : sess.cleared)/sess.needed*100)}%"></i></div>${
+  const top = h(`<div class="lesson-top"><button type="button" class="lesson-x" aria-label="Sair">✕</button><div class="lesson-prog"><i style="width:${Math.round((isQuiz? (sess.asked-1+(sess.checked?1:0)) : sess.cleared)/sess.needed*100)}%"></i></div>${
     isQuiz ? `${sess.lives!==undefined ? `<span class="lesson-hearts" aria-label="${sess.lives} vidas">❤️ ${sess.lives}</span>` : ''}<span class="lesson-score">🏅 ${sess.score}</span>` : sess.maxWrong!==null ? `<span class="lesson-hearts">🛡️ ${Math.max(0,sess.maxWrong+1-sess.wrong)}</span>` : `<span class="lesson-hearts">❤️ ${heartsNow()}</span>`
   }</div>`);
   top.querySelector('.lesson-x').onclick = ()=>{
@@ -6700,7 +6739,7 @@ function lessonScreen(){
   let checkBtn = null;
   if(!sess.checked){
     if(!isQuiz){
-      const bar = h(`<div class="lesson-footer"><button class="show-btn" ${sess.selected===null?'disabled':''}>CONFIRMAR</button></div>`);
+      const bar = h(`<div class="lesson-footer"><button type="button" class="show-btn" ${sess.selected===null?'disabled':''}>CONFIRMAR</button></div>`);
       checkBtn = bar.querySelector('button');
       checkBtn.onclick = ()=>{ if(sess.selected!==null) lessonCheck(sess, sess.selected); };
       wrap.appendChild(bar);
@@ -6715,7 +6754,7 @@ function lessonScreen(){
         <div class="fb-head"><span class="fb-ico">${ok?'👏':'🤔'}</span><div><div class="fb-t">${praise}</div>${!ok || isQuiz ? `<div class="fb-ans mono"></div>`:''}</div></div>
         <button type="button" class="fb-why">📖 Ver explicação</button>
         <div class="fb-steps" style="display:none"></div>
-        <button class="show-btn ${ok?'ok':'bad'}">PRÓXIMA ›</button>
+        <button type="button" class="show-btn ${ok?'ok':'bad'}">PRÓXIMA ›</button>
       </div>`);
     const ansEl = sheet.querySelector('.fb-ans');
     if(ansEl) ansEl.textContent = ok ? `Resposta: ${answerLabel(ex)}` : answerLabel(ex);
@@ -6785,7 +6824,7 @@ function lessonEnd(wrap, sess){
     c.appendChild(h(`<div class="le-mascot">${mascotSVG('sad',130)}</div>`));
     c.appendChild(h(`<h2 class="le-title" style="color:#FF4B4B">Não foi dessa vez!</h2>`));
     c.appendChild(h(`<p class="le-sub">Tudo bem — continue a trilha no seu ritmo e tente de novo depois. 💪</p>`));
-    const b = h(`<div class="lesson-footer static"><button class="show-btn">VOLTAR À TRILHA</button></div>`);
+    const b = h(`<div class="lesson-footer static"><button type="button" class="show-btn">VOLTAR À TRILHA</button></div>`);
     b.querySelector('button').onclick = ()=> go('path');
     c.appendChild(b);
     return;
@@ -6834,11 +6873,11 @@ function lessonEnd(wrap, sess){
   if(gems) c.appendChild(h(`<div class="le-gems">+${gems} 🪙 moedas</div>`));
   if(isQuiz) c.appendChild(h(`<p class="le-sub">Recorde no ${({facil:'fácil',medio:'médio',dificil:'difícil'})[sess.diff]}: ${(g.quizBest[sess.diff]||0).toLocaleString('pt-BR')} pontos</p>`));
   const foot = h(`<div class="lesson-footer static"></div>`);
-  const cont = h(`<button class="show-btn">CONTINUAR</button>`);
+  const cont = h(`<button type="button" class="show-btn">CONTINUAR</button>`);
   cont.onclick = ()=> go(isQuiz ? 'quizSetup' : 'path');
   foot.appendChild(cont);
   if(isQuiz){
-    const again = h(`<button class="show-btn ghost">JOGAR DE NOVO</button>`);
+    const again = h(`<button type="button" class="show-btn ghost">JOGAR DE NOVO</button>`);
     again.onclick = ()=> startQuiz(sess.diff);
     foot.appendChild(again);
   }
@@ -6913,7 +6952,7 @@ function pathHero(){
       <div class="ph-k">${finished ? 'TEMPORADA COMPLETA' : `EPISÓDIO ${n.unit+1} · ${n.idx+1}/${PATH_NODES.length}`}</div>
       <h2>${finished ? 'Você zerou a trilha! 👑' : n.subject.name}</h2>
       <p>${finished ? 'Continue praticando pra ganhar XP.' : n.label}</p>
-      <button class="show-btn light">${cur===0 ? '▶ COMEÇAR O SHOW' : '▶ CONTINUAR'}</button>
+      <button type="button" class="show-btn light">${cur===0 ? '▶ COMEÇAR O SHOW' : '▶ CONTINUAR'}</button>
     </div>
     <div>${mascotSVG('joy', 86)}</div>
   </div>`);
@@ -6987,7 +7026,7 @@ function nodeSheet(n, color, isDone){
     <div class="ns-k">${n.subject.sym} ${n.subject.name}</div>
     <h3>${n.label}</h3>
     <p>${isDone ? 'Você já completou — praticar de novo dá mais XP!' : `${q} perguntas de múltipla escolha. Errou? Tente de novo até acertar — e peça uma dica se precisar. 💡`}</p>
-    <button class="show-btn light">${isDone?'PRATICAR DE NOVO':'COMEÇAR'} +XP</button>
+    <button type="button" class="show-btn light">${isDone?'PRATICAR DE NOVO':'COMEÇAR'} +XP</button>
   </div>`;
   bg.addEventListener('click', e=>{ if(e.target===bg) bg.remove(); });
   bg.querySelector('button').onclick = ()=>{ bg.remove(); startPathLesson(n, false); };
