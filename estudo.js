@@ -452,16 +452,16 @@ function solvePracticeCard(raw){
    ========================================================= */
 const ARENA_V2_KEY = 'msarena-v1';
 const ARENA_IMPORT_FLAG = 'mathstudy-arena-import-v1';
-function arenaV2Raw(){ try{ const raw = localStorage.getItem(ARENA_V2_KEY); return raw ? JSON.parse(raw) : null; }catch(e){ return null; } }
+function arenaV2Raw(){ return storage.get(ARENA_V2_KEY, null); }
 function arenaV2Pending(){
-  try{ if(localStorage.getItem(ARENA_IMPORT_FLAG)) return null; }catch(e){ return null; }
+  if(storage.has(ARENA_IMPORT_FLAG)) return null;
   const d = arenaV2Raw();
   if(!d) return null;
   const answered = Object.values(d.stats||{}).reduce((a,s)=>a+(s.total||0),0);
   if(!answered && !(d.xp>0)) return null;
   return {xp:d.xp||0, answered};
 }
-function arenaV2Dismiss(){ try{ localStorage.setItem(ARENA_IMPORT_FLAG, JSON.stringify({skipped:true, ts:Date.now()})); }catch(e){} }
+function arenaV2Dismiss(){ storage.set(ARENA_IMPORT_FLAG, {skipped:true, ts:Date.now()}); }
 async function arenaV2Import(){
   const d = arenaV2Raw(); if(!d) return null;
   const valid = id=> SUBJECTS.some(s=>s.id===id);
@@ -505,6 +505,6 @@ async function arenaV2Import(){
   saveGame();
   if(d.xp > 0) gameAddXP(d.xp);   // XP entra no único XP da conta (pode subir de nível)
   saveGame();
-  try{ localStorage.setItem(ARENA_IMPORT_FLAG, JSON.stringify({uid:currentUserId(), ts:Date.now(), xp:d.xp||0})); }catch(e){}
+  storage.set(ARENA_IMPORT_FLAG, {uid:currentUserId(), ts:Date.now(), xp:d.xp||0});
   return {xp:d.xp||0, answered:Object.values(d.stats||{}).reduce((x,s)=>x+(s.total||0),0), errors:(d.errors||[]).length};
 }

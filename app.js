@@ -2142,43 +2142,36 @@ let errorsCache = null, errorsCacheUid = null;
 async function loadProgress(){
   const uid = currentUserId();
   if(progressCache && progressCacheUid===uid) return progressCache;
-  try{
-    const raw = localStorage.getItem(`${PROGRESS_KEY_BASE}:${uid}`);
-    progressCache = raw ? JSON.parse(raw) : {};
-  }catch(e){ progressCache = {}; }
+  progressCache = storage.get(`${PROGRESS_KEY_BASE}:${uid}`, {}) || {};
   progressCacheUid = uid;
   return progressCache;
 }
 async function saveProgress(){
-  try{ localStorage.setItem(`${PROGRESS_KEY_BASE}:${progressCacheUid}`, JSON.stringify(progressCache)); }catch(e){}
+  return storage.set(`${PROGRESS_KEY_BASE}:${progressCacheUid}`, progressCache);
 }
 
 async function loadHistory(){
   const uid = currentUserId();
   if(historyCache && historyCacheUid===uid) return historyCache;
-  try{
-    const raw = localStorage.getItem(`${HISTORY_KEY_BASE}:${uid}`);
-    historyCache = raw ? JSON.parse(raw) : [];
-  }catch(e){ historyCache = []; }
+  historyCache = storage.get(`${HISTORY_KEY_BASE}:${uid}`, []);
+  if(!Array.isArray(historyCache)) historyCache = [];
   historyCacheUid = uid;
   return historyCache;
 }
 async function saveHistory(){
-  try{ localStorage.setItem(`${HISTORY_KEY_BASE}:${historyCacheUid}`, JSON.stringify(historyCache)); }catch(e){}
+  return storage.set(`${HISTORY_KEY_BASE}:${historyCacheUid}`, historyCache);
 }
 
 async function loadErrors(){
   const uid = currentUserId();
   if(errorsCache && errorsCacheUid===uid) return errorsCache;
-  try{
-    const raw = localStorage.getItem(`${ERRORS_KEY_BASE}:${uid}`);
-    errorsCache = raw ? JSON.parse(raw) : [];
-  }catch(e){ errorsCache = []; }
+  errorsCache = storage.get(`${ERRORS_KEY_BASE}:${uid}`, []);
+  if(!Array.isArray(errorsCache)) errorsCache = [];
   errorsCacheUid = uid;
   return errorsCache;
 }
 async function saveErrors(){
-  try{ localStorage.setItem(`${ERRORS_KEY_BASE}:${errorsCacheUid}`, JSON.stringify(errorsCache)); }catch(e){}
+  return storage.set(`${ERRORS_KEY_BASE}:${errorsCacheUid}`, errorsCache);
 }
 
 /* retrato leve e serializável da questão, pra poder mostrar de novo depois (histórico / revisão de erros) */
@@ -2198,8 +2191,21 @@ function bumpProgress(p, subjectId, correct, difficulty){
   d.recent = (d.recent || []).concat([{ok:!!correct, h:difficulty==='dificil'}]).slice(-10);
   return d;
 }
+/* uma resposta mexe em 4 lugares (progresso, XP/jogo, histórico e caderno de erros): tudo é gravado
+   junto numa transação — se o aparelho não conseguir gravar, nada fica pela metade e a pessoa é avisada.
+   A mesma questão enviada duas vezes seguidas (clique duplo, Enter repetido) conta uma vez só. */
+const _recentAnswers = new WeakMap();
 async function recordAnswer(subjectId, correct, extra){
   extra = extra || {};
+  if(extra.ex && typeof extra.ex === 'object'){
+    const last = _recentAnswers.get(extra.ex);
+    if(last && Date.now() - last < 2000) return {ok:true, duplicate:true};
+    _recentAnswers.set(extra.ex, Date.now());
+  }
+  const {ok} = await storage.transaction(()=> recordAnswerNow(subjectId, correct, extra));
+  return {ok};
+}
+async function recordAnswerNow(subjectId, correct, extra){
   const p = await loadProgress();
   bumpProgress(p, subjectId, correct, extra.difficulty);
   await saveProgress();
@@ -2300,17 +2306,15 @@ let settingsCache = null, settingsCacheUid = null;
 async function loadSettings(){
   const uid = currentUserId();
   if(settingsCache && settingsCacheUid===uid) return settingsCache;
-  try{
-    const raw = localStorage.getItem(`${SETTINGS_KEY_BASE}:${uid}`);
-    settingsCache = raw ? Object.assign({}, DEFAULT_SETTINGS, JSON.parse(raw)) : Object.assign({}, DEFAULT_SETTINGS);
-    // visual educacional (claro) vira o padrão uma vez para todo mundo; quem quiser volta ao escuro em Configurações
-    if(!settingsCache.eduUI){ settingsCache.eduUI = 1; settingsCache.theme = 'light'; try{ localStorage.setItem(`${SETTINGS_KEY_BASE}:${uid}`, JSON.stringify(settingsCache)); }catch(e){} }
-  }catch(e){ settingsCache = Object.assign({}, DEFAULT_SETTINGS); }
+  const saved = storage.get(`${SETTINGS_KEY_BASE}:${uid}`, null);
+  settingsCache = Object.assign({}, DEFAULT_SETTINGS, (saved && typeof saved==='object') ? saved : {});
+  // visual educacional (claro) vira o padrão uma vez para todo mundo; quem quiser volta ao escuro em Configurações
+  if(!settingsCache.eduUI){ settingsCache.eduUI = 1; settingsCache.theme = 'light'; storage.set(`${SETTINGS_KEY_BASE}:${uid}`, settingsCache); }
   settingsCacheUid = uid;
   return settingsCache;
 }
 async function saveSettings(){
-  try{ localStorage.setItem(`${SETTINGS_KEY_BASE}:${settingsCacheUid}`, JSON.stringify(settingsCache)); }catch(e){}
+  return storage.set(`${SETTINGS_KEY_BASE}:${settingsCacheUid}`, settingsCache);
 }
 /* leitura síncrona pra usar dentro de handlers de clique (nas sessões de exercício), sem precisar
    de await ali; settings já foram carregadas no boot/login, então o cache está pronto. */
@@ -2427,22 +2431,20 @@ async function hashPassword(pw){
 
 async function loadUsers(){
   if(usersCache !== null) return usersCache;
-  try{
-    const raw = localStorage.getItem(USERS_KEY);
-    usersCache = raw ? JSON.parse(raw) : [];
-  }catch(e){ usersCache = []; }
+  usersCache = storage.get(USERS_KEY, []);
+  if(!Array.isArray(usersCache)) usersCache = [];
   // migração de versões antigas: uma única conta guardada sem lista.
   if(usersCache.length===0){
     try{
-      const oldRaw = localStorage.getItem(LEGACY_AUTH_KEY);
+      const oldRaw = storage.getRaw(LEGACY_AUTH_KEY);
       if(oldRaw){
         const old = JSON.parse(oldRaw);
         if(old && old.name && old.passHash){
           const migrated = {id: userIdFromName(old.name), name: old.name, passHash: old.passHash};
           usersCache = [migrated];
           await saveUsers(usersCache);
-          const oldProgress = localStorage.getItem(LEGACY_PROGRESS_KEY);
-          if(oldProgress) localStorage.setItem(`${PROGRESS_KEY_BASE}:${migrated.id}`, oldProgress);
+          const oldProgress = storage.getRaw(LEGACY_PROGRESS_KEY);
+          if(oldProgress) storage.setRaw(`${PROGRESS_KEY_BASE}:${migrated.id}`, oldProgress);
         }
       }
     }catch(e){}
@@ -2451,13 +2453,13 @@ async function loadUsers(){
 }
 async function saveUsers(list){
   usersCache = list;
-  try{ localStorage.setItem(USERS_KEY, JSON.stringify(list)); }catch(e){}
+  return storage.set(USERS_KEY, list);
 }
 async function setCurrentUserId(id){
-  try{ localStorage.setItem(CURRENT_USER_KEY, id); }catch(e){}
+  return storage.setRaw(CURRENT_USER_KEY, id);
 }
 async function getSavedCurrentUserId(){
-  try{ return localStorage.getItem(CURRENT_USER_KEY); }catch(e){ return null; }
+  return storage.getRaw(CURRENT_USER_KEY);
 }
 function doLogout(){
   // fecha tour/janelas abertas da conta que está saindo (o tour continua pendente pra ela)
@@ -2465,21 +2467,56 @@ function doLogout(){
   document.querySelectorAll('.gm-modal-bg, .tour-root, .gm-toast').forEach(n=>n.remove());
   if(typeof _toastQueue!=='undefined') _toastQueue.length = 0;
   currentUser = null;
-  settingsCache = null; settingsCacheUid = null;
+  dropUserCaches();
+  state.screen = 'home'; state.session = null; state.subjectId = null;
   applyTheme('dark'); applyTextScale('normal');
-  try{ localStorage.removeItem(CURRENT_USER_KEY); }catch(e){}
+  storage.remove(CURRENT_USER_KEY);
   boot();
 }
 
 /* =========================================================
    Gerenciamento de conta — usado na tela de Configurações
    ========================================================= */
-/* troca o nome da conta logada; se o novo nome gerar um id diferente (quase sempre gera,
-   já que o id vem do nome), migra progresso/histórico/erros/configurações pro novo id
-   sem perder nada. */
+/* ÚNICA fonte de verdade das chaves que pertencem a uma conta.
+   Toda chave nova que guardar dados de uma conta precisa entrar aqui — é daqui que
+   saem a renomeação, o isolamento entre contas e os testes. */
+const DUEL_NAMES_KEY_BASE = 'mathstudy-duel-names-v1';
+function getUserStorageKeys(uid){
+  const k = base=> `${base}:${uid}`;
+  const fixed = {
+    progress: k(PROGRESS_KEY_BASE),
+    history:  k(HISTORY_KEY_BASE),
+    errors:   k(ERRORS_KEY_BASE),
+    settings: k(SETTINGS_KEY_BASE),
+    game:     k(GAME_KEY_BASE),        // XP, ofensiva, conquistas, missões, trilha, Arena, estudo...
+    notes:    k(NOTES_KEY_BASE),       // índice das páginas do caderno
+    backup:   k(BACKUP_KEY_BASE),      // quando foi o último backup / lembrete
+    ptrain:   k(PTRAIN_KEY_BASE),      // últimas escolhas do treino personalizado
+    duel:     k(DUEL_NAMES_KEY_BASE),  // nomes dos jogadores do duelo
+  };
+  // uma chave por página do caderno (os ids vêm do índice da própria conta, nunca de busca por prefixo,
+  // pra que a conta "ana" não pegue páginas da conta "ana:b")
+  const idx = storage.get(fixed.notes, []);
+  const notePages = (Array.isArray(idx) ? idx : []).map(n=> `${NOTE_KEY_BASE}:${uid}:${n.id}`);
+  return {fixed, notePages, all:[...Object.values(fixed), ...notePages]};
+}
+/* esquece o que está em memória de uma conta (depois de migrar, restaurar ou desfazer) */
+function dropUserCaches(){
+  progressCache = null; progressCacheUid = null;
+  historyCache = null; historyCacheUid = null;
+  errorsCache = null; errorsCacheUid = null;
+  settingsCache = null; settingsCacheUid = null;
+  gameCache = null; gameCacheUid = null;
+}
+// se uma gravação em grupo falhar e for desfeita, a memória volta a ler do aparelho
+storage.onRollback(()=> dropUserCaches());
+
+/* troca o nome da conta logada. O id vem do nome, então quase sempre muda: aí TODOS os dados
+   da conta (getUserStorageKeys) vão para o id novo numa única transação — ou vai tudo, ou nada. */
 async function renameCurrentUser(newName){
-  newName = (newName||'').trim();
+  newName = (newName||'').trim().replace(/\s+/g,' ');
   if(!newName) return {ok:false, error:'Digite um nome.'};
+  if(newName.length < 2) return {ok:false, error:'O nome precisa ter pelo menos 2 letras.'};
   const users = await loadUsers();
   const oldId = currentUser.id;
   const newId = userIdFromName(newName);
@@ -2488,21 +2525,23 @@ async function renameCurrentUser(newName){
   }
   const idx = users.findIndex(u=>u.id===oldId);
   if(idx<0) return {ok:false, error:'Conta não encontrada.'};
-  users[idx] = Object.assign({}, users[idx], {id:newId, name:newName});
-  await saveUsers(users);
-  if(newId !== oldId){
-    [PROGRESS_KEY_BASE, HISTORY_KEY_BASE, ERRORS_KEY_BASE, SETTINGS_KEY_BASE, GAME_KEY_BASE].forEach(base=>{
-      const oldKey = `${base}:${oldId}`, newKey = `${base}:${newId}`;
-      const val = localStorage.getItem(oldKey);
-      if(val!==null){ localStorage.setItem(newKey, val); localStorage.removeItem(oldKey); }
-    });
-    if(progressCacheUid===oldId) progressCacheUid = newId;
-    if(historyCacheUid===oldId) historyCacheUid = newId;
-    if(errorsCacheUid===oldId) errorsCacheUid = newId;
-    if(settingsCacheUid===oldId) settingsCacheUid = newId;
-  }
+  // grava o que está em memória antes de mover, pra não migrar uma versão velha
+  if(gameCache && gameCacheUid===oldId) saveGame();
+  const oldKeys = getUserStorageKeys(oldId);
+  const newList = users.slice(); newList[idx] = Object.assign({}, users[idx], {id:newId, name:newName});
+  const {ok} = await storage.transaction(()=>{
+    storage.set(USERS_KEY, newList);
+    if(newId !== oldId){
+      Object.keys(oldKeys.fixed).forEach(name=> storage.migrate(oldKeys.fixed[name], getUserStorageKeys(newId).fixed[name]));
+      oldKeys.notePages.forEach(key=> storage.migrate(key, key.replace(`${NOTE_KEY_BASE}:${oldId}:`, `${NOTE_KEY_BASE}:${newId}:`)));
+    }
+    storage.setRaw(CURRENT_USER_KEY, newId);
+  });
+  if(!ok){ usersCache = null; return {ok:false, error:'Não conseguimos salvar a troca de nome neste aparelho. Nada foi alterado.'}; }
+  usersCache = newList;
+  dropUserCaches();
   currentUser = {id:newId, name:newName};
-  await setCurrentUserId(newId);
+  await loadSettings();
   return {ok:true};
 }
 
@@ -2520,17 +2559,24 @@ async function changeCurrentUserPassword(currentPass, newPass){
   return {ok:true};
 }
 
-/* baixa um .json com progresso, histórico, erros e configurações da conta logada */
-async function exportProgressData(){
-  saveBackupInfo({last: Date.now()});
+/* tudo da conta logada, no formato de backup (usado para exportar e nos testes) */
+async function buildBackupPayload(){
   const [progress, history, errors, settings] = await Promise.all([loadProgress(), loadHistory(), loadErrors(), loadSettings()]);
-  const payload = {
+  return {
+    backupVersion: BACKUP_VERSION,
+    app: 'Matemática Show',
     exportedAt: new Date().toISOString(),
     account: currentUser ? currentUser.name : null,
     progress, history, errors, settings,
     game: loadGame(),
     notes: exportNotes(),
+    ptrain: loadLastTraining(),
   };
+}
+/* baixa um .json com progresso, histórico, erros e configurações da conta logada */
+async function exportProgressData(){
+  saveBackupInfo({last: Date.now()});
+  const payload = await buildBackupPayload();
   const safeName = (currentUser && currentUser.name ? currentUser.name : 'progresso').toLowerCase().replace(/[^a-z0-9]+/g,'-');
   const filename = `matematica-show-${safeName}-${new Date().toISOString().slice(0,10)}.json`;
   const jsonStr = JSON.stringify(payload, null, 2);
@@ -2578,52 +2624,96 @@ async function exportProgressData(){
   }catch(e){ return false; }
 }
 
-/* lê um .json exportado pelo próprio app e restaura progresso/histórico/erros/configurações
-   pra conta logada agora — substitui o que já existia (é uma restauração, não uma mescla). */
+/* ---------- backup: formato versionado + validação completa antes de gravar ----------
+   backupVersion 1 = este formato. Arquivos antigos (sem backupVersion) são tratados como versão 0
+   e passam pela mesma validação. Arquivo de versão mais nova que o app é recusado. */
+const BACKUP_VERSION = 1;
+const isObj = v=> !!v && typeof v === 'object' && !Array.isArray(v);
+const isNum = v=> typeof v === 'number' && isFinite(v) && v >= 0;
+/* devolve {ok:true, clean} ou {ok:false, error}. Não grava nada. */
+function validateBackup(data){
+  const bad = msg=> ({ok:false, error:`Esse backup não pode ser usado: ${msg} Seus dados atuais não foram alterados.`});
+  if(!isObj(data)) return bad('o arquivo não tem o formato de backup do Matemática Show.');
+  const ver = data.backupVersion === undefined ? 0 : data.backupVersion;
+  if(typeof ver !== 'number' || ver < 0) return bad('a versão do arquivo é desconhecida.');
+  if(ver > BACKUP_VERSION) return bad('ele foi feito por uma versão mais nova do app. Atualize o app e tente de novo.');
+  const parts = ['progress','history','errors','settings','game','notes','ptrain'].filter(k=> data[k] !== undefined && data[k] !== null);
+  if(!parts.some(k=> ['progress','history','errors','settings','game'].includes(k))) return bad('ele não tem progresso, histórico, erros, configurações nem dados de jogo.');
+  const clean = {};
+  if(data.progress !== undefined && data.progress !== null){
+    if(!isObj(data.progress)) return bad('o progresso está num formato inválido.');
+    for(const [id, d] of Object.entries(data.progress)){
+      if(!isObj(d) || !isNum(d.attempted) || !isNum(d.correct) || d.correct > d.attempted) return bad(`o progresso de "${id}" está com números inválidos.`);
+      if(d.recent !== undefined && !Array.isArray(d.recent)) return bad(`o progresso de "${id}" está num formato inválido.`);
+    }
+    clean.progress = data.progress;
+  }
+  if(data.history !== undefined && data.history !== null){
+    if(!Array.isArray(data.history)) return bad('o histórico está num formato inválido.');
+    if(data.history.some(e=> !isObj(e) || typeof e.subjectId !== 'string' || !isNum(e.ts))) return bad('há questões do histórico sem assunto ou sem data.');
+    clean.history = data.history.slice(0, HISTORY_LIMIT);
+  }
+  if(data.errors !== undefined && data.errors !== null){
+    if(!Array.isArray(data.errors)) return bad('o caderno de erros está num formato inválido.');
+    if(data.errors.some(e=> !isObj(e) || typeof e.subjectId !== 'string' || (e.ex !== undefined && e.ex !== null && !isObj(e.ex)))) return bad('há erros guardados sem assunto ou com a questão estragada.');
+    clean.errors = data.errors.slice(0, ERRORS_LIMIT);
+  }
+  if(data.settings !== undefined && data.settings !== null){
+    if(!isObj(data.settings)) return bad('as configurações estão num formato inválido.');
+    clean.settings = data.settings;
+  }
+  if(data.game !== undefined && data.game !== null){
+    if(!isObj(data.game) || (data.game.xp !== undefined && !isNum(data.game.xp))) return bad('os dados de jogo (XP, conquistas) estão num formato inválido.');
+    clean.game = data.game;
+  }
+  if(data.notes !== undefined && data.notes !== null){
+    const n = data.notes;
+    if(!isObj(n) || !Array.isArray(n.index) || n.index.some(x=> !isObj(x) || typeof x.id !== 'string') || (n.pages !== undefined && !isObj(n.pages))) return bad('as anotações do caderno estão num formato inválido.');
+    clean.notes = n;
+  }
+  if(isObj(data.ptrain)) clean.ptrain = data.ptrain;
+  return {ok:true, clean, version:ver};
+}
+/* lê um .json exportado pelo próprio app e restaura na conta logada. Primeiro valida TUDO;
+   só depois grava, numa única transação (se qualquer gravação falhar, nada muda). */
 async function importProgressData(file){
   let data;
   try{
     const text = await file.text();
     data = JSON.parse(text);
   }catch(e){
-    return {ok:false, error:'Não foi possível ler esse arquivo. Confira se é um .json exportado pelo Matemática Show.'};
+    return {ok:false, error:'Não foi possível ler esse arquivo. Confira se é um .json exportado pelo Matemática Show. Seus dados atuais não foram alterados.'};
   }
-  if(!data || typeof data !== 'object' || (!data.progress && !data.history && !data.errors && !data.settings)){
-    return {ok:false, error:'Esse arquivo não parece ser um backup do Matemática Show.'};
-  }
-  const uid = currentUserId();
-  if(data.progress && typeof data.progress === 'object'){
-    progressCache = data.progress; progressCacheUid = uid; await saveProgress();
-  }
-  if(Array.isArray(data.history)){
-    historyCache = data.history; historyCacheUid = uid; await saveHistory();
-  }
-  if(Array.isArray(data.errors)){
-    errorsCache = data.errors; errorsCacheUid = uid; await saveErrors();
-  }
-  if(data.settings && typeof data.settings === 'object'){
-    settingsCache = Object.assign({}, DEFAULT_SETTINGS, data.settings); settingsCacheUid = uid; await saveSettings();
-    applyTheme(settingsCache.theme); applyTextScale(settingsCache.textScale);
-  }
-  if(data.notes) importNotes(data.notes);
-  if(data.game && typeof data.game === 'object'){
-    gameCache = null; gameCacheUid = null;
-    try{ localStorage.setItem(`${GAME_KEY_BASE}:${uid}`, JSON.stringify(data.game)); }catch(e){}
-  }
+  return restoreBackupData(data);
+}
+async function restoreBackupData(data){
+  const v = validateBackup(data);
+  if(!v.ok) return v;
+  const c = v.clean, uid = currentUserId(), keys = getUserStorageKeys(uid).fixed;
+  const {ok} = await storage.transaction(()=>{
+    if(c.progress) storage.set(keys.progress, c.progress);
+    if(c.history) storage.set(keys.history, c.history);
+    if(c.errors) storage.set(keys.errors, c.errors);
+    if(c.settings) storage.set(keys.settings, Object.assign({}, DEFAULT_SETTINGS, c.settings));
+    if(c.game) storage.set(keys.game, c.game);
+    if(c.ptrain) storage.set(keys.ptrain, c.ptrain);
+    if(c.notes) importNotes(c.notes);
+  });
+  dropUserCaches();
+  if(!ok) return {ok:false, error:'Não conseguimos gravar o backup neste aparelho (pode estar sem espaço). Seus dados atuais não foram alterados.'};
+  await loadSettings();
+  applyTheme(settingsCache.theme); applyTextScale(settingsCache.textScale);
   return {ok:true};
 }
 
-/* apaga progresso/histórico/erros da conta logada — a conta em si (nome/senha) continua existindo */
+/* apaga progresso/histórico/erros/jogo da conta logada — a conta (nome/senha), as configurações
+   e as anotações do caderno continuam existindo */
 async function resetCurrentUserProgress(){
-  const uid = currentUserId();
-  [PROGRESS_KEY_BASE, HISTORY_KEY_BASE, ERRORS_KEY_BASE, GAME_KEY_BASE].forEach(base=>{
-    try{ localStorage.removeItem(`${base}:${uid}`); }catch(e){}
-  });
-  gameCache = null;
-  progressCache = {}; progressCacheUid = uid;
-  historyCache = []; historyCacheUid = uid;
-  errorsCache = []; errorsCacheUid = uid;
-  await saveProgress(); await saveHistory(); await saveErrors();
+  const keys = getUserStorageKeys(currentUserId()).fixed;
+  const {ok} = await storage.transaction(()=>{ ['progress','history','errors','game'].forEach(k=> storage.remove(keys[k])); });
+  dropUserCaches();
+  await loadSettings();
+  return ok;
 }
 
 /* =========================================================
@@ -2641,7 +2731,7 @@ function avatarHTML(u, cls){
 /* lê o XP/ofensiva de uma conta sem precisar estar logado nela */
 function peekGame(uid){
   try{
-    const g = JSON.parse(localStorage.getItem(`${GAME_KEY_BASE}:${uid}`) || '{}');
+    const g = storage.get(`${GAME_KEY_BASE}:${uid}`, {}) || {};
     return {level: levelInfo(g.xp||0).level, streak: streakFromData(g)};
   }catch(e){ return {level:1, streak:0}; }
 }
@@ -2938,17 +3028,24 @@ function hashForState(s){
 function cloneState(s){
   try{ return JSON.parse(JSON.stringify(s)); }catch(e){ return null; }
 }
+/* cada entrada do histórico do navegador leva o id da conta: "voltar" nunca restaura a tela
+   (nem a questão em andamento) de outra conta que usou o mesmo aparelho */
+function stateSnapshot(){ const c = cloneState(state); if(c) c.__uid = currentUser ? currentUser.id : null; return c; }
 function pushHistoryState(){
-  try{ history.pushState(cloneState(state), '', hashForState(state)); }catch(e){}
+  try{ history.pushState(stateSnapshot(), '', hashForState(state)); }catch(e){ if(storage.DEV) console.warn('[histórico]', e); }
 }
 function replaceHistoryState(){
-  try{ history.replaceState(cloneState(state), '', hashForState(state)); }catch(e){}
+  try{ history.replaceState(stateSnapshot(), '', hashForState(state)); }catch(e){ if(storage.DEV) console.warn('[histórico]', e); }
 }
 window.addEventListener('popstate', (e)=>{
   if(!currentUser) return; // ainda na tela de login/cadastro — nada pra restaurar
   if(e.state && e.state.__root){ askExitApp(); return; }
-  if(e.state){
+  if(e.state && e.state.__uid !== undefined && e.state.__uid !== currentUser.id){
+    // entrada de outra conta: não restaura nada dela
+    state.screen = 'home'; state.session = null;
+  } else if(e.state){
     Object.assign(state, e.state);
+    delete state.__uid;
   } else {
     state.screen = 'home';
   }
@@ -3025,7 +3122,7 @@ function masteryOf(d){
 function progressSync(){
   const uid = currentUserId();
   if(!(progressCache && progressCacheUid===uid)){
-    try{ const raw = localStorage.getItem(`${PROGRESS_KEY_BASE}:${uid}`); progressCache = raw ? JSON.parse(raw) : {}; }catch(e){ progressCache = {}; }
+    progressCache = storage.get(`${PROGRESS_KEY_BASE}:${uid}`, {}) || {};
     progressCacheUid = uid;
   }
   return progressCache;
@@ -3086,33 +3183,37 @@ const NOTE_SIZES = {pen:[2.5,5,9], hl:[18,28,40], eraser:[12,24,44], shape:[2.5,
 const NOTE_BGS = [['grid','Quadriculado'],['lines','Pautado'],['dots','Pontilhado'],['cartesian','Plano cartesiano'],['plain','Liso']];
 const NOTE_TOOLS = [['pen','✒️','Caneta'],['hl','🖍️','Marca-texto'],['eraser','🧽','Borracha'],['line','📏','Linha reta'],['rect','▭','Retângulo'],['circle','◯','Círculo'],['text','T','Texto']];
 
-function notesIndex(){ try{ return JSON.parse(localStorage.getItem(`${NOTES_KEY_BASE}:${currentUserId()}`)||'[]'); }catch(e){ return []; } }
-function saveNotesIndex(list){ localStorage.setItem(`${NOTES_KEY_BASE}:${currentUserId()}`, JSON.stringify(list)); }
+function notesIndex(){ const l = storage.get(`${NOTES_KEY_BASE}:${currentUserId()}`, []); return Array.isArray(l) ? l : []; }
+function saveNotesIndex(list){ return storage.set(`${NOTES_KEY_BASE}:${currentUserId()}`, list); }
 function loadNotePage(id){
   const meta = notesIndex().find(n=>n.id===id);
   if(!meta) return null;
   let strokes = [];
-  try{ strokes = JSON.parse(localStorage.getItem(`${NOTE_KEY_BASE}:${currentUserId()}:${id}`)||'[]'); }catch(e){}
+  strokes = storage.get(`${NOTE_KEY_BASE}:${currentUserId()}:${id}`, []);
   return Object.assign({}, meta, {strokes});
 }
 /* salva traços + miniatura; avisa se o armazenamento do aparelho encheu */
 function saveNotePage(page){
+  // traços e índice vão juntos: ou os dois são salvos, ou nenhum (evita página sem índice ou índice sem página)
+  let ok = false;
+  storage.begin();
   try{
-    localStorage.setItem(`${NOTE_KEY_BASE}:${currentUserId()}:${page.id}`, JSON.stringify(page.strokes));
+    storage.set(`${NOTE_KEY_BASE}:${currentUserId()}:${page.id}`, page.strokes);
     const list = notesIndex();
     const meta = {id:page.id, title:page.title, subjectId:page.subjectId||null, bg:page.bg, updated:Date.now(), created:page.created||Date.now(), thumb:noteThumb(page)};
     const i = list.findIndex(n=>n.id===page.id);
     if(i>=0) list[i] = meta; else list.unshift(meta);
     saveNotesIndex(list);
-    return true;
-  }catch(e){
-    queueToast('⚠️', 'Não deu pra salvar', 'O armazenamento do aparelho está cheio. Apague páginas antigas.');
-    return false;
-  }
+  }catch(e){ storage.abort(); if(storage.DEV) console.warn('[caderno] erro ao montar a página', e); return false; }
+  ok = storage.commit();
+  if(!ok) queueToast('⚠️', 'Não deu pra salvar', 'O armazenamento do aparelho está cheio. Apague páginas antigas ou faça um backup.');
+  return ok;
 }
 function deleteNotePage(id){
-  try{ localStorage.removeItem(`${NOTE_KEY_BASE}:${currentUserId()}:${id}`); }catch(e){}
+  storage.begin();
+  storage.remove(`${NOTE_KEY_BASE}:${currentUserId()}:${id}`);
   saveNotesIndex(notesIndex().filter(n=>n.id!==id));
+  return storage.commit();
 }
 function newNotePage(opts){
   opts = opts || {};
@@ -3126,16 +3227,15 @@ function newNotePage(opts){
 function exportNotes(){
   const index = notesIndex();
   const pages = {};
-  index.forEach(n=>{ try{ pages[n.id] = JSON.parse(localStorage.getItem(`${NOTE_KEY_BASE}:${currentUserId()}:${n.id}`)||'[]'); }catch(e){} });
+  index.forEach(n=>{ pages[n.id] = storage.get(`${NOTE_KEY_BASE}:${currentUserId()}:${n.id}`, []); });
   return {index, pages};
 }
 function importNotes(data){
   if(!data || !Array.isArray(data.index)) return;
-  notesIndex().forEach(n=>{ try{ localStorage.removeItem(`${NOTE_KEY_BASE}:${currentUserId()}:${n.id}`); }catch(e){} });
-  try{
-    saveNotesIndex(data.index);
-    data.index.forEach(n=>{ localStorage.setItem(`${NOTE_KEY_BASE}:${currentUserId()}:${n.id}`, JSON.stringify((data.pages||{})[n.id]||[])); });
-  }catch(e){}
+  // chamado dentro da transação da restauração: se algo falhar, as páginas antigas voltam
+  notesIndex().forEach(n=>{ storage.remove(`${NOTE_KEY_BASE}:${currentUserId()}:${n.id}`); });
+  saveNotesIndex(data.index);
+  data.index.forEach(n=>{ storage.set(`${NOTE_KEY_BASE}:${currentUserId()}:${n.id}`, (data.pages||{})[n.id]||[]); });
 }
 
 /* ---------- desenho ---------- */
@@ -3699,7 +3799,9 @@ function duelScreen(){
   const c = h(`<div class="content"></div>`);
   wrap.appendChild(c);
   let level = 0, names = ['Jogador 1','Jogador 2'];
-  try{ const saved = JSON.parse(localStorage.getItem('mathstudy-duel-names')||'null'); if(Array.isArray(saved)) names = saved; }catch(e){}
+  // nomes do duelo agora são de cada conta; a chave antiga (do aparelho) só é lida se a conta ainda não tiver os seus
+  const saved = storage.get(`${DUEL_NAMES_KEY_BASE}:${currentUserId()}`, null) || storage.get('mathstudy-duel-names', null);
+  if(Array.isArray(saved)) names = saved;
 
   c.appendChild(h(`<div class="lt-start"><div class="big">⚔️</div><h2>Duelo a dois</h2><p>Dois jogadores no mesmo celular, frente a frente. Deite o aparelho na mesa: cada um fica com uma metade da tela. Quem acertar primeiro leva o ponto! São ${DUEL_ROUNDS} contas.</p></div>`));
   const form = h(`<div class="answer-form">
@@ -3719,7 +3821,7 @@ function duelScreen(){
   const start = h(`<button class="btn primary" style="width:100%">Começar duelo ⚔️</button>`);
   start.onclick = ()=>{
     names = [form.querySelector('.duel-n1').value.trim()||'Jogador 1', form.querySelector('.duel-n2').value.trim()||'Jogador 2'];
-    try{ localStorage.setItem('mathstudy-duel-names', JSON.stringify(names)); }catch(e){}
+    storage.set(`${DUEL_NAMES_KEY_BASE}:${currentUserId()}`, names);
     runDuel(names, level);
   };
   c.appendChild(start);
@@ -3997,8 +4099,8 @@ async function startSpacedReview(){
    o progresso fica só neste aparelho; de tempos em tempos lembramos de exportar uma cópia */
 const BACKUP_KEY_BASE = 'mathstudy-backup-v1';
 const BACKUP_EVERY_DAYS = 14, BACKUP_MIN_ANSWERS = 30;
-function backupInfo(){ try{ return JSON.parse(localStorage.getItem(`${BACKUP_KEY_BASE}:${currentUserId()}`)||'{}'); }catch(e){ return {}; } }
-function saveBackupInfo(o){ try{ localStorage.setItem(`${BACKUP_KEY_BASE}:${currentUserId()}`, JSON.stringify(Object.assign(backupInfo(), o))); }catch(e){} }
+function backupInfo(){ return storage.get(`${BACKUP_KEY_BASE}:${currentUserId()}`, {}) || {}; }
+function saveBackupInfo(o){ return storage.set(`${BACKUP_KEY_BASE}:${currentUserId()}`, Object.assign(backupInfo(), o)); }
 let _backupAskedThisRun = false;
 async function maybeAskBackup(){
   if(_backupAskedThisRun || !currentUser) return;
@@ -4266,6 +4368,8 @@ function exerciseSessionScreen(){
     }
     const btn = h(`<button class="check-btn">Corrigir</button>`);
     btn.onclick = async ()=>{
+      if(sess.checked || btn.disabled) return; // clique duplo / Enter repetido: corrige uma vez só
+      btn.disabled = true;
       const v1 = parseUserNumber(form.querySelector('#ans1').value);
       let correct;
       if(ex.type==='single'){
@@ -4334,6 +4438,10 @@ async function startReviewErrors(opts){
 }
 
 async function recordReviewAnswer(item, correct){
+  const {ok} = await storage.transaction(()=> recordReviewAnswerNow(item, correct));
+  return {ok};
+}
+async function recordReviewAnswerNow(item, correct){
   const hist = await loadHistory();
   hist.unshift({
     id: `${Date.now()}_${Math.random().toString(36).slice(2,8)}`,
@@ -4411,6 +4519,8 @@ function reviewErrorsSessionScreen(){
     }
     const btn = h(`<button class="check-btn">Corrigir</button>`);
     btn.onclick = async ()=>{
+      if(sess.checked || btn.disabled) return; // clique duplo / Enter repetido: corrige uma vez só
+      btn.disabled = true;
       const v1 = parseUserNumber(form.querySelector('#ans1').value);
       let correct;
       if(ex.type==='single'){
@@ -4543,6 +4653,8 @@ function challengeSessionScreen(){
     }
     const btn = h(`<button class="check-btn">Corrigir</button>`);
     btn.onclick = async ()=>{
+      if(sess.checked || btn.disabled) return; // clique duplo / Enter repetido: corrige uma vez só
+      btn.disabled = true;
       const v1 = parseUserNumber(form.querySelector('#ans1').value);
       let correct;
       if(ex.type==='single'){
@@ -4626,10 +4738,10 @@ function pickWeighted(items, weights){
 
 /* último treino montado, pra já abrir a tela com as mesmas escolhas */
 function loadLastTraining(){
-  try{ const raw = localStorage.getItem(`${PTRAIN_KEY_BASE}:${currentUserId()}`); return raw ? JSON.parse(raw) : null; }catch(e){ return null; }
+  return storage.get(`${PTRAIN_KEY_BASE}:${currentUserId()}`, null);
 }
 function saveLastTraining(cfg){
-  try{ localStorage.setItem(`${PTRAIN_KEY_BASE}:${currentUserId()}`, JSON.stringify({subjectIds:cfg.subjectIds, difficultyMode:cfg.difficultyMode, qty:cfg.qty, focusWeak:cfg.focusWeak})); }catch(e){}
+  return storage.set(`${PTRAIN_KEY_BASE}:${currentUserId()}`, {subjectIds:cfg.subjectIds, difficultyMode:cfg.difficultyMode, qty:cfg.qty, focusWeak:cfg.focusWeak});
 }
 function weakSubjectIds(progress){
   return SUBJECTS.filter(s=>{ const a = accuracyFor(progress, s.id); return a!==null && a < PT_WEAK_LIMIT; }).map(s=>s.id);
@@ -4957,6 +5069,8 @@ function personalizedSessionScreen(){
     }
     const btn = h(`<button class="check-btn">Corrigir</button>`);
     btn.onclick = async ()=>{
+      if(sess.checked || btn.disabled) return; // clique duplo / Enter repetido: corrige uma vez só
+      btn.disabled = true;
       const v1 = parseUserNumber(form.querySelector('#ans1').value);
       let correct;
       if(ex.type==='single'){
@@ -5441,7 +5555,8 @@ async function settingsScreen(){
       resetBtn.textContent = 'Tem certeza? Toque de novo pra confirmar';
       return;
     }
-    await resetCurrentUserProgress();
+    const ok = await resetCurrentUserProgress();
+    if(!ok){ resetBtn.textContent = 'Não foi possível resetar agora. Nada foi apagado.'; confirmingReset = false; return; }
     resetBtn.textContent = 'Progresso resetado ✓';
     resetBtn.disabled = true;
   };
@@ -5684,7 +5799,8 @@ function loadGame(){
   const uid = currentUserId();
   if(gameCache && gameCacheUid===uid) return gameCache;
   let g = null;
-  try{ const raw = localStorage.getItem(`${GAME_KEY_BASE}:${uid}`); g = raw ? JSON.parse(raw) : null; }catch(e){}
+  g = storage.get(`${GAME_KEY_BASE}:${uid}`, null);
+  if(g && typeof g !== 'object') g = null;
   gameCache = Object.assign({xp:0, streak:0, lastDay:null, bestCombo:0, hits:0, hardHits:0, fixed:0, boltBest:0, subjectsHit:{}, ach:{}, today:null}, g||{});
   gameCacheUid = uid;
   gameEnsureToday();
@@ -5692,7 +5808,7 @@ function loadGame(){
   return gameCache;
 }
 function saveGame(){
-  try{ localStorage.setItem(`${GAME_KEY_BASE}:${gameCacheUid}`, JSON.stringify(gameCache)); }catch(e){}
+  return storage.set(`${GAME_KEY_BASE}:${gameCacheUid}`, gameCache);
 }
 function gameEnsureToday(){
   const g = gameCache, k = dayKey();

@@ -57,7 +57,8 @@ function markTopicRead(subjectId, topicId){
 function errorsSync(){
   const uid = currentUserId();
   if(!(errorsCache && errorsCacheUid===uid)){
-    try{ const raw = localStorage.getItem(`${ERRORS_KEY_BASE}:${uid}`); errorsCache = raw ? JSON.parse(raw) : []; }catch(e){ errorsCache = []; }
+    errorsCache = storage.get(`${ERRORS_KEY_BASE}:${uid}`, []);
+    if(!Array.isArray(errorsCache)) errorsCache = [];
     errorsCacheUid = uid;
   }
   return errorsCache;
