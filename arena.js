@@ -52,7 +52,7 @@ function withSeed(seed, fn){
    ========================================================= */
 function arenaScreen(){
   const wrap = document.createElement('div');
-  wrap.appendChild(topbar('⚔️ Arena', true, ()=>go('home')));
+  wrap.appendChild(topbar('⚔️ Arena', true, ()=>go('challenges')));
   const c = h(`<div class="content"></div>`);
   wrap.appendChild(c);
   const g = loadGame(), a = arenaData();

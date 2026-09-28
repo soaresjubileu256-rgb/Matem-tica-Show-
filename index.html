@@ -26,6 +26,7 @@
 
 <script src="arena.js"></script>
 <script src="estudo.js"></script>
+<script src="ensino.js"></script>
 <script src="aprendizagem.js"></script>
 <script src="app.js"></script>
 
@@ -33,9 +34,38 @@
 // registra o service worker (funcionamento offline + instalação como app). Se o navegador
 // não suportar, ou se estiver rodando fora de um servidor (ex: abrindo o arquivo direto),
 // simplesmente não faz nada — o app continua funcionando normal, só sem o modo offline.
+// aviso discreto no rodapé (nova versão / sem internet)
+function netNotice(id, text, action){
+  let el = document.getElementById(id);
+  if(!text){ if(el) el.remove(); return; }
+  if(!el){ el = document.createElement('div'); el.id = id; el.className = 'net-notice'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
+  el.innerHTML = '<span></span>';
+  el.querySelector('span').textContent = text;
+  if(action){ const b = document.createElement('button'); b.type = 'button'; b.textContent = action.label; b.onclick = action.go; el.appendChild(b); }
+  const x = document.createElement('button'); x.type = 'button'; x.className = 'net-x'; x.setAttribute('aria-label', 'Fechar aviso'); x.textContent = '✕'; x.onclick = ()=> el.remove(); el.appendChild(x);
+}
+function netStatus(){
+  if(navigator.onLine) netNotice('net-off', null);
+  else netNotice('net-off', 'Você está sem internet. O app continua funcionando e seu progresso fica salvo neste aparelho.');
+}
+window.addEventListener('online', netStatus);
+window.addEventListener('offline', netStatus);
+window.addEventListener('load', netStatus);
 if('serviceWorker' in navigator){
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
+    const hadController = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.register('sw.js').then(reg => {
+      // procura atualização quando o app volta a ficar visível (no máximo 1 vez por hora)
+      let lastCheck = Date.now();
+      document.addEventListener('visibilitychange', () => {
+        if(document.visibilityState === 'visible' && Date.now() - lastCheck > 36e5){ lastCheck = Date.now(); reg.update().catch(() => {}); }
+      });
+    }).catch(() => {});
+    // uma versão nova assumiu: oferece recarregar (sem interromper quem está no meio de uma questão)
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if(!hadController) return; // primeira instalação: nada mudou para a pessoa
+      netNotice('net-upd', 'Nova versão do Matemática Show disponível.', {label:'Atualizar', go:() => location.reload()});
+    });
   });
 }
 </script>

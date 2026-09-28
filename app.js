@@ -244,7 +244,10 @@ function subColumnSteps(a, b, decimalPlaces){
     let borrowOut, digit;
     if(top < bottom){
       digit = top+10-bottom;
-      steps.push(`${cap1(place)}: ${top0}${borrowIn?` (já emprestou, ficou ${top})`:''} é menor que ${bottom} → empresta 1 da casa vizinha: ${top+10} − ${bottom} = ${digit}`);
+      if(top < 0){
+        // era 0 e já tinha emprestado 1: pega 1 da casa vizinha (vira 10) e, depois de emprestar, fica 9
+        steps.push(`${cap1(place)}: o 0 já tinha emprestado 1 para a direita e não tinha de onde tirar — ele pega 1 da casa vizinha (vira 10) e, depois de emprestar, fica 9: 9 − ${bottom} = ${digit}`);
+      } else steps.push(`${cap1(place)}: ${top0}${borrowIn?` (emprestou 1, ficou ${top})`:''} é menor que ${bottom} → empresta 1 da casa vizinha: ${top+10} − ${bottom} = ${digit}`);
       borrowOut = 1;
     } else {
       digit = top-bottom;
@@ -457,8 +460,10 @@ function chainRow(tokens){
 }
 
 /* ---------------- escada de passos: cada linha é um estágio da resolução ---------------- */
+/* números negativos com o sinal de menos tipográfico (−7 em vez de -7), só em texto simples */
+function minusSign(t){ return typeof t==='string' && !t.includes('<') ? t.replace(/(^|[\s=(:,])-(\d)/g, '$1−$2') : t; }
 function stepChain(lines){
-  const rows = lines.map((l,i)=> `<div class="eq-line">${l}</div>` + (i<lines.length-1 ? `<div class="eq-arrow">↓</div>` : '')).join('');
+  const rows = lines.map((l,i)=> `<div class="eq-line">${minusSign(l)}</div>` + (i<lines.length-1 ? `<div class="eq-arrow">↓</div>` : '')).join('');
   return `<div class="step-chain">${rows}</div>`;
 }
 // passo a passo completo da fórmula de Bhaskara: mostra a substituição de cada valor (com
@@ -1200,8 +1205,8 @@ const SUBJECTS = [
     ],
     gen:{
       facil:()=>{ const a=pick([2,3,4,5]), b=a*pick([2,3,4]); const c=a*pick([2,3]); const x=c*b/a; return mkSingle(`Se ${a} itens custam R$ ${b}, quanto custam ${c} itens (mesma proporção)?`, x, [`Proporção direta — multiplique em cruz: ${a} × x = ${c} × ${b}`, `x = ${c} × ${b} ÷ ${a}`, `x = ${x}`], null, proporcaoTag('direta') + cruzVisual(['Itens','R$'], [a,b], [c,'?']), proporcaoTag('direta') + cruzVisual(['Itens','R$'], [a,b], [c,fmt(x)])); },
-      medio:()=>{ const a=randInt(3,10), b=randInt(10,60); const c=randInt(3,20); const x=Math.round(c*b/a*100)/100; return mkSingle(`${a} máquinas produzem ${b} peças. Quantas peças ${c} máquinas produzem (mesma proporção)?`, x, [`Proporção direta: ${a}/${b} = ${c}/x`, `Multiplique em cruz: x = ${c} × ${b} ÷ ${a}`, `x = ${fmt(x)}`], null, proporcaoTag('direta') + cruzVisual(['Máquinas','Peças'], [a,b], [c,'?']), proporcaoTag('direta') + cruzVisual(['Máquinas','Peças'], [a,b], [c,fmt(x)])); },
-      dificil:()=>{ const a=randInt(2,8), b=randInt(4,20); const c=randInt(2,8); const x=Math.round(a*b/c*100)/100; return mkSingle(`${a} torneiras enchem uma caixa em ${b} horas. Em quantas horas ${c} torneiras enchem a mesma caixa (proporção inversa)?`, x, [`Proporção inversa — o x está na coluna Horas, então a fração da esquerda é ${b}/x. A coluna Torneiras entra invertida: ${c}/${a}`, `Multiplicando em cruz: ${b} × ${a} = ${c} × x`, `x = ${a} × ${b} ÷ ${c} = ${fmt(x)}`], null, proporcaoTag('inversa') + proporcaoTable(['Torneiras','Horas'], [a,b], [c,'?']), proporcaoTag('inversa') + proporcaoTable(['Torneiras','Horas'], [a,b], [c,fmt(x)])); },
+      medio:()=>{ const a=randInt(3,10), b=a*randInt(3,8); let c=randInt(3,20); if(c===a) c++; const x=c*b/a; return mkSingle(`${a} máquinas produzem ${b} peças. Quantas peças ${c} máquinas produzem (mesma proporção)?`, x, [`Proporção direta: ${a}/${b} = ${c}/x`, `Multiplique em cruz: x = ${c} × ${b} ÷ ${a}`, `x = ${fmt(x)}`], null, proporcaoTag('direta') + cruzVisual(['Máquinas','Peças'], [a,b], [c,'?']), proporcaoTag('direta') + cruzVisual(['Máquinas','Peças'], [a,b], [c,fmt(x)])); },
+      dificil:()=>{ let a, b, c; do{ a=randInt(2,8); b=randInt(4,20); c=randInt(2,8); } while(c===a || (a*b)%c!==0); const x=a*b/c; return mkSingle(`${a} torneiras enchem uma caixa em ${b} horas. Em quantas horas ${c} torneiras enchem a mesma caixa (proporção inversa)?`, x, [`Proporção inversa — o x está na coluna Horas, então a fração da esquerda é ${b}/x. A coluna Torneiras entra invertida: ${c}/${a}`, `Multiplicando em cruz: ${b} × ${a} = ${c} × x`, `x = ${a} × ${b} ÷ ${c} = ${fmt(x)}`], null, proporcaoTag('inversa') + proporcaoTable(['Torneiras','Horas'], [a,b], [c,'?']), proporcaoTag('inversa') + proporcaoTable(['Torneiras','Horas'], [a,b], [c,fmt(x)])); },
     }
   },
   {
@@ -1300,9 +1305,9 @@ const SUBJECTS = [
       {title:'Exemplo 3 (a ≠ 1)', text:'2x² − 8x + 6 = 0 → S = {1, 3}', qVisual: bhaskaraFormulaBox() + '<div class="bk-divider">Substituindo os valores</div>' + bhaskaraCard(2,-8,6,true), steps: bhaskaraSteps(2,-8,6)},
     ],
     gen:{
-      facil:()=>{ const r1=randInt(1,6), r2=randInt(1,6); const b=-(r1+r2), c=r1*r2; const eqText=`x² ${fmtSigned(b)}x ${fmtSigned(c)} = 0`; return mkPair(eqText, r1, r2, bhaskaraSteps(1,b,c), stepChain([eqText]), bhaskaraCard(1,b,c)); },
-      medio:()=>{ const a=pick([1,2]); const r1=randInt(-5,5)||1, r2=randInt(-5,5)||2; const b=-a*(r1+r2), c=a*r1*r2; const eqText=`${a>1?a:''}x² ${fmtSigned(b)}x ${fmtSigned(c)} = 0`; return mkPair(eqText, r1, r2, bhaskaraSteps(a,b,c), stepChain([eqText]), bhaskaraCard(a,b,c)); },
-      dificil:()=>{ const a=pick([1,2,3]); const r1=randInt(-6,6)||1, r2=randInt(-6,6)||-2; const b=-a*(r1+r2), c=a*r1*r2; const eqText=`${a>1?a:''}x² ${fmtSigned(b)}x ${fmtSigned(c)} = 0`; return mkPair(eqText, r1, r2, bhaskaraSteps(a,b,c), stepChain([eqText]), bhaskaraCard(a,b,c)); },
+      facil:()=>{ const r1=randInt(1,6), r2=randInt(1,6); const b=-(r1+r2), c=r1*r2; const eqText=eq2Text(1,b,c); return mkPair(eqText, r1, r2, bhaskaraSteps(1,b,c), stepChain([eqText]), bhaskaraCard(1,b,c)); },
+      medio:()=>{ const a=pick([1,2]); const r1=randInt(-5,5)||1, r2=randInt(-5,5)||2; const b=-a*(r1+r2), c=a*r1*r2; const eqText=eq2Text(a,b,c); return mkPair(eqText, r1, r2, bhaskaraSteps(a,b,c), stepChain([eqText]), bhaskaraCard(a,b,c)); },
+      dificil:()=>{ const a=pick([1,2,3]); const r1=randInt(-6,6)||1, r2=randInt(-6,6)||-2; const b=-a*(r1+r2), c=a*r1*r2; const eqText=eq2Text(a,b,c); return mkPair(eqText, r1, r2, bhaskaraSteps(a,b,c), stepChain([eqText]), bhaskaraCard(a,b,c)); },
     }
   },
   {
@@ -1322,7 +1327,7 @@ const SUBJECTS = [
     gen:{
       facil:()=>{ const x=randInt(1,10), y=randInt(1,10); const a1=x+y, a2=x-y; const rows=[{x:'x',y:'+ y',c:`${a1}`},{x:'x',y:'− y',c:`${a2}`}]; const sum={x:'2x',y:'',c:`${a1+a2}`}; return mkXY(`x + y = ${a1}\nx − y = ${a2}`, x, y, [`Some as duas equações: 2x = ${a1+a2}`, `x = ${a1+a2}/2 = ${x}`, `Substitua na 1ª: y = ${a1} − ${x} = ${y}`], sistemaArmado(rows), sistemaArmado(rows, sum)); },
       medio:()=>{ const x=randInt(1,8), y=randInt(1,8); const a=randInt(2,3), b=randInt(2,3); const e1=a*x+y, e2=x+b*y; const rows=[{x:`${a}x`,y:'+ y',c:`${e1}`},{x:'x',y:`+ ${b}y`,c:`${e2}`}]; return mkXY(`${a}x + y = ${e1}\nx + ${b}y = ${e2}`, x, y, [`Isole y na 1ª: y = ${e1} − ${a}x`, `Substitua na 2ª: x + ${b}(${e1} − ${a}x) = ${e2}`, `Resolvendo: x = ${x}`, `y = ${e1} − ${a}×${x} = ${y}`], sistemaArmado(rows), sistemaArmado(rows)); },
-      dificil:()=>{ const x=randInt(-5,8), y=randInt(-5,8); const a=randInt(2,4), b=randInt(2,4), c=randInt(1,3), d=randInt(1,3); const e1=a*x+c*y, e2=b*x-d*y; const rows=[{x:`${a}x`,y:`+ ${c}y`,c:`${e1}`},{x:`${b}x`,y:`− ${d}y`,c:`${e2}`}]; return mkXY(`${a}x + ${c}y = ${e1}\n${b}x − ${d}y = ${e2}`, x, y, [`Multiplique as equações para igualar coeficientes de uma variável.`, `Some/subtraia para eliminar essa variável.`, `x = ${x}`, `y = ${y}`], sistemaArmado(rows), sistemaArmado(rows)); },
+      dificil:()=>{ const x=randInt(-5,8), y=randInt(-5,8); const a=randInt(2,4), b=randInt(2,4), c=randInt(1,3), d=randInt(1,3); const e1=a*x+c*y, e2=b*x-d*y; const cy = c===1?'':c, dy = d===1?'':d; const rows=[{x:`${a}x`,y:`+ ${cy}y`,c:`${e1}`},{x:`${b}x`,y:`− ${dy}y`,c:`${e2}`}]; return mkXY(`${a}x + ${cy}y = ${e1}\n${b}x − ${dy}y = ${e2}`, x, y, [`Multiplique as equações para igualar coeficientes de uma variável.`, `Some/subtraia para eliminar essa variável.`, `x = ${x}`, `y = ${y}`], sistemaArmado(rows), sistemaArmado(rows)); },
     }
   },
   {
@@ -1365,7 +1370,7 @@ const SUBJECTS = [
     gen:{
       facil:()=>{ const a=randInt(2,6), b=randInt(1,10), x=randInt(1,10); const r=a*x+b; return mkSingle(`f(x) = ${a}x + ${b}. Calcule f(${x}).`, r, [`Substitua x por ${x}: f(${x}) = ${a}×${x} + ${b}`, `f(${x}) = ${a*x} + ${b} = ${r}`], null, stepChain([`f(x) = ${a}x + ${b}`, `f(${x}) = ?`]), stepChain([`f(x) = ${a}x + ${b}`, `f(${x}) = ${a}×${x} + ${b}`, `f(${x}) = ${r}`])); },
       medio:()=>{ const a=randInt(2,6); const root=pick([-6,-5,-4,-3,-2,-1,1,2,3,4,5,6]); const b=-a*root; const fx=`f(x) = ${a}x ${fmtSigned(b)}`; return mkSingle(`${fx}. Qual é a raiz da função (valor de x que faz f(x) = 0)?`, root, [`Iguale a fórmula a 0: ${a}x ${fmtSigned(b)} = 0`, `Isole o x: ${a}x = ${-b}`, `x = ${-b} ÷ ${a} = ${root}`], null, stepChain([fx, 'f(x) = 0 → ?']), stepChain([fx, `${a}x ${fmtSigned(b)} = 0`, `x = ${root}`])); },
-      dificil:()=>{ const a=randInt(2,9); let b=randInt(-40,40); if(b===0) b=7; const root=Math.round((-b/a)*100)/100; const fx=`f(x) = ${a}x ${fmtSigned(b)}`; return mkSingle(`${fx}. Qual é a raiz da função (valor de x que faz f(x) = 0)?`, root, [`Iguale a fórmula a 0: ${a}x ${fmtSigned(b)} = 0`, `Isole o x: ${a}x = ${-b}`, `x = ${-b} ÷ ${a} = ${fmt(root)}`], null, stepChain([fx, 'f(x) = 0 → ?']), stepChain([fx, `${a}x ${fmtSigned(b)} = 0`, `x = ${fmt(root)}`])); },
+      dificil:()=>{ const a=randInt(2,9); let b=randInt(-40,40); if(b===0) b=7; const root=Math.round((-b/a)*100)/100; const fx=`f(x) = ${a}x ${fmtSigned(b)}`; const exact = Number.isInteger(-b/a); return mkSingle(`${fx}. Qual é a raiz da função (valor de x que faz f(x) = 0)?${exact?'':' Arredonde para 2 casas.'}`, root, [`Iguale a fórmula a 0: ${a}x ${fmtSigned(b)} = 0`, `Isole o x: ${a}x = ${-b}`, `x = ${-b} ÷ ${a} = ${exact ? fmt(root) : '≈ '+fmt(root)}`], null, stepChain([fx, 'f(x) = 0 → ?']), stepChain([fx, `${a}x ${fmtSigned(b)} = 0`, `x = ${fmt(root)}`])); },
     }
   },
   {
@@ -1377,7 +1382,7 @@ const SUBJECTS = [
       <li><b>MMC:</b> multiplique <b>todos</b> os fatores que aparecem, cada um com a <b>maior</b> quantidade de vezes em que aparece.</li>
       <li><b>MDC:</b> multiplique só os fatores <b>em comum</b>, cada um com a <b>menor</b> quantidade de vezes.</li>
     </ol>
-    <p><b>Dica:</b> MMC × MDC = produto dos dois números. Ex.: 12 × 6 = 4 × 18 = 72.</p>`,
+    <p><b>Dica:</b> MMC × MDC = produto dos dois números. Ex.: com 12 e 18, MMC = 36 e MDC = 6, e 36 × 6 = 216 = 12 × 18.</p>`,
     examples:[
       {title:'Exemplo 1 (MMC)', text:'MMC(4, 6) = 12', steps:['Múltiplos de 4: 4, 8, <b>12</b>, 16...', 'Múltiplos de 6: 6, <b>12</b>, 18...', 'O primeiro que aparece nas duas listas é 12.']},
       {title:'Exemplo 2 (MDC)', text:'MDC(12, 18) = 6', steps:mdcSteps(12,18)},
@@ -1516,11 +1521,18 @@ const BNCC_ANO = {adicao:'1º ao 5º ano', subtracao:'1º ao 5º ano', multiplic
   geometria:'5º ao 7º ano', estatistica:'6º ao 8º ano', dinheiro:'2º ao 5º ano'};
 
 function fmtSigned(n){ return n>=0? `+ ${n}` : `− ${Math.abs(n)}`; }
+/* ax² + bx + c = 0 escrito do jeito do caderno: sem "1x²", sem "+ 0x" e sem "+ 0" */
+function eq2Text(a, b, c){
+  let t = `${a>1?a:''}x²`;
+  if(b) t += ` ${b>0?'+':'−'} ${Math.abs(b)===1?'':Math.abs(b)}x`;
+  if(c) t += ` ${fmtSigned(c)}`;
+  return t + ' = 0';
+}
 
-function mkSingle(question, answer, steps, columns, qVisual, solvedVisual){ return {type:'single', question, answer, steps, columns, qVisual, solvedVisual}; }
+function mkSingle(question, answer, steps, columns, qVisual, solvedVisual){ return {type:'single', question:minusSign(question), answer, steps:(steps||[]).map(minusSign), columns, qVisual, solvedVisual}; }
 function mkFrac(question, num, den, steps, visual){ return {type:'single', question, answer: num/den, displayAnswer: fracStr(num,den), steps, visual}; }
-function mkPair(question, a, b, steps, qVisual, solvedVisual){ return {type:'pair', question, answer:[a,b], steps, qVisual, solvedVisual}; }
-function mkXY(question, x, y, steps, qVisual, solvedVisual){ return {type:'xy', question, answer:{x,y}, steps, qVisual, solvedVisual}; }
+function mkPair(question, a, b, steps, qVisual, solvedVisual){ return {type:'pair', question:minusSign(question), answer:[a,b], steps:(steps||[]).map(minusSign), qVisual, solvedVisual}; }
+function mkXY(question, x, y, steps, qVisual, solvedVisual){ return {type:'xy', question:question.split('\n').map(minusSign).join('\n'), answer:{x,y}, steps:(steps||[]).map(minusSign), qVisual, solvedVisual}; }
 
 /* =========================================================
    Resolvedor de questões livres ("Resolver questão")
@@ -2243,7 +2255,13 @@ async function reviewErrorResult(errorId, correct){
   let res;
   if(correct){
     const box = e.box || 1;
-    if(box >= 3){ errs.splice(idx,1); res = 'learned'; const g = loadGame(); g.errLearned = (g.errLearned||0) + 1; saveGame(); }
+    if(box >= 3){
+      errs.splice(idx,1); res = 'learned';
+      const g = loadGame(); g.errLearned = (g.errLearned||0) + 1;
+      // "conteúdo recuperado": guarda as últimas questões que saíram do caderno
+      g.recovered = [{subjectId:e.subjectId, q:e.ex ? String(e.ex.question||'') : '', count:e.count||1, firstTs:e.firstTs||e.ts, ts:Date.now()}].concat(g.recovered||[]).slice(0, 30);
+      saveGame();
+    }
     else { e.box = box + 1; e.due = Date.now() + ERROR_BOX_DAYS[e.box]*864e5; res = 'up'; }
   } else {
     e.box = 1; e.due = Date.now() + 864e5; e.count = (e.count||1) + 1; e.lastWrong = Date.now(); res = 'again';
@@ -2963,17 +2981,17 @@ function topbar(title, showBack, onBack){
 
 /* ---------------- barra de navegação inferior ---------------- */
 const BOTTOM_NAV_ITEMS = [
-  {screen:'home', icon:'⌂', label:'Início', group:['home','help']},
-  {screen:'content', icon:'∑', label:'Aprender', group:['content','subjectDetail','geoLab','cardsDeck','notebook','notePage']},
-  {screen:'practice', icon:'✎', label:'Praticar', group:['practice','exercisesSubjects','exerciseDifficulty','exerciseSession','personalizedSetup','personalizedSession','reviewErrorsSession','errors','tabuada','challengeDifficulty','challengeSession','examSetup','examResult','placement','plan','solve']},
-  {screen:'progress', icon:'↗', label:'Progresso', group:['progress','report','history','achievements','certificates','certificate']},
-  {screen:'more', icon:'☰', label:'Mais', group:['more','arena','arenaDaily','lightning','quizSetup','duel','path','calculator','profile','settings']},
+  {screen:'home', icon:'🏠', label:'Início', group:['home','help','more','profile','settings']},
+  {screen:'content', icon:'📚', label:'Aprender', group:['content','subjectDetail','geoLab','cardsDeck','notebook','notePage']},
+  {screen:'practice', icon:'✏️', label:'Praticar', group:['practice','exercisesSubjects','exerciseDifficulty','exerciseSession','personalizedSetup','personalizedSession','reviewErrorsSession','errors','tabuada','examSetup','examResult','placement','plan','solve','calculator']},
+  {screen:'progress', icon:'📊', label:'Progresso', group:['progress','report','history']},
+  {screen:'challenges', icon:'🎮', label:'Desafios', group:['challenges','arena','arenaDaily','lightning','quizSetup','duel','path','challengeDifficulty','challengeSession','achievements','certificates','certificate']},
 ];
 function bottomNav(){
   const bar = h(`<div class="bottom-nav"></div>`);
   BOTTOM_NAV_ITEMS.forEach(item=>{
     const active = item.group.includes(state.screen);
-    const btn = h(`<button class="bn-item ${active?'active':''}"><span class="bn-icon">${item.icon}</span><span class="bn-label">${item.label}</span></button>`);
+    const btn = h(`<button class="bn-item ${active?'active':''}" ${active?'aria-current="page"':''}><span class="bn-icon" aria-hidden="true">${item.icon}</span><span class="bn-label">${item.label}</span></button>`);
     btn.onclick = ()=>{ if(state.screen !== item.screen) go(item.screen); };
     bar.appendChild(btn);
   });
@@ -3677,7 +3695,7 @@ function addScratchButton(card, ex){
 const DUEL_ROUNDS = 10;
 function duelScreen(){
   const wrap = document.createElement('div');
-  wrap.appendChild(topbar('⚔️ Duelo a dois', true, ()=>go('home')));
+  wrap.appendChild(topbar('⚔️ Duelo a dois', true, ()=>go('challenges')));
   const c = h(`<div class="content"></div>`);
   wrap.appendChild(c);
   let level = 0, names = ['Jogador 1','Jogador 2'];
@@ -4001,7 +4019,7 @@ async function maybeAskBackup(){
 /* ---------------- TABUADA (tela própria) ---------------- */
 function tabuadaScreen(){
   const wrap = document.createElement('div');
-  wrap.appendChild(topbar('Tabuada', true, ()=>go('home')));
+  wrap.appendChild(topbar('Tabuada', true, ()=>go('practice')));
   wrap.appendChild(buildTabuadaSection());
   return wrap;
 }
@@ -4057,7 +4075,7 @@ function renderExampleBody(ex){
 }
 function exercisesSubjectsScreen(){
   const wrap = document.createElement('div');
-  wrap.appendChild(topbar('Exercícios', true, ()=>go('home')));
+  wrap.appendChild(topbar('Exercícios', true, ()=>go('practice')));
   const c = h(`<div class="content"></div>`);
   c.appendChild(h(`<p style="color:var(--ink-soft); font-size:14px; margin:2px 0 16px;">Escolha um assunto para praticar.</p>`));
   SUBJECTS.forEach((s,u)=>{
@@ -4274,10 +4292,9 @@ function exerciseSessionScreen(){
     wireSlashButtons(form);
   } else {
     const correct = sess.wasCorrect;
-    const fb = learnFeedback(ex, correct, sess.subjectId);
+    const fb = learnFeedback(ex, correct, sess.subjectId, {difficulty: sess.difficulty});
     c.appendChild(fb);
-    if(!correct) renderDrillButton(c, sess.subjectId, sess.difficulty);
-    const nextBtn = h(`<button class="next-btn">${sess.index+1<sess.total? 'Próxima questão':'Ver resultado'}</button>`);
+    const nextBtn = h(`<button class="next-btn">${sess.index+1<sess.total? (correct ? 'Próxima questão' : 'Tentar uma questão parecida') : 'Ver resultado'}</button>`);
     nextBtn.onclick = ()=>{
       sess.index++;
       sess.checked=false; sess.wasCorrect=null;
@@ -4305,6 +4322,7 @@ async function startReviewErrors(opts){
   const now = Date.now();
   let pool = errs.filter(e=>errorIsDue(e, now) && (!opts.subjectId || e.subjectId===opts.subjectId));
   if(!pool.length || opts.all) pool = errs.filter(e=>!opts.subjectId || e.subjectId===opts.subjectId);
+  if(opts.ids) pool = errs.filter(e=>opts.ids.includes(e.id)); // "tentar de novo" uma questão do caderno
   if(!pool.length){ go('home'); return; }
   pool = pool.slice().sort((a,b)=>(a.box||1)-(b.box||1) || (b.count||1)-(a.count||1)).slice(0, REVIEW_ERRORS_MAX);
   state.session = {
@@ -4419,7 +4437,7 @@ function reviewErrorsSessionScreen(){
     wireSlashButtons(form);
   } else {
     const correct = sess.wasCorrect;
-    const fb = learnFeedback(ex, correct, item.subjectId, {okTitle: item.reviewResult==='learned' ? 'Aprendido! Essa questão saiu do seu caderno de erros.' : `Correto! Ela volta em ${ERROR_BOX_DAYS[Math.min(3,(item.box||1)+1)]} dias para fixar.`, badTitle:'Vamos entender o erro (ela volta amanhã para você tentar de novo)'});
+    const fb = learnFeedback(ex, correct, item.subjectId, {difficulty: item.difficulty, okTitle: item.reviewResult==='learned' ? 'Aprendido! Essa questão saiu do seu caderno de erros.' : `Correto! Ela volta em ${ERROR_BOX_DAYS[Math.min(3,(item.box||1)+1)]} dias para fixar.`, badTitle:'Vamos entender o erro (ela volta amanhã para você tentar de novo)'});
     c.appendChild(fb);
     if(!correct) renderDrillButton(c, item.subjectId, item.difficulty);
     const nextBtn = h(`<button class="next-btn">${sess.index+1<sess.total? 'Próximo erro':'Ver resultado'}</button>`);
@@ -4438,7 +4456,7 @@ function reviewErrorsSessionScreen(){
 /* ---------------- DESAFIOS (perguntas de todos os assuntos misturadas, por dificuldade) ---------------- */
 function challengeDifficultyScreen(){
   const wrap = document.createElement('div');
-  wrap.appendChild(topbar('Desafios', true, ()=>go('home')));
+  wrap.appendChild(topbar('Desafio misto', true, ()=>go('challenges')));
   const c = h(`<div class="content"></div>`);
   c.appendChild(h(`<div class="greeting" style="margin-bottom:4px"><h2>🏆 Desafios</h2><p>10 questões sorteadas de todos os assuntos. Escolha a dificuldade.</p></div>`));
   const row = h(`<div class="diff-row"></div>`);
@@ -4551,7 +4569,7 @@ function challengeSessionScreen(){
     wireSlashButtons(form);
   } else {
     const correct = sess.wasCorrect;
-    const fb = learnFeedback(ex, correct, sess.currentSubjectId);
+    const fb = learnFeedback(ex, correct, sess.currentSubjectId, {difficulty: sess.difficulty});
     c.appendChild(fb);
     if(!correct) renderDrillButton(c, sess.currentSubjectId, sess.difficulty);
     const nextBtn = h(`<button class="next-btn">${sess.index+1<sess.total? 'Próxima questão':'Ver resultado'}</button>`);
@@ -4708,7 +4726,7 @@ function genQuestionAvoidingRepeat(subject, difficulty, lastSignature){
 
 async function personalizedSetupScreen(){
   const wrap = document.createElement('div');
-  wrap.appendChild(topbar('Treino personalizado', true, ()=>go('home')));
+  wrap.appendChild(topbar('Treino personalizado', true, ()=>go('practice')));
   const c = h(`<div class="content"></div>`);
   c.appendChild(h(`<p style="color:var(--ink-soft); font-size:14px; margin:2px 0 18px;">Monte um treino sob medida: escolha os assuntos, a dificuldade e quantas questões quer praticar.</p>`));
 
@@ -4967,7 +4985,7 @@ function personalizedSessionScreen(){
     wireSlashButtons(form);
   } else {
     const correct = sess.wasCorrect;
-    const fb = learnFeedback(ex, correct, sess.currentSubjectId);
+    const fb = learnFeedback(ex, correct, sess.currentSubjectId, {difficulty: sess.difficulty});
     c.appendChild(fb);
     if(!correct) renderDrillButton(c, sess.currentSubjectId, sess.difficulty);
     const nextBtn = h(`<button class="next-btn">${sess.index+1<sess.total? 'Próxima questão':'Ver resultado'}</button>`);
@@ -4987,7 +5005,7 @@ function personalizedSessionScreen(){
 /* ---------------- SOLVE ---------------- */
 function solveScreen(){
   const wrap = document.createElement('div');
-  wrap.appendChild(topbar('Resolver questão', true, ()=>go('home')));
+  wrap.appendChild(topbar('Resolver questão', true, ()=>go('practice')));
   const c = h(`<div class="content"></div>`);
   const card = h(`
     <div>
@@ -5058,7 +5076,7 @@ function solveScreen(){
 /* ---------------- CALCULATOR ---------------- */
 function calculatorScreen(){
   const wrap = document.createElement('div');
-  wrap.appendChild(topbar('Calculadora', true, ()=>go('home')));
+  wrap.appendChild(topbar('Calculadora', true, ()=>go('practice')));
   const c = h(`<div class="content"></div>`);
   const st = state.calc;
   const disp = h(`<div class="calc-display"><div class="prev mono">${st.prev}</div><div class="cur mono">${st.cur}</div></div>`);
@@ -5445,6 +5463,8 @@ async function progressScreen(){
   const studied = SUBJECTS.filter(s=>(p[s.id]&&p[s.id].attempted) || (studyRead()[s.id]||[]).length).length;
   const streak = gameStreakNow();
   c.appendChild(h(`<p class="edu-lead">Como está o seu aprendizado.</p>`));
+  const ov = overallProgress();
+  c.appendChild(h(`<div class="edu-card edu-overall pg-overall"><div class="edu-small"><span>Progresso geral na trilha</span><b>${ov.pct}%</b></div>${eduBar(ov.pct, `Progresso geral: ${ov.pct}%`)}<small>${ov.done} de ${ov.total} assuntos concluídos (as 5 etapas: aprender, exemplos, praticar, revisar e dominar)</small></div>`));
   c.appendChild(h(`<div class="edu-stats edu-stats4"><div><b>${att}</b><span>exercícios feitos</span></div><div><b>${att ? Math.round(ok/att*100)+'%' : '—'}</b><span>de acerto</span></div>
     <div><b>${studied}</b><span>assuntos estudados</span></div><div><b>${strong}</b><span>proficientes ou dominados</span></div></div>`));
 
@@ -5489,18 +5509,22 @@ async function progressScreen(){
   } else dif.appendChild(h(`<p class="edu-lead">${att ? 'Nenhuma dificuldade forte agora. Continue praticando!' : 'Responda alguns exercícios e aqui aparecem os assuntos que mais precisam de atenção.'}</p>`));
   c.appendChild(dif);
 
-  // domínio por assunto
-  const dm = h(`<section class="edu-sec"><div class="edu-sec-h"><h2>Domínio por assunto</h2></div></section>`);
-  LEARN_AREAS.forEach(a=>{
-    dm.appendChild(h(`<div class="edu-area-t">${a.name}</div>`));
+  // domínio por assunto e por parte (🟢 Dominado · 🟡 Em aprendizado · 🔴 Precisa praticar)
+  const dm = h(`<section class="edu-sec"><div class="edu-sec-h"><h2>Domínio dos conteúdos</h2></div>
+    <p class="edu-lead sk-legend">🟢 Dominado · 🟡 Em aprendizado · 🔴 Precisa praticar · ○ Ainda não praticado</p></section>`);
+  LEARN_AREAS.forEach((a, ai)=>{
+    dm.appendChild(h(`<div class="edu-area-t">Etapa ${ai+1} · ${a.name}</div>`));
     const l = h(`<div class="edu-list"></div>`);
     a.ids.forEach(id=>{
       const s = SUBJECTS.find(x=>x.id===id); if(!s) return;
       const d = p[id], m = masteryOf(d), acc = d && d.attempted ? Math.round(d.correct/d.attempted*100) : null;
-      const r = h(`<button type="button" class="edu-row edu-row-bar mastery-row"><span class="edu-ico">${s.sym}</span><span class="edu-row-t"><b></b><small>${m.ico} ${m.name}${acc!==null ? ` · ${acc}% de acerto em ${d.attempted}` : ''}</small>${eduBar(Math.round(m.lvl/4*100), `${s.name}: ${m.name}`)}</span><span class="edu-chev">›</span></button>`);
-      r.querySelector('b').textContent = s.name;
-      r.onclick = ()=> go('subjectDetail', {subjectId:id});
-      l.appendChild(r);
+      const skills = skillMastery(hist, id);
+      const box = h(`<details class="edu-card sk-card mastery-row"><summary><span class="edu-ico" aria-hidden="true">${s.sym}</span><span class="edu-row-t"><b></b><small>${m.ico} ${m.name}${acc!==null ? ` · ${acc}% de acerto em ${d.attempted}` : ''}</small>${eduBar(Math.round(m.lvl/4*100), `${s.name}: ${m.name}`)}</span><span class="sk-sum" aria-hidden="true">${skills.map(k=>k.state.ico).join('')}</span></summary>
+        <ul class="sk-list">${skills.map(r=>`<li class="sk-${r.state.key}"><span class="sk-ico" aria-hidden="true">${r.state.ico}</span><span class="sk-name">${escHTML(r.name)}</span><span class="sk-st">${r.state.name}${r.n ? ` · ${r.ok}/${r.n}` : ''}</span></li>`).join('')}</ul>
+        <button type="button" class="edu-link">Abrir ${escHTML(s.name)}</button></details>`);
+      box.querySelector('b').textContent = s.name;
+      box.querySelector('.edu-link').onclick = ()=> go('subjectDetail', {subjectId:id});
+      l.appendChild(box);
     });
     dm.appendChild(l);
   });
@@ -5511,6 +5535,7 @@ async function progressScreen(){
   const more = eduSection('Mais sobre você');
   const l2 = h(`<div class="edu-list"></div>`);
   l2.appendChild(eduRow({ico:'★', title:`Nível ${L.level} · ${g.xp} XP`, sub:`${L.title} · ${nAch} conquista${nAch===1?'':'s'}`, go:()=>go('achievements')}));
+  l2.appendChild(eduRow({ico:'📜', title:'Certificados', sub:'Episódios concluídos na Trilha', go:()=>go('certificates')}));
   l2.appendChild(eduRow({ico:'📝', title:'Relatório semanal', sub:'Resumo para pais e professores', go:()=>go('report')}));
   if(att) l2.appendChild(eduRow({ico:'🕘', title:'Histórico de questões', sub:'Tudo o que você respondeu', go:()=>go('history')}));
   more.appendChild(l2);
@@ -6117,7 +6142,7 @@ function boltQuestion(score){
 }
 function lightningScreen(){
   const wrap = document.createElement('div');
-  wrap.appendChild(topbar('⚡ Modo Relâmpago', true, ()=>go('home')));
+  wrap.appendChild(topbar('⚡ Modo Relâmpago', true, ()=>go('challenges')));
   const c = h(`<div class="content"></div>`);
   wrap.appendChild(c);
   const g = loadGame();
@@ -6785,7 +6810,7 @@ function pathHero(){
 /* ---------- tela da trilha ---------- */
 function pathScreen(){
   const wrap = document.createElement('div');
-  const bar = topbar('Trilha', true, ()=>go('home'));
+  const bar = topbar('Trilha', true, ()=>go('challenges'));
   bar.appendChild(statusPills());
   bar.classList.add('sticky-top');
   wrap.appendChild(bar);
@@ -6874,7 +6899,7 @@ function openChest(n, isDone){
 /* ---------- escolha do quiz ---------- */
 function quizSetupScreen(){
   const wrap = document.createElement('div');
-  wrap.appendChild(topbar('🎤 Quiz do Show', true, ()=>go('home')));
+  wrap.appendChild(topbar('🎤 Quiz do Show', true, ()=>go('challenges')));
   const c = h(`<div class="content"></div>`);
   const g = loadGame(); const best = g.quizBest || {};
   c.appendChild(h(`<div class="quiz-hero"><span class="beam l"></span><span class="beam r"></span><div class="mic">🎤</div><h2>Quiz do Show</h2><p>${QUIZ_TOTAL} perguntas de todos os assuntos. Você tem <b>${QUIZ_SECONDS}s</b> por pergunta — quanto mais rápido, mais pontos! Acertos seguidos dão bônus. 🔥</p></div>`));
@@ -6894,16 +6919,16 @@ function quizSetupScreen(){
 const TOUR_STEPS = [
   {sel:null, mood:'joy', title:'Bem-vindo ao Matemática Show!',
    text:'Aqui você aprende matemática de verdade: explicação, exemplos passo a passo, exercícios e correção que mostra onde você errou. Vamos conhecer o app em menos de 1 minuto.'},
-  {sel:'.edu-continue', title:'Continue de onde parou',
-   text:'Aqui aparece o assunto que você está estudando, a <b>próxima lição</b> e quanto já concluiu. Um toque e você volta exatamente de onde parou.'},
-  {sel:'.edu-areas', title:'Aprenda matemática',
-   text:'Os assuntos estão organizados em quatro áreas. Cada assunto tem <b>explicação</b>, <b>exemplos resolvidos</b>, <b>como resolver</b>, um exercício pra <b>tentar</b> e prática.'},
-  {sel:'.edu-list', title:'Pratique',
-   text:'Exercícios rápidos, <b>revisão dos seus erros</b> (o app explica o que deu errado) e o Resolver, que mostra o passo a passo de qualquer conta.'},
-  {sel:'.edu-today', title:'Desafio de hoje',
-   text:'Sua meta de questões do dia, as missões e o Desafio do Dia. Cada acerto dá XP e mantém sua 🔥 sequência de dias.'},
+  {sel:'.edu-continue', title:'Continue de onde você parou',
+   text:'Aqui aparece o assunto da sua <b>trilha</b>, a etapa em que você está (Aprender, Exemplos, Praticar, Revisar, Dominar) e o <b>próximo passo</b>. Um toque em Continuar e você segue de onde parou.'},
+  {sel:'.edu-quick', title:'Atalhos',
+   text:'<b>Prática recomendada</b> escolhe 5 questões pelo seu desempenho. <b>Aprender</b> abre a trilha com todos os assuntos. <b>Meu progresso</b> mostra o que você domina. Em dúvida? Toque em <b>🤔 Não sei o que estudar</b>.'},
+  {sel:'.edu-practice-today', title:'Prática de hoje',
+   text:'Todo dia o app escolhe o que mais vai te ajudar: seus erros, o assunto em que você está mais fraco ou o que está na hora de revisar. Sempre com o motivo.'},
+  {sel:'.edu-today', title:'Sua rotina',
+   text:'Meta de questões do dia, sua 🔥 sequência, nível, missões e o Desafio do Dia. Eles ajudam a manter o ritmo, mas o foco é aprender.'},
   {sel:'.bottom-nav', title:'Menu',
-   text:'<b>Aprender</b> tem os conteúdos. <b>Praticar</b> reúne exercícios, revisão, simulados e plano de estudos. <b>Progresso</b> mostra sua evolução. Em <b>Mais</b> ficam a Arena, a Trilha, a calculadora e as conquistas.'},
+   text:'<b>Aprender</b> tem a trilha e os conteúdos. <b>Praticar</b> reúne exercícios, caderno de erros, simulados e ferramentas. <b>Progresso</b> mostra seu domínio. <b>Desafios</b> tem a Arena, a Trilha, o Quiz e as conquistas.'},
   {sel:'.tut-help-btn', title:'Precisa de ajuda?',
    text:'Toque no <b>?</b> a qualquer momento pra abrir o guia "Como usar" ou rever este tour.'},
   {sel:null, mood:'joy', title:'Tudo pronto!', final:true,
@@ -6995,7 +7020,7 @@ function firstTimeTip(key, html){
 
 /* ---------- tela "Como usar" ---------- */
 const HELP_TOPICS = [
-  {ico:'🗺️', t:'Trilha, episódios e fases', d:'A Trilha (em <b>Praticar</b> ou <b>Mais</b>) é um jeito de praticar em forma de jogo. Cada assunto é um episódio com 5 etapas: Fase 1 (fácil), Fase 2 (médio), Prêmio surpresa 🎁, Fase 3 (difícil) e a Grande final 🎤. Se errar, a alternativa errada fica riscada e você tenta de novo (tem o botão 💡 <b>Ver dica</b>). Já sabe um assunto? Use <b>Pular pra cá ⏩</b> e faça um teste de nivelamento.'},
+  {ico:'🗺️', t:'Trilha, episódios e fases', d:'A Trilha (em <b>Desafios</b>) é um jeito de praticar em forma de jogo. Cada assunto é um episódio com 5 etapas: Fase 1 (fácil), Fase 2 (médio), Prêmio surpresa 🎁, Fase 3 (difícil) e a Grande final 🎤. Se errar, a alternativa errada fica riscada e você tenta de novo (tem o botão 💡 <b>Ver dica</b>). Já sabe um assunto? Use <b>Pular pra cá ⏩</b> e faça um teste de nivelamento.'},
   {ico:'❤️', t:'Vidas e moedas', d:'Você tem 5 vidas. Errar uma pergunta da Trilha gasta uma (só o primeiro erro de cada pergunta — tentar de novo não gasta mais), e elas voltam sozinhas (1 a cada 20 minutos). Sem vidas? Recarregue com 50 🪙 moedas, ou continue treinando em Exercícios, Quiz e Relâmpago, que não gastam vidas. Você ganha moedas completando fases e abrindo prêmios.'},
   {ico:'⭐', t:'XP e níveis', d:'Todo acerto dá XP (fácil 10, médio 15, difícil 25). Acertos seguidos formam um <b>combo 🔥</b> que aumenta o XP. Junte XP pra subir de nível e ganhar títulos novos, de "Aprendiz dos Números" até "Lenda da Matemática".'},
   {ico:'🔥', t:'Ofensiva', d:'É quantos dias seguidos você jogou. Responda pelo menos uma pergunta por dia (ou jogue uma partida do Relâmpago) pra manter a chama acesa. <b>Se passar um dia inteiro sem jogar, a ofensiva volta pra zero.</b> Toque no 🔥 pra ver sua semana, seu recorde e o próximo marco: 3, 7, 14, 30 dias e além dão 🪙 moedas.'},
@@ -7006,25 +7031,26 @@ const HELP_TOPICS = [
   {ico:'✏️', t:'Caderno (escrever à mão)', d:'Funciona como uma mesa digitalizadora: escreva com o dedo ou com uma caneta stylus (ela sente a pressão: aperte mais pra um traço mais grosso). Com caneta, o dedo passa a só mover a página, então você pode apoiar a mão na tela. Dois dedos movem e dão zoom. Tem caneta, marca-texto, borracha, linha reta (fica reta sozinha na horizontal/vertical), retângulo, círculo, texto com símbolos (², √, π...) e papel quadriculado, pautado, pontilhado ou <b>plano cartesiano</b>. Nas questões, o botão ✏️ abre um <b>rascunho</b> pra fazer a conta à mão.'},
   {ico:'🔺', t:'Laboratório de Geometria', d:'Em Aprender → <b>Laboratório de Geometria</b>. <b>Áreas</b>: escolha a figura (quadrado, retângulo, triângulo, paralelogramo, trapézio, losango, círculo), mexa nas medidas e veja os quadradinhos de 1 cm², a área e o perímetro mudando, com a explicação de onde vem cada fórmula. <b>Sólidos</b>: cubo, paralelepípedo e cilindro com volume e área total. <b>Ângulos</b>: arraste os cantos do triângulo e veja que os ângulos sempre somam 180°.'},
   {ico:'⚔️', t:'Duelo a dois', d:'Dois jogadores no mesmo celular, frente a frente: deite o aparelho na mesa e cada um fica com metade da tela. Quem acertar primeiro leva o ponto; errou, fica travado até a próxima conta.'},
-  {ico:'📜', t:'Certificados', d:'Venceu a Grande final de um episódio da Trilha? Ganha um certificado com seu nome, que dá pra imprimir ou salvar em PDF. Veja em <b>Mais → Certificados</b>.'},
+  {ico:'📜', t:'Certificados', d:'Venceu a Grande final de um episódio da Trilha? Ganha um certificado com seu nome, que dá pra imprimir ou salvar em PDF. Veja em <b>Desafios → Certificados</b>.'},
   {ico:'💾', t:'Backup do progresso', d:'Seu progresso fica salvo só neste aparelho. De vez em quando o app lembra você de salvar uma cópia. Você também pode fazer isso quando quiser em Configurações → <b>Exportar progresso</b>, e depois restaurar com <b>Importar</b>.'},
-  {ico:'📜', t:'Missões e meta do dia', d:'Na tela inicial, em <b>Desafio de hoje</b>: a meta de questões do dia (toque em "Mudar" pra ajustar), as <b>missões do dia</b> (toque pra ver e pegar o XP) e o Desafio do Dia.'},
+  {ico:'📜', t:'Missões e meta do dia', d:'Na tela inicial, em <b>Sua rotina</b> (e na aba Desafios): a meta de questões do dia (toque em "Mudar" pra ajustar), as <b>missões do dia</b> (toque pra ver e pegar o XP) e o Desafio do Dia.'},
   {ico:'🎤', t:'Quiz do Show', d:'10 perguntas de todos os assuntos, com 20 segundos cada. Quanto mais rápido você responde certo, mais pontos ganha, e acertos seguidos dão bônus. Pra sair no meio, toque no ✕ lá em cima.'},
   {ico:'⚡', t:'Relâmpago', d:'Você tem 60 segundos pra acertar o máximo de contas. Acertou: +1 ponto e +1 segundo. Errou: perde 3 segundos. Tente bater seu recorde!'},
-  {ico:'∑', t:'Aprender', d:'Em <b>Aprender</b> os assuntos estão em quatro áreas. Cada assunto é uma sequência: <b>1. Explicação</b> (dividida em lições curtas), <b>2. Exemplos resolvidos</b> passo a passo, <b>3. Como resolver</b>, <b>4. Tente você</b> (uma questão com correção) e <b>5. Pratique</b>. Toque em "Entendi, próxima lição" pra marcar o que já estudou: o Início mostra de onde continuar.'},
+  {ico:'∑', t:'Aprender', d:'Em <b>Aprender</b> fica a <b>trilha de aprendizagem</b>, na ordem: Matemática básica → Operações → Frações → Porcentagem → Álgebra → Geometria → Equações do 2º grau → Problemas do dia a dia. O 📍 mostra onde você está. Cada assunto tem 5 etapas: <b>Aprender</b> (lições curtas), <b>Exemplos</b> resolvidos, <b>Praticar</b> (5 exercícios), <b>Revisar</b> (sem erros pendentes) e <b>Dominar</b>. Na página do assunto você vê também o seu domínio em cada parte: 🟢 Dominado, 🟡 Em aprendizado, 🔴 Precisa praticar.'},
   {ico:'✎', t:'Exercícios, Desafios e Treino personalizado', d:'<b>Exercícios</b>: 5 questões de um assunto, você escolhe a dificuldade. <b>Desafios</b>: 10 questões misturadas. <b>Treino personalizado</b>: você escolhe os assuntos (cada um mostra seu % de acerto), a dificuldade e a quantidade; o app lembra suas últimas escolhas. No fim, veja seu desempenho por assunto e use <b>Treinar o que errei</b>. Aqui você digita a resposta (use o botão <b>/</b> pra frações).'},
-  {ico:'💡', t:'Dicas e explicações', d:'Travou? Toque em "💡 Preciso de uma dica" pra lembrar o método. Depois de responder, sempre aparece a resolução passo a passo, e na Trilha é só tocar em "📖 Ver explicação".'},
-  {ico:'🔁', t:'Revisar meus erros', d:'Toda questão errada vai para o <b>Caderno de erros</b> (Praticar → Caderno de erros), com o assunto e a dificuldade. Na revisão, a correção mostra o raciocínio e a ideia principal. Acertou, ela volta em 3 dias e depois em 7 pra fixar; acertou de novo, sai do caderno. A mesma questão errada de novo não se repete: o app conta quantas vezes você errou e usa isso pra recomendar o que treinar.'},
+  {ico:'💡', t:'Dicas e explicações', d:'Travou? Toque em "💡 Preciso de uma dica". Errou? A correção explica em 5 passos: o que a questão pede, as informações, a operação, a resolução e a conferência. Se ainda não entendeu, toque em <b>🆘 Não entendi</b>: o app explica de outro jeito, mostra uma parte por vez e oferece uma questão mais fácil.'},
+  {ico:'🔁', t:'Revisar meus erros', d:'Toda questão errada vai para o <b>Caderno de erros</b> (Praticar → Caderno de erros), com assunto, quantas vezes errou e a data. Em cada uma: <b>Tentar de novo</b> ou <b>Entender de novo</b>. Acertou na revisão, ela volta em 3 dias e depois em 7; acertou de novo, vira <b>✅ Conteúdo recuperado</b>. Errou, volta amanhã.'},
   {ico:'📝', t:'Simulado, plano e nivelamento', d:'Em <b>Praticar</b>: o <b>Simulado</b> é uma prova com tempo e nota de 0 a 10, com correção comentada; o <b>Plano de estudos</b> divide os assuntos até a data da prova, começando pelos mais fracos; o <b>Teste de nivelamento</b> tem 10 perguntas e mostra por onde começar.'},
-  {ico:'⚔️', t:'Arena', d:'Em <b>Mais → Arena</b>, pra quem gosta de competir: fases com estrelas (10 perguntas, 3 vidas e relógio), o <b>Desafio do Dia</b> (7 perguntas iguais pra todo mundo, com resultado pra compartilhar), Relâmpago, Quiz e Duelo.'},
-  {ico:'☰', t:'O menu do app', d:'<b>Início</b>: de onde continuar e o que fazer hoje. <b>Aprender</b>: os conteúdos. <b>Praticar</b>: exercícios, caderno de erros, revisão, simulado e plano de estudos. <b>Progresso</b>: sua evolução por assunto. <b>Mais</b>: Arena, Trilha, jogos, calculadora, caderno, conquistas, perfil e configurações.'},
+  {ico:'⚔️', t:'Arena', d:'Em <b>Desafios → Arena</b>, pra quem gosta de competir: fases com estrelas (10 perguntas, 3 vidas e relógio), o <b>Desafio do Dia</b> (7 perguntas iguais pra todo mundo, com resultado pra compartilhar), Relâmpago, Quiz e Duelo.'},
+  {ico:'☰', t:'O menu do app', d:'<b>Início</b>: continue de onde parou, a prática de hoje e o botão 🤔 Não sei o que estudar. <b>Aprender</b>: a trilha e os conteúdos. <b>Praticar</b>: exercícios, caderno de erros, revisão, simulado, plano e ferramentas. <b>Progresso</b>: seu domínio por assunto e por parte. <b>Desafios</b>: Arena, Trilha, Quiz, Relâmpago, Duelo, missões e conquistas. Tudo junto em "Ver todas as funções do app", no fim do Início.'},
+  {ico:'🎯', t:'Prática de hoje e "Não sei o que estudar"', d:'Todo dia o app escolhe <b>5 questões</b> pelo seu desempenho real: primeiro os erros prontos para revisão, depois o assunto em que seu acerto está mais baixo, depois o que já está na hora de relembrar. Sempre mostra o motivo. Em dúvida, toque em <b>🤔 Não sei o que estudar</b>: o app indica um assunto e o próximo passo.'},
   {ico:'?', t:'Resolver questão', d:'Digite uma conta, equação ou problema (ex.: <i>2x + 5 = 15</i> ou <i>25% de 300</i>) e o app mostra a resolução completa, passo a passo.'},
   {ico:'🏅', t:'Conquistas', d:'Medalhas que você desbloqueia jogando: combos, dias seguidos, recordes e muito mais. Veja todas na tela de Conquistas.'},
   {ico:'⚙️', t:'Perfil e configurações', d:'No Perfil (o círculo com sua inicial, lá em cima) você vê suas estatísticas. Em Configurações dá pra trocar entre tema claro e escuro, ligar/desligar som e vibração, e <b>exportar/importar</b> seu progresso pra não perder nada ao trocar de celular.'},
 ];
 /* grupos do "Como usar", na ordem em que a pessoa usa o app */
 const HELP_GROUPS = [
-  ['📚 Estudar', ['O menu do app','Aprender','Dicas e explicações','Exercícios, Desafios e Treino personalizado','Revisar meus erros','Revisão do dia','Nível de domínio','Simulado, plano e nivelamento']],
+  ['📚 Estudar', ['O menu do app','Aprender','Prática de hoje e "Não sei o que estudar"','Dicas e explicações','Exercícios, Desafios e Treino personalizado','Revisar meus erros','Revisão do dia','Nível de domínio','Simulado, plano e nivelamento']],
   ['🎯 Motivação', ['Missões e meta do dia','Ofensiva','XP e níveis']],
   ['🎮 Jogar', ['Arena','Trilha, episódios e fases','Vidas e moedas','Quiz do Show','Relâmpago','Duelo a dois']],
   ['🧰 Ferramentas', ['Resolver questão','Laboratório de Geometria','Caderno (escrever à mão)','Ouvir a questão e tamanho do texto']],
@@ -7065,6 +7091,7 @@ const SCREENS = {
   subjectDetail: studyScreen,
   practice: practiceScreen,
   more: moreScreen,
+  challenges: challengesScreen,
   exercisesSubjects: exercisesSubjectsScreen,
   exerciseDifficulty: exerciseDifficultyScreen,
   exerciseSession: exerciseSessionScreen,

@@ -329,23 +329,60 @@ function chooseCardsLevel(subjectId){
 }
 
 /* =========================================================
-   CADERNO DE ERROS (visão geral)
+   CADERNO DE ERROS — assuntos, cada questão errada e o que já foi recuperado
    ========================================================= */
+function plainQ(ex){ const d = document.createElement('div'); d.innerHTML = String((ex && ex.question) || ''); return d.textContent.replace(/\s+/g,' ').trim(); }
+function dayMonth(ts){ const d = new Date(ts); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`; }
+function errorItemCard(e, now){
+  const s = subjById(e.subjectId), due = errorIsDue(e, now);
+  const days = due ? 0 : Math.ceil((e.due - now)/864e5);
+  const card = h(`<div class="edu-card er-item"><div class="er-top"><span class="er-subj"></span><span class="er-when ${due?'due':''}">${due ? 'Revisar hoje' : `Volta em ${days} dia${days===1?'':'s'}`}</span></div>
+    <p class="er-q mono"></p>
+    <small class="er-meta">Errou ${e.count||1} vez${(e.count||1)===1?'':'es'} · desde ${dayMonth(e.firstTs||e.ts)} · etapa ${Math.min(3,e.box||1)} de 3 da revisão</small>
+    <div class="er-acts"><button type="button" class="btn primary" data-a="try">Tentar de novo</button><button type="button" class="btn secondary" data-a="why" aria-expanded="false">Entender de novo</button></div>
+    <div class="er-why" hidden></div></div>`);
+  card.querySelector('.er-subj').textContent = s ? s.name : e.subjectName || '';
+  card.querySelector('.er-q').textContent = plainQ(e.ex);
+  card.querySelector('[data-a=try]').onclick = ()=> startReviewErrors({ids:[e.id]});
+  const wb = card.querySelector('[data-a=why]'), box = card.querySelector('.er-why');
+  wb.onclick = ()=>{
+    const open = box.hidden; box.hidden = !open; wb.setAttribute('aria-expanded', open);
+    wb.textContent = open ? 'Fechar explicação' : 'Entender de novo';
+    if(open && !box.childElementCount && e.ex) box.appendChild(learnFeedback(e.ex, false, e.subjectId, {difficulty:e.difficulty, badTitle:'Vamos entender de novo', onEasier:(d)=> startSession(e.subjectId, d)}));
+  };
+  return card;
+}
 function errorsScreen(){
   const wrap = document.createElement('div');
-  wrap.appendChild(topbar('Caderno de erros', true, ()=>go('home')));
+  wrap.appendChild(topbar('Caderno de erros', true, ()=>go('practice')));
   const c = h(`<div class="content edu-content"><div class="ar-muted" style="padding:20px 0;text-align:center">Carregando…</div></div>`);
   wrap.appendChild(c);
   Promise.all([loadErrors(), loadProgress()]).then(([errs, progress])=>{
     if(!wrap.isConnected) return;
     c.innerHTML = '';
-    const now = Date.now(), due = errs.filter(e=>errorIsDue(e, now)), learned = loadGame().errLearned || 0;
+    const g = loadGame(), now = Date.now(), due = errs.filter(e=>errorIsDue(e, now)), learned = g.errLearned || 0, recovered = g.recovered || [];
+    const recoveredSec = ()=>{
+      const sec = eduSection('✅ Conteúdo recuperado');
+      if(!recovered.length){ sec.appendChild(h(`<p class="edu-lead">Quando você acertar uma questão errada 3 vezes na revisão (hoje, em 3 dias e em 7 dias), ela aparece aqui como recuperada.</p>`)); return sec; }
+      const l = h(`<ul class="er-rec"></ul>`);
+      recovered.slice(0, 10).forEach(r=>{ const s = subjById(r.subjectId); const li = h(`<li><span class="er-ok" aria-hidden="true">✅</span><span><b></b><span class="mono"></span><small>Errou ${r.count} vez${r.count===1?'':'es'} · recuperado em ${dayMonth(r.ts)}</small></span></li>`); li.querySelector('b').textContent = s ? s.name : ''; li.querySelector('.mono').textContent = r.q.replace(/<[^>]+>/g,''); l.appendChild(li); });
+      sec.appendChild(l);
+      if(learned > recovered.length) sec.appendChild(h(`<p class="edu-lead edu-small-note">Ao todo, ${learned} questão(ões) recuperada(s).</p>`));
+      return sec;
+    };
     if(!errs.length){
       c.appendChild(h(`<div class="edu-hello"><h1>Nada para revisar</h1><p>Quando você errar uma questão em qualquer parte do app, ela aparece aqui com a explicação, para você aprender com ela.</p></div>`));
-      if(learned) c.appendChild(h(`<p class="edu-lead">Você já aprendeu ${learned} questão(ões) que tinha errado. 👏</p>`));
+      c.appendChild(recoveredSec());
       return;
     }
-    c.appendChild(h(`<div class="edu-hello"><h1>Vamos revisar</h1><p>Errar faz parte de aprender. Estes são os assuntos em que você teve mais dificuldade.</p></div>`));
+    c.appendChild(h(`<div class="edu-hello"><h1>Vamos revisar</h1><p>Errar faz parte de aprender. Entenda cada erro e tente de novo.</p></div>`));
+    c.appendChild(h(`<div class="edu-stats"><div><b>${due.length}</b><span>para hoje</span></div><div><b>${errs.length}</b><span>no caderno</span></div><div><b>${learned}</b><span>recuperada${learned===1?'':'s'}</span></div></div>`));
+    const acts = h(`<div class="edu-actions"></div>`);
+    const rv = h(`<button type="button" class="btn primary">${due.length ? `Começar revisão (${Math.min(due.length, REVIEW_ERRORS_MAX)})` : 'Revisar mesmo assim'}</button>`);
+    rv.onclick = ()=> startReviewErrors({all: !due.length});
+    acts.appendChild(rv);
+    c.appendChild(acts);
+
     const by = {};
     errs.forEach(e=>{ (by[e.subjectId] = by[e.subjectId] || []).push(e); });
     const sec = eduSection('Você teve dificuldade em');
@@ -361,19 +398,28 @@ function errorsScreen(){
       l.appendChild(r);
     });
     sec.appendChild(l);
-    c.appendChild(sec);
-    const acts = h(`<div class="edu-actions"></div>`);
-    const rv = h(`<button type="button" class="btn primary">${due.length ? 'Começar revisão' : 'Revisar mesmo assim'}</button>`);
-    rv.onclick = ()=> startReviewErrors({all: !due.length});
-    acts.appendChild(rv);
     const rec = recommendSubjects(progress, errs, 3);
     if(rec.length){
-      const tr = h(`<button type="button" class="btn secondary">Praticar questões novas desses assuntos</button>`);
+      const tr = h(`<button type="button" class="btn secondary edu-go">Praticar questões novas desses assuntos</button>`);
       tr.onclick = ()=> startPersonalizedSession({subjectIds:rec, difficultyMode:'adaptativa', qty:10, focusWeak:rec.length>1, progress});
-      acts.appendChild(tr);
+      sec.appendChild(tr);
     }
-    c.appendChild(acts);
-    c.appendChild(h(`<p class="edu-lead edu-small-note">${due.length} para revisar hoje · ${errs.length} no caderno · ${learned} já aprendida(s).<br>Como funciona: acertou na revisão, a questão volta em 3 dias e depois em 7 para fixar; acertou de novo, sai do caderno.</p>`));
+    c.appendChild(sec);
+
+    // cada questão errada
+    const qs = eduSection('Questões para rever');
+    const ql = h(`<div class="er-list"></div>`);
+    const sorted = errs.slice().sort((a,b)=> (errorIsDue(b,now)-errorIsDue(a,now)) || (b.count||1)-(a.count||1) || b.ts-a.ts);
+    let shown = 0;
+    const more = h(`<button type="button" class="btn secondary edu-go">Mostrar mais</button>`);
+    const showMore = ()=>{ sorted.slice(shown, shown+10).forEach(e=> ql.appendChild(errorItemCard(e, now))); shown += 10; if(shown >= sorted.length) more.remove(); };
+    more.onclick = showMore;
+    qs.appendChild(ql); qs.appendChild(more);
+    showMore();
+    c.appendChild(qs);
+
+    c.appendChild(recoveredSec());
+    c.appendChild(h(`<p class="edu-lead edu-small-note">Como funciona: acertou na revisão, a questão volta em 3 dias e depois em 7 para fixar; acertou de novo, ela sai do caderno e vira conteúdo recuperado. Errou, ela volta amanhã.</p>`));
   });
   return wrap;
 }
