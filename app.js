@@ -2418,16 +2418,7 @@ function attachStrengthMeter(input, getName){
   return box;
 }
 
-async function hashPassword(pw){
-  try{
-    const enc = new TextEncoder().encode(pw);
-    const buf = await crypto.subtle.digest('SHA-256', enc);
-    return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-  }catch(e){
-    let hh=0; for(let i=0;i<pw.length;i++){ hh = (hh*31 + pw.charCodeAt(i))|0; }
-    return 'fb'+hh;
-  }
-}
+/* senhas: ver seguranca.js (PBKDF2 com salt; contas antigas continuam entrando e são atualizadas no login) */
 
 async function loadUsers(){
   if(usersCache !== null) return usersCache;
@@ -2549,13 +2540,13 @@ async function changeCurrentUserPassword(currentPass, newPass){
   const users = await loadUsers();
   const idx = users.findIndex(u=>u.id===currentUser.id);
   if(idx<0) return {ok:false, error:'Conta não encontrada.'};
-  const currentHash = await hashPassword(currentPass);
-  if(users[idx].passHash !== currentHash) return {ok:false, error:'Senha atual incorreta.'};
+  if(!(await verifyPassword(users[idx], currentPass)).ok) return {ok:false, error:'Senha atual incorreta.'};
   const weak = passwordProblem(newPass, currentUser.name);
   if(weak) return {ok:false, error:weak};
   if(newPass === currentPass) return {ok:false, error:'A nova senha precisa ser diferente da atual.'};
-  users[idx] = Object.assign({}, users[idx], {passHash: await hashPassword(newPass)});
-  await saveUsers(users);
+  const rec = await makePasswordRecord(newPass);
+  const list = users.slice(); list[idx] = Object.assign({}, users[idx], rec);
+  if(!(await saveUsers(list))){ usersCache = null; return {ok:false, error:'Não conseguimos salvar a nova senha neste aparelho. A senha antiga continua valendo.'}; }
   return {ok:true};
 }
 
@@ -2817,6 +2808,9 @@ function authScreen(mode, users){
     const nm = (card.querySelector('.authName')||{}).value || '';
     return users.find(u=>u.id===userIdFromName(nm)) || null;
   }
+  /* "Esqueci minha senha": mostra só a dica da conta escolhida (ou do nome digitado exatamente).
+     Com nome digitado que não existe, a resposta é a mesma de "conta sem dica" — a tela não
+     confirma se um nome tem conta. A senha e o resumo dela nunca aparecem. */
   function forgot(){
     const acc = findAccount();
     const hint = acc && acc.hint;
@@ -2824,7 +2818,7 @@ function authScreen(mode, users){
       icon:'🔑', title: hint ? 'Sua dica de senha' : 'Esqueceu a senha?',
       message: hint
         ? `💡 "${hint}"`
-        : (acc ? 'Essa conta não tem dica de senha. ' : '') + 'A senha fica guardada só neste aparelho, então não dá pra recuperar pela internet. Tente lembrar com calma, ou peça ajuda a quem criou a conta. Se não tiver jeito, crie uma conta nova.',
+        : 'Não há dica de senha para mostrar. A senha fica guardada só neste aparelho, então não dá pra recuperar pela internet. Tente lembrar com calma, ou peça ajuda a quem criou a conta. Se não tiver jeito, crie uma conta nova.',
       ok:'Tentar de novo', cancel: hint ? 'Fechar' : 'Criar conta nova',
     }).then(ok=>{ if(!ok && !hint) paintRegister(); else { const f = card.querySelector('.authPass'); if(f) f.focus(); } });
   }
@@ -2839,17 +2833,23 @@ function authScreen(mode, users){
     if(f && f.until > Date.now()){ showError(`Muitas tentativas. Espere ${Math.ceil((f.until-Date.now())/1000)} segundos e tente de novo.`); return; }
     const acc = list.find(u=>u.id===id);
     const btn = card.querySelector('.auth-go'); btn.disabled = true; btn.textContent = 'Entrando…';
-    const passHash = await hashPassword(pass);
-    if(!acc || acc.passHash!==passHash){
+    const check = acc ? await verifyPassword(acc, pass) : {ok:false};
+    if(!check.ok){
       btn.disabled = false; btn.textContent = 'Entrar ▶';
       const rec = _loginFails[id] = _loginFails[id] || {n:0, until:0};
       rec.n++;
       if(rec.n >= LOGIN_MAX_TRIES){ rec.n = 0; rec.until = Date.now() + LOGIN_WAIT_MS; showError('Senha errada muitas vezes. Espere 30 segundos. 💡 Toque em "Esqueci minha senha" pra ver sua dica.'); }
-      else showError(acc ? `Senha incorreta. Tente de novo${rec.n>=2 ? ' — ou veja sua dica em "Esqueci minha senha"' : ''}.` : 'Não achei nenhuma conta com esse nome neste aparelho.');
+      else showError(selected ? `Senha incorreta. Tente de novo${rec.n>=2 ? ' — ou veja sua dica em "Esqueci minha senha"' : ''}.` : 'Nome ou senha incorretos. Confira e tente de novo.');
       const pf = card.querySelector('.authPass'); pf.value = ''; pf.focus();
       return;
     }
     delete _loginFails[id];
+    if(check.upgrade){
+      // conta de versão antiga: refaz o resumo da senha no formato novo (com salt), sem mudar a senha
+      const rec = await makePasswordRecord(pass);
+      const upd = list.map(u=> u.id===acc.id ? Object.assign({}, u, rec) : u);
+      if(!(await saveUsers(upd))) usersCache = null;
+    }
     currentUser = {id: acc.id, name: acc.name};
     await setCurrentUserId(acc.id);
     await loadSettings();
@@ -2901,11 +2901,9 @@ function authScreen(mode, users){
     const list = await loadUsers();
     if(list.some(u=>u.id===id)){ showError('Já existe uma conta com esse nome neste aparelho. Escolha outro nome ou entre na conta.'); return; }
     const btn = card.querySelector('.auth-go'); btn.disabled = true; btn.textContent = 'Criando…';
-    const passHash = await hashPassword(pass);
-    const newUser = {id, name, passHash};
+    const newUser = Object.assign({id, name}, await makePasswordRecord(pass));
     if(hint) newUser.hint = hint;
-    list.push(newUser);
-    await saveUsers(list);
+    if(!(await saveUsers(list.concat([newUser])))){ usersCache = null; btn.disabled = false; btn.textContent = 'Criar conta e começar ▶'; showError('Não conseguimos salvar a conta neste aparelho. Verifique o espaço disponível.'); return; }
     currentUser = {id, name};
     await setCurrentUserId(id);
     await loadSettings();
@@ -6996,7 +6994,8 @@ function nodeSheet(n, color, isDone){
   document.body.appendChild(bg);
 }
 function openChest(n, isDone){
-  if(isDone){ showFloat('✨ Prêmio já aberto!'); return; }
+  // confere o estado salvo (não só o da hora em que a tela foi desenhada): clique duplo abre uma vez só
+  if(isDone || pathDone()[n.key]){ showFloat('✨ Prêmio já aberto!'); return; }
   const gems = randInt(20,40);
   pathDone()[n.key] = true;
   const g = loadGame();
