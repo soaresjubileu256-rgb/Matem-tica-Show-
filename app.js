@@ -1031,8 +1031,9 @@ function quadStr(a,b,c){
   return s;
 }
 // matriz com colchetes: [[1,2],[3,4]]
-function matHTML(M, name){
-  const rows = M.map(r=>`<tr>${r.map(v=>`<td>${nm(v)}</td>`).join('')}</tr>`).join('');
+// cls(i, j) opcional: classe de destaque de cada célula ('hl-a', 'hl-b', 'hl-soft', 'dim')
+function matHTML(M, name, cls){
+  const rows = M.map((r,i)=>`<tr>${r.map((v,j)=>{ const c = cls ? cls(i,j) : ''; return `<td${c?` class="${c}"`:''}>${nm(v)}</td>`; }).join('')}</tr>`).join('');
   return `<span class="mat-wrap">${name?`<span class="mat-name">${name} =</span>`:''}<span class="mat"><table>${rows}</table></span></span>`;
 }
 function matQ(text, mats){ return `<div class="geo-qtext">${text}</div><div class="mat-row">${mats.join('')}</div>`; }
@@ -1057,6 +1058,137 @@ function barChartSVG(title, labels, values){
     <line x1="26" y1="${base}" x2="${W-4}" y2="${base}" stroke="var(--ink-soft)" stroke-width="1"/>${bars}</svg>`;
 }
 function fmtPct(v){ return nm(round2(v)) + '%'; }
+
+/* ---------------- desenhos dos exemplos do Ensino Médio (mesmo estilo dos gráficos e figuras do app) ---------------- */
+// gráfico de função: o = {f, xmin, xmax, ymin, ymax, color, label, pts:[{x,y,t,c}], segs:[[x1,y1,x2,y2]], grid}
+function funcGraph(o){
+  const W = 220, H = o.square ? Math.round((o.ymax-o.ymin)/(o.xmax-o.xmin)*(W-24)+24) : 170, sx = x=> 12 + (x-o.xmin)/(o.xmax-o.xmin)*(W-24), sy = y=> H-12 - (y-o.ymin)/(o.ymax-o.ymin)*(H-24);
+  let s = '';
+  if(o.grid){
+    for(let x=Math.ceil(o.xmin); x<=o.xmax; x++) s += `<line x1="${sx(x)}" y1="${sy(o.ymin)}" x2="${sx(x)}" y2="${sy(o.ymax)}" class="fg-grid"/>`;
+    for(let y=Math.ceil(o.ymin); y<=o.ymax; y++) s += `<line x1="${sx(o.xmin)}" y1="${sy(y)}" x2="${sx(o.xmax)}" y2="${sy(y)}" class="fg-grid"/>`;
+  }
+  if(o.ymin<=0 && o.ymax>=0) s += `<line x1="4" y1="${sy(0)}" x2="${W-4}" y2="${sy(0)}" class="lg-axis"/>`;
+  if(o.xmin<=0 && o.xmax>=0) s += `<line x1="${sx(0)}" y1="${H-4}" x2="${sx(0)}" y2="4" class="lg-axis"/>`;
+  if(o.f){
+    let path = '', pen = false;
+    for(let i=0;i<=160;i++){
+      const x = o.xmin + (o.xmax-o.xmin)*i/160, y = o.f(x);
+      if(!isFinite(y) || y<o.ymin-0.5 || y>o.ymax+0.5){ pen = false; continue; }
+      path += `${pen?'L':'M'}${sx(x).toFixed(1)} ${sy(y).toFixed(1)} `; pen = true;
+    }
+    s += `<path d="${path}" class="lg-line" style="stroke:${o.color||'var(--pine)'}"/>`;
+  }
+  (o.segs||[]).forEach(([x1,y1,x2,y2])=>{ s += `<line x1="${sx(x1)}" y1="${sy(y1)}" x2="${sx(x2)}" y2="${sy(y2)}" class="lg-line" style="stroke:${o.color||'var(--pine)'}"/>`; });
+  (o.dash||[]).forEach(([x1,y1,x2,y2])=>{ s += `<line x1="${sx(x1)}" y1="${sy(y1)}" x2="${sx(x2)}" y2="${sy(y2)}" class="geo-height"/>`; });
+  (o.pts||[]).forEach(p=>{
+    s += `<circle cx="${sx(p.x)}" cy="${sy(p.y)}" r="4" class="lg-dot" style="fill:${p.c||'var(--coral)'}"/>`;
+    if(p.t) s += `<text x="${sx(p.x)+(p.dx||6)}" y="${sy(p.y)+(p.dy||-8)}" class="lg-text" style="fill:${p.c||'var(--coral)'}" text-anchor="${p.anchor||'start'}">${p.t}</text>`;
+  });
+  return `<div class="lin-graph-wrap"><div class="lin-graph">${o.label?`<div class="lin-graph-label">${o.label}</div>`:''}<svg class="lin-graph-svg" viewBox="0 0 ${W} ${H}">${s}</svg></div></div>`;
+}
+// triângulo retângulo: ângulo θ embaixo à esquerda, ângulo reto embaixo à direita.
+// o = {bw, bh (proporção), base, alt, hip (rótulos), ang (rótulo do ângulo), ask: 'base'|'alt'|'hip'}
+function rightTriSVG(o){
+  const W = 300, k = Math.min(200/o.bw, 130/o.bh), w = o.bw*k, h = o.bh*k, x0 = (W-w)/2 - 10, y0 = h + 16, H = y0 + 30;
+  const A = [x0, y0], B = [x0+w, y0], C = [x0+w, y0-h];
+  const lbl = (key, x, y, anchor)=> `<text x="${x}" y="${y}" text-anchor="${anchor}" class="${o.ask===key?'geo-ask':'geo-lbl'}">${o[key]}</text>`;
+  const ang = Math.atan2(h, w), r = 30;
+  return `<svg class="geo-fig" viewBox="0 0 ${W} ${H}" role="img" aria-label="Triângulo retângulo">
+    <polygon points="${A} ${B} ${C}" class="geo-shape"/>
+    <path d="M${B[0]-12} ${B[1]}v-12h12" class="geo-mark"/>
+    ${o.ang?`<path d="M${A[0]+r} ${A[1]} A${r} ${r} 0 0 0 ${(A[0]+r*Math.cos(ang)).toFixed(1)} ${(A[1]-r*Math.sin(ang)).toFixed(1)}" class="geo-radius" fill="none"/>
+    <text x="${A[0]+r+6}" y="${A[1]-8}" class="geo-lbl geo-lbl-h" font-size="13">${o.ang}</text>`:''}
+    ${lbl('base', (A[0]+B[0])/2, y0+22, 'middle')}
+    ${lbl('alt', B[0]+10, y0-h/2+5, 'start')}
+    ${lbl('hip', (A[0]+C[0])/2-10, (A[1]+C[1])/2-6, 'end')}
+  </svg>`;
+}
+// triângulo qualquer com o ângulo A entre os lados b e c (lei dos senos/cossenos)
+function triAngleSVG(o){
+  const W = 300, rad = o.A*Math.PI/180;
+  const P = [[0,0],[o.c,0],[o.b*Math.cos(rad), o.b*Math.sin(rad)]];
+  const xs = P.map(p=>p[0]), ys = P.map(p=>p[1]), minx = Math.min(...xs), maxx = Math.max(...xs), maxy = Math.max(...ys);
+  const k = Math.min(220/(maxx-minx), 130/maxy), ox = (W-(maxx-minx)*k)/2 - minx*k, oy = maxy*k + 16;
+  const q = P.map(([x,y])=>[+(ox+x*k).toFixed(1), +(oy-y*k).toFixed(1)]);
+  const r = 26, mid = rad/2, H = oy + 32;
+  const t = (x,y,txt,cls,anchor)=> `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="${anchor||'middle'}" class="${cls}">${txt}</text>`;
+  return `<svg class="geo-fig" viewBox="0 0 ${W} ${H}" role="img" aria-label="Triângulo">
+    <polygon points="${q.map(p=>p.join(',')).join(' ')}" class="geo-shape"/>
+    <path d="M${q[0][0]+r} ${q[0][1]} A${r} ${r} 0 0 0 ${(q[0][0]+r*Math.cos(rad)).toFixed(1)} ${(q[0][1]-r*Math.sin(rad)).toFixed(1)}" class="geo-radius" fill="none"/>
+    ${t(q[0][0]+(r+16)*Math.cos(mid), q[0][1]-(r+10)*Math.sin(mid)+4, o.Alabel||`${o.A}°`, 'geo-lbl geo-lbl-h')}
+    ${t((q[0][0]+q[1][0])/2, q[0][1]+22, o.cl, o.ask==='c'?'geo-ask':'geo-lbl')}
+    ${t((q[0][0]+q[2][0])/2-10, (q[0][1]+q[2][1])/2, o.bl, o.ask==='b'?'geo-ask':'geo-lbl', 'end')}
+    ${t((q[1][0]+q[2][0])/2+10, (q[1][1]+q[2][1])/2, o.al, o.ask==='a'?'geo-ask':'geo-lbl', 'start')}
+  </svg>`;
+}
+// ciclo trigonométrico com um ângulo marcado (em graus)
+function unitCircleSVG(deg, label){
+  const W = 300, H = 200, cx = 150, cy = 100, R = 72, a = deg*Math.PI/180, px = cx+R*Math.cos(a), py = cy-R*Math.sin(a);
+  const big = (deg%360) > 180 ? 1 : 0, r = 20;
+  return `<svg class="geo-fig" style="max-width:320px" viewBox="0 0 ${W} ${H}" role="img" aria-label="Ciclo trigonométrico">
+    <line x1="${cx-R-18}" y1="${cy}" x2="${cx+R+18}" y2="${cy}" class="lg-axis"/><line x1="${cx}" y1="${cy+R+18}" x2="${cx}" y2="${cy-R-18}" class="lg-axis"/>
+    <circle cx="${cx}" cy="${cy}" r="${R}" class="geo-shape" style="fill:rgba(76,125,255,.08)"/>
+    <line x1="${px.toFixed(1)}" y1="${py.toFixed(1)}" x2="${px.toFixed(1)}" y2="${cy}" class="geo-height"/>
+    <line x1="${cx}" y1="${cy}" x2="${px.toFixed(1)}" y2="${py.toFixed(1)}" class="geo-radius"/>
+    <path d="M${cx+r} ${cy} A${r} ${r} 0 ${big} 0 ${(cx+r*Math.cos(a)).toFixed(1)} ${(cy-r*Math.sin(a)).toFixed(1)}" fill="none" stroke="var(--pine)" stroke-width="2.5"/>
+    <circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="4.5" class="geo-dot"/>
+    <text x="${(px+(Math.cos(a)>=0?8:-8)).toFixed(1)}" y="${(py+(Math.sin(a)>=0?-8:16)).toFixed(1)}" text-anchor="${Math.cos(a)>=0?'start':'end'}" class="geo-lbl" style="font-size:13px">${label||deg+'°'}</text>
+    <text x="${cx+R+18}" y="${cy+16}" class="lg-text" fill="var(--ink-soft)" text-anchor="end">cos</text>
+    <text x="${cx+6}" y="${cy-R-8}" class="lg-text" fill="var(--ink-soft)">sen</text>
+  </svg>`;
+}
+// pirâmide de base quadrada em perspectiva
+function pyramidSVG(l, h){
+  const W = 320, H = 220, k = Math.min(170/l, 140/h), w = l*k, d = w*0.35, x0 = (W-w-d)/2, y0 = 185;
+  const F1 = [x0, y0], F2 = [x0+w, y0], B2 = [x0+w+d, y0-d], B1 = [x0+d, y0-d], cx = x0+(w+d)/2, cy = y0-d/2, T = [cx, cy-h*k];
+  return `<svg class="geo-fig" viewBox="0 0 ${W} ${H}" role="img" aria-label="Pirâmide">
+    <polyline points="${F1} ${B1} ${B2}" class="geo-hidden"/><line x1="${B1[0]}" y1="${B1[1]}" x2="${T[0]}" y2="${T[1]}" class="geo-hidden"/>
+    <polygon points="${F1} ${F2} ${T}" class="geo-face front"/><polygon points="${F2} ${B2} ${T}" class="geo-face side"/>
+    <line x1="${T[0]}" y1="${T[1]}" x2="${cx}" y2="${cy}" class="geo-height"/><circle cx="${cx}" cy="${cy}" r="2.5" class="geo-dot"/>
+    <text x="${cx+7}" y="${(T[1]+cy)/2+5}" class="geo-lbl geo-lbl-h">h = ${h} cm</text>
+    <text x="${x0+w/2}" y="${y0+20}" text-anchor="middle" class="geo-lbl">${l} cm</text>
+  </svg>`;
+}
+// gráfico de setores com uma fatia destacada
+function pieSVG(deg, label){
+  const cx = 110, cy = 95, R = 72, a = deg*Math.PI/180, x = cx+R*Math.sin(a), y = cy-R*Math.cos(a);
+  return `<svg class="geo-fig" style="max-width:240px" viewBox="0 0 220 190" role="img" aria-label="Gráfico de setores">
+    <circle cx="${cx}" cy="${cy}" r="${R}" fill="rgba(76,125,255,.14)" stroke="#6B8CFF" stroke-width="2"/>
+    <path d="M${cx} ${cy} L${cx} ${cy-R} A${R} ${R} 0 ${deg>180?1:0} 1 ${x.toFixed(1)} ${y.toFixed(1)} Z" fill="var(--pine)" opacity=".85" stroke="#6B8CFF" stroke-width="2"/>
+    <text x="${(cx+R*0.5*Math.sin(a/2)).toFixed(1)}" y="${(cy-R*0.5*Math.cos(a/2)+5).toFixed(1)}" text-anchor="middle" class="geo-lbl" font-size="13">${label||deg+'°'}</text>
+  </svg>`;
+}
+// tabela dos 36 resultados de dois dados, destacando os que somam "sum"
+function diceGrid(sum){
+  let rows = `<tr><th>+</th>${[1,2,3,4,5,6].map(j=>`<th>${j}</th>`).join('')}</tr>`;
+  for(let i=1;i<=6;i++) rows += `<tr><th>${i}</th>${[1,2,3,4,5,6].map(j=>`<td class="${i+j===sum?'hit':''}">${i+j}</td>`).join('')}</tr>`;
+  return `<table class="mini-table dice-grid">${rows}</table>`;
+}
+// sequência com o "passo" escrito em cada seta: 5 →(+3) 8 →(+3) 11
+function seqRow(terms, steps){
+  return `<div class="seq-row">${terms.map((t,i)=> `<span class="seq-t">${t}</span>` + (i<terms.length-1 ? `<span class="seq-a"><small>${Array.isArray(steps)?steps[i]:steps}</small>→</span>` : '')).join('')}</div>`;
+}
+// tabela pequena: head = ['x', 'x − média', ...], rows = [[...], ...]
+function miniTable(head, rows, foot){
+  return `<table class="mini-table"><tr>${head.map(x=>`<th>${x}</th>`).join('')}</tr>${rows.map(r=>`<tr>${r.map(x=>`<td>${x}</td>`).join('')}</tr>`).join('')}${foot?`<tr class="foot">${foot.map(x=>`<td>${x}</td>`).join('')}</tr>`:''}</table>`;
+}
+// conjuntos numéricos um dentro do outro
+function numberSetsSVG(){
+  const box = (x,y,w,h,c,t,ex)=> `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="14" fill="${c}" fill-opacity=".14" stroke="${c}" stroke-width="2"/>
+    <text x="${x+10}" y="${y+20}" class="geo-lbl" style="fill:${c}">${t}</text>${ex?`<text x="${x+w-10}" y="${y+20}" text-anchor="end" class="lg-text" fill="var(--ink-soft)">${ex}</text>`:''}`;
+  return `<svg class="geo-fig" viewBox="0 0 320 200" role="img" aria-label="Conjuntos numéricos">
+    ${box(4,4,312,192,'#6B8CFF','ℝ reais','')}
+    ${box(16,32,196,154,'#33D2E3','ℚ racionais','½  0,25')}
+    ${box(28,62,160,114,'#B23FE0','ℤ inteiros','−2  −1')}
+    ${box(40,92,120,74,'#FF8A4C','ℕ naturais','')}
+    <text x="100" y="150" text-anchor="middle" class="lg-text" fill="var(--ink-soft)">0  1  2  3 …</text>
+    ${box(222,32,84,154,'#FF5C7A','𝕀','')}
+    <text x="264" y="95" text-anchor="middle" class="lg-text" fill="var(--ink-soft)">√2</text>
+    <text x="264" y="120" text-anchor="middle" class="lg-text" fill="var(--ink-soft)">π</text>
+    <text x="264" y="145" text-anchor="middle" class="lg-text" fill="var(--ink-soft)">√5</text>
+  </svg>`;
+}
 
 const SUBJECTS = [
   {
@@ -1561,9 +1693,9 @@ const SUBJECTS = [
     <div class="section-title">Dízima periódica vira fração</div>
     <p>Quando o período tem 1 algarismo, ele fica sobre <b>9</b>; com 2 algarismos, sobre <b>99</b>: 0,454545… = 45/99 = 5/11.</p>`,
     examples:[
-      {title:'Exemplo 1 (classificar)', text:'−4 → inteiro · 0,75 → racional · √5 → irracional', steps:['−4 é inteiro (e também racional e real).', '0,75 = 3/4, então é racional.', '5 não é quadrado perfeito, então √5 é irracional.']},
-      {title:'Exemplo 2 (contar inteiros)', text:'De −3 até 4 existem 8 inteiros', steps:['Liste: −3, −2, −1, 0, 1, 2, 3, 4', 'Atalho: 4 − (−3) + 1 = 8']},
-      {title:'Exemplo 3 (dízima)', text:'0,272727… = 27/99 = 3/11', steps:['O período (27) tem 2 algarismos → fica sobre 99.', '27/99, simplificando por 9 = 3/11']},
+      {title:'Exemplo 1 (um dentro do outro)', text:'ℕ ⊂ ℤ ⊂ ℚ ⊂ ℝ', qVisual: numberSetsSVG(), steps:['Todo natural também é inteiro, todo inteiro também é racional…', 'Racionais e irracionais juntos formam os reais (ℝ).']},
+      {title:'Exemplo 2 (classificar)', text:'−4 → inteiro · 0,75 → racional · √5 → irracional', qVisual: stepChain(['−4 → inteiro (ℤ)', `0,75 = ${fracRow([{n:3,d:4}])} → racional (ℚ)`, '√5 = 2,2360… → irracional (𝕀)']), steps:['−4 é inteiro (e também racional e real).', '0,75 = 3/4, então é racional.', '5 não é quadrado perfeito, então √5 é irracional.']},
+      {title:'Exemplo 3 (dízima vira fração)', text:'0,272727… = 27/99 = 3/11', qVisual: fracRow(['0,2727… =', {n:27,d:99}, '=', {n:3,d:11}]), steps:['O período (27) tem 2 algarismos → fica sobre 99.', '27/99, simplificando por 9 = 3/11']},
     ],
     gen:{
       facil:()=>{ const a=randInt(-9,-1), b=randInt(1,9), n=b-a+1;
@@ -1590,9 +1722,9 @@ const SUBJECTS = [
     <div class="example-box mono" style="margin-top:8px">xᵥ = −b / 2a      yᵥ = f(xᵥ)</div>
     <p>O yᵥ é o <b>valor mínimo</b> (se a > 0) ou o <b>valor máximo</b> (se a < 0) da função. Também dá pra calcular por yᵥ = −Δ / 4a.</p>`,
     examples:[
-      {title:'Exemplo 1 (calcular f(x))', text:'f(x) = x² − 3x + 2 → f(4) = 6', steps:['Troque x por 4: 4² − 3×4 + 2', '16 − 12 + 2 = 6']},
-      {title:'Exemplo 2 (vértice)', text:'f(x) = x² − 6x + 5 → xᵥ = 3', steps:['a = 1, b = −6', 'xᵥ = −b / 2a = 6 / 2 = 3']},
-      {title:'Exemplo 3 (valor mínimo)', text:'f(x) = x² − 6x + 5 → mínimo = −4', steps:['a > 0, então tem mínimo, no vértice.', 'yᵥ = f(3) = 9 − 18 + 5 = −4']},
+      {title:'Exemplo 1 (calcular f(x))', text:'f(x) = x² − 3x + 2 → f(4) = 6', qVisual: stepChain(['f(x) = x² − 3x + 2', 'f(4) = 4² − 3×4 + 2', 'f(4) = 16 − 12 + 2', 'f(4) = 6']), steps:['Troque x por 4 na fórmula: 4² − 3×4 + 2', 'Resolva a potência e a multiplicação: 16 − 12 + 2', 'Some e subtraia: 6']},
+      {title:'Exemplo 2 (o gráfico: parábola)', text:'f(x) = x² − 6x + 5 → raízes 1 e 5, vértice (3, −4)', qVisual: funcGraph({f:x=>x*x-6*x+5, xmin:-1, xmax:7, ymin:-5, ymax:8, label:'f(x) = x² − 6x + 5', pts:[{x:1,y:0,t:'raiz',c:'var(--coral)',dx:-6,anchor:'end'},{x:5,y:0,t:'raiz',c:'var(--coral)'},{x:3,y:-4,t:'vértice (3, −4)',c:'var(--amber)',dy:14}]}), steps:['a = 1 > 0: a parábola abre pra cima e tem ponto mínimo.', 'As raízes (x² − 6x + 5 = 0) são 1 e 5: é onde ela corta o eixo x.', 'O vértice fica bem no meio das raízes.']},
+      {title:'Exemplo 3 (vértice e valor mínimo)', text:'f(x) = x² − 6x + 5 → xᵥ = 3, mínimo −4', qVisual: stepChain([`xᵥ = ${fracRow([{n:'−b', d:'2a'}])}`, `xᵥ = ${fracRow([{n:'6', d:'2'}])} = 3`, 'yᵥ = f(3) = 9 − 18 + 5', 'yᵥ = −4']), steps:['a = 1, b = −6', 'xᵥ = −b / 2a = 6 / 2 = 3', 'yᵥ = f(3) = 9 − 18 + 5 = −4 → é o valor mínimo']},
     ],
     gen:{
       facil:()=>{ const a=pick([1,1,2,-1]), b=randInt(-5,5), c=randInt(-9,9), x=randInt(-3,4), r=a*x*x+b*x+c;
@@ -1613,9 +1745,9 @@ const SUBJECTS = [
     <p>Se |x − a| = k (com k > 0), existem <b>duas</b> possibilidades: o que está dentro vale <b>k</b> ou vale <b>−k</b>.</p>
     <div class="example-box mono" style="margin-top:8px">|x − a| = k  →  x = a + k  ou  x = a − k</div>`,
     examples:[
-      {title:'Exemplo 1', text:'|−7| + |3| = 10', steps:['|−7| = 7 e |3| = 3', '7 + 3 = 10']},
-      {title:'Exemplo 2 (calcular f(x))', text:'f(x) = |2x − 9| → f(2) = 5', steps:['2×2 − 9 = −5', '|−5| = 5']},
-      {title:'Exemplo 3 (equação)', text:'|x − 3| = 5 → x = 8 ou x = −2', steps:['x − 3 = 5 → x = 8', 'x − 3 = −5 → x = −2']},
+      {title:'Exemplo 1 (módulo = distância até o zero)', text:'|−7| + |3| = 10', qVisual: stepChain(['|−7| + |3|', '7 + 3', '10']), steps:['|−7| = 7 (o −7 está a 7 passos do zero)', '|3| = 3', '7 + 3 = 10']},
+      {title:'Exemplo 2 (o gráfico em V)', text:'f(x) = |x − 2| → ponta do V em x = 2', qVisual: funcGraph({f:x=>Math.abs(x-2), xmin:-2, xmax:6, ymin:-1, ymax:5, label:'f(x) = |x − 2|', pts:[{x:2,y:0,t:'(2, 0)',c:'var(--amber)',dy:16}]}), steps:['Dentro do módulo, x − 2 vira zero quando x = 2: é a ponta do V.', 'Pros dois lados, o gráfico sobe: o módulo nunca é negativo.']},
+      {title:'Exemplo 3 (equação modular)', text:'|x − 3| = 5 → x = 8 ou x = −2', qVisual: stepChain(['|x − 3| = 5', 'x − 3 = 5   ou   x − 3 = −5', 'x = 8   ou   x = −2']), steps:['O que está dentro do módulo vale 5 ou −5.', 'x − 3 = 5 → x = 8', 'x − 3 = −5 → x = −2']},
     ],
     gen:{
       facil:()=>{ const a=-randInt(1,15), b=randInt(-12,12), r=Math.abs(a)+Math.abs(b);
@@ -1638,9 +1770,9 @@ const SUBJECTS = [
       <li>Resolva a equação que sobrou.</li>
     </ol>`,
     examples:[
-      {title:'Exemplo 1', text:'2ˣ = 32 → x = 5', steps:['32 = 2⁵', '2ˣ = 2⁵ → x = 5']},
-      {title:'Exemplo 2', text:'3ˣ⁺¹ = 81 → x = 3', steps:['81 = 3⁴', 'x + 1 = 4 → x = 3']},
-      {title:'Exemplo 3 (bases diferentes)', text:'4ˣ = 8 → x = 3/2', steps:['4 = 2² e 8 = 2³', '(2²)ˣ = 2³ → 2x = 3', 'x = 3/2 = 1,5']},
+      {title:'Exemplo 1 (mesma base)', text:'2ˣ = 32 → x = 5', qVisual: stepChain(['2ˣ = 32', '2ˣ = 2⁵', 'x = 5']), steps:['Fatore o 32: 32 = 2 × 2 × 2 × 2 × 2 = 2⁵', 'Bases iguais → iguale os expoentes: x = 5']},
+      {title:'Exemplo 2 (o gráfico)', text:'f(x) = 2ˣ: crescente, passa por (0, 1)', qVisual: funcGraph({f:x=>Math.pow(2,x), xmin:-3, xmax:3.2, ymin:-0.8, ymax:8.5, label:'f(x) = 2ˣ', pts:[{x:0,y:1,t:'(0, 1)',c:'var(--amber)'},{x:2,y:4,t:'(2, 4)',c:'var(--coral)',dx:-8,anchor:'end'}]}), steps:['A base 2 é maior que 1: a função é crescente.', '2⁰ = 1, então o gráfico passa por (0, 1).', 'Pra esquerda ela chega perto do eixo x, mas nunca encosta.']},
+      {title:'Exemplo 3 (bases diferentes)', text:'4ˣ = 8 → x = 3/2', qVisual: stepChain(['4ˣ = 8', '(2²)ˣ = 2³', '2x = 3', `x = ${fracRow([{n:3,d:2}])}`]), steps:['Escreva tudo na base 2: 4 = 2² e 8 = 2³', 'Potência de potência: (2²)ˣ = 2²ˣ → 2x = 3', 'x = 3/2 = 1,5']},
     ],
     gen:{
       facil:()=>{ const b=pick([2,3,5]), n=randInt(2, b===2?7:b===3?5:4), N=Math.pow(b,n);
@@ -1666,9 +1798,9 @@ const SUBJECTS = [
     </ol>
     <p>Valores úteis: <b>log 2 ≈ 0,30</b> · <b>log 3 ≈ 0,48</b> · log 5 = log(10/2) ≈ 0,70.</p>`,
     examples:[
-      {title:'Exemplo 1', text:'log₃ 81 = 4', steps:['3 elevado a quanto dá 81?', '3⁴ = 81, então log₃ 81 = 4']},
-      {title:'Exemplo 2 (propriedade)', text:'log₆ 4 + log₆ 9 = 2', steps:['Soma de logs = log do produto: log₆ (4 × 9) = log₆ 36', '6² = 36, então vale 2']},
-      {title:'Exemplo 3 (usando log 2 e log 3)', text:'log 6 ≈ 0,78', steps:['6 = 2 × 3', 'log 6 = log 2 + log 3 ≈ 0,30 + 0,48 = 0,78']},
+      {title:'Exemplo 1 (o que é o log)', text:'log₃ 81 = 4', qVisual: stepChain(['log₃ 81 = x', '3ˣ = 81', '3ˣ = 3⁴', 'x = 4']), steps:['Transforme em potência: log₃ 81 = x ⇔ 3ˣ = 81', 'Fatore: 81 = 3⁴', 'Então x = 4']},
+      {title:'Exemplo 2 (propriedade do produto)', text:'log₆ 4 + log₆ 9 = 2', qVisual: stepChain(['log₆ 4 + log₆ 9', 'log₆ (4 × 9)', 'log₆ 36', '2']), steps:['Soma de logs de mesma base = log do produto', '4 × 9 = 36', '6² = 36, então vale 2']},
+      {title:'Exemplo 3 (usando log 2 e log 3)', text:'log 6 ≈ 0,78', qVisual: stepChain(['log 6 = log (2 × 3)', 'log 6 = log 2 + log 3', 'log 6 ≈ 0,30 + 0,48', 'log 6 ≈ 0,78']), steps:['Fatore: 6 = 2 × 3', 'Log do produto = soma dos logs', '0,30 + 0,48 = 0,78']},
     ],
     gen:{
       facil:()=>{ const b=pick([2,3,5,10]), n=randInt(1, b===2?7:b===10?4:4), N=Math.pow(b,n), bs=subN(b);
@@ -1697,8 +1829,9 @@ const SUBJECTS = [
       <li><b>c</b> encolhe a onda na horizontal: período = 360° / |c|.</li>
     </ol>`,
     examples:[
-      {title:'Exemplo 1 (máximo e mínimo)', text:'f(x) = 3 + 2·sen x → varia de 1 a 5', steps:['sen x vai de −1 a 1', 'Máximo: 3 + 2×1 = 5 · Mínimo: 3 + 2×(−1) = 1']},
-      {title:'Exemplo 2 (período)', text:'f(x) = sen(4x) → período 90°', steps:['Período = 360° ÷ 4 = 90°']},
+      {title:'Exemplo 1 (a onda do seno)', text:'f(x) = sen x: vai de −1 a 1, período 360°', qVisual: funcGraph({f:x=>Math.sin(x*Math.PI/180), xmin:-20, xmax:380, ymin:-1.4, ymax:1.5, label:'f(x) = sen x', pts:[{x:90,y:1,t:'máx 1',c:'var(--amber)'},{x:270,y:-1,t:'mín −1',c:'var(--coral)',dy:16},{x:360,y:0,t:'360°',c:'var(--pine)',dy:-8,anchor:'end',dx:-4}]}), steps:['O seno sobe até 1 (em 90°), desce até −1 (em 270°) e volta.', 'Uma onda completa leva 360°: esse é o período.']},
+      {title:'Exemplo 2 (máximo e mínimo)', text:'f(x) = 3 + 2·sen x → varia de 1 a 5', qVisual: stepChain(['−1 ≤ sen x ≤ 1', 'máx: 3 + 2 × 1 = 5', 'mín: 3 + 2 × (−1) = 1']), steps:['sen x vai de −1 a 1', 'Máximo: 3 + 2×1 = 5', 'Mínimo: 3 + 2×(−1) = 1']},
+      {title:'Exemplo 3 (período)', text:'f(x) = sen(4x) → período 90°', qVisual: stepChain([`período = ${fracRow([{n:'360°', d:'c'}])}`, `período = ${fracRow([{n:'360°', d:'4'}])}`, 'período = 90°']), steps:['Com 4x, a onda anda 4 vezes mais rápido.', 'Período = 360° ÷ 4 = 90°']},
     ],
     gen:{
       facil:()=>{ const a=randInt(0,6), b=randInt(1,5)*pick([1,-1]), fn=pick(['sen','cos']);
@@ -1720,9 +1853,9 @@ const SUBJECTS = [
     <div class="example-box mono" style="margin-top:8px">Sₙ = (a₁ + aₙ) · n / 2</div>
     <p>A ideia (de Gauss): somar o primeiro com o último dá o mesmo que o segundo com o penúltimo, e assim por diante.</p>`,
     examples:[
-      {title:'Exemplo 1 (razão)', text:'(5, 8, 11, …) → r = 3', steps:['r = 8 − 5 = 3']},
-      {title:'Exemplo 2 (termo geral)', text:'a₁ = 3, r = 4 → a₁₀ = 39', steps:['a₁₀ = 3 + (10 − 1) × 4', '= 3 + 36 = 39']},
-      {title:'Exemplo 3 (soma)', text:'1 + 2 + … + 100 = 5050', steps:['a₁ = 1, a₁₀₀ = 100, n = 100', 'S = (1 + 100) × 100 / 2 = 5050']},
+      {title:'Exemplo 1 (razão)', text:'(5, 8, 11, 14, …) → r = 3', qVisual: seqRow(['5','8','11','14','…'], '+3'), steps:['Cada termo é o anterior + 3.', 'r = 8 − 5 = 3']},
+      {title:'Exemplo 2 (termo geral)', text:'a₁ = 3, r = 4 → a₁₀ = 39', qVisual: stepChain(['aₙ = a₁ + (n − 1) · r', 'a₁₀ = 3 + (10 − 1) × 4', 'a₁₀ = 3 + 36', 'a₁₀ = 39']), steps:['Use o termo geral com a₁ = 3, r = 4 e n = 10', '(10 − 1) × 4 = 36', '3 + 36 = 39']},
+      {title:'Exemplo 3 (soma de Gauss)', text:'1 + 2 + … + 100 = 5050', qVisual: stepChain([`S = ${fracRow([{n:'(a₁ + aₙ) · n', d:'2'}])}`, `S = ${fracRow([{n:'(1 + 100) × 100', d:'2'}])}`, 'S = 5050']), steps:['a₁ = 1, a₁₀₀ = 100, n = 100', '1 + 100 = 101 → 101 × 100 = 10100', '10100 ÷ 2 = 5050']},
     ],
     gen:{
       facil:()=>{ const a=randInt(-5,15), r=randInt(-6,9)||3, seq=[0,1,2,3].map(i=>a+i*r);
@@ -1743,9 +1876,9 @@ const SUBJECTS = [
     <div class="example-box mono" style="margin-top:8px">Sₙ = a₁ · (qⁿ − 1) / (q − 1)</div>
     <p><b>PG infinita:</b> se a razão está entre −1 e 1, os termos vão ficando minúsculos e a soma de todos eles dá S = a₁ / (1 − q).</p>`,
     examples:[
-      {title:'Exemplo 1 (razão)', text:'(3, 12, 48, …) → q = 4', steps:['q = 12 ÷ 3 = 4']},
-      {title:'Exemplo 2 (termo geral)', text:'a₁ = 2, q = 3 → a₅ = 162', steps:['a₅ = 2 × 3⁴', '= 2 × 81 = 162']},
-      {title:'Exemplo 3 (soma)', text:'1 + 2 + 4 + 8 + 16 = 31', steps:['a₁ = 1, q = 2, n = 5', 'S = 1 × (2⁵ − 1) / (2 − 1) = 31']},
+      {title:'Exemplo 1 (razão)', text:'(3, 12, 48, 192, …) → q = 4', qVisual: seqRow(['3','12','48','192','…'], '×4'), steps:['Cada termo é o anterior × 4.', 'q = 12 ÷ 3 = 4']},
+      {title:'Exemplo 2 (termo geral)', text:'a₁ = 2, q = 3 → a₅ = 162', qVisual: stepChain(['aₙ = a₁ · qⁿ⁻¹', 'a₅ = 2 × 3⁴', 'a₅ = 2 × 81', 'a₅ = 162']), steps:['Use o termo geral com a₁ = 2, q = 3 e n = 5', '3⁴ = 81', '2 × 81 = 162']},
+      {title:'Exemplo 3 (soma)', text:'1 + 2 + 4 + 8 + 16 = 31', qVisual: stepChain([`S = ${fracRow([{n:'a₁ · (qⁿ − 1)', d:'q − 1'}])}`, `S = ${fracRow([{n:'1 × (2⁵ − 1)', d:'2 − 1'}])}`, 'S = 31']), steps:['a₁ = 1, q = 2, n = 5', '2⁵ − 1 = 32 − 1 = 31', '31 ÷ 1 = 31']},
     ],
     gen:{
       facil:()=>{ const a=randInt(1,6), q=pick([2,3,4,-2]), seq=[0,1,2].map(i=>a*Math.pow(q,i));
@@ -1773,9 +1906,9 @@ const SUBJECTS = [
     <div class="section-title">Esfera</div>
     <div class="example-box mono" style="margin-top:8px">V = 4 · π · r³ ÷ 3      Área = 4 · π · r²</div>`,
     examples:[
-      {title:'Exemplo 1 (caixa)', text:'5 cm × 4 cm × 3 cm → 60 cm³', steps:['V = 5 × 4 × 3 = 60 cm³']},
-      {title:'Exemplo 2 (cilindro)', text:'r = 2 cm, h = 10 cm → 125,6 cm³', steps:['Base: π × 2² = 3,14 × 4 = 12,56', 'V = 12,56 × 10 = 125,6 cm³']},
-      {title:'Exemplo 3 (pirâmide)', text:'Base quadrada de lado 6, altura 5 → 60', steps:['Área da base: 6 × 6 = 36', 'V = 36 × 5 ÷ 3 = 60']},
+      {title:'Exemplo 1 (paralelepípedo)', text:'5 cm × 4 cm × 3 cm → 60 cm³', qVisual: geoSolid('box',{c:5,l:4,h:3}), steps:['V = comprimento × largura × altura', '5 × 4 × 3 = 60 cm³']},
+      {title:'Exemplo 2 (cilindro)', text:'r = 2 cm, h = 10 cm → 125,6 cm³', qVisual: geoSolid('cylinder',{r:2,h:10}), steps:['Área da base: π × r² = 3,14 × 4 = 12,56', 'V = base × altura = 12,56 × 10 = 125,6 cm³']},
+      {title:'Exemplo 3 (pirâmide)', text:'Base quadrada de lado 6 cm, altura 5 cm → 60 cm³', qVisual: pyramidSVG(6,5), steps:['Área da base: 6 × 6 = 36', 'Pirâmide termina em ponta: divide por 3', 'V = 36 × 5 ÷ 3 = 60 cm³']},
     ],
     gen:{
       facil:()=>{
@@ -1810,9 +1943,9 @@ const SUBJECTS = [
     <div class="example-box mono" style="margin-top:8px">(x − a)² + (y − b)² = r²</div>
     <p>(a, b) é o centro e r é o raio. Se a equação vier "aberta" (x² + y² − 2ax − 2by + c = 0), o centro é (a, b) e r² = a² + b² − c.</p>`,
     examples:[
-      {title:'Exemplo 1 (distância)', text:'A(1, 2) e B(4, 6) → d = 5', steps:['Δx = 4 − 1 = 3 · Δy = 6 − 2 = 4', 'd = √(9 + 16) = √25 = 5']},
-      {title:'Exemplo 2 (coeficiente angular)', text:'A(1, 3) e B(3, 11) → m = 4', steps:['m = (11 − 3) / (3 − 1) = 8 / 2 = 4']},
-      {title:'Exemplo 3 (circunferência)', text:'x² + y² − 4x − 6y + 4 = 0 → centro (2, 3), raio 3', steps:['−2a = −4 → a = 2 · −2b = −6 → b = 3', 'r² = 2² + 3² − 4 = 9 → r = 3']},
+      {title:'Exemplo 1 (distância)', text:'A(1, 2) e B(4, 6) → d = 5', qVisual: funcGraph({xmin:-0.5, xmax:5.5, ymin:-0.5, ymax:7, grid:true, square:true, label:'d = √(3² + 4²) = 5', segs:[[1,2,4,6]], dash:[[1,2,4,2],[4,2,4,6]], pts:[{x:1,y:2,t:'A',c:'var(--amber)',dx:-8,anchor:'end'},{x:4,y:6,t:'B',c:'var(--coral)'}]}), steps:['Δx = 4 − 1 = 3 · Δy = 6 − 2 = 4 (os catetos pontilhados)', 'd = √(3² + 4²) = √(9 + 16) = √25 = 5']},
+      {title:'Exemplo 2 (coeficiente angular)', text:'A(1, 3) e B(3, 11) → m = 4', qVisual: stepChain([`m = ${fracRow([{n:'y₂ − y₁', d:'x₂ − x₁'}])}`, `m = ${fracRow([{n:'11 − 3', d:'3 − 1'}])}`, `m = ${fracRow([{n:8, d:2}])} = 4`]), steps:['Quanto subiu: 11 − 3 = 8', 'Quanto andou pro lado: 3 − 1 = 2', 'm = 8 ÷ 2 = 4']},
+      {title:'Exemplo 3 (circunferência)', text:'(x − 2)² + (y − 1)² = 9 → centro (2, 1), raio 3', qVisual: funcGraph({xmin:-2, xmax:6, ymin:-3, ymax:5, grid:true, square:true, label:'(x − 2)² + (y − 1)² = 9', segs:Array.from({length:48},(_,i)=>{ const a=i/48*2*Math.PI, b=(i+1)/48*2*Math.PI; return [2+3*Math.cos(a),1+3*Math.sin(a),2+3*Math.cos(b),1+3*Math.sin(b)]; }), dash:[[2,1,5,1]], pts:[{x:2,y:1,t:'C(2, 1)',c:'var(--amber)',dy:16,dx:4}]}), steps:['Compare com (x − a)² + (y − b)² = r²', 'Centro (a, b) = (2, 1)', 'r² = 9 → r = 3']},
     ],
     gen:{
       facil:()=>{ const [dx,dy,d]=pick([[3,4,5],[4,3,5],[6,8,10],[8,6,10],[5,12,13],[12,5,13],[9,12,15]]), x1=randInt(-5,5), y1=randInt(-5,5), x2=x1+dx*pick([1,-1]), y2=y1+dy*pick([1,-1]);
@@ -1841,9 +1974,9 @@ const SUBJECTS = [
     <div class="section-title">Ângulos notáveis</div>
     <div class="example-box mono" style="margin-top:8px">30°: sen = 1/2 · cos = √3/2 · tg = √3/3<br>45°: sen = cos = √2/2 · tg = 1<br>60°: sen = √3/2 · cos = 1/2 · tg = √3</div>`,
     examples:[
-      {title:'Exemplo 1 (Pitágoras)', text:'Catetos 6 e 8 → hipotenusa 10', steps:['h² = 6² + 8² = 36 + 64 = 100', 'h = √100 = 10']},
-      {title:'Exemplo 2 (cateto que falta)', text:'Hipotenusa 13, cateto 5 → outro cateto 12', steps:['13² = 5² + c² → 169 = 25 + c²', 'c² = 144 → c = 12']},
-      {title:'Exemplo 3 (seno)', text:'Hipotenusa 20, ângulo 30° → cateto oposto 10', steps:['sen 30° = oposto ÷ hipotenusa', '1/2 = oposto ÷ 20 → oposto = 10']},
+      {title:'Exemplo 1 (Pitágoras)', text:'Catetos 6 e 8 → hipotenusa 10', qVisual: rightTriSVG({bw:8, bh:6, base:'8 cm', alt:'6 cm', hip:'? cm', ask:'hip'}), steps:['h² = 6² + 8² = 36 + 64 = 100', 'h = √100 = 10 cm']},
+      {title:'Exemplo 2 (cateto que falta)', text:'Hipotenusa 13, cateto 5 → outro cateto 12', qVisual: rightTriSVG({bw:12, bh:5, base:'? cm', alt:'5 cm', hip:'13 cm', ask:'base'}), steps:['13² = 5² + x² → 169 = 25 + x²', 'x² = 144 → x = 12 cm']},
+      {title:'Exemplo 3 (seno)', text:'Hipotenusa 20, ângulo 30° → cateto oposto 10', qVisual: rightTriSVG({bw:17.3, bh:10, base:'', alt:'? cm', hip:'20 cm', ang:'30°', ask:'alt'}), steps:['O lado que falta é o oposto ao ângulo de 30°: use o seno.', 'sen 30° = oposto ÷ hipotenusa → 1/2 = x ÷ 20', 'x = 10 cm']},
     ],
     gen:{
       facil:()=>{ const [a,b,c]=pick([[3,4,5],[6,8,10],[5,12,13],[8,15,17],[9,12,15],[12,16,20],[7,24,25]]);
@@ -1872,9 +2005,9 @@ const SUBJECTS = [
     <div class="section-title">Voltas completas</div>
     <p>Dar uma volta inteira (360°) cai no mesmo ponto. Então 390° é o mesmo lugar que 30°. Pra achar a <b>menor determinação positiva</b>, tire 360° quantas vezes precisar.</p>`,
     examples:[
-      {title:'Exemplo 1', text:'π/4 rad = 45°', steps:['180° ÷ 4 = 45°']},
-      {title:'Exemplo 2', text:'5π/6 rad = 150°', steps:['5 × 180° ÷ 6 = 900° ÷ 6 = 150°']},
-      {title:'Exemplo 3 (voltas)', text:'780° → 60°', steps:['780° − 360° = 420°', '420° − 360° = 60°']},
+      {title:'Exemplo 1 (radianos → graus)', text:'π/4 rad = 45°', qVisual: unitCircleSVG(45, 'π/4 = 45°'), steps:['π rad = 180°', 'π/4 = 180° ÷ 4 = 45°']},
+      {title:'Exemplo 2 (2º quadrante)', text:'5π/6 rad = 150°', qVisual: unitCircleSVG(150, '5π/6 = 150°'), steps:['Troque π por 180°: 5 × 180° ÷ 6 = 900° ÷ 6 = 150°', 'Está no 2º quadrante: seno positivo, cosseno negativo.']},
+      {title:'Exemplo 3 (voltas completas)', text:'780° → 60°', qVisual: stepChain(['780°', '780° − 360° = 420°', '420° − 360° = 60°']), steps:['Cada volta completa (360°) cai no mesmo lugar.', 'Tire 360° até ficar entre 0° e 360°: 60°']},
     ],
     gen:{
       facil:()=>{ const k=pick([2,3,4,5,6,9,10,12,18]);
@@ -1901,9 +2034,9 @@ const SUBJECTS = [
       <li>sen(a + b) = sen a · cos b + sen b · cos a</li>
     </ol>`,
     examples:[
-      {title:'Exemplo 1 (achar o cosseno)', text:'sen x = 3/5 (1º quadrante) → cos x = 4/5', steps:['cos²x = 1 − (3/5)² = 1 − 9/25 = 16/25', 'cos x = 4/5 (positivo no 1º quadrante)']},
-      {title:'Exemplo 2 (tangente)', text:'sen x = 3/5 e cos x = 4/5 → tg x = 3/4', steps:['tg x = sen ÷ cos = (3/5) ÷ (4/5) = 3/4']},
-      {title:'Exemplo 3 (arco duplo)', text:'sen 2x = 2 × 3/5 × 4/5 = 24/25', steps:['sen 2x = 2 · sen x · cos x', '2 × 3/5 × 4/5 = 24/25']},
+      {title:'Exemplo 1 (achar o cosseno)', text:'sen x = 3/5 (1º quadrante) → cos x = 4/5', qVisual: stepChain(['sen²x + cos²x = 1', `cos²x = 1 − ${fracRow([{n:9,d:25}])} = ${fracRow([{n:16,d:25}])}`, `cos x = ${fracRow([{n:4,d:5}])}`]), steps:['Relação fundamental: cos²x = 1 − sen²x', '(3/5)² = 9/25 → 1 − 9/25 = 16/25', 'cos x = √(16/25) = 4/5 (positivo no 1º quadrante)']},
+      {title:'Exemplo 2 (tangente)', text:'sen x = 3/5 e cos x = 4/5 → tg x = 3/4', qVisual: fracRow(['tg x =', {n:'3/5', d:'4/5'}, '=', {n:3, d:4}]), steps:['tg x = sen x ÷ cos x', '(3/5) ÷ (4/5) = 3/4']},
+      {title:'Exemplo 3 (arco duplo)', text:'sen 2x = 2 × 3/5 × 4/5 = 24/25', qVisual: fracRow(['sen 2x = 2 ×', {n:3,d:5}, '×', {n:4,d:5}, '=', {n:24,d:25}]), steps:['sen 2x = 2 · sen x · cos x', '2 × 3/5 × 4/5 = 24/25']},
     ],
     gen:{
       facil:()=>{ const [p,q,h]=pick([[3,4,5],[4,3,5],[5,12,13],[12,5,13],[8,15,17],[15,8,17],[7,24,25]]), useSen=Math.random()<0.5;
@@ -1925,9 +2058,9 @@ const SUBJECTS = [
     <div class="example-box mono" style="margin-top:8px">a² = b² + c² − 2·b·c·cos A</div>
     <p>Use quando conhece <b>dois lados e o ângulo entre eles</b>. Lembre: cos 60° = 1/2 e cos 120° = −1/2.</p>`,
     examples:[
-      {title:'Exemplo 1 (lei dos senos)', text:'a = 5 oposto a 30°, B = 90° → b = 10', steps:['a / sen 30° = b / sen 90°', '5 / 0,5 = b / 1 → b = 10']},
-      {title:'Exemplo 2 (lei dos cossenos, 60°)', text:'b = 3, c = 8, A = 60° → a = 7', steps:['a² = 9 + 64 − 2 × 3 × 8 × 1/2', 'a² = 73 − 24 = 49 → a = 7']},
-      {title:'Exemplo 3 (lei dos cossenos, 120°)', text:'b = 3, c = 5, A = 120° → a = 7', steps:['cos 120° = −1/2, então o "−" vira "+"', 'a² = 9 + 25 + 15 = 49 → a = 7']},
+      {title:'Exemplo 1 (lei dos senos)', text:'a = 5 oposto a 30°, B = 90° → b = 10', qVisual: stepChain([`${fracRow([{n:'a', d:'sen A'}])} = ${fracRow([{n:'b', d:'sen B'}])}`, `${fracRow([{n:'5', d:'0,5'}])} = ${fracRow([{n:'b', d:'1'}])}`, 'b = 10']), steps:['a / sen 30° = b / sen 90°', 'sen 30° = 0,5 e sen 90° = 1', '5 ÷ 0,5 = 10 → b = 10']},
+      {title:'Exemplo 2 (lei dos cossenos, 60°)', text:'b = 3, c = 8, A = 60° → a = 7', qVisual: triAngleSVG({b:3, c:8, A:60, bl:'3', cl:'8', al:'a = ?', ask:'a'}), steps:['a² = b² + c² − 2bc · cos 60°', 'a² = 9 + 64 − 2 × 3 × 8 × 1/2 = 73 − 24 = 49', 'a = 7']},
+      {title:'Exemplo 3 (lei dos cossenos, 120°)', text:'b = 3, c = 5, A = 120° → a = 7', qVisual: triAngleSVG({b:3, c:5, A:120, bl:'3', cl:'5', al:'a = ?', ask:'a'}), steps:['cos 120° = −1/2, então o "−" da fórmula vira "+"', 'a² = 9 + 25 + 15 = 49', 'a = 7']},
     ],
     gen:{
       facil:()=>{ const a=randInt(2,20);
@@ -1954,9 +2087,9 @@ const SUBJECTS = [
       <li><b>Combinação</b> (escolher p e a ordem <b>não</b> importa): C = n! / [p! (n − p)!] — ex.: comissão, grupo.</li>
     </ol>`,
     examples:[
-      {title:'Exemplo 1 (princípio multiplicativo)', text:'3 camisas × 4 calças = 12', steps:['Para cada camisa há 4 calças: 3 × 4 = 12']},
-      {title:'Exemplo 2 (anagramas)', text:'AMOR → 4! = 24 anagramas', steps:['4 letras diferentes: 4 × 3 × 2 × 1 = 24']},
-      {title:'Exemplo 3 (combinação)', text:'Comissão de 2 entre 5 pessoas → 10', steps:['A ordem não importa: C(5,2) = 5 × 4 ÷ 2 = 10']},
+      {title:'Exemplo 1 (princípio multiplicativo)', text:'3 camisas × 4 calças = 12', qVisual: chainRow(['3','×','4','=','12']), steps:['Para cada uma das 3 camisas há 4 calças.', '3 × 4 = 12 roupas']},
+      {title:'Exemplo 2 (anagramas)', text:'AMOR → 4! = 24 anagramas', qVisual: chainRow(['4','×','3','×','2','×','1','=','24']), steps:['1ª letra: 4 opções, 2ª: 3, 3ª: 2, última: 1', '4! = 24']},
+      {title:'Exemplo 3 (combinação)', text:'Comissão de 2 entre 5 pessoas → 10', qVisual: fracRow(['C(5,2) =', {n:'5 × 4', d:'2 × 1'}, '=', {n:20,d:2}, '= 10']), steps:['A ordem não importa (Ana e Bia = Bia e Ana).', 'Conte como se importasse (5 × 4 = 20) e divida pelas trocas de lugar (2! = 2).', '20 ÷ 2 = 10']},
     ],
     gen:{
       facil:()=>{ const m=randInt(2,8), n=randInt(2,7);
@@ -1982,9 +2115,9 @@ const SUBJECTS = [
     </ol>
     <p><b>Dois dados:</b> são 6 × 6 = <b>36</b> resultados possíveis. A soma mais comum é 7 (6 jeitos).</p>`,
     examples:[
-      {title:'Exemplo 1 (dado)', text:'Sair número par → 3/6 = 1/2', steps:['Pares: 2, 4, 6 → 3 casos', 'P = 3/6 = 1/2 = 50%']},
-      {title:'Exemplo 2 (urna)', text:'3 bolas vermelhas e 5 azuis → P(vermelha) = 3/8', steps:['Total: 3 + 5 = 8 bolas', 'P = 3/8']},
-      {title:'Exemplo 3 (dois dados)', text:'Soma 5 → 4/36 = 1/9', steps:['(1,4), (2,3), (3,2), (4,1) → 4 casos', 'P = 4/36 = 1/9']},
+      {title:'Exemplo 1 (dado)', text:'Sair número par → 3/6 = 1/2', qVisual: fracRow(['P =', {n:'favoráveis', d:'possíveis'}, '=', {n:3, d:6}, '=', {n:1, d:2}]), steps:['Pares: 2, 4, 6 → 3 casos favoráveis', 'Um dado tem 6 resultados possíveis', 'P = 3/6 = 1/2 = 50%']},
+      {title:'Exemplo 2 (urna)', text:'3 bolas vermelhas e 5 azuis → P(vermelha) = 3/8', qVisual: fracRow(['P(vermelha) =', {n:3, d:'3 + 5'}, '=', {n:3, d:8}]), steps:['Total: 3 + 5 = 8 bolas', 'P = 3/8']},
+      {title:'Exemplo 3 (dois dados)', text:'Soma 5 → 4/36 = 1/9', qVisual: diceGrid(5), steps:['A tabela mostra os 36 resultados possíveis.', 'Soma 5 aparece 4 vezes: (1,4), (2,3), (3,2), (4,1)', 'P = 4/36 = 1/9']},
     ],
     gen:{
       facil:()=>{ const opts=[['um número par',[2,4,6]],['um número ímpar',[1,3,5]],['um múltiplo de 3',[3,6]],['um número maior que 4',[5,6]],['um número menor que 3',[1,2]],['um número primo',[2,3,5]],['o número 6',[6]],['um número maior que 1',[2,3,4,5,6]]];
@@ -2016,8 +2149,9 @@ const SUBJECTS = [
     </ol>
     <p>Desvio padrão <b>pequeno</b>: dados parecidos, grupo regular. <b>Grande</b>: dados espalhados.</p>`,
     examples:[
-      {title:'Exemplo 1 (amplitude)', text:'3, 9, 5, 12 → amplitude 9', steps:['12 − 3 = 9']},
-      {title:'Exemplo 2 (variância e desvio)', text:'2, 4, 4, 6 → σ² = 2, σ ≈ 1,41', steps:['Média = 16 ÷ 4 = 4', 'Desvios: −2, 0, 0, 2 → quadrados: 4, 0, 0, 4', 'σ² = 8 ÷ 4 = 2 → σ = √2 ≈ 1,41']},
+      {title:'Exemplo 1 (amplitude)', text:'3, 9, 5, 12 → amplitude 9', qVisual: stepChain(['3, 9, 5, 12', 'maior: 12 · menor: 3', '12 − 3 = 9']), steps:['Maior valor: 12 · menor: 3', 'Amplitude = 12 − 3 = 9']},
+      {title:'Exemplo 2 (variância e desvio padrão)', text:'2, 4, 4, 6 → σ² = 2, σ ≈ 1,41', qVisual: miniTable(['valor','− média (4)','desvio²'], [['2','−2','4'],['4','0','0'],['4','0','0'],['6','2','4']], ['','soma','8']), steps:['Média = 16 ÷ 4 = 4', 'Some os desvios ao quadrado: 4 + 0 + 0 + 4 = 8', 'Variância = 8 ÷ 4 = 2 → desvio padrão σ = √2 ≈ 1,41']},
+      {title:'Exemplo 3 (comparando grupos)', text:'5, 5, 5 → σ = 0 · 0, 5, 10 → σ ≈ 4,08', qVisual: stepChain(['Turma A: 5, 5, 5 → σ = 0', 'Turma B: 0, 5, 10 → σ ≈ 4,08']), steps:['As duas turmas têm média 5.', 'Na turma A todo mundo tirou igual: desvio 0.', 'Na turma B as notas se espalham: desvio grande.']},
     ],
     gen:{
       facil:()=>{ const nums=Array.from({length:6},()=>randInt(1,40)), mx=Math.max(...nums), mn=Math.min(...nums);
@@ -2046,8 +2180,8 @@ const SUBJECTS = [
     <div class="example-box mono" style="margin-top:8px">variação = (novo − antigo) ÷ antigo × 100</div>`,
     examples:[
       {title:'Exemplo 1 (ler o gráfico)', text:'Vendas: Jan 40, Fev 60 → aumento de 20', qVisual: barChartSVG('Vendas (unidades)', ['Jan','Fev','Mar'], [40,60,50]), steps:['Leia no topo de cada coluna: Jan = 40, Fev = 60', 'Aumento: 60 − 40 = 20 unidades']},
-      {title:'Exemplo 2 (variação %)', text:'De 40 para 60 → aumento de 50%', steps:['(60 − 40) ÷ 40 = 0,5', '0,5 × 100 = 50%']},
-      {title:'Exemplo 3 (setores)', text:'Setor de 90° → 25% do total', steps:['90° ÷ 360° = 0,25 = 25%']},
+      {title:'Exemplo 2 (variação percentual)', text:'De 40 para 60 → aumento de 50%', qVisual: fracRow([{n:'60 − 40', d:'40'}, '=', {n:20, d:40}, '= 0,5 = 50%']), steps:['Variação = (novo − antigo) ÷ antigo', '20 ÷ 40 = 0,5', '0,5 × 100 = 50%']},
+      {title:'Exemplo 3 (setores)', text:'Setor de 90° → 25% do total', qVisual: pieSVG(90, '90°'), steps:['O círculo todo tem 360° = 100%.', '90° ÷ 360° = 0,25 = 25%']},
     ],
     gen:{
       facil:()=>{ const meses=['Jan','Fev','Mar','Abr','Mai'], vals=meses.map(()=>randInt(2,12)*10), i=randInt(0,4), svg=barChartSVG('Vendas de sorvete (unidades)', meses, vals), q=`Quantos sorvetes foram vendidos em ${['janeiro','fevereiro','março','abril','maio'][i]}?`;
@@ -2078,9 +2212,9 @@ const SUBJECTS = [
     <div class="example-box mono" style="margin-top:8px">M = C · (1 + i)ᵗ</div>
     <p><b>Atenção:</b> a taxa e o tempo precisam estar na mesma unidade (ao mês com meses, ao ano com anos), e a taxa entra como decimal: 5% = 0,05.</p>`,
     examples:[
-      {title:'Exemplo 1 (simples)', text:'R$ 1.000 a 2% ao mês por 5 meses → J = R$ 100', steps:['J = 1000 × 0,02 × 5', 'J = R$ 100']},
-      {title:'Exemplo 2 (composto)', text:'R$ 1.000 a 10% ao mês por 2 meses → M = R$ 1.210', steps:['M = 1000 × 1,1²', '= 1000 × 1,21 = R$ 1.210']},
-      {title:'Exemplo 3 (comparando)', text:'No simples, seriam R$ 1.200', steps:['J = 1000 × 0,1 × 2 = 200 → M = 1.200', 'O composto rende mais: R$ 10 a mais.']},
+      {title:'Exemplo 1 (juros simples)', text:'R$ 1.000 a 2% ao mês por 5 meses → J = R$ 100', qVisual: stepChain(['J = C · i · t', 'J = 1000 × 0,02 × 5', 'J = R$ 100']), steps:['C = 1000, i = 2% = 0,02, t = 5', '1000 × 0,02 = 20 por mês', '20 × 5 = R$ 100']},
+      {title:'Exemplo 2 (juros compostos)', text:'R$ 1.000 a 10% ao mês por 2 meses → M = R$ 1.210', qVisual: stepChain(['M = C · (1 + i)ᵗ', 'M = 1000 × 1,1²', 'M = 1000 × 1,21', 'M = R$ 1.210']), steps:['C = 1000, i = 10% = 0,1, t = 2', '1,1² = 1,21', '1000 × 1,21 = R$ 1.210']},
+      {title:'Exemplo 3 (comparando mês a mês)', text:'Simples: R$ 1.200 · Composto: R$ 1.210', qVisual: miniTable(['mês','simples','composto'], [['0','1.000','1.000'],['1','1.100','1.100'],['2','1.200','1.210']]), steps:['No simples, rende sempre 10% de 1.000 = R$ 100 por mês.', 'No composto, o 2º mês rende 10% de 1.100 = R$ 110.', 'O composto rende R$ 10 a mais.']},
     ],
     gen:{
       facil:()=>{ const C=randInt(2,30)*100, i=randInt(1,10), t=randInt(2,12), J=C*i*t/100;
@@ -2103,9 +2237,9 @@ const SUBJECTS = [
     <div class="example-box mono" style="margin-top:8px">10% e depois 20%: 0,90 × 0,80 = 0,72</div>
     <p>Pagar 72% do preço = desconto total de <b>28%</b>, e não de 30%.</p>`,
     examples:[
-      {title:'Exemplo 1', text:'R$ 250 com 20% de desconto → R$ 200', steps:['Fator: 1 − 0,20 = 0,80', '250 × 0,80 = R$ 200']},
-      {title:'Exemplo 2 (sucessivos)', text:'R$ 200 com 10% e depois 20% → R$ 144', steps:['200 × 0,90 = 180', '180 × 0,80 = R$ 144']},
-      {title:'Exemplo 3 (desconto único equivalente)', text:'10% + 20% sucessivos = 28%', steps:['0,90 × 0,80 = 0,72', '1 − 0,72 = 0,28 = 28%']},
+      {title:'Exemplo 1 (desconto)', text:'R$ 250 com 20% de desconto → R$ 200', qVisual: seqRow(['R$ 250','R$ 200'], '× 0,80'), steps:['Fator: 1 − 0,20 = 0,80', '250 × 0,80 = R$ 200']},
+      {title:'Exemplo 2 (descontos sucessivos)', text:'R$ 200 com 10% e depois 20% → R$ 144', qVisual: seqRow(['R$ 200','R$ 180','R$ 144'], ['× 0,90','× 0,80']), steps:['1º desconto: 200 × 0,90 = 180', '2º desconto (sobre 180!): 180 × 0,80 = R$ 144']},
+      {title:'Exemplo 3 (desconto único equivalente)', text:'10% + 20% sucessivos = 28%', qVisual: stepChain(['0,90 × 0,80 = 0,72', 'paga 72% do preço', '100% − 72% = 28% de desconto']), steps:['Multiplique os fatores: 0,90 × 0,80 = 0,72', 'Desconto total: 1 − 0,72 = 0,28 = 28% (e não 30%)']},
     ],
     gen:{
       facil:()=>{ const P=randInt(2,50)*10, d=pick([10,20,25,30,40,50]), V=round2(P*(1-d/100));
@@ -2127,9 +2261,9 @@ const SUBJECTS = [
     <p>Se um investimento rendeu 10% mas a inflação foi 4%, você não ganhou 6%. O <b>ganho real</b> desconta a inflação dividindo os fatores:</p>
     <div class="example-box mono" style="margin-top:8px">1 + real = (1 + rendimento) ÷ (1 + inflação)</div>`,
     examples:[
-      {title:'Exemplo 1 (preço corrigido)', text:'R$ 80 com inflação de 5% → R$ 84', steps:['80 × 1,05 = R$ 84']},
-      {title:'Exemplo 2 (acumulada)', text:'5% e depois 10% → 15,5%', steps:['1,05 × 1,10 = 1,155', '1,155 − 1 = 0,155 = 15,5%']},
-      {title:'Exemplo 3 (ganho real)', text:'Rendeu 32%, inflação 10% → real 20%', steps:['1,32 ÷ 1,10 = 1,20', 'Ganho real: 20%']},
+      {title:'Exemplo 1 (preço corrigido)', text:'R$ 80 com inflação de 5% → R$ 84', qVisual: seqRow(['R$ 80','R$ 84'], '× 1,05'), steps:['Fator: 1 + 0,05 = 1,05', '80 × 1,05 = R$ 84']},
+      {title:'Exemplo 2 (inflação acumulada)', text:'5% e depois 10% → 15,5%', qVisual: seqRow(['100','105','115,5'], ['× 1,05','× 1,10']), steps:['Pense num preço de 100: depois de 5% vira 105.', 'Depois de mais 10%: 105 × 1,10 = 115,5', 'Acumulada: 15,5% (e não 15%)']},
+      {title:'Exemplo 3 (ganho real)', text:'Rendeu 32%, inflação 10% → real 20%', qVisual: fracRow(['1 + real =', {n:'1,32', d:'1,10'}, '= 1,20']), steps:['Divida os fatores: 1,32 ÷ 1,10 = 1,20', 'Ganho real: 20%']},
     ],
     gen:{
       facil:()=>{ const P=randInt(2,40)*10, i=randInt(2,12), V=round2(P*(1+i/100));
@@ -2153,8 +2287,9 @@ const SUBJECTS = [
     </ol>
     <p><b>Matriz identidade (I):</b> 1 na diagonal e 0 no resto. A · I = A.</p>`,
     examples:[
-      {title:'Exemplo 1 (localizar)', text:'Na matriz abaixo, a₂₃ = 6', qVisual: matHTML([[1,2,3],[4,5,6]], 'A'), steps:['Linha 2: 4, 5, 6', 'Coluna 3 dessa linha: 6']},
-      {title:'Exemplo 2 (produto)', text:'c₁₁ = 1·5 + 2·7 = 19', qVisual: `<div class="mat-row">${matHTML([[1,2],[3,4]], 'A')}${matHTML([[5,6],[7,8]], 'B')}</div>`, steps:['Linha 1 de A: (1, 2) · Coluna 1 de B: (5, 7)', '1×5 + 2×7 = 5 + 14 = 19']},
+      {title:'Exemplo 1 (localizar a₂₃)', text:'Na matriz abaixo, a₂₃ = 6', qVisual: matHTML([[1,2,3],[4,5,6]], 'A', (i,j)=> i===1&&j===2 ? 'hl-a' : (i===1||j===2) ? 'hl-soft' : ''), steps:['a₂₃ = linha 2, coluna 3', 'Linha 2: 4, 5, 6 → na coluna 3 está o 6']},
+      {title:'Exemplo 2 (soma)', text:'A + B: some posição com posição', qVisual: `<div class="mat-row">${matHTML([[1,2],[3,4]], 'A')}<span class="mat-op">+</span>${matHTML([[5,0],[1,2]], 'B')}<span class="mat-op">=</span>${matHTML([[6,2],[4,6]])}</div>`, steps:['c₁₁ = 1 + 5 = 6 · c₁₂ = 2 + 0 = 2', 'c₂₁ = 3 + 1 = 4 · c₂₂ = 4 + 2 = 6']},
+      {title:'Exemplo 3 (produto)', text:'c₁₁ = 1·5 + 2·7 = 19', qVisual: `<div class="mat-row">${matHTML([[1,2],[3,4]], 'A', (i)=> i===0 ? 'hl-a' : '')}${matHTML([[5,6],[7,8]], 'B', (i,j)=> j===0 ? 'hl-b' : '')}</div>`, steps:['c₁₁ = linha 1 de A × coluna 1 de B', '1×5 + 2×7 = 5 + 14 = 19']},
     ],
     gen:{
       facil:()=>{ const r=pick([2,3]), c=3, M=Array.from({length:r},()=>Array.from({length:c},()=>randInt(-9,9))), i=randInt(1,r), j=randInt(1,c), q=`Na matriz A, qual é o elemento a${SUBD[i]}${SUBD[j]}?`;
@@ -2181,8 +2316,9 @@ const SUBJECTS = [
       <li>det = (1ª soma) − (2ª soma).</li>
     </ol>`,
     examples:[
-      {title:'Exemplo 1 (2×2)', text:'det = 3·4 − 1·2 = 10', qVisual: matHTML([[3,1],[2,4]]), steps:['Diagonal principal: 3 × 4 = 12', 'Diagonal secundária: 1 × 2 = 2', 'det = 12 − 2 = 10']},
-      {title:'Exemplo 2 (Sarrus)', text:'det = −17', qVisual: matHTML([[1,2,0],[3,1,2],[0,1,3]]), steps:['Descendo: 1·1·3 + 2·2·0 + 0·3·1 = 3', 'Subindo: 0·1·0 + 1·2·1 + 2·3·3 = 20', 'det = 3 − 20 = −17']},
+      {title:'Exemplo 1 (2×2)', text:'det = 3·4 − 1·2 = 10', qVisual: `<div class="mat-row">${matHTML([[3,1],[2,4]], 'det', (i,j)=> i===j ? 'hl-a' : 'hl-b')}</div>`, steps:['Diagonal principal (azul): 3 × 4 = 12', 'Diagonal secundária (laranja): 1 × 2 = 2', 'det = 12 − 2 = 10']},
+      {title:'Exemplo 2 (2×2 com negativos)', text:'det = 5·(−2) − 3·(−4) = 2', qVisual: `<div class="mat-row">${matHTML([[5,3],[-4,-2]], 'det', (i,j)=> i===j ? 'hl-a' : 'hl-b')}</div>`, steps:['Principal: 5 × (−2) = −10', 'Secundária: 3 × (−4) = −12', 'det = −10 − (−12) = −10 + 12 = 2']},
+      {title:'Exemplo 3 (3×3 — Sarrus)', text:'det = −17', qVisual: `<div class="mat-row">${matHTML([[1,2,0,1,2],[3,1,2,3,1],[0,1,3,0,1]], '', (i,j)=> j>2 ? 'dim' : '')}</div>`, steps:['Repita as 2 primeiras colunas (em cinza) do lado direito.', 'Descendo: 1·1·3 + 2·2·0 + 0·3·1 = 3', 'Subindo: 0·1·0 + 1·2·1 + 2·3·3 = 20', 'det = 3 − 20 = −17']},
     ],
     gen:{
       facil:()=>{ const M=[[randInt(1,9),randInt(1,9)],[randInt(1,9),randInt(1,9)]], d=M[0][0]*M[1][1]-M[0][1]*M[1][0], q='Qual é o determinante da matriz?';

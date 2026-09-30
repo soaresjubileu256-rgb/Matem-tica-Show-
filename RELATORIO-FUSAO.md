@@ -144,4 +144,4 @@ Em **Aprender** e **Exercícios** a lista agora é separada em *Ensino Fundament
 
 - O Simulado ganhou o grupo **Ensino Médio**.
 - Na Trilha, os assuntos novos vêm depois dos 18 que já existiam (a ordem antiga não mudou, então ninguém perde progresso).
-- O service worker passou para `mat-show-v20`, pra todo mundo receber a versão nova.
+- O service worker passou para `mat-show-v21`, pra todo mundo receber a versão nova.
