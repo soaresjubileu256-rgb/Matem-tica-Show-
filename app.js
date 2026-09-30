@@ -3825,7 +3825,7 @@ const BOTTOM_NAV_ITEMS = [
   {screen:'path', icon:'★', label:'Trilha', group:['path']},
   {screen:'content', icon:'∑', label:'Aprender', group:['content','subjectDetail','geoLab','cardsDeck']},
   {screen:'exercisesSubjects', icon:'✎', label:'Exercícios', group:['exercisesSubjects','exerciseDifficulty','exerciseSession']},
-  {screen:'arena', icon:'⚔', label:'Arena', group:['arena','arenaDaily','examSetup','examResult','lightning','quizSetup','duel']},
+  {screen:'arena', icon:'⚔', label:'Arena', group:['arena','arenaDaily','dailyIntro','dailyReview','examSetup','examResult','lightning','quizSetup','duel']},
   {screen:'progress', icon:'↑', label:'Progresso', group:['progress','report','history']},
 ];
 function bottomNav(){
@@ -3933,7 +3933,7 @@ function homeScreen(){
   // Arena: Desafio do Dia (igual pra todo mundo) e plano de estudos até a prova
   const dk = isoDay(), dailyDone = arenaData().daily[dk];
   const dailyBanner = h(`<button type="button" class="alert-banner ${dailyDone?'':'purple'}"><span class="sym">📅</span>
-    <span class="txt"><span class="title">Desafio do Dia #${dailyNumber(dk)}</span><span class="sub">${dailyDone ? `Feito: ${dailyDone.marks} ${dailyDone.ok}/${dailyDone.n}` : `${DAILY_N} perguntas, as mesmas pra todo mundo hoje · +${DAILY_BONUS_XP} XP`}</span></span><span class="chev">${dailyDone?'✓':'›'}</span></button>`);
+    <span class="txt"><span class="title">Desafio do Dia #${dailyNumber(dk)}</span><span class="sub">${dailyDone ? `Feito: ${dailyDone.marks} ${dailyDone.ok}/${dailyDone.n}${dailyStreak()>1 ? ` · 🔥 ${dailyStreak()} dias` : ''}` : `${DAILY_N} perguntas do seu nível · +${DAILY_BONUS_XP} XP${dailyStreak() ? ` · 🔥 ${dailyStreak()} dias seguidos` : ''}`}</span></span><span class="chev">${dailyDone?'✓':'›'}</span></button>`);
   dailyBanner.onclick = ()=> startDaily();
   const pt = planToday(), plan = studyData().plan;
   let planBanner = null;
@@ -7666,8 +7666,9 @@ function lessonScreen(){
     c.appendChild(meta);
     const tb = meta.querySelector('.quiz-ring');
     const paint = ()=>{
-      const left = sess.checked ? (sess.timeLeft||0) : Math.max(0, QUIZ_SECONDS - (Date.now()-sess.qStart)/1000);
-      tb.querySelector('.bar').style.strokeDashoffset = 157.08*(1 - left/QUIZ_SECONDS);
+      const QS = q.secs || QUIZ_SECONDS; // o Desafio do Dia dá mais tempo pras perguntas difíceis
+      const left = sess.checked ? (sess.timeLeft||0) : Math.max(0, QS - (Date.now()-sess.qStart)/1000);
+      tb.querySelector('.bar').style.strokeDashoffset = 157.08*(1 - left/QS);
       tb.querySelector('span').textContent = Math.ceil(left);
       tb.classList.toggle('low', left<=5);
       return left;
@@ -7798,9 +7799,10 @@ async function lessonCheck(sess, idx){
   sess.selected = idx; sess.checked = true; sess.wasCorrect = ok; sess.tryAgain = false;
   giveAnswerFeedback(ok);
   if(sess.kind==='quiz'){
-    const left = Math.max(0, QUIZ_SECONDS - (Date.now()-sess.qStart)/1000);
+    const QS = q.secs || QUIZ_SECONDS;
+    const left = Math.max(0, QS - (Date.now()-sess.qStart)/1000);
     sess.timeLeft = left;
-    if(ok){ sess.qStreak++; sess.lastPoints = Math.round(500 + 500*left/QUIZ_SECONDS) + Math.min(sess.qStreak-1,5)*100; sess.score += sess.lastPoints; sess.correct++; }
+    if(ok){ sess.qStreak++; sess.lastPoints = Math.round(500 + 500*left/QS) + Math.min(sess.qStreak-1,5)*100; sess.score += sess.lastPoints; sess.correct++; }
     else { sess.qStreak = 0; sess.lastPoints = 0; sess.wrong++; }
     sess.cleared++;
     if(sess.mode) arenaAfterCheck(sess, ok);
@@ -8275,6 +8277,8 @@ const SCREENS = {
   calculator: calculatorScreen,
   arena: arenaScreen,
   arenaDaily: arenaDailyScreen,
+  dailyIntro: dailyIntroScreen,
+  dailyReview: dailyReviewScreen,
   examSetup: examSetupScreen,
   examRun: examRunScreen,
   examResult: examResultScreen,

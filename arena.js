@@ -70,7 +70,7 @@ function arenaScreen(){
   const k = isoDay(), done = a.daily[k];
   const daily = h(`<button type="button" class="alert-banner ${done?'':'purple'} ar-daily">
     <span class="sym">📅</span>
-    <span class="txt"><span class="title">Desafio do Dia #${dailyNumber(k)}</span><span class="sub">${done ? `${done.marks} · ${done.ok}/${done.n} em ${mmssA(done.secs)}` : `${DAILY_N} perguntas, as mesmas para todo mundo hoje · +${DAILY_BONUS_XP} XP`}</span></span>
+    <span class="txt"><span class="title">Desafio do Dia #${dailyNumber(k)}</span><span class="sub">${done ? `${done.marks} · ${done.ok}/${done.n} em ${mmssA(done.secs)}` : `${DAILY_N} perguntas do seu nível · +${DAILY_BONUS_XP} XP${dailyStreak() ? ` · 🔥 ${dailyStreak()} dias` : ''}`}</span></span>
     <span class="chev">${done ? '✓' : '›'}</span></button>`);
   daily.onclick = ()=> startDaily();
   c.appendChild(daily);
@@ -123,24 +123,180 @@ function startArenaPhase(subjectId, diff){
   state.session = sess;
   go('lesson');
 }
+/* ---------- Desafio do Dia ----------
+   Um desafio por nível (Fundamental ou Ensino Médio), igual para todo mundo daquele nível no dia.
+   Tempo por pergunta conforme a dificuldade, bônus por acertar tudo e por jogar dias seguidos,
+   correção comentada no fim (as perguntas são geradas de novo pela semente, então só guardamos
+   as respostas escolhidas). */
+const DAILY_TRACKS = [
+  {id:'fund', name:'Ensino Fundamental', short:'Fundamental', ico:'📘', groups:['f1','f2','f3']},
+  {id:'em', name:'Ensino Médio', short:'Ensino Médio', ico:'🎓', groups:['em']},
+];
+const DAILY_SECS = {facil:30, medio:45, dificil:60};
+const DAILY_PERFECT_XP = 20;   // acertou as 7
+const DAILY_STREAK_XP = 5;     // por dia seguido de desafio (a partir do 2º)
+const DAILY_STREAK_MAX = 25;
+function dailyTrack(id){ return DAILY_TRACKS.find(t=>t.id===id) || DAILY_TRACKS[0]; }
+function dailyTrackIds(id){ return [...new Set(dailyTrack(id).groups.flatMap(g=> examGroupIds(EXAM_GROUPS.find(x=>x.id===g))))]; }
+function dailyDefaultTrack(){
+  const a = arenaData();
+  if(a.dailyTrack) return a.dailyTrack;
+  const lvl = settingsCache && settingsCache.schoolLevel, gr = (loadGame().study||{}).grade;
+  return (lvl==='medio' || gr==='em') ? 'em' : 'fund';
+}
 function dailySeed(k){ return Number(k.replace(/-/g,'')); }
 function dailyNumber(k){ return Math.round((new Date(k+'T12:00') - new Date('2026-01-01T12:00'))/864e5) + 1; }
-function dailyQuestions(k){
-  return withSeed(dailySeed(k), ()=>{
-    const ids = shuffle(SUBJECTS.map(s=>s.id)).slice(0, DAILY_N);
+function dailyQuestions(k, track){
+  track = track || 'fund';
+  return withSeed(dailySeed(k)*10 + (track==='em' ? 1 : 0), ()=>{
+    const ids = shuffle(dailyTrackIds(track)).slice(0, DAILY_N);
     const diffs = ['facil','facil','medio','medio','medio','dificil','dificil'];
-    return ids.map((id,i)=>{ const s = SUBJECTS.find(x=>x.id===id); const ex = s.gen[diffs[i]](); return {ex, subjectId:id, diff:diffs[i], opts:buildOptions(ex)}; });
+    return ids.map((id,i)=>{ const s = SUBJECTS.find(x=>x.id===id); const ex = s.gen[diffs[i]](); return {ex, subjectId:id, diff:diffs[i], secs:DAILY_SECS[diffs[i]], opts:buildOptions(ex)}; });
   });
 }
+/* dias seguidos com desafio feito (termina hoje, ou ontem se hoje ainda não jogou) */
+function dailyDayShift(k, n){ const d = new Date(k+'T12:00'); d.setDate(d.getDate()+n); return isoDay(d); }
+function dailyStreak(){
+  const a = arenaData(); let k = isoDay();
+  if(!a.daily[k]) k = dailyDayShift(k, -1);
+  let n = 0; while(a.daily[k]){ n++; k = dailyDayShift(k, -1); }
+  return n;
+}
+function dailyBestStreak(){
+  const ks = Object.keys(arenaData().daily).sort(); let best = 0, cur = 0, prev = null;
+  ks.forEach(k=>{ cur = (prev && dailyDayShift(prev, 1)===k) ? cur+1 : 1; best = Math.max(best, cur); prev = k; });
+  return Math.max(best, arenaData().dailyBest||0);
+}
+function dailyUntilMidnight(){
+  const now = new Date(), m = new Date(now); m.setHours(24,0,0,0);
+  const s = Math.max(0, Math.round((m-now)/1000));
+  return `${String(Math.floor(s/3600)).padStart(2,'0')}:${String(Math.floor(s%3600/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+}
+function dailyCountdown(prefix){
+  const el = h(`<span class="dl-count">${prefix}${dailyUntilMidnight()}</span>`);
+  const t = setInterval(()=>{ if(!el.isConnected){ clearInterval(t); return; } el.textContent = prefix + dailyUntilMidnight(); }, 1000);
+  return el;
+}
+/* últimos 7 dias em bolinhas: verde (acertou 5+), amarela (jogou), vazia (não jogou) */
+function dailyWeekStrip(){
+  const a = arenaData(), today = isoDay(), names = ['D','S','T','Q','Q','S','S'];
+  let html = '';
+  for(let i=6;i>=0;i--){
+    const k = dailyDayShift(today, -i), r = a.daily[k], d = new Date(k+'T12:00');
+    const cls = r ? (r.ok===r.n ? 'perfect' : r.ok>=5 ? 'good' : 'played') : (k===today ? 'today' : '');
+    html += `<div class="dl-day ${cls}"><span class="dl-dot">${r ? r.ok : k===today ? '?' : ''}</span><small>${names[d.getDay()]}</small></div>`;
+  }
+  return h(`<div class="dl-week">${html}</div>`);
+}
+function dailyStatsRow(){
+  const a = arenaData(), all = Object.values(a.daily), played = all.length;
+  const avg = played ? all.reduce((s,r)=>s+r.ok,0)/played : 0, perf = all.filter(r=>r.ok===r.n).length;
+  return h(`<div class="dl-stats">
+    <div><b>🔥 ${dailyStreak()}</b><span>sequência</span></div>
+    <div><b>🏆 ${dailyBestStreak()}</b><span>melhor</span></div>
+    <div><b>📅 ${played}</b><span>jogados</span></div>
+    <div><b>⭐ ${perf}</b><span>perfeitos</span></div>
+    <div><b>🎯 ${fmt(Math.round(avg*10)/10)}</b><span>média</span></div>
+  </div>`);
+}
+
 function startDaily(){
-  const k = isoDay();
-  if(arenaData().daily[k]){ go('arenaDaily'); return; }
-  const plan = dailyQuestions(k);
-  const sess = arenaBaseSession({mode:'daily', dayIso:k, plan, marks:[], needed:DAILY_N, diff:'misturada'});
+  if(arenaData().daily[isoDay()]){ go('arenaDaily'); return; }
+  go('dailyIntro');
+}
+function beginDaily(track){
+  const k = isoDay(), a = arenaData();
+  if(a.daily[k]){ go('arenaDaily'); return; }
+  a.dailyTrack = track; saveGame();
+  const plan = dailyQuestions(k, track);
+  const sess = arenaBaseSession({mode:'daily', dayIso:k, track, plan, marks:[], picks:[], needed:DAILY_N, diff:'misturada'});
   sess.q = JSON.parse(JSON.stringify(plan[0])); sess.subjectId = sess.q.subjectId; sess.asked++; sess.qStart = Date.now();
   state.session = sess;
   go('lesson');
 }
+
+/* tela de abertura: regras, nível, assuntos de hoje e sequência */
+function dailyIntroScreen(){
+  const k = isoDay();
+  if(arenaData().daily[k]){ setTimeout(()=>go('arenaDaily'), 0); return document.createElement('div'); }
+  const wrap = document.createElement('div');
+  wrap.appendChild(topbar('📅 Desafio do Dia', true, ()=>go('arena')));
+  const c = h(`<div class="content"></div>`);
+  wrap.appendChild(c);
+  let track = state.dailyTrack || dailyDefaultTrack();
+  const [y,m,d] = k.split('-'), streak = dailyStreak();
+  c.appendChild(h(`<div class="dl-hero">
+    <div class="dl-hero-num">#${dailyNumber(k)}</div>
+    <div class="dl-hero-t"><h2>Desafio do Dia</h2><p>${d}/${m}/${y} · as mesmas perguntas para todo mundo do seu nível</p></div>
+    ${streak ? `<div class="dl-hero-streak">🔥 ${streak} dia${streak===1?'':'s'} seguido${streak===1?'':'s'}! Não quebre a sequência.</div>` : ''}
+  </div>`));
+  c.appendChild(h(`<h3 class="ar-label">Escolha o nível</h3>`));
+  const tr = h(`<div class="dl-tracks"></div>`);
+  c.appendChild(tr);
+  const topics = h(`<div class="dl-topics"></div>`);
+  const paintTopics = ()=>{
+    tr.querySelectorAll('.dl-track').forEach(b=> b.classList.toggle('on', b.dataset.t===track));
+    const plan = dailyQuestions(k, track);
+    topics.innerHTML = `<h3 class="ar-label">Assuntos de hoje</h3><div class="dl-chips">${plan.map((q,i)=>{ const s = SUBJECTS.find(x=>x.id===q.subjectId); return `<span class="dl-chip d-${q.diff}"><i>${i+1}</i>${s.sym} ${s.name}</span>`; }).join('')}</div>`;
+  };
+  DAILY_TRACKS.forEach(t=>{
+    const b = h(`<button type="button" class="dl-track" data-t="${t.id}"><span class="dl-track-ico">${t.ico}</span><b>${t.short}</b></button>`);
+    b.onclick = ()=>{ track = t.id; state.dailyTrack = t.id; paintTopics(); };
+    tr.appendChild(b);
+  });
+  c.appendChild(topics);
+  paintTopics();
+  c.appendChild(h(`<div class="card dl-rules">
+    <div><span>🧩</span><p><b>${DAILY_N} perguntas</b>: 2 fáceis, 3 médias e 2 difíceis</p></div>
+    <div><span>⏱️</span><p><b>${DAILY_SECS.facil}s, ${DAILY_SECS.medio}s e ${DAILY_SECS.dificil}s</b> por pergunta, conforme a dificuldade. Mais rápido = mais pontos</p></div>
+    <div><span>🎯</span><p><b>Uma tentativa só</b>: se sair no meio, vale o que já respondeu</p></div>
+    <div><span>⚡</span><p><b>+${DAILY_BONUS_XP} XP</b> · acertou todas: <b>+${DAILY_PERFECT_XP} XP</b> · dias seguidos: <b>+${DAILY_STREAK_XP} XP por dia</b> (até +${DAILY_STREAK_MAX})</p></div>
+    <div><span>📖</span><p>No fim tem a <b>correção comentada</b> de cada pergunta</p></div>
+  </div>`));
+  c.appendChild(h(`<h3 class="ar-label">Sua semana</h3>`));
+  c.appendChild(dailyWeekStrip());
+  const foot = h(`<div class="lesson-footer static"><button class="show-btn">COMEÇAR O DESAFIO</button></div>`);
+  foot.querySelector('button').onclick = ()=> beginDaily(track);
+  c.appendChild(foot);
+  return wrap;
+}
+
+/* correção comentada de um dia */
+function dailyReviewScreen(){
+  const k = state.reviewDay || isoDay(), r = arenaData().daily[k];
+  const wrap = document.createElement('div');
+  wrap.appendChild(topbar(`📖 Correção · #${dailyNumber(k)}`, true, ()=>go('arenaDaily')));
+  const c = h(`<div class="content"></div>`);
+  wrap.appendChild(c);
+  if(!r || !r.picks){ c.appendChild(h(`<p class="ar-muted">A correção só existe para os desafios feitos a partir desta versão do app.</p>`)); return wrap; }
+  const plan = dailyQuestions(k, r.track);
+  c.appendChild(h(`<div class="dl-rev-top"><span class="ar-marks" style="font-size:22px; margin:0">${r.marks}</span><b>${r.ok}/${r.n}</b><small>${dailyTrack(r.track).ico} ${dailyTrack(r.track).short}</small></div>`));
+  plan.forEach((q,i)=>{
+    // pk: índice da alternativa · -1 = o tempo acabou · -2 = saiu antes de responder
+    const s = SUBJECTS.find(x=>x.id===q.subjectId), pk = r.picks[i] ?? -2, ok = pk>=0 && !!q.opts[pk] && q.opts[pk].ok;
+    const status = ok ? 'ok' : pk===-2 ? 'skip' : 'bad';
+    const mine = pk===-2 ? 'não respondeu (saiu antes)' : pk===-1 ? '⏰ o tempo acabou' : q.opts[pk].label;
+    const qv = questionHTML(q.ex);
+    const card = h(`<div class="dl-rev ${status}">
+      <div class="dl-rev-h"><span class="dl-rev-n">${i+1}</span><span class="dl-rev-s">${s.sym} ${s.name} · ${ARENA_DIFF_NAME[q.diff]}</span><span class="dl-rev-i">${ok?'✅':status==='skip'?'⬜':'❌'}</span></div>
+      <div class="dl-rev-q qtext mono ${qv.stacked?'stacked':''}">${qv.html}</div>
+      <div class="dl-rev-a"><div><small>Sua resposta</small><span class="mono ${ok?'good':'wrong'}"></span></div>${ok?'':`<div><small>Resposta certa</small><span class="mono good"></span></div>`}</div>
+      <button type="button" class="fb-why">📖 Ver explicação</button>
+      <div class="fb-steps" style="display:none">${solutionHTML(q.ex)}</div>
+    </div>`);
+    const spans = card.querySelectorAll('.dl-rev-a span');
+    spans[0].textContent = mine; if(spans[1]) spans[1].textContent = answerLabel(q.ex);
+    card.querySelector('.fb-why').onclick = e=>{ const st = card.querySelector('.fb-steps'), open = st.style.display==='none'; st.style.display = open?'':'none'; e.currentTarget.textContent = open ? '📖 Esconder explicação' : '📖 Ver explicação'; };
+    if(!ok){
+      const pr = h(`<button type="button" class="drill-btn">🎯 Praticar ${s.name.toLowerCase()} (5 questões)</button>`);
+      pr.onclick = ()=> startSession(q.subjectId, q.diff);
+      card.appendChild(pr);
+    }
+    c.appendChild(card);
+  });
+  return wrap;
+}
+
 /* próxima pergunta dentro do motor do quiz (chamado por lessonAdvance) */
 function arenaNextQuestion(sess){
   if(sess.mode === 'daily'){ sess.q = JSON.parse(JSON.stringify(sess.plan[sess.asked])); sess.subjectId = sess.q.subjectId; }
@@ -149,7 +305,7 @@ function arenaNextQuestion(sess){
 }
 /* depois de corrigir cada pergunta (chamado por lessonCheck) */
 function arenaAfterCheck(sess, ok){
-  if(sess.mode === 'daily') sess.marks.push(ok ? '🟩' : '🟥');
+  if(sess.mode === 'daily'){ sess.marks.push(ok ? '🟩' : '🟥'); sess.picks.push(sess.selected===null ? -1 : sess.selected); }
   if(sess.mode === 'arena' && !ok){ sess.lives--; if(sess.lives <= 0) sess.outOfLives = true; }
 }
 /* saiu no meio do Desafio do Dia: vale uma tentativa, então guarda o que já fez */
@@ -160,10 +316,17 @@ function arenaSaveDaily(sess){
   const a = arenaData();
   if(a.daily[sess.dayIso]) return a.daily[sess.dayIso];
   const marks = sess.marks.slice(); while(marks.length < sess.needed) marks.push('⬜');
-  const r = {ok:sess.correct, n:sess.needed, marks:marks.join(''), secs:Math.round((Date.now()-sess.startTs)/1000), score:sess.score, id:sess.id};
+  const picks = (sess.picks||[]).slice(); while(picks.length < sess.needed) picks.push(-2);
+  const r = {ok:sess.correct, n:sess.needed, marks:marks.join(''), secs:Math.round((Date.now()-sess.startTs)/1000), score:sess.score, id:sess.id, track:sess.track||'fund', picks};
   a.daily[sess.dayIso] = r;
   const ks = Object.keys(a.daily).sort(); while(ks.length > 90) delete a.daily[ks.shift()];
-  gameAddXP(DAILY_BONUS_XP); sess.xp = (sess.xp||0) + DAILY_BONUS_XP;
+  // XP: base + bônus por acertar todas + bônus pelos dias seguidos
+  const streak = dailyStreak();
+  a.dailyBest = Math.max(a.dailyBest||0, streak);
+  r.streak = streak;
+  r.bonus = {base:DAILY_BONUS_XP, perfect: r.ok===r.n ? DAILY_PERFECT_XP : 0, streak: Math.min(DAILY_STREAK_MAX, Math.max(0, streak-1)*DAILY_STREAK_XP)};
+  const xp = r.bonus.base + r.bonus.perfect + r.bonus.streak;
+  gameAddXP(xp); sess.xp = (sess.xp||0) + xp;
   gameUnlock('daily1');
   if(Object.keys(a.daily).length >= 7) gameUnlock('daily7');
   saveGame();
@@ -210,8 +373,9 @@ function arenaQuizEnd(c, sess){
   if(isDaily){
     const r = a.daily[sess.dayIso];
     c.appendChild(h(`<div class="le-mascot">${mascotSVG(r.ok>=4?'joy':'happy',120)}</div>`));
-    c.appendChild(h(`<h2 class="le-title">${r.ok===r.n ? 'Perfeito! 🏆' : r.ok>=5 ? 'Mandou bem!' : 'Amanhã tem mais!'}</h2>`));
+    c.appendChild(h(`<h2 class="le-title">${r.ok===r.n ? 'Perfeito! 🏆' : r.ok>=5 ? 'Mandou bem!' : r.ok>=3 ? 'Boa tentativa!' : 'Amanhã tem mais!'}</h2>`));
     c.appendChild(h(`<div class="ar-marks" aria-label="${r.ok} certas de ${r.n}">${r.marks}</div>`));
+    if(r.streak) c.appendChild(h(`<p class="le-sub dl-streak-msg">🔥 ${r.streak} dia${r.streak===1?'':'s'} seguido${r.streak===1?'':'s'} de desafio${r.streak>1?'!':''}</p>`));
   } else {
     const st = sess.stars||0;
     c.appendChild(h(`<div class="ar-bigstars" aria-label="${st} de 3 estrelas">${[0,1,2].map(i=>`<span class="${i<st?'on':''}" style="--k:${i}">★</span>`).join('')}</div>`));
@@ -228,8 +392,13 @@ function arenaQuizEnd(c, sess){
   if(sess.starBonus) c.appendChild(h(`<p class="le-sub">+${sess.starBonus} XP pelas estrelas novas</p>`));
   if(isDaily){
     const r = a.daily[sess.dayIso];
+    const b = r.bonus || {base:DAILY_BONUS_XP, perfect:0, streak:0};
+    c.appendChild(h(`<div class="card dl-bonus"><div><span>Desafio concluído</span><b>+${b.base} XP</b></div>${b.perfect?`<div><span>🏆 Acertou todas</span><b>+${b.perfect} XP</b></div>`:''}${b.streak?`<div><span>🔥 ${r.streak} dias seguidos</span><b>+${b.streak} XP</b></div>`:''}</div>`));
+    const rv = h(`<button type="button" class="show-btn ghost dl-review-btn">📖 VER CORREÇÃO</button>`);
+    rv.onclick = ()=> go('dailyReview', {reviewDay:sess.dayIso});
+    c.appendChild(rv);
     c.appendChild(dailyShareBox(sess.dayIso, r));
-    c.appendChild(h(`<p class="le-sub">+${DAILY_BONUS_XP} XP de bônus pelo desafio. As perguntas que você errou foram para o seu caderno de erros.</p>`));
+    c.appendChild(h(`<p class="le-sub">${r.ok<r.n ? 'As perguntas que você errou foram para o seu caderno de erros. ' : ''}Próximo desafio em </p>`)).appendChild(dailyCountdown(''));
   }
   const foot = h(`<div class="lesson-footer static"></div>`);
   const cont = h(`<button class="show-btn">CONTINUAR</button>`);
@@ -247,7 +416,8 @@ function arenaQuizEnd(c, sess){
 /* ---------- compartilhar o resultado do Desafio do Dia ---------- */
 function dailyShareText(k, r){
   const [y,m,d] = k.split('-');
-  return `Desafio do Dia #${dailyNumber(k)} · Matemática Show\n${d}/${m}/${y}\n${r.marks} ${r.ok}/${r.n} em ${mmssA(r.secs)}`;
+  const t = dailyTrack(r.track), st = r.streak > 1 ? `\n🔥 ${r.streak} dias seguidos` : '';
+  return `Desafio do Dia #${dailyNumber(k)} · Matemática Show\n${t.ico} ${t.short} · ${d}/${m}/${y}\n${r.marks} ${r.ok}/${r.n} em ${mmssA(r.secs)}${st}`;
 }
 function dailyShareBox(k, r){
   const box = h(`<div class="card ar-share"><div class="ar-share-t">Compartilhe seu resultado</div><pre class="ar-share-txt"></pre>
@@ -268,19 +438,38 @@ function dailyShareBox(k, r){
 function arenaDailyScreen(){
   const wrap = document.createElement('div');
   wrap.appendChild(topbar('📅 Desafio do Dia', true, ()=>go('arena')));
-  const c = h(`<div class="content lesson-end"></div>`);
+  const c = h(`<div class="content"></div>`);
   wrap.appendChild(c);
-  const k = isoDay(), r = arenaData().daily[k];
+  const k = isoDay(), a = arenaData(), r = a.daily[k];
   if(!r){ setTimeout(()=>startDaily(), 0); return wrap; }
-  c.appendChild(h(`<h2 class="le-title">Desafio #${dailyNumber(k)} feito ✓</h2>`));
-  c.appendChild(h(`<div class="ar-marks">${r.marks}</div>`));
-  c.appendChild(h(`<p class="le-sub">${r.ok} de ${r.n} certas em ${mmssA(r.secs)}. Um novo desafio aparece à meia-noite.</p>`));
+  const t = dailyTrack(r.track);
+  const hero = h(`<div class="dl-hero done">
+    <div class="dl-hero-num">#${dailyNumber(k)}</div>
+    <div class="dl-hero-t"><h2>${r.ok===r.n ? 'Perfeito! 🏆' : 'Desafio feito ✓'}</h2><p>${t.ico} ${t.short} · ${r.ok} de ${r.n} certas em ${mmssA(r.secs)}</p></div>
+    <div class="ar-marks">${r.marks}</div>
+    <div class="dl-next">Próximo desafio em </div>
+  </div>`);
+  hero.querySelector('.dl-next').appendChild(dailyCountdown(''));
+  c.appendChild(hero);
+  if(r.picks){
+    const rv = h(`<button type="button" class="alert-banner purple" style="margin:0 0 14px; width:100%"><span class="sym">📖</span><span class="txt"><span class="title">Ver correção comentada</span><span class="sub">Cada pergunta com a sua resposta, a certa e a explicação</span></span><span class="chev">›</span></button>`);
+    rv.onclick = ()=> go('dailyReview', {reviewDay:k});
+    c.appendChild(rv);
+  }
+  c.appendChild(h(`<h3 class="ar-label">Suas estatísticas</h3>`));
+  c.appendChild(dailyStatsRow());
+  c.appendChild(h(`<h3 class="ar-label">Últimos 7 dias</h3>`));
+  c.appendChild(dailyWeekStrip());
   c.appendChild(dailyShareBox(k, r));
-  const hist = Object.entries(arenaData().daily).sort((x,y)=> y[0].localeCompare(x[0])).slice(1, 8);
+  const hist = Object.entries(a.daily).sort((x,y)=> y[0].localeCompare(x[0])).filter(([dk])=>dk!==k).slice(0, 10);
   if(hist.length){
     c.appendChild(h(`<h3 class="ar-label" style="text-align:left">Dias anteriores</h3>`));
     const l = h(`<div class="ar-dlist"></div>`);
-    hist.forEach(([dk, x])=> l.appendChild(h(`<div class="ar-drow"><span>#${dailyNumber(dk)} · ${dk.split('-').reverse().slice(0,2).join('/')}</span><span class="ar-dm">${x.marks}</span><b>${x.ok}/${x.n}</b></div>`)));
+    hist.forEach(([dk, x])=>{
+      const row = h(`<${x.picks?'button type="button"':'div'} class="ar-drow ${x.picks?'tap':''}"><span>#${dailyNumber(dk)} · ${dk.split('-').reverse().slice(0,2).join('/')}${x.track?` · ${dailyTrack(x.track).ico}`:''}</span><span class="ar-dm">${x.marks}</span><b>${x.ok}/${x.n}</b>${x.picks?'<i class="chev">›</i>':''}</${x.picks?'button':'div'}>`);
+      if(x.picks) row.onclick = ()=> go('dailyReview', {reviewDay:dk});
+      l.appendChild(row);
+    });
     c.appendChild(l);
   }
   const b = h(`<div class="lesson-footer static"><button class="show-btn">VOLTAR À ARENA</button></div>`);

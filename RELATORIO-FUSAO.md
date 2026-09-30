@@ -144,4 +144,14 @@ Em **Aprender** e **Exercícios** a lista agora é separada em *Ensino Fundament
 
 - O Simulado ganhou o grupo **Ensino Médio**.
 - Na Trilha, os assuntos novos vêm depois dos 18 que já existiam (a ordem antiga não mudou, então ninguém perde progresso).
-- O service worker passou para `mat-show-v21`, pra todo mundo receber a versão nova.
+- O service worker passou para `mat-show-v22`, pra todo mundo receber a versão nova.
+
+## 8. Desafio do Dia melhorado
+
+- **Tela de abertura** antes de começar: número do desafio, data, regras, assuntos de hoje (com a dificuldade de cada um) e a semana em bolinhas.
+- **Um desafio por nível**: *Fundamental* ou *Ensino Médio*, cada um igual para todo mundo daquele nível no dia (o app sugere o nível pelas Configurações/nivelamento e lembra a última escolha).
+- **Tempo por dificuldade**: 30 s (fácil), 45 s (médio) e 60 s (difícil), no lugar de 20 s para todas.
+- **Sequência de dias 🔥** e bônus de XP: +30 pelo desafio, +20 se acertar as 7 e +5 por dia seguido (até +25).
+- **Correção comentada**: cada pergunta com a sua resposta, a certa, a explicação e um botão para praticar o assunto errado. Dá para abrir também nos dias anteriores.
+- **Tela de resultado** com contagem regressiva para o próximo desafio, estatísticas (sequência, melhor sequência, jogados, perfeitos, média) e os últimos 7 dias.
+- O texto para compartilhar mostra o nível e a sequência.
