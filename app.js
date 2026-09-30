@@ -33,6 +33,8 @@ function mdcSteps(a,b){
     common.length ? `Pegue só os fatores em comum, cada um com o menor expoente: ${used.join(' × ')}` : 'Eles não têm fator primo em comum.',
     `MDC(${a}, ${b}) = ${gcd(a,b)}`];
 }
+function brl(cents){ return 'R$ ' + (cents/100).toFixed(2).replace('.', ','); }
+function cap(t){ return t.charAt(0).toUpperCase() + t.slice(1); }
 function fracStr(n,d){ const [a,b]=simplifyFrac(n,d); return b===1? String(a) : (a+"/"+b); }
 
 /* ---------------- MMC: lista os múltiplos de cada número lado a lado até achar o comum ---------------- */
@@ -694,6 +696,368 @@ function potRow(parts){
 function potStage(html){ return `<div class="pot-stage">${html}</div>`; }
 
 /* ---------------- catálogo de assuntos ---------------- */
+/* =========================================================
+   GEOMETRIA VISUAL
+   - geoFigure(): desenha a figura (SVG) com as medidas escritas nela,
+     usada nas questões, nos exemplos e no laboratório
+   - Laboratório de Geometria: mexer nas medidas e ver área/perímetro
+     mudando; sólidos 3D com volume; triângulo com ângulos arrastáveis
+   ========================================================= */
+const GEO_W = 320, GEO_H = 210, GEO_PAD = 34;
+function geoNum(v){ return fmt(Math.round(v*100)/100); }
+/* d: medidas · o: {unit, ask:'area'|'perim'|null, grid, hl:'perim'|'area', q:{b:'?'}} (q troca o rótulo por "?") */
+function geoFigure(shape, d, o){
+  o = o || {};
+  const u = o.unit || 'cm';
+  const lab = (k, v)=> (o.q && o.q[k]) ? o.q[k] : `${geoNum(v)} ${u}`;
+  // escala pra caber no quadro, mantendo a proporção
+  let wU, hU;
+  if(shape==='circle'){ wU = hU = 2*d.r; }
+  else if(shape==='square'){ wU = hU = d.l; }
+  else if(shape==='trapezoid'){ wU = d.B; hU = d.h; }
+  else if(shape==='parallelogram'){ wU = d.b + (d.s||0); hU = d.h; }
+  else if(shape==='rhombus'){ wU = d.D; hU = d.d; }
+  else { wU = d.b + (shape==='triangle' ? Math.max(0, (d.a||0)-d.b) + Math.max(0, -(d.a||0)) : 0); hU = d.h; }
+  const k = Math.min((GEO_W-2*GEO_PAD)/wU, (GEO_H-2*GEO_PAD)/hU);
+  const W = wU*k, H = hU*k, x0 = (GEO_W-W)/2, y0 = (GEO_H-H)/2;
+  let body = '', grid = '';
+  const cls = 'geo-shape' + (o.hl==='area' ? ' fill-hl' : '') + (o.hl==='perim' ? ' stroke-hl' : '');
+  const txt = (x, y, t, anchor, extra)=> `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="${anchor||'middle'}" class="geo-lbl ${extra||''}">${t}</text>`;
+  // quadradinhos de 1×1 (mostra de onde vem a área)
+  if(o.grid && shape!=='circle' && wU<=24 && hU<=24){
+    for(let i=0;i<=Math.round(wU);i++) grid += `<line x1="${(x0+i*k).toFixed(1)}" y1="${y0.toFixed(1)}" x2="${(x0+i*k).toFixed(1)}" y2="${(y0+H).toFixed(1)}" class="geo-grid"/>`;
+    for(let j=0;j<=Math.round(hU);j++) grid += `<line x1="${x0.toFixed(1)}" y1="${(y0+j*k).toFixed(1)}" x2="${(x0+W).toFixed(1)}" y2="${(y0+j*k).toFixed(1)}" class="geo-grid"/>`;
+  }
+  if(shape==='rect' || shape==='square'){
+    const b = shape==='square' ? d.l : d.b, h = shape==='square' ? d.l : d.h;
+    body += `<rect x="${x0}" y="${y0}" width="${W}" height="${H}" class="${cls}"/>`;
+    body += `<path d="M${x0} ${y0+H-10}h10v10" class="geo-mark"/>`;
+    body += txt(x0+W/2, y0+H+20, lab('b', b));
+    body += txt(x0+W+8, y0+H/2+5, lab(shape==='square'?'b':'h', h), 'start');
+  } else if(shape==='triangle'){
+    const a = d.a==null ? d.b*0.35 : d.a; // onde fica o topo (em relação ao canto esquerdo da base)
+    const left = Math.min(0, a), bx = x0 - left*k;
+    const A = [bx, y0+H], B = [bx+d.b*k, y0+H], C = [bx+a*k, y0];
+    body += `<polygon points="${A} ${B} ${C}" class="${cls}"/>`;
+    if(o.showRect) body += `<rect x="${bx}" y="${y0}" width="${d.b*k}" height="${H}" class="geo-ghost"/>`;
+    body += `<line x1="${C[0]}" y1="${C[1]}" x2="${C[0]}" y2="${y0+H}" class="geo-height"/>`;
+    if(a<0 || a>d.b) body += `<line x1="${a<0?C[0]:B[0]}" y1="${y0+H}" x2="${a<0?A[0]:C[0]}" y2="${y0+H}" class="geo-height"/>`;
+    body += `<path d="M${C[0]} ${y0+H-9}h${a>d.b?-9:9}v9" class="geo-mark"/>`;
+    body += txt((A[0]+B[0])/2, y0+H+20, lab('b', d.b));
+    body += txt(C[0]+(a>d.b?-8:8), y0+H/2+5, `h = ${lab('h', d.h)}`, a>d.b?'end':'start', 'geo-lbl-h');
+  } else if(shape==='trapezoid'){
+    const off = (d.B-d.b)/2*k;
+    const P = [[x0, y0+H], [x0+W, y0+H], [x0+W-off, y0], [x0+off, y0]];
+    body += `<polygon points="${P.map(p=>p.join(',')).join(' ')}" class="${cls}"/>`;
+    body += `<line x1="${x0+off}" y1="${y0}" x2="${x0+off}" y2="${y0+H}" class="geo-height"/>`;
+    body += txt(x0+W/2, y0+H+20, lab('B', d.B));
+    body += txt(x0+W/2, y0-9, lab('b', d.b));
+    body += txt(x0+off+7, y0+H/2+5, `h = ${lab('h', d.h)}`, 'start', 'geo-lbl-h');
+  } else if(shape==='parallelogram'){
+    const s = (d.s||0)*k;
+    const P = [[x0, y0+H], [x0+d.b*k, y0+H], [x0+d.b*k+s, y0], [x0+s, y0]];
+    body += `<polygon points="${P.map(p=>p.join(',')).join(' ')}" class="${cls}"/>`;
+    if(o.showRect) body += `<polygon points="${x0},${y0+H} ${x0+s},${y0+H} ${x0+s},${y0}" class="geo-ghost"/><polygon points="${x0+d.b*k},${y0+H} ${x0+d.b*k+s},${y0+H} ${x0+d.b*k+s},${y0}" class="geo-ghost"/>`;
+    body += `<line x1="${x0+s}" y1="${y0}" x2="${x0+s}" y2="${y0+H}" class="geo-height"/>`;
+    body += txt(x0+d.b*k/2, y0+H+20, lab('b', d.b));
+    body += txt(x0+s+7, y0+H/2+5, `h = ${lab('h', d.h)}`, 'start', 'geo-lbl-h');
+  } else if(shape==='rhombus'){
+    const cx = x0+W/2, cy = y0+H/2;
+    body += `<polygon points="${cx},${y0} ${x0+W},${cy} ${cx},${y0+H} ${x0},${cy}" class="${cls}"/>`;
+    body += `<line x1="${x0}" y1="${cy}" x2="${x0+W}" y2="${cy}" class="geo-height"/><line x1="${cx}" y1="${y0}" x2="${cx}" y2="${y0+H}" class="geo-height"/>`;
+    body += txt(x0+W*0.72, cy-7, `D = ${lab('D', d.D)}`, 'middle', 'geo-lbl-h');
+    body += txt(cx+7, y0+H*0.25, `d = ${lab('d', d.d)}`, 'start', 'geo-lbl-h');
+  } else if(shape==='circle'){
+    const R = d.r*k, cx = GEO_W/2, cy = GEO_H/2;
+    body += `<circle cx="${cx}" cy="${cy}" r="${R}" class="${cls}"/>`;
+    body += `<circle cx="${cx}" cy="${cy}" r="3" class="geo-dot"/>`;
+    body += `<line x1="${cx}" y1="${cy}" x2="${cx+R}" y2="${cy}" class="geo-radius"/>`;
+    body += txt(cx+R/2, cy-8, `r = ${lab('r', d.r)}`, 'middle', 'geo-lbl-h');
+  }
+  const ask = o.ask==='area' ? 'Área = ?' : o.ask==='perim' ? 'Perímetro = ?' : '';
+  return `<svg class="geo-fig" viewBox="0 0 ${GEO_W} ${GEO_H+(ask?16:0)}" role="img" aria-label="Figura geométrica">${grid}${body}${ask?txt(GEO_W/2, GEO_H+10, ask, 'middle', 'geo-ask'):''}</svg>`;
+}
+/* enunciado + figura juntos (quando a questão tem figura, o app mostra só o visual) */
+function geoQ(text, svg){ return `<div class="geo-qtext">${text}</div>${svg}`; }
+
+/* ---------- sólidos em perspectiva ---------- */
+function geoSolid(kind, d){
+  const W = 320, H = 230;
+  let s = '';
+  const txt = (x, y, t, a)=> `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="${a||'middle'}" class="geo-lbl">${t}</text>`;
+  if(kind==='cube' || kind==='box'){
+    const a = kind==='cube' ? d.a : d.c, b = kind==='cube' ? d.a : d.l, c = kind==='cube' ? d.a : d.h; // comprimento, largura, altura
+    const depthK = 0.5; // perspectiva cavaleira: profundidade pela metade, a 45°
+    const wU = a + b*depthK*0.71, hU = c + b*depthK*0.71;
+    const k = Math.min((W-80)/wU, (H-60)/hU);
+    const dx = b*depthK*0.71*k, dy = b*depthK*0.71*k;
+    const x0 = (W-(a*k+dx))/2, y0 = (H-(c*k+dy))/2 + dy;
+    const F = [[x0,y0],[x0+a*k,y0],[x0+a*k,y0+c*k],[x0,y0+c*k]];
+    const T = F.map(([x,y])=>[x+dx,y-dy]);
+    s += `<polygon points="${[F[0],F[1],T[1],T[0]].join(' ')}" class="geo-face top"/>`;
+    s += `<polygon points="${[F[1],T[1],T[2],F[2]].join(' ')}" class="geo-face side"/>`;
+    s += `<polygon points="${F.join(' ')}" class="geo-face front"/>`;
+    s += `<polyline points="${[F[3],T[3],T[2]].join(' ')}" class="geo-hidden"/><line x1="${T[3][0]}" y1="${T[3][1]}" x2="${T[0][0]}" y2="${T[0][1]}" class="geo-hidden"/>`;
+    s += txt(x0+a*k/2, y0+c*k+20, `${geoNum(a)} cm`);
+    s += txt(x0-8, y0+c*k/2+5, `${geoNum(c)} cm`, 'end');
+    s += txt(F[2][0]+dx/2+8, F[2][1]-dy/2+14, `${geoNum(b)} cm`, 'start');
+  } else if(kind==='cylinder'){
+    const k = Math.min((W-90)/(2*d.r), (H-70)/(d.h + d.r*0.6));
+    const R = d.r*k, ry = R*0.3, Hh = d.h*k, cx = W/2, top = (H-Hh)/2;
+    s += `<path d="M${cx-R} ${top} L${cx-R} ${top+Hh} A${R} ${ry} 0 0 0 ${cx+R} ${top+Hh} L${cx+R} ${top} Z" class="geo-face front"/>`;
+    s += `<path d="M${cx-R} ${top+Hh} A${R} ${ry} 0 0 1 ${cx+R} ${top+Hh}" class="geo-hidden"/>`;
+    s += `<ellipse cx="${cx}" cy="${top}" rx="${R}" ry="${ry}" class="geo-face top"/>`;
+    s += `<line x1="${cx}" y1="${top}" x2="${cx+R}" y2="${top}" class="geo-radius"/><circle cx="${cx}" cy="${top}" r="2.5" class="geo-dot"/>`;
+    s += txt(cx+R/2, top-6, `r = ${geoNum(d.r)} cm`);
+    s += txt(cx+R+8, top+Hh/2+5, `h = ${geoNum(d.h)} cm`, 'start');
+  }
+  return `<svg class="geo-fig" viewBox="0 0 ${W} ${H}" role="img" aria-label="Sólido geométrico">${s}</svg>`;
+}
+
+/* ---------- Laboratório de Geometria ---------- */
+const GEO_SHAPES = {
+  square:{name:'Quadrado', dims:[['l','Lado',1,12,5]],
+    area:d=>d.l*d.l, perim:d=>4*d.l,
+    fa:d=>[`Área = lado × lado`, `${d.l} × ${d.l} = ${d.l*d.l} cm²`], fp:d=>[`Perímetro = 4 × lado`, `4 × ${d.l} = ${4*d.l} cm`],
+    why:'Cabem exatamente lado × lado quadradinhos de 1 cm² dentro dele. Conte!'},
+  rect:{name:'Retângulo', dims:[['b','Base',1,14,7],['h','Altura',1,10,4]],
+    area:d=>d.b*d.h, perim:d=>2*(d.b+d.h),
+    fa:d=>[`Área = base × altura`, `${d.b} × ${d.h} = ${d.b*d.h} cm²`], fp:d=>[`Perímetro = 2 × (base + altura)`, `2 × (${d.b} + ${d.h}) = ${2*(d.b+d.h)} cm`],
+    why:'São "altura" fileiras com "base" quadradinhos cada: base × altura quadradinhos.'},
+  triangle:{name:'Triângulo', dims:[['b','Base',2,14,8],['h','Altura',1,10,5],['a','Posição do topo',-4,18,3]],
+    area:d=>d.b*d.h/2, perim:d=>d.b + Math.hypot(d.a, d.h) + Math.hypot(d.b-d.a, d.h),
+    fa:d=>[`Área = base × altura ÷ 2`, `${d.b} × ${d.h} ÷ 2 = ${geoNum(d.b*d.h/2)} cm²`],
+    fp:d=>{ const l1 = Math.hypot(d.a,d.h), l2 = Math.hypot(d.b-d.a,d.h); return [`Perímetro = soma dos 3 lados`, `${d.b} + ${geoNum(l1)} + ${geoNum(l2)} ≈ ${geoNum(d.b+l1+l2)} cm`]; },
+    why:'O triângulo é sempre metade do retângulo pontilhado (base × altura). Mexa no topo: a área não muda!', rect:true},
+  parallelogram:{name:'Paralelogramo', dims:[['b','Base',2,12,7],['h','Altura',1,9,4],['s','Inclinação',0,6,2]],
+    area:d=>d.b*d.h, perim:d=>2*(d.b+Math.hypot(d.s,d.h)),
+    fa:d=>[`Área = base × altura`, `${d.b} × ${d.h} = ${d.b*d.h} cm²`], fp:d=>{ const l = Math.hypot(d.s,d.h); return [`Perímetro = 2 × (base + lado)`, `2 × (${d.b} + ${geoNum(l)}) ≈ ${geoNum(2*(d.b+l))} cm`]; },
+    why:'Corte o triângulo pontilhado da esquerda e encaixe na direita: vira um retângulo de base × altura.', rect:true},
+  trapezoid:{name:'Trapézio', dims:[['B','Base maior',3,14,10],['b','Base menor',1,13,5],['h','Altura',1,9,4]],
+    area:d=>(d.B+d.b)*d.h/2, perim:d=>d.B+d.b+2*Math.hypot((d.B-d.b)/2, d.h),
+    fa:d=>[`Área = (B + b) × h ÷ 2`, `(${d.B} + ${d.b}) × ${d.h} ÷ 2 = ${geoNum((d.B+d.b)*d.h/2)} cm²`],
+    fp:d=>{ const l = Math.hypot((d.B-d.b)/2, d.h); return [`Perímetro = B + b + 2 lados`, `${d.B} + ${d.b} + 2 × ${geoNum(l)} ≈ ${geoNum(d.B+d.b+2*l)} cm`]; },
+    why:'Dois trapézios iguais, um de cabeça pra baixo, formam um paralelogramo de base (B + b). Por isso divide por 2.'},
+  rhombus:{name:'Losango', dims:[['D','Diagonal maior',2,14,10],['d','Diagonal menor',1,10,6]],
+    area:d=>d.D*d.d/2, perim:d=>4*Math.hypot(d.D/2, d.d/2),
+    fa:d=>[`Área = D × d ÷ 2`, `${d.D} × ${d.d} ÷ 2 = ${geoNum(d.D*d.d/2)} cm²`], fp:d=>{ const l = Math.hypot(d.D/2,d.d/2); return [`Perímetro = 4 × lado`, `4 × ${geoNum(l)} ≈ ${geoNum(4*l)} cm`]; },
+    why:'O losango ocupa exatamente metade do retângulo formado pelas duas diagonais.'},
+  circle:{name:'Círculo', dims:[['r','Raio',1,8,3]],
+    area:d=>3.14*d.r*d.r, perim:d=>2*3.14*d.r,
+    fa:d=>[`Área = π × r² (π ≈ 3,14)`, `3,14 × ${d.r} × ${d.r} = ${geoNum(3.14*d.r*d.r)} cm²`], fp:d=>[`Comprimento = 2 × π × r`, `2 × 3,14 × ${d.r} = ${geoNum(6.28*d.r)} cm`],
+    why:'Dá a volta em qualquer círculo e divida pelo diâmetro: sempre dá ≈ 3,14. Esse número é o π.'},
+};
+const GEO_SOLIDS = {
+  cube:{name:'Cubo', dims:[['a','Aresta',1,10,4]],
+    vol:d=>d.a**3, surf:d=>6*d.a*d.a,
+    fv:d=>[`Volume = a × a × a`, `${d.a} × ${d.a} × ${d.a} = ${d.a**3} cm³`], fs:d=>[`Área total = 6 faces × a²`, `6 × ${d.a*d.a} = ${6*d.a*d.a} cm²`]},
+  box:{name:'Paralelepípedo', dims:[['c','Comprimento',1,12,6],['l','Largura',1,10,3],['h','Altura',1,10,4]],
+    vol:d=>d.c*d.l*d.h, surf:d=>2*(d.c*d.l+d.c*d.h+d.l*d.h),
+    fv:d=>[`Volume = comprimento × largura × altura`, `${d.c} × ${d.l} × ${d.h} = ${d.c*d.l*d.h} cm³`],
+    fs:d=>[`Área total = 2 × (c·l + c·h + l·h)`, `2 × (${d.c*d.l} + ${d.c*d.h} + ${d.l*d.h}) = ${2*(d.c*d.l+d.c*d.h+d.l*d.h)} cm²`]},
+  cylinder:{name:'Cilindro', dims:[['r','Raio',1,6,2],['h','Altura',1,10,5]],
+    vol:d=>3.14*d.r*d.r*d.h, surf:d=>2*3.14*d.r*d.r + 2*3.14*d.r*d.h,
+    fv:d=>[`Volume = área da base × altura = π × r² × h`, `3,14 × ${d.r*d.r} × ${d.h} = ${geoNum(3.14*d.r*d.r*d.h)} cm³`],
+    fs:d=>[`Área total = 2 bases + lateral = 2πr² + 2πr·h`, `${geoNum(6.28*d.r*d.r)} + ${geoNum(6.28*d.r*d.h)} = ${geoNum(6.28*d.r*d.r + 6.28*d.r*d.h)} cm²`]},
+};
+function geoSliders(dims, values, onChange){
+  const box = h(`<div class="geo-sliders"></div>`);
+  dims.forEach(([key,label,min,max])=>{
+    const row = h(`<label class="geo-sl"><span class="geo-sl-l">${label}</span><input type="range" min="${min}" max="${max}" step="1" value="${values[key]}"><b></b></label>`);
+    const inp = row.querySelector('input'), out = row.querySelector('b');
+    const paint = ()=>{ out.textContent = `${values[key]} cm`; };
+    inp.oninput = ()=>{ values[key] = Number(inp.value); paint(); onChange(); };
+    paint();
+    box.appendChild(row);
+  });
+  return box;
+}
+function geoFormulaBox(title, lines, ico){
+  return `<div class="geo-res"><div class="geo-res-t">${ico} ${title}</div>${lines.map((l,i)=>`<div class="${i===lines.length-1?'geo-res-v':'geo-res-f'}">${l}</div>`).join('')}</div>`;
+}
+function geoLabScreen(){
+  const wrap = document.createElement('div');
+  wrap.appendChild(topbar('🔺 Laboratório de Geometria', true, ()=>go(state.geoBack || 'content')));
+  const c = h(`<div class="content"></div>`);
+  wrap.appendChild(c);
+  const tab = state.geoTab || 'area';
+  const tabs = h(`<div class="diff-row geo-tabs"></div>`);
+  [['area','📐 Áreas'],['solid','🧊 Sólidos'],['angle','📏 Ângulos']].forEach(([id,label])=>{
+    const b = h(`<button type="button" class="diff-chip ${tab===id?'active':''}">${label}</button>`);
+    b.onclick = ()=>{ state.geoTab = id; render(); };
+    tabs.appendChild(b);
+  });
+  c.appendChild(tabs);
+  if(tab==='area') geoAreaTab(c);
+  else if(tab==='solid') geoSolidTab(c);
+  else geoAngleTab(c);
+  return wrap;
+}
+function geoAreaTab(c){
+  const id = state.geoShape || 'rect';
+  const S = GEO_SHAPES[id];
+  const vals = state.geoVals && state.geoVals[id] ? state.geoVals[id] : Object.fromEntries(S.dims.map(d=>[d[0], d[4]]));
+  state.geoVals = Object.assign(state.geoVals||{}, {[id]:vals});
+  let showGrid = state.geoGrid !== false;
+  const chips = h(`<div class="subj-chip-grid geo-shapes"></div>`);
+  Object.entries(GEO_SHAPES).forEach(([k,sh])=>{
+    const b = h(`<button type="button" class="subj-chip ${k===id?'active':''}" style="padding:7px 12px">${sh.name}</button>`);
+    b.onclick = ()=>{ state.geoShape = k; render(); };
+    chips.appendChild(b);
+  });
+  c.appendChild(chips);
+  const fig = h(`<div class="geo-stage"></div>`);
+  const res = h(`<div class="geo-results"></div>`);
+  const why = h(`<div class="rp-tip" style="margin-top:12px"></div>`);
+  function paint(){
+    if(id==='trapezoid' && vals.b >= vals.B) vals.b = vals.B-1; // base menor precisa ser menor
+    fig.innerHTML = geoFigure(id, vals, {grid:showGrid, showRect:S.rect});
+    res.innerHTML = geoFormulaBox('Área', S.fa(vals), '🟦') + geoFormulaBox(id==='circle'?'Comprimento (perímetro)':'Perímetro', S.fp(vals), '📏');
+  }
+  c.appendChild(fig);
+  const gridT = h(`<button type="button" class="weak-toggle ${showGrid?'active':''}" style="margin:10px 0"><span class="check">✓</span><span>Mostrar os quadradinhos de 1 cm²</span></button>`);
+  gridT.onclick = ()=>{ showGrid = !showGrid; state.geoGrid = showGrid; gridT.classList.toggle('active', showGrid); paint(); };
+  if(id!=='circle') c.appendChild(gridT);
+  c.appendChild(geoSliders(S.dims, vals, ()=>{ paint(); syncSliders(); }));
+  function syncSliders(){ if(id==='trapezoid'){ const inp = c.querySelectorAll('.geo-sl input')[1]; if(inp && Number(inp.value)!==vals.b){ inp.value = vals.b; inp.parentNode.querySelector('b').textContent = `${vals.b} cm`; } } }
+  c.appendChild(res);
+  why.textContent = '💡 ' + S.why;
+  c.appendChild(why);
+  paint();
+}
+function geoSolidTab(c){
+  const id = state.geoSolid || 'cube';
+  const S = GEO_SOLIDS[id];
+  const key = 'solid_'+id;
+  const vals = state.geoVals && state.geoVals[key] ? state.geoVals[key] : Object.fromEntries(S.dims.map(d=>[d[0], d[4]]));
+  state.geoVals = Object.assign(state.geoVals||{}, {[key]:vals});
+  const chips = h(`<div class="subj-chip-grid geo-shapes"></div>`);
+  Object.entries(GEO_SOLIDS).forEach(([k,sh])=>{
+    const b = h(`<button type="button" class="subj-chip ${k===id?'active':''}" style="padding:7px 12px">${sh.name}</button>`);
+    b.onclick = ()=>{ state.geoSolid = k; render(); };
+    chips.appendChild(b);
+  });
+  c.appendChild(chips);
+  const fig = h(`<div class="geo-stage"></div>`), res = h(`<div class="geo-results"></div>`);
+  function paint(){
+    fig.innerHTML = geoSolid(id, vals);
+    res.innerHTML = geoFormulaBox('Volume (quanto cabe dentro)', S.fv(vals), '🧊') + geoFormulaBox('Área total (quanto papel pra embrulhar)', S.fs(vals), '🎁');
+  }
+  c.appendChild(fig);
+  c.appendChild(geoSliders(S.dims, vals, paint));
+  c.appendChild(res);
+  c.appendChild(h(`<div class="rp-tip" style="margin-top:12px">💡 Volume é quantos cubinhos de 1 cm³ cabem dentro. 1.000 cm³ = 1 litro!</div>`));
+  paint();
+}
+/* triângulo com cantos arrastáveis: os ângulos mudam, a soma fica sempre 180° */
+function geoAngleTab(c){
+  const W = 320, H = 240;
+  const P = state.geoTri || [[60,200],[270,200],[140,50]];
+  state.geoTri = P;
+  const stage = h(`<div class="geo-stage"><svg class="geo-fig geo-drag" viewBox="0 0 ${W} ${H}" role="img" aria-label="Triângulo com cantos que podem ser arrastados"></svg></div>`);
+  const svg = stage.querySelector('svg');
+  const info = h(`<div class="geo-results"></div>`);
+  c.appendChild(h(`<p style="color:var(--ink-soft); font-size:13.5px; margin:4px 0 10px">Arraste as bolinhas dos cantos. Os ângulos mudam, mas a soma é sempre <b>180°</b>.</p>`));
+  c.appendChild(stage);
+  c.appendChild(info);
+  const COL = ['#FF5C7A','#33D2E3','#FFB800'];
+  const angleAt = (i)=>{ const A = P[i], B = P[(i+1)%3], C = P[(i+2)%3];
+    const v1 = [B[0]-A[0], B[1]-A[1]], v2 = [C[0]-A[0], C[1]-A[1]];
+    return Math.acos(Math.max(-1, Math.min(1, (v1[0]*v2[0]+v1[1]*v2[1])/(Math.hypot(...v1)*Math.hypot(...v2)))))*180/Math.PI; };
+  function paint(){
+    const ang = [0,1,2].map(angleAt);
+    const rounded = ang.map(a=>Math.round(a));
+    const diff = 180 - rounded.reduce((a,b)=>a+b,0); // ajusta o arredondamento pra somar 180 na tela
+    if(diff){ const i = ang.map((a,i)=>[a-Math.floor(a), i]).sort((x,y)=>diff>0? y[0]-x[0] : x[0]-y[0])[0][1]; rounded[i] += diff; }
+    let s = `<polygon points="${P.map(p=>p.join(',')).join(' ')}" class="geo-shape"/>`;
+    P.forEach((A,i)=>{
+      const B = P[(i+1)%3], C = P[(i+2)%3], r = 26;
+      const a1 = Math.atan2(B[1]-A[1], B[0]-A[0]), a2 = Math.atan2(C[1]-A[1], C[0]-A[0]);
+      let da = a2 - a1; while(da <= -Math.PI) da += 2*Math.PI; while(da > Math.PI) da -= 2*Math.PI;
+      const x1 = A[0]+r*Math.cos(a1), y1 = A[1]+r*Math.sin(a1), x2 = A[0]+r*Math.cos(a2), y2 = A[1]+r*Math.sin(a2);
+      s += `<path d="M${A[0]} ${A[1]} L${x1} ${y1} A${r} ${r} 0 0 ${da>0?1:0} ${x2} ${y2} Z" fill="${COL[i]}" fill-opacity=".35" stroke="${COL[i]}" stroke-width="2"/>`;
+      const mid = a1 + da/2, lx = A[0]+(r+20)*Math.cos(mid), ly = A[1]+(r+20)*Math.sin(mid);
+      s += `<text x="${lx}" y="${ly+5}" text-anchor="middle" class="geo-lbl" style="fill:${COL[i]}">${rounded[i]}°</text>`;
+    });
+    P.forEach((p,i)=>{ s += `<circle cx="${p[0]}" cy="${p[1]}" r="13" class="geo-handle" data-i="${i}" style="stroke:${COL[i]}"/>`; });
+    svg.innerHTML = s;
+    const sides = [0,1,2].map(i=>Math.hypot(P[(i+1)%3][0]-P[i][0], P[(i+1)%3][1]-P[i][1]));
+    const eq = (a,b)=> Math.abs(a-b) < Math.max(a,b)*0.04;
+    const bySides = eq(sides[0],sides[1]) && eq(sides[1],sides[2]) ? 'Equilátero (3 lados iguais)' : (eq(sides[0],sides[1])||eq(sides[1],sides[2])||eq(sides[0],sides[2])) ? 'Isósceles (2 lados iguais)' : 'Escaleno (3 lados diferentes)';
+    const maxA = Math.max(...rounded);
+    const byAng = maxA===90 ? 'Retângulo (tem um ângulo de 90°)' : maxA>90 ? 'Obtusângulo (tem um ângulo maior que 90°)' : 'Acutângulo (todos menores que 90°)';
+    info.innerHTML = `<div class="geo-res"><div class="geo-res-t">📏 Soma dos ângulos</div><div class="geo-res-f"><span style="color:${COL[0]}">${rounded[0]}°</span> + <span style="color:${COL[1]}">${rounded[1]}°</span> + <span style="color:${COL[2]}">${rounded[2]}°</span></div><div class="geo-res-v">= 180°</div></div>
+      <div class="geo-res"><div class="geo-res-t">🔎 Que triângulo é esse?</div><div class="geo-res-f">Pelos lados: <b>${bySides}</b></div><div class="geo-res-f">Pelos ângulos: <b>${byAng}</b></div></div>`;
+  }
+  let drag = -1;
+  const toSvg = e=>{ const r = svg.getBoundingClientRect(); return [Math.max(12, Math.min(W-12, (e.clientX-r.left)*W/r.width)), Math.max(12, Math.min(H-12, (e.clientY-r.top)*H/r.height))]; };
+  svg.addEventListener('pointerdown', e=>{
+    const [x,y] = toSvg(e);
+    let best = -1, bd = 30;
+    P.forEach((p,i)=>{ const d = Math.hypot(p[0]-x, p[1]-y); if(d<bd){ bd = d; best = i; } });
+    if(best<0) return;
+    drag = best; svg.setPointerCapture(e.pointerId); e.preventDefault();
+  });
+  svg.addEventListener('pointermove', e=>{
+    if(drag<0) return;
+    const np = toSvg(e), others = P.filter((_,i)=>i!==drag);
+    if(others.some(o=>Math.hypot(o[0]-np[0], o[1]-np[1]) < 24)) return; // não deixa dois cantos se encostarem
+    P[drag] = np.map(v=>Math.round(v)); paint();
+  });
+  const end = ()=>{ drag = -1; };
+  svg.addEventListener('pointerup', end); svg.addEventListener('pointercancel', end);
+  const presets = h(`<div class="cta-row" style="margin-top:12px"></div>`);
+  [['Equilátero',[[60,205],[260,205],[160,32]]],['Retângulo',[[70,200],[250,200],[70,60]]],['Obtusângulo',[[40,190],[280,190],[90,120]]]].forEach(([n,pts])=>{
+    const b = h(`<button class="btn secondary" style="flex:1; padding:10px 6px; font-size:13px">${n}</button>`);
+    b.onclick = ()=>{ pts.forEach((p,i)=>{ P[i] = p.slice(); }); paint(); };
+    presets.appendChild(b);
+  });
+  c.appendChild(presets);
+  paint();
+}
+
+/* ---------------- ajudantes dos assuntos do Ensino Médio ---------------- */
+// número com o sinal de menos "de verdade" (−) e vírgula decimal
+function nm(n){ return fmt(n).replace('-', '−'); }
+// número entre parênteses quando é negativo: 3 → 3 · −3 → (−3)
+function np(n){ return n<0 ? `(${nm(n)})` : nm(n); }
+function round2(v){ return Math.round(v*100)/100; }
+// polinômio ax² + bx + c escrito do jeito que a gente escreve no caderno
+function quadStr(a,b,c){
+  const coef = (k, v)=> Math.abs(k)===1 ? v : `${Math.abs(k)}${v}`;
+  let s = (a<0?'−':'') + coef(a,'x²');
+  if(b) s += ` ${b>0?'+':'−'} ${coef(b,'x')}`;
+  if(c) s += ` ${c>0?'+':'−'} ${Math.abs(c)}`;
+  return s;
+}
+// matriz com colchetes: [[1,2],[3,4]]
+function matHTML(M, name){
+  const rows = M.map(r=>`<tr>${r.map(v=>`<td>${nm(v)}</td>`).join('')}</tr>`).join('');
+  return `<span class="mat-wrap">${name?`<span class="mat-name">${name} =</span>`:''}<span class="mat"><table>${rows}</table></span></span>`;
+}
+function matQ(text, mats){ return `<div class="geo-qtext">${text}</div><div class="mat-row">${mats.join('')}</div>`; }
+const SUBD = ['₀','₁','₂','₃','₄','₅','₆','₇','₈','₉'];
+function subN(n){ return String(n).split('').map(d=>SUBD[d]).join(''); }
+const SUPD = ['⁰','¹','²','³','⁴','⁵','⁶','⁷','⁸','⁹'];
+function supN(n){ return String(n).split('').map(d=>SUPD[d]).join(''); }
+function reais(v){ return 'R$ ' + v.toLocaleString('pt-BR', {minimumFractionDigits: Number.isInteger(v)?0:2, maximumFractionDigits:2}); }
+// gráfico de colunas simples (as cores seguem o tema)
+function barChartSVG(title, labels, values){
+  const W = 300, H = 180, top = 26, base = 150, max = Math.max(...values) * 1.15;
+  const bw = 34, gap = (W - 30 - labels.length*bw) / (labels.length+1);
+  let bars = '';
+  labels.forEach((l,i)=>{
+    const x = 30 + gap + i*(bw+gap), hgt = (values[i]/max) * (base-top), y = base - hgt;
+    bars += `<rect x="${x}" y="${y}" width="${bw}" height="${hgt}" rx="5" fill="var(--pine)" opacity=".85"/>
+      <text x="${x+bw/2}" y="${y-5}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--ink)">${values[i]}</text>
+      <text x="${x+bw/2}" y="${base+15}" text-anchor="middle" font-size="11" fill="var(--ink-soft)">${l}</text>`;
+  });
+  return `<svg class="bar-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${title}">
+    <text x="${W/2}" y="14" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)">${title}</text>
+    <line x1="26" y1="${base}" x2="${W-4}" y2="${base}" stroke="var(--ink-soft)" stroke-width="1"/>${bars}</svg>`;
+}
+function fmtPct(v){ return nm(round2(v)) + '%'; }
+
 const SUBJECTS = [
   {
     id:'adicao', name:'Adição', sym:'+',
@@ -1084,23 +1448,37 @@ const SUBJECTS = [
       <li><b>Círculo:</b> área = π × raio², usando π ≈ 3,14</li>
     </ol>`,
     examples:[
-      {title:'Exemplo 1 (perímetro)', text:'Retângulo 8 cm × 3 cm → perímetro 22 cm', steps:['Some todos os lados: 8 + 3 + 8 + 3 = 22', 'Ou use a fórmula: 2 × (8 + 3) = 22 cm']},
-      {title:'Exemplo 2 (área do triângulo)', text:'Base 10 cm, altura 6 cm → área 30 cm²', steps:['Área = base × altura ÷ 2', '10 × 6 = 60', '60 ÷ 2 = 30 cm²']},
-      {title:'Exemplo 3 (círculo)', text:'Raio 5 cm → área 78,5 cm²', steps:['Área = π × r²', 'r² = 5 × 5 = 25', '3,14 × 25 = 78,5 cm²']},
+      {title:'Exemplo 1 (perímetro)', text:'Retângulo 8 cm × 3 cm → perímetro 22 cm', qVisual: geoFigure('rect',{b:8,h:3},{hl:'perim'}), steps:['Some todos os lados: 8 + 3 + 8 + 3 = 22', 'Ou use a fórmula: 2 × (8 + 3) = 22 cm']},
+      {title:'Exemplo 2 (área do triângulo)', text:'Base 10 cm, altura 6 cm → área 30 cm²', qVisual: geoFigure('triangle',{b:10,h:6,a:3.5},{hl:'area', showRect:true}), steps:['Área = base × altura ÷ 2 (o triângulo é metade do retângulo pontilhado)', '10 × 6 = 60', '60 ÷ 2 = 30 cm²']},
+      {title:'Exemplo 3 (círculo)', text:'Raio 5 cm → área 78,5 cm²', qVisual: geoFigure('circle',{r:5},{hl:'area'}), steps:['Área = π × r²', 'r² = 5 × 5 = 25', '3,14 × 25 = 78,5 cm²']},
     ],
     gen:{
       facil:()=>{
-        if(Math.random()<0.5){ const b=randInt(3,15), a=randInt(2,12); return mkSingle(`Um retângulo tem ${b} cm de base e ${a} cm de altura. Qual é o perímetro (em cm)?`, 2*(a+b), ['Perímetro é a soma de todos os lados.', `${b} + ${a} + ${b} + ${a} = ${2*(a+b)} cm`]); }
-        const l=randInt(2,15); return mkSingle(`Um quadrado tem ${l} cm de lado. Qual é o perímetro (em cm)?`, 4*l, ['O quadrado tem 4 lados iguais.', `4 × ${l} = ${4*l} cm`]);
+        if(Math.random()<0.5){ const b=randInt(3,15), a=randInt(2,12); const q=`Um retângulo tem ${b} cm de base e ${a} cm de altura. Qual é o perímetro (em cm)?`;
+          return mkSingle(q, 2*(a+b), ['Perímetro é a soma de todos os lados.', `${b} + ${a} + ${b} + ${a} = ${2*(a+b)} cm`], null, geoQ(q, geoFigure('rect',{b,h:a},{ask:'perim'})), geoFigure('rect',{b,h:a},{hl:'perim'})); }
+        const l=randInt(2,15); const q=`Um quadrado tem ${l} cm de lado. Qual é o perímetro (em cm)?`;
+        return mkSingle(q, 4*l, ['O quadrado tem 4 lados iguais.', `4 × ${l} = ${4*l} cm`], null, geoQ(q, geoFigure('square',{l},{ask:'perim'})), geoFigure('square',{l},{hl:'perim'}));
       },
       medio:()=>{
-        if(Math.random()<0.5){ const b=randInt(3,20), a=randInt(2,15); return mkSingle(`Qual é a área (em m²) de um terreno retangular de ${b} m por ${a} m?`, a*b, ['Área do retângulo = base × altura', `${b} × ${a} = ${a*b} m²`]); }
-        const b=2*randInt(2,10), a=randInt(3,14); return mkSingle(`Um triângulo tem base ${b} cm e altura ${a} cm. Qual é a área (em cm²)?`, b*a/2, ['Área do triângulo = base × altura ÷ 2', `${b} × ${a} = ${b*a}`, `${b*a} ÷ 2 = ${b*a/2} cm²`]);
+        const r = Math.random();
+        if(r<0.4){ const b=randInt(3,20), a=randInt(2,15); const q=`Qual é a área (em m²) de um terreno retangular de ${b} m por ${a} m?`;
+          return mkSingle(q, a*b, ['Área do retângulo = base × altura', `${b} × ${a} = ${a*b} m²`], null, geoQ(q, geoFigure('rect',{b,h:a},{unit:'m', ask:'area'})), geoFigure('rect',{b,h:a},{unit:'m', hl:'area', grid:true})); }
+        if(r<0.75){ const b=2*randInt(2,10), a=randInt(3,14), top=randInt(0,b); const q=`Um triângulo tem base ${b} cm e altura ${a} cm. Qual é a área (em cm²)?`;
+          return mkSingle(q, b*a/2, ['Área do triângulo = base × altura ÷ 2', `${b} × ${a} = ${b*a}`, `${b*a} ÷ 2 = ${b*a/2} cm²`], null, geoQ(q, geoFigure('triangle',{b,h:a,a:top},{ask:'area'})), geoFigure('triangle',{b,h:a,a:top},{hl:'area', showRect:true})); }
+        const b=randInt(4,14), a=randInt(2,9), sl=randInt(1,4); const q=`Um paralelogramo tem base ${b} cm e altura ${a} cm. Qual é a área (em cm²)?`;
+        return mkSingle(q, b*a, ['Área do paralelogramo = base × altura (a altura é a reta pontilhada, não o lado inclinado)', `${b} × ${a} = ${b*a} cm²`], null, geoQ(q, geoFigure('parallelogram',{b,h:a,s:sl},{ask:'area'})), geoFigure('parallelogram',{b,h:a,s:sl},{hl:'area', showRect:true}));
       },
       dificil:()=>{
-        if(Math.random()<0.5){ const r=randInt(2,10); const A=Math.round(3.14*r*r*100)/100; return mkSingle(`Qual é a área (em cm²) de um círculo de raio ${r} cm? Use π = 3,14.`, A, ['Área do círculo = π × r²', `r² = ${r} × ${r} = ${r*r}`, `3,14 × ${r*r} = ${fmt(A)} cm²`]); }
-        const h=2*randInt(2,6), B=randInt(8,20), b=randInt(3,B-2); const A=(B+b)*h/2;
-        return mkSingle(`Um trapézio tem base maior ${B} cm, base menor ${b} cm e altura ${h} cm. Qual é a área (em cm²)?`, A, ['Área do trapézio = (base maior + base menor) × altura ÷ 2', `${B} + ${b} = ${B+b}`, `${B+b} × ${h} = ${(B+b)*h}`, `${(B+b)*h} ÷ 2 = ${A} cm²`]);
+        const r = Math.random();
+        if(r<0.3){ const rad=randInt(2,10); const A=Math.round(3.14*rad*rad*100)/100; const q=`Qual é a área (em cm²) de um círculo de raio ${rad} cm? Use π = 3,14.`;
+          return mkSingle(q, A, ['Área do círculo = π × r²', `r² = ${rad} × ${rad} = ${rad*rad}`, `3,14 × ${rad*rad} = ${fmt(A)} cm²`], null, geoQ(q, geoFigure('circle',{r:rad},{ask:'area'})), geoFigure('circle',{r:rad},{hl:'area'})); }
+        if(r<0.55){ const h=2*randInt(2,6), B=randInt(8,20), b=randInt(3,B-2); const A=(B+b)*h/2; const q=`Um trapézio tem base maior ${B} cm, base menor ${b} cm e altura ${h} cm. Qual é a área (em cm²)?`;
+          return mkSingle(q, A, ['Área do trapézio = (base maior + base menor) × altura ÷ 2', `${B} + ${b} = ${B+b}`, `${B+b} × ${h} = ${(B+b)*h}`, `${(B+b)*h} ÷ 2 = ${A} cm²`], null, geoQ(q, geoFigure('trapezoid',{B,b,h},{ask:'area'})), geoFigure('trapezoid',{B,b,h},{hl:'area'})); }
+        if(r<0.8){ const D=2*randInt(3,8), d=randInt(2,D-1); const q=`Um losango tem diagonal maior ${D} cm e diagonal menor ${d} cm. Qual é a área (em cm²)?`;
+          return mkSingle(q, D*d/2, ['Área do losango = D × d ÷ 2', `${D} × ${d} = ${D*d}`, `${D*d} ÷ 2 = ${D*d/2} cm²`], null, geoQ(q, geoFigure('rhombus',{D,d},{ask:'area'})), geoFigure('rhombus',{D,d},{hl:'area'})); }
+        // descobrir a medida que falta
+        const b=randInt(3,12), a=randInt(2,10); const q=`Um retângulo tem área de ${a*b} cm² e base de ${b} cm. Qual é a altura (em cm)?`;
+        return mkSingle(q, a, ['Área = base × altura, então altura = área ÷ base', `${a*b} ÷ ${b} = ${a} cm`], null, geoQ(q, geoFigure('rect',{b,h:a},{q:{h:'?'}})), geoFigure('rect',{b,h:a},{hl:'area', grid:true}));
       },
     }
   },
@@ -1131,14 +1509,736 @@ const SUBJECTS = [
       dificil:()=>{
         if(Math.random()<0.5){ const target=randInt(6,8); const known=[randInt(4,10),randInt(4,10),randInt(4,10)]; const need=4*target-known.reduce((a,b)=>a+b,0);
           if(need<0 || need>10) return SUBJECTS.find(x=>x.id==='estatistica').gen.dificil();
-          return mkSingle(`Nas 3 primeiras provas, Ana tirou ${known.join(', ')}. Que nota ela precisa tirar na 4ª prova pra ficar com média ${target}?`, need,
+          return mkSingle(`Nas 3 primeiras provas, um aluno tirou ${known.join(', ')}. Que nota ele precisa tirar na 4ª prova pra ficar com média ${target}?`, need,
             [`Pra ter média ${target} em 4 provas, a soma das notas precisa ser ${target} × 4 = ${4*target}.`, `Ela já tem ${known.join(' + ')} = ${4*target-need}.`, `Falta: ${4*target} − ${4*target-need} = ${need}.`]); }
         const nums=Array.from({length:6},()=>randInt(1,20)); const sorted=[...nums].sort((a,b)=>a-b); const med=(sorted[2]+sorted[3])/2;
         return mkSingle(`Qual é a mediana de ${nums.join(', ')}?`, med, [`Coloque em ordem: ${sorted.map((v,i)=>(i===2||i===3)?`<b>${v}</b>`:v).join(', ')}`, `São 6 números (quantidade par): faça a média dos dois do meio.`, `(${sorted[2]} + ${sorted[3]}) ÷ 2 = ${fmt(med)}`]);
       },
     }
   },
+  {
+    id:'dinheiro', name:'Dinheiro e troco', sym:'R$',
+    learn:`<p>Fazer compras, conferir o troco, dividir a conta da pizza... o dinheiro é a matemática que a gente mais usa no dia a dia! No Brasil, a moeda é o <b>real (R$)</b>, e cada real tem <b>100 centavos</b>. Por isso R$ 2,50 é "2 reais e 50 centavos".</p>
+    <p><b>Truque pra não errar:</b> pense tudo em <b>centavos</b>, faça a conta com números inteiros e só no fim volte pra reais.</p>
+    <ol style="margin:0 0 10px; padding-left:20px; line-height:1.7;">
+      <li><b>Total da compra:</b> some os preços (ou multiplique preço × quantidade).</li>
+      <li><b>Troco:</b> valor pago − total da compra.</li>
+      <li><b>Dividir a conta:</b> total ÷ número de pessoas.</li>
+    </ol>`,
+    examples:[
+      {title:'Exemplo 1 (somar preços)', text:'R$ 3,50 + R$ 2,75 = R$ 6,25', steps:['Em centavos: 350 + 275 = 625', '625 centavos = R$ 6,25']},
+      {title:'Exemplo 2 (troco)', text:'Pagou R$ 20 numa compra de R$ 13,40 → troco R$ 6,60', steps:['Em centavos: 2000 − 1340 = 660', 'Troco: R$ 6,60']},
+      {title:'Exemplo 3 (várias unidades)', text:'3 cadernos de R$ 7,90 = R$ 23,70', steps:['Em centavos: 3 × 790 = 2370', 'Total: R$ 23,70']},
+    ],
+    gen:{
+      facil:()=>{ const itens=shuffle(['um lápis','uma borracha','um suco','um pão','uma bala','um picolé']).slice(0,2);
+        const a=randInt(2,20)*25, b=randInt(2,20)*25;
+        return mkSingle(`${cap(itens[0])} custa ${brl(a)} e ${itens[1]} custa ${brl(b)}. Quanto custam os dois juntos (em reais)?`, (a+b)/100, [`Em centavos: ${a} + ${b} = ${a+b}`, `${a+b} centavos = ${brl(a+b)}`]); },
+      medio:()=>{ const nota=pick([1000,2000,5000]); const preco=randInt(Math.round(nota*0.3/10), Math.round(nota*0.95/10))*10;
+        return mkSingle(`Você comprou algo de ${brl(preco)} e pagou com uma nota de ${brl(nota)}. Qual é o troco (em reais)?`, (nota-preco)/100, ['Troco = valor pago − preço', `Em centavos: ${nota} − ${preco} = ${nota-preco}`, `Troco: ${brl(nota-preco)}`]); },
+      dificil:()=>{
+        if(Math.random()<0.5){ const q=randInt(2,5), preco=randInt(15,120)*10, total=q*preco; const pago=Math.ceil((total+1)/5000)*5000;
+          return mkSingle(`Você comprou ${q} cadernos de ${brl(preco)} cada e pagou com ${brl(pago)}. Qual é o troco (em reais)?`, (pago-total)/100, [`Total: ${q} × ${brl(preco)} = ${brl(total)}`, `Troco: ${brl(pago)} − ${brl(total)} = ${brl(pago-total)}`]); }
+        const n=randInt(2,6), each=randInt(8,40)*50, total=n*each;
+        return mkSingle(`A conta da pizzaria deu ${brl(total)} e vai ser dividida igualmente entre ${n} amigos. Quanto cada um paga (em reais)?`, each/100, ['Cada um paga = total ÷ número de pessoas', `Em centavos: ${total} ÷ ${n} = ${each}`, `Cada um paga ${brl(each)}`]);
+      },
+    }
+  },
+  /* =================== ENSINO MÉDIO — Álgebra e Funções =================== */
+  {
+    id:'conjuntos', name:'Conjuntos numéricos', sym:'ℝ',
+    learn:`<p>Os números foram "inventados" aos poucos: cada vez que aparecia uma conta sem resposta, surgia um conjunto novo que resolvia o problema. Por isso um conjunto fica <b>dentro</b> do outro.</p>
+    <ol style="margin:0 0 10px; padding-left:20px; line-height:1.7;">
+      <li><b>Naturais (ℕ):</b> 0, 1, 2, 3, … — os números de contar.</li>
+      <li><b>Inteiros (ℤ):</b> …, −2, −1, 0, 1, 2, … — os naturais mais os negativos.</li>
+      <li><b>Racionais (ℚ):</b> tudo que pode ser escrito como fração a/b (com b ≠ 0): inteiros, decimais que terminam (0,25) e dízimas periódicas (0,333…).</li>
+      <li><b>Irracionais (𝕀):</b> decimais infinitos que <b>nunca</b> se repetem, como √2 = 1,4142… e π = 3,1415…</li>
+      <li><b>Reais (ℝ):</b> todos juntos — racionais + irracionais.</li>
+    </ol>
+    <div class="example-box mono" style="margin-top:8px">ℕ ⊂ ℤ ⊂ ℚ ⊂ ℝ</div>
+    <div class="section-title">Dica — raízes</div>
+    <p>Raiz de um quadrado perfeito é racional (√9 = 3). Raiz de um número que <b>não</b> é quadrado perfeito é irracional (√7).</p>
+    <div class="section-title">Dízima periódica vira fração</div>
+    <p>Quando o período tem 1 algarismo, ele fica sobre <b>9</b>; com 2 algarismos, sobre <b>99</b>: 0,454545… = 45/99 = 5/11.</p>`,
+    examples:[
+      {title:'Exemplo 1 (classificar)', text:'−4 → inteiro · 0,75 → racional · √5 → irracional', steps:['−4 é inteiro (e também racional e real).', '0,75 = 3/4, então é racional.', '5 não é quadrado perfeito, então √5 é irracional.']},
+      {title:'Exemplo 2 (contar inteiros)', text:'De −3 até 4 existem 8 inteiros', steps:['Liste: −3, −2, −1, 0, 1, 2, 3, 4', 'Atalho: 4 − (−3) + 1 = 8']},
+      {title:'Exemplo 3 (dízima)', text:'0,272727… = 27/99 = 3/11', steps:['O período (27) tem 2 algarismos → fica sobre 99.', '27/99, simplificando por 9 = 3/11']},
+    ],
+    gen:{
+      facil:()=>{ const a=randInt(-9,-1), b=randInt(1,9), n=b-a+1;
+        return mkSingle(`Quantos números inteiros existem de ${nm(a)} até ${b}, contando os dois?`, n, [`Atalho: último − primeiro + 1`, `${b} − ${np(a)} + 1 = ${n}`]); },
+      medio:()=>{
+        const pool = [['√2',1],['√3',1],['√5',1],['√7',1],['π',1],['√10',1],['√4',0],['√9',0],['√16',0],['0,5',0],['−3',0],['2/7',0],['1,333…',0],['0',0]];
+        const list = shuffle([...pool]).slice(0,6), n = list.filter(x=>x[1]).length;
+        return mkSingle(`Quantos destes números são irracionais? ${list.map(x=>x[0]).join('  ·  ')}`, n,
+          [`Irracionais: raízes de números que não são quadrados perfeitos, e o π.`, `Irracionais da lista: ${list.filter(x=>x[1]).map(x=>x[0]).join(', ') || 'nenhum'}`, `Total: ${n}`]); },
+      dificil:()=>{ let n; do{ n=randInt(10,98); }while(n%11===0);
+        const [p,q] = simplifyFrac(n,99);
+        return mkFrac(`Escreva a dízima 0,${n}${n}${n}… como fração.`, n, 99, [`O período (${n}) tem 2 algarismos → fica sobre 99: ${n}/99`, q!==99 ? `Simplificando: ${p}/${q}` : `A fração ${n}/99 já está simplificada.`]); },
+    }
+  },
+  {
+    id:'funcquad', name:'Função quadrática', sym:'ax²',
+    learn:`<p>A <b>função quadrática</b> (ou do 2º grau) tem o x elevado ao quadrado. O gráfico dela não é uma reta, é uma curva chamada <b>parábola</b>.</p>
+    <div class="example-box mono" style="margin-top:8px">f(x) = ax² + bx + c   (a ≠ 0)</div>
+    <div class="section-title">Passo 1 — pra que lado a parábola abre</div>
+    <p>Se <b>a > 0</b>, ela abre pra cima (formato de ∪) e tem um ponto <b>mínimo</b>. Se <b>a < 0</b>, abre pra baixo (∩) e tem um ponto <b>máximo</b>.</p>
+    <div class="section-title">Passo 2 — as raízes</div>
+    <p>São os pontos onde a parábola corta o eixo x. Ache resolvendo ax² + bx + c = 0 com Bhaskara: Δ = b² − 4ac e x = (−b ± √Δ) / 2a.</p>
+    <div class="section-title">Passo 3 — o vértice (a "ponta" da parábola)</div>
+    <div class="example-box mono" style="margin-top:8px">xᵥ = −b / 2a      yᵥ = f(xᵥ)</div>
+    <p>O yᵥ é o <b>valor mínimo</b> (se a > 0) ou o <b>valor máximo</b> (se a < 0) da função. Também dá pra calcular por yᵥ = −Δ / 4a.</p>`,
+    examples:[
+      {title:'Exemplo 1 (calcular f(x))', text:'f(x) = x² − 3x + 2 → f(4) = 6', steps:['Troque x por 4: 4² − 3×4 + 2', '16 − 12 + 2 = 6']},
+      {title:'Exemplo 2 (vértice)', text:'f(x) = x² − 6x + 5 → xᵥ = 3', steps:['a = 1, b = −6', 'xᵥ = −b / 2a = 6 / 2 = 3']},
+      {title:'Exemplo 3 (valor mínimo)', text:'f(x) = x² − 6x + 5 → mínimo = −4', steps:['a > 0, então tem mínimo, no vértice.', 'yᵥ = f(3) = 9 − 18 + 5 = −4']},
+    ],
+    gen:{
+      facil:()=>{ const a=pick([1,1,2,-1]), b=randInt(-5,5), c=randInt(-9,9), x=randInt(-3,4), r=a*x*x+b*x+c;
+        return mkSingle(`f(x) = ${quadStr(a,b,c)}. Calcule f(${nm(x)}).`, r, [`Troque x por ${np(x)} na fórmula.`, `x² = ${np(x)}² = ${x*x}`, `f(${nm(x)}) = ${a===1?'':a===-1?'−':a+' × '}${x*x}${b?` ${b*x>=0?'+':'−'} ${Math.abs(b*x)}`:''}${c?` ${c>0?'+':'−'} ${Math.abs(c)}`:''} = ${nm(r)}`]); },
+      medio:()=>{ const a=pick([1,2,-1,-2]); let xv=randInt(-5,5); if(!xv) xv=2; const b=-2*a*xv, c=randInt(-9,9);
+        return mkSingle(`f(x) = ${quadStr(a,b,c)}. Qual é o x do vértice?`, xv, [`a = ${nm(a)} e b = ${nm(b)}`, `xᵥ = −b / 2a = ${nm(-b)} / ${nm(2*a)} = ${nm(xv)}`]); },
+      dificil:()=>{ const a=pick([1,2,-1,-2]); let xv=randInt(-4,4); if(!xv) xv=-2; const b=-2*a*xv, c=randInt(-9,9), yv=a*xv*xv+b*xv+c, kind=a>0?'mínimo':'máximo';
+        return mkSingle(`f(x) = ${quadStr(a,b,c)}. Qual é o valor ${kind} da função?`, yv, [`a ${a>0?'> 0: a parábola abre pra cima, tem mínimo':'< 0: a parábola abre pra baixo, tem máximo'} no vértice.`, `xᵥ = −b / 2a = ${nm(-b)} / ${nm(2*a)} = ${nm(xv)}`, `yᵥ = f(${nm(xv)}) = ${nm(yv)}`]); },
+    }
+  },
+  {
+    id:'modular', name:'Função modular', sym:'|x|',
+    learn:`<p>O <b>módulo</b> de um número é a distância dele até o zero na reta numérica. Distância nunca é negativa, então o módulo tira o sinal de menos: |−5| = 5 e |5| = 5.</p>
+    <div class="example-box mono" style="margin-top:8px">|x| = x, se x ≥ 0<br>|x| = −x, se x < 0</div>
+    <div class="section-title">A função f(x) = |x|</div>
+    <p>O gráfico tem formato de <b>V</b>, com a ponta na origem. Toda a parte que estaria abaixo do eixo x é "rebatida" pra cima.</p>
+    <div class="section-title">Equações modulares</div>
+    <p>Se |x − a| = k (com k > 0), existem <b>duas</b> possibilidades: o que está dentro vale <b>k</b> ou vale <b>−k</b>.</p>
+    <div class="example-box mono" style="margin-top:8px">|x − a| = k  →  x = a + k  ou  x = a − k</div>`,
+    examples:[
+      {title:'Exemplo 1', text:'|−7| + |3| = 10', steps:['|−7| = 7 e |3| = 3', '7 + 3 = 10']},
+      {title:'Exemplo 2 (calcular f(x))', text:'f(x) = |2x − 9| → f(2) = 5', steps:['2×2 − 9 = −5', '|−5| = 5']},
+      {title:'Exemplo 3 (equação)', text:'|x − 3| = 5 → x = 8 ou x = −2', steps:['x − 3 = 5 → x = 8', 'x − 3 = −5 → x = −2']},
+    ],
+    gen:{
+      facil:()=>{ const a=-randInt(1,15), b=randInt(-12,12), r=Math.abs(a)+Math.abs(b);
+        return mkSingle(`Quanto vale |${nm(a)}| + |${nm(b)}|?`, r, [`|${nm(a)}| = ${Math.abs(a)} e |${nm(b)}| = ${Math.abs(b)}`, `${Math.abs(a)} + ${Math.abs(b)} = ${r}`]); },
+      medio:()=>{ const k=randInt(2,5), m=randInt(10,25), x=randInt(0,Math.floor(m/k)), v=k*x-m;
+        return mkSingle(`f(x) = |${k}x − ${m}|. Calcule f(${x}).`, Math.abs(v), [`Dentro do módulo: ${k}×${x} − ${m} = ${nm(v)}`, `|${nm(v)}| = ${Math.abs(v)}`]); },
+      dificil:()=>{ const a=randInt(-6,8), k=randInt(2,9), big=Math.random()<0.5, r=big?a+k:a-k, inner=a>=0?`x − ${a}`:`x + ${-a}`;
+        return mkSingle(`Resolva |${a===0?'x':inner}| = ${k}. Qual é a ${big?'maior':'menor'} solução?`, r, [`O que está dentro vale ${k} ou −${k}.`, `${a===0?'x':inner} = ${k} → x = ${nm(a+k)}`, `${a===0?'x':inner} = −${k} → x = ${nm(a-k)}`, `A ${big?'maior':'menor'} é ${nm(r)}.`]); },
+    }
+  },
+  {
+    id:'exponencial', name:'Função exponencial', sym:'aˣ',
+    learn:`<p>Na <b>função exponencial</b> o x fica no <b>expoente</b>. Ela descreve coisas que crescem (ou diminuem) multiplicando sempre pelo mesmo número: bactérias que dobram, dinheiro com juros compostos, remédio saindo do corpo.</p>
+    <div class="example-box mono" style="margin-top:8px">f(x) = aˣ   (a > 0 e a ≠ 1)</div>
+    <p>Se <b>a > 1</b>, ela é crescente; se <b>0 < a < 1</b>, é decrescente. O gráfico sempre passa pelo ponto (0, 1), porque a⁰ = 1, e nunca toca o eixo x.</p>
+    <div class="section-title">Equação exponencial — o truque</div>
+    <ol style="margin:0 0 10px; padding-left:20px; line-height:1.7;">
+      <li>Escreva os dois lados como potências <b>da mesma base</b> (fatore o número).</li>
+      <li>Com as bases iguais, iguale os expoentes: aᵐ = aⁿ → m = n.</li>
+      <li>Resolva a equação que sobrou.</li>
+    </ol>`,
+    examples:[
+      {title:'Exemplo 1', text:'2ˣ = 32 → x = 5', steps:['32 = 2⁵', '2ˣ = 2⁵ → x = 5']},
+      {title:'Exemplo 2', text:'3ˣ⁺¹ = 81 → x = 3', steps:['81 = 3⁴', 'x + 1 = 4 → x = 3']},
+      {title:'Exemplo 3 (bases diferentes)', text:'4ˣ = 8 → x = 3/2', steps:['4 = 2² e 8 = 2³', '(2²)ˣ = 2³ → 2x = 3', 'x = 3/2 = 1,5']},
+    ],
+    gen:{
+      facil:()=>{ const b=pick([2,3,5]), n=randInt(2, b===2?7:b===3?5:4), N=Math.pow(b,n);
+        return mkSingle(`Resolva: ${b}ˣ = ${N}`, n, [`Escreva ${N} como potência de ${b}: ${N} = ${b}<sup>${n}</sup>`, `${b}<sup>x</sup> = ${b}<sup>${n}</sup> → x = ${n}`]); },
+      medio:()=>{ const b=pick([2,3]), n=randInt(3, b===2?8:5), k=randInt(1,n-1), sgn=Math.random()<0.6, N=Math.pow(b,n), x=sgn?n-k:n+k;
+        return mkSingle(`Resolva: ${b}ˣ${sgn?'⁺':'⁻'}${supN(k)} = ${N}`, x, [`${N} = ${b}<sup>${n}</sup>`, `Iguale os expoentes: x ${sgn?'+':'−'} ${k} = ${n}`, `x = ${x}`]); },
+      dificil:()=>{ const [p,m] = pick([[2,2],[2,3],[3,2],[3,3],[5,2]]), a=Math.pow(p,m); let n; do{ n=randInt(1, p===2?7:4); }while(n%m===0);
+        const N=Math.pow(p,n);
+        return mkFrac(`Resolva: ${a}ˣ = ${N}`, n, m, [`Escreva tudo na base ${p}: ${a} = ${p}<sup>${m}</sup> e ${N} = ${p}<sup>${n}</sup>`, `(${p}<sup>${m}</sup>)<sup>x</sup> = ${p}<sup>${n}</sup> → ${m}x = ${n}`, `x = ${fracStr(n,m)}`]); },
+    }
+  },
+  {
+    id:'logaritmo', name:'Logaritmo', sym:'log',
+    learn:`<p>O <b>logaritmo</b> responde uma pergunta: "a que expoente eu elevo a base pra chegar nesse número?". Ele é a operação inversa da potência.</p>
+    <div class="example-box mono" style="margin-top:8px">logₐ b = x  ⇔  aˣ = b</div>
+    <p>Exemplo: log₂ 8 = 3, porque 2³ = 8. Quando a base não aparece (log 100), ela é <b>10</b>.</p>
+    <div class="section-title">Propriedades (as que mais caem)</div>
+    <ol style="margin:0 0 10px; padding-left:20px; line-height:1.7;">
+      <li><b>Produto:</b> log(m·n) = log m + log n</li>
+      <li><b>Divisão:</b> log(m/n) = log m − log n</li>
+      <li><b>Potência:</b> log mᵏ = k · log m</li>
+      <li><b>Mudança de base:</b> logₐ b = log b / log a</li>
+    </ol>
+    <p>Valores úteis: <b>log 2 ≈ 0,30</b> · <b>log 3 ≈ 0,48</b> · log 5 = log(10/2) ≈ 0,70.</p>`,
+    examples:[
+      {title:'Exemplo 1', text:'log₃ 81 = 4', steps:['3 elevado a quanto dá 81?', '3⁴ = 81, então log₃ 81 = 4']},
+      {title:'Exemplo 2 (propriedade)', text:'log₆ 4 + log₆ 9 = 2', steps:['Soma de logs = log do produto: log₆ (4 × 9) = log₆ 36', '6² = 36, então vale 2']},
+      {title:'Exemplo 3 (usando log 2 e log 3)', text:'log 6 ≈ 0,78', steps:['6 = 2 × 3', 'log 6 = log 2 + log 3 ≈ 0,30 + 0,48 = 0,78']},
+    ],
+    gen:{
+      facil:()=>{ const b=pick([2,3,5,10]), n=randInt(1, b===2?7:b===10?4:4), N=Math.pow(b,n), bs=subN(b);
+        return mkSingle(`Quanto vale log${bs} ${N}?`, n, [`Pergunta: ${b} elevado a quanto dá ${N}?`, `${b}<sup>${n}</sup> = ${N}, então log${bs} ${N} = ${n}`]); },
+      medio:()=>{ const [b,x,op,y] = pick([[6,4,'+',9],[2,12,'−',3],[3,18,'−',2],[10,25,'+',4],[10,5,'+',2],[2,40,'−',5],[12,3,'+',4],[10,50,'+',20],[4,32,'+',2],[2,24,'−',3],[3,54,'−',2],[10,200,'+',5]]);
+        const arg = op==='+' ? x*y : x/y, r = Math.round(Math.log(arg)/Math.log(b)), bs=subN(b);
+        return mkSingle(`Quanto vale log${bs} ${x} ${op} log${bs} ${y}?`, r, [op==='+' ? `Soma de logs de mesma base = log do produto: log${bs} (${x} × ${y}) = log${bs} ${arg}` : `Diferença de logs = log da divisão: log${bs} (${x} ÷ ${y}) = log${bs} ${arg}`, `${b}<sup>${r}</sup> = ${arg}, então vale ${r}`]); },
+      dificil:()=>{ let i, j; do{ i=randInt(0,3); j=randInt(0,2); }while(i+j===0 || (i===1&&j===0) || (i===0&&j===1)); const N=Math.pow(2,i)*Math.pow(3,j), r=round2(i*0.30+j*0.48);
+        const parts=[...Array(i).fill('2'), ...Array(j).fill('3')];
+        return mkSingle(`Use log 2 = 0,30 e log 3 = 0,48. Quanto vale log ${N}?`, r, [`Fatore: ${N} = ${parts.join(' × ')}`, `log do produto = soma dos logs: ${[i?`${i} × 0,30`:'', j?`${j} × 0,48`:''].filter(Boolean).join(' + ')}`, `log ${N} = ${fmt(r)}`]); },
+    }
+  },
+  {
+    id:'functrig', name:'Funções trigonométricas', sym:'sen',
+    learn:`<p>As funções <b>seno</b> e <b>cosseno</b> são <b>periódicas</b>: o gráfico é uma onda que se repete sempre do mesmo jeito. Por isso elas descrevem marés, som, batimentos do coração e tudo que "vai e volta".</p>
+    <ol style="margin:0 0 10px; padding-left:20px; line-height:1.7;">
+      <li>sen x e cos x sempre ficam entre <b>−1 e 1</b>.</li>
+      <li>O <b>período</b> (tamanho de uma onda completa) é 360°, ou 2π rad.</li>
+      <li>A tangente tem período de 180° (π rad).</li>
+    </ol>
+    <div class="section-title">A forma geral</div>
+    <div class="example-box mono" style="margin-top:8px">f(x) = a + b · sen(cx)</div>
+    <ol style="margin:0 0 10px; padding-left:20px; line-height:1.7;">
+      <li><b>a</b> sobe ou desce a onda inteira.</li>
+      <li><b>b</b> estica a onda na vertical: máximo = a + |b| e mínimo = a − |b|.</li>
+      <li><b>c</b> encolhe a onda na horizontal: período = 360° / |c|.</li>
+    </ol>`,
+    examples:[
+      {title:'Exemplo 1 (máximo e mínimo)', text:'f(x) = 3 + 2·sen x → varia de 1 a 5', steps:['sen x vai de −1 a 1', 'Máximo: 3 + 2×1 = 5 · Mínimo: 3 + 2×(−1) = 1']},
+      {title:'Exemplo 2 (período)', text:'f(x) = sen(4x) → período 90°', steps:['Período = 360° ÷ 4 = 90°']},
+    ],
+    gen:{
+      facil:()=>{ const a=randInt(0,6), b=randInt(1,5)*pick([1,-1]), fn=pick(['sen','cos']);
+        return mkSingle(`f(x) = ${a?a+' ':''}${b>0?(a?'+ ':''):'− '}${Math.abs(b)===1?'':Math.abs(b)+'·'}${fn} x. Qual é o valor máximo de f?`, a+Math.abs(b), [`${fn} x varia de −1 a 1.`, `O máximo acontece quando ${Math.abs(b)}·${fn} x "soma" o mais possível: ${a} + ${Math.abs(b)} = ${a+Math.abs(b)}`]); },
+      medio:()=>{ const a=randInt(-3,6), b=randInt(1,5)*pick([1,-1]), fn=pick(['sen','cos']);
+        return mkSingle(`f(x) = ${a?nm(a)+' ':''}${b>0?(a?'+ ':''):'− '}${Math.abs(b)===1?'':Math.abs(b)+'·'}${fn} x. Qual é o valor mínimo de f?`, a-Math.abs(b), [`${fn} x varia de −1 a 1.`, `Mínimo = a − |b| = ${nm(a)} − ${Math.abs(b)} = ${nm(a-Math.abs(b))}`]); },
+      dificil:()=>{ const c=pick([2,3,4,5,6,8,9,10,12]), fn=pick(['sen','cos']);
+        return mkSingle(`Qual é o período, em graus, de f(x) = ${fn}(${c}x)?`, 360/c, [`O período de ${fn} x é 360°.`, `Com ${c}x, a onda anda ${c} vezes mais rápido: 360° ÷ ${c} = ${360/c}°`]); },
+    }
+  },
+  /* =================== ENSINO MÉDIO — Progressões =================== */
+  {
+    id:'pa', name:'Progressão aritmética (PA)', sym:'PA',
+    learn:`<p>Uma <b>PA</b> é uma sequência em que cada termo é o anterior <b>mais</b> um número fixo, chamado <b>razão (r)</b>. Exemplo: 3, 7, 11, 15, … tem razão 4.</p>
+    <p>Pra achar a razão, faça qualquer termo menos o anterior: r = a₂ − a₁.</p>
+    <div class="section-title">Termo geral (achar qualquer termo)</div>
+    <div class="example-box mono" style="margin-top:8px">aₙ = a₁ + (n − 1) · r</div>
+    <div class="section-title">Soma dos n primeiros termos</div>
+    <div class="example-box mono" style="margin-top:8px">Sₙ = (a₁ + aₙ) · n / 2</div>
+    <p>A ideia (de Gauss): somar o primeiro com o último dá o mesmo que o segundo com o penúltimo, e assim por diante.</p>`,
+    examples:[
+      {title:'Exemplo 1 (razão)', text:'(5, 8, 11, …) → r = 3', steps:['r = 8 − 5 = 3']},
+      {title:'Exemplo 2 (termo geral)', text:'a₁ = 3, r = 4 → a₁₀ = 39', steps:['a₁₀ = 3 + (10 − 1) × 4', '= 3 + 36 = 39']},
+      {title:'Exemplo 3 (soma)', text:'1 + 2 + … + 100 = 5050', steps:['a₁ = 1, a₁₀₀ = 100, n = 100', 'S = (1 + 100) × 100 / 2 = 5050']},
+    ],
+    gen:{
+      facil:()=>{ const a=randInt(-5,15), r=randInt(-6,9)||3, seq=[0,1,2,3].map(i=>a+i*r);
+        return mkSingle(`Qual é o próximo termo da PA (${seq.map(nm).join(', ')}, …)?`, a+4*r, [`Razão: ${nm(seq[1])} − ${np(seq[0])} = ${nm(r)}`, `Próximo: ${nm(seq[3])} ${r>=0?'+':'−'} ${Math.abs(r)} = ${nm(a+4*r)}`]); },
+      medio:()=>{ const a=randInt(-10,20), r=randInt(2,9), n=randInt(10,40), an=a+(n-1)*r;
+        return mkSingle(`Numa PA, a₁ = ${nm(a)} e a razão é ${r}. Qual é o ${n}º termo?`, an, [`aₙ = a₁ + (n − 1)·r`, `a${subN(n)} = ${nm(a)} + (${n} − 1) × ${r} = ${nm(a)} + ${(n-1)*r}`, `= ${nm(an)}`]); },
+      dificil:()=>{ const a=randInt(1,10), r=randInt(1,6), n=randInt(8,20), an=a+(n-1)*r, S=(a+an)*n/2;
+        return mkSingle(`Qual é a soma dos ${n} primeiros termos da PA (${a}, ${a+r}, ${a+2*r}, …)?`, S, [`Razão r = ${r}. Último termo: a${subN(n)} = ${a} + ${n-1} × ${r} = ${an}`, `S = (a₁ + aₙ) · n / 2 = (${a} + ${an}) × ${n} / 2`, `S = ${S}`]); },
+    }
+  },
+  {
+    id:'pg', name:'Progressão geométrica (PG)', sym:'PG',
+    learn:`<p>Uma <b>PG</b> é uma sequência em que cada termo é o anterior <b>vezes</b> um número fixo, chamado <b>razão (q)</b>. Exemplo: 2, 6, 18, 54, … tem razão 3.</p>
+    <p>Pra achar a razão, divida um termo pelo anterior: q = a₂ ÷ a₁.</p>
+    <div class="section-title">Termo geral</div>
+    <div class="example-box mono" style="margin-top:8px">aₙ = a₁ · qⁿ⁻¹</div>
+    <div class="section-title">Soma dos n primeiros termos</div>
+    <div class="example-box mono" style="margin-top:8px">Sₙ = a₁ · (qⁿ − 1) / (q − 1)</div>
+    <p><b>PG infinita:</b> se a razão está entre −1 e 1, os termos vão ficando minúsculos e a soma de todos eles dá S = a₁ / (1 − q).</p>`,
+    examples:[
+      {title:'Exemplo 1 (razão)', text:'(3, 12, 48, …) → q = 4', steps:['q = 12 ÷ 3 = 4']},
+      {title:'Exemplo 2 (termo geral)', text:'a₁ = 2, q = 3 → a₅ = 162', steps:['a₅ = 2 × 3⁴', '= 2 × 81 = 162']},
+      {title:'Exemplo 3 (soma)', text:'1 + 2 + 4 + 8 + 16 = 31', steps:['a₁ = 1, q = 2, n = 5', 'S = 1 × (2⁵ − 1) / (2 − 1) = 31']},
+    ],
+    gen:{
+      facil:()=>{ const a=randInt(1,6), q=pick([2,3,4,-2]), seq=[0,1,2].map(i=>a*Math.pow(q,i));
+        return mkSingle(`Qual é o próximo termo da PG (${seq.map(nm).join(', ')}, …)?`, a*Math.pow(q,3), [`Razão: ${nm(seq[1])} ÷ ${nm(seq[0])} = ${nm(q)}`, `Próximo: ${nm(seq[2])} × ${np(q)} = ${nm(a*Math.pow(q,3))}`]); },
+      medio:()=>{ const a=randInt(1,5), q=pick([2,3]), n=randInt(5, q===2?9:6), an=a*Math.pow(q,n-1);
+        return mkSingle(`Numa PG, a₁ = ${a} e a razão é ${q}. Qual é o ${n}º termo?`, an, [`aₙ = a₁ · qⁿ⁻¹`, `= ${a} × ${q}<sup>${n-1}</sup> = ${a} × ${Math.pow(q,n-1)}`, `= ${an}`]); },
+      dificil:()=>{ const a=randInt(1,5), q=pick([2,3]), n=randInt(4, q===2?8:5), S=a*(Math.pow(q,n)-1)/(q-1);
+        return mkSingle(`Qual é a soma dos ${n} primeiros termos da PG (${a}, ${a*q}, ${a*q*q}, …)?`, S, [`a₁ = ${a}, q = ${q}, n = ${n}`, `S = ${a} × (${q}<sup>${n}</sup> − 1) / (${q} − 1) = ${a} × ${Math.pow(q,n)-1} / ${q-1}`, `S = ${S}`]); },
+    }
+  },
+  /* =================== ENSINO MÉDIO — Geometria =================== */
+  {
+    id:'espacial', name:'Geometria espacial', sym:'V',
+    learn:`<p>Na geometria espacial as figuras têm 3 dimensões: comprimento, largura e altura. O <b>volume</b> mede quanto cabe dentro do sólido (em cm³, m³…). 1 dm³ = 1 litro.</p>
+    <div class="section-title">Prismas e cilindros ("retos até em cima")</div>
+    <div class="example-box mono" style="margin-top:8px">V = área da base × altura</div>
+    <ol style="margin:0 0 10px; padding-left:20px; line-height:1.7;">
+      <li><b>Cubo:</b> V = a³</li>
+      <li><b>Paralelepípedo (caixa):</b> V = comprimento × largura × altura</li>
+      <li><b>Cilindro:</b> V = π · r² · h</li>
+    </ol>
+    <div class="section-title">Pirâmides e cones ("terminam em ponta")</div>
+    <div class="example-box mono" style="margin-top:8px">V = área da base × altura ÷ 3</div>
+    <p>Um cone cabe exatamente 3 vezes dentro do cilindro de mesma base e altura!</p>
+    <div class="section-title">Esfera</div>
+    <div class="example-box mono" style="margin-top:8px">V = 4 · π · r³ ÷ 3      Área = 4 · π · r²</div>`,
+    examples:[
+      {title:'Exemplo 1 (caixa)', text:'5 cm × 4 cm × 3 cm → 60 cm³', steps:['V = 5 × 4 × 3 = 60 cm³']},
+      {title:'Exemplo 2 (cilindro)', text:'r = 2 cm, h = 10 cm → 125,6 cm³', steps:['Base: π × 2² = 3,14 × 4 = 12,56', 'V = 12,56 × 10 = 125,6 cm³']},
+      {title:'Exemplo 3 (pirâmide)', text:'Base quadrada de lado 6, altura 5 → 60', steps:['Área da base: 6 × 6 = 36', 'V = 36 × 5 ÷ 3 = 60']},
+    ],
+    gen:{
+      facil:()=>{
+        if(Math.random()<0.4){ const a=randInt(2,10); return mkSingle(`Qual é o volume (em cm³) de um cubo de aresta ${a} cm?`, a*a*a, [`V = a³ = ${a} × ${a} × ${a}`, `V = ${a*a*a} cm³`]); }
+        const c=randInt(2,12), l=randInt(2,10), h=randInt(2,10);
+        return mkSingle(`Uma caixa tem ${c} cm de comprimento, ${l} cm de largura e ${h} cm de altura. Qual é o volume (em cm³)?`, c*l*h, [`V = comprimento × largura × altura`, `${c} × ${l} × ${h} = ${c*l*h} cm³`]); },
+      medio:()=>{
+        if(Math.random()<0.5){ const r=randInt(1,5), h=randInt(2,10), B=round2(3.14*r*r), V=round2(B*h);
+          return mkSingle(`Qual é o volume (em cm³) de um cilindro de raio ${r} cm e altura ${h} cm? Use π = 3,14.`, V, [`Área da base: π × r² = 3,14 × ${r*r} = ${fmt(B)}`, `V = ${fmt(B)} × ${h} = ${fmt(V)} cm³`]); }
+        const l=randInt(2,10), h=3*randInt(1,5), V=l*l*h/3;
+        return mkSingle(`Uma pirâmide tem base quadrada de lado ${l} cm e altura ${h} cm. Qual é o volume (em cm³)?`, V, [`Área da base: ${l} × ${l} = ${l*l}`, `V = base × altura ÷ 3 = ${l*l} × ${h} ÷ 3`, `V = ${V} cm³`]); },
+      dificil:()=>{ const t=Math.random();
+        if(t<0.4){ const r=randInt(1,5), h=3*randInt(1,4), V=round2(3.14*r*r*h/3);
+          return mkSingle(`Qual é o volume (em cm³) de um cone de raio ${r} cm e altura ${h} cm? Use π = 3,14.`, V, [`V = π × r² × h ÷ 3`, `= 3,14 × ${r*r} × ${h} ÷ 3`, `V = ${fmt(V)} cm³`]); }
+        if(t<0.7){ const r=pick([3,6]), V=round2(4*3.14*r*r*r/3);
+          return mkSingle(`Qual é o volume (em cm³) de uma esfera de raio ${r} cm? Use π = 3,14.`, V, [`V = 4 × π × r³ ÷ 3`, `r³ = ${r*r*r}`, `4 × 3,14 × ${r*r*r} ÷ 3 = ${fmt(V)} cm³`]); }
+        const r=randInt(1,10), A=round2(4*3.14*r*r);
+        return mkSingle(`Qual é a área da superfície (em cm²) de uma esfera de raio ${r} cm? Use π = 3,14.`, A, [`A = 4 × π × r²`, `= 4 × 3,14 × ${r*r}`, `A = ${fmt(A)} cm²`]); },
+    }
+  },
+  {
+    id:'analitica', name:'Geometria analítica', sym:'(x,y)',
+    learn:`<p>A geometria analítica junta geometria e álgebra: os pontos viram <b>coordenadas (x, y)</b> no plano cartesiano, e as figuras viram <b>equações</b>.</p>
+    <div class="section-title">Distância entre dois pontos</div>
+    <p>É o Teorema de Pitágoras disfarçado: a diferença dos x e a diferença dos y são os catetos.</p>
+    <div class="example-box mono" style="margin-top:8px">d = √[(x₂ − x₁)² + (y₂ − y₁)²]</div>
+    <div class="section-title">Ponto médio</div>
+    <div class="example-box mono" style="margin-top:8px">M = ((x₁ + x₂)/2 , (y₁ + y₂)/2)</div>
+    <div class="section-title">Reta</div>
+    <p>O <b>coeficiente angular</b> diz a inclinação: m = (y₂ − y₁) / (x₂ − x₁). A equação da reta é y = mx + n.</p>
+    <div class="section-title">Circunferência</div>
+    <div class="example-box mono" style="margin-top:8px">(x − a)² + (y − b)² = r²</div>
+    <p>(a, b) é o centro e r é o raio. Se a equação vier "aberta" (x² + y² − 2ax − 2by + c = 0), o centro é (a, b) e r² = a² + b² − c.</p>`,
+    examples:[
+      {title:'Exemplo 1 (distância)', text:'A(1, 2) e B(4, 6) → d = 5', steps:['Δx = 4 − 1 = 3 · Δy = 6 − 2 = 4', 'd = √(9 + 16) = √25 = 5']},
+      {title:'Exemplo 2 (coeficiente angular)', text:'A(1, 3) e B(3, 11) → m = 4', steps:['m = (11 − 3) / (3 − 1) = 8 / 2 = 4']},
+      {title:'Exemplo 3 (circunferência)', text:'x² + y² − 4x − 6y + 4 = 0 → centro (2, 3), raio 3', steps:['−2a = −4 → a = 2 · −2b = −6 → b = 3', 'r² = 2² + 3² − 4 = 9 → r = 3']},
+    ],
+    gen:{
+      facil:()=>{ const [dx,dy,d]=pick([[3,4,5],[4,3,5],[6,8,10],[8,6,10],[5,12,13],[12,5,13],[9,12,15]]), x1=randInt(-5,5), y1=randInt(-5,5), x2=x1+dx*pick([1,-1]), y2=y1+dy*pick([1,-1]);
+        return mkSingle(`Qual é a distância entre A(${nm(x1)}, ${nm(y1)}) e B(${nm(x2)}, ${nm(y2)})?`, d, [`Δx = ${nm(x2)} − ${np(x1)} = ${nm(x2-x1)} · Δy = ${nm(y2)} − ${np(y1)} = ${nm(y2-y1)}`, `d = √(${dx*dx} + ${dy*dy}) = √${d*d}`, `d = ${d}`]); },
+      medio:()=>{ let m=randInt(-4,4); if(!m) m=2; const dx=randInt(1,4), x1=randInt(-5,5), y1=randInt(-6,6), x2=x1+dx, y2=y1+m*dx;
+        return mkSingle(`Qual é o coeficiente angular da reta que passa por A(${nm(x1)}, ${nm(y1)}) e B(${nm(x2)}, ${nm(y2)})?`, m, [`m = (y₂ − y₁) / (x₂ − x₁)`, `= (${nm(y2)} − ${np(y1)}) / (${nm(x2)} − ${np(x1)}) = ${nm(y2-y1)} / ${dx}`, `m = ${nm(m)}`]); },
+      dificil:()=>{ let a=randInt(-5,5)||2, b=randInt(-5,5)||-3; const r=randInt(1,6), c=a*a+b*b-r*r;
+        const eq = `x² + y² ${-2*a>0?'+':'−'} ${Math.abs(2*a)}x ${-2*b>0?'+':'−'} ${Math.abs(2*b)}y${c?` ${c>0?'+':'−'} ${Math.abs(c)}`:''} = 0`;
+        return mkSingle(`Qual é o raio da circunferência ${eq}?`, r, [`Compare com x² + y² − 2ax − 2by + c = 0: a = ${nm(a)}, b = ${nm(b)}, c = ${nm(c)}`, `r² = a² + b² − c = ${a*a} + ${b*b} ${c>=0?'−':'+'} ${Math.abs(c)} = ${r*r}`, `r = ${r}`]); },
+    }
+  },
+  /* =================== ENSINO MÉDIO — Trigonometria =================== */
+  {
+    id:'trigret', name:'Triângulo retângulo', sym:'θ',
+    learn:`<p>Um triângulo retângulo tem um ângulo de <b>90°</b>. O lado maior, oposto ao ângulo reto, é a <b>hipotenusa</b>; os outros dois são os <b>catetos</b>.</p>
+    <div class="section-title">Teorema de Pitágoras</div>
+    <div class="example-box mono" style="margin-top:8px">hipotenusa² = cateto² + cateto²</div>
+    <div class="section-title">Seno, cosseno e tangente</div>
+    <p>Olhando para um ângulo θ (que não seja o reto):</p>
+    <ol style="margin:0 0 10px; padding-left:20px; line-height:1.7;">
+      <li><b>sen θ</b> = cateto oposto ÷ hipotenusa</li>
+      <li><b>cos θ</b> = cateto adjacente ÷ hipotenusa</li>
+      <li><b>tg θ</b> = cateto oposto ÷ cateto adjacente</li>
+    </ol>
+    <p>Pra decorar: <b>"SOH-CAH-TOA"</b> ou "seno é oposto, cosseno é colado".</p>
+    <div class="section-title">Ângulos notáveis</div>
+    <div class="example-box mono" style="margin-top:8px">30°: sen = 1/2 · cos = √3/2 · tg = √3/3<br>45°: sen = cos = √2/2 · tg = 1<br>60°: sen = √3/2 · cos = 1/2 · tg = √3</div>`,
+    examples:[
+      {title:'Exemplo 1 (Pitágoras)', text:'Catetos 6 e 8 → hipotenusa 10', steps:['h² = 6² + 8² = 36 + 64 = 100', 'h = √100 = 10']},
+      {title:'Exemplo 2 (cateto que falta)', text:'Hipotenusa 13, cateto 5 → outro cateto 12', steps:['13² = 5² + c² → 169 = 25 + c²', 'c² = 144 → c = 12']},
+      {title:'Exemplo 3 (seno)', text:'Hipotenusa 20, ângulo 30° → cateto oposto 10', steps:['sen 30° = oposto ÷ hipotenusa', '1/2 = oposto ÷ 20 → oposto = 10']},
+    ],
+    gen:{
+      facil:()=>{ const [a,b,c]=pick([[3,4,5],[6,8,10],[5,12,13],[8,15,17],[9,12,15],[12,16,20],[7,24,25]]);
+        return mkSingle(`Um triângulo retângulo tem catetos ${a} cm e ${b} cm. Quanto mede a hipotenusa (em cm)?`, c, [`h² = ${a}² + ${b}² = ${a*a} + ${b*b} = ${c*c}`, `h = √${c*c} = ${c} cm`]); },
+      medio:()=>{ const [a,b,c]=pick([[3,4,5],[6,8,10],[5,12,13],[8,15,17],[9,12,15],[12,16,20],[7,24,25]]), sw=Math.random()<0.5, k=sw?a:b, ans=sw?b:a;
+        return mkSingle(`Num triângulo retângulo, a hipotenusa mede ${c} cm e um cateto mede ${k} cm. Quanto mede o outro cateto (em cm)?`, ans, [`${c}² = ${k}² + x² → ${c*c} = ${k*k} + x²`, `x² = ${c*c-k*k}`, `x = ${ans} cm`]); },
+      dificil:()=>{ const t=Math.random();
+        if(t<0.4){ const h=2*randInt(3,15); return mkSingle(`Num triângulo retângulo, a hipotenusa mede ${h} cm. Quanto mede o cateto oposto ao ângulo de 30° (em cm)?`, h/2, ['sen 30° = cateto oposto ÷ hipotenusa', `1/2 = x ÷ ${h}`, `x = ${h/2} cm`]); }
+        if(t<0.7){ const h=2*randInt(3,15); return mkSingle(`Num triângulo retângulo, a hipotenusa mede ${h} cm. Quanto mede o cateto adjacente ao ângulo de 60° (em cm)?`, h/2, ['cos 60° = cateto adjacente ÷ hipotenusa', `1/2 = x ÷ ${h}`, `x = ${h/2} cm`]); }
+        const a=randInt(3,40); return mkSingle(`Uma escada forma 45° com o chão, e o pé dela está a ${a} m da parede. A que altura (em m) ela toca a parede?`, a, ['tg 45° = cateto oposto ÷ cateto adjacente = 1', `x ÷ ${a} = 1`, `x = ${a} m`]); },
+    }
+  },
+  {
+    id:'ciclo', name:'Ciclo trigonométrico', sym:'π',
+    learn:`<p>O <b>ciclo trigonométrico</b> é uma circunferência de raio 1, com centro na origem. Cada ângulo marca um ponto nela: a coordenada <b>x</b> desse ponto é o <b>cosseno</b> e a coordenada <b>y</b> é o <b>seno</b>.</p>
+    <div class="section-title">Graus e radianos</div>
+    <div class="example-box mono" style="margin-top:8px">π rad = 180°</div>
+    <p>Pra passar de radianos pra graus, troque π por 180°: 2π/3 = 2 × 180° ÷ 3 = 120°.</p>
+    <div class="section-title">Os quadrantes</div>
+    <ol style="margin:0 0 10px; padding-left:20px; line-height:1.7;">
+      <li>1º (0° a 90°): seno +, cosseno +</li>
+      <li>2º (90° a 180°): seno +, cosseno −</li>
+      <li>3º (180° a 270°): seno −, cosseno −</li>
+      <li>4º (270° a 360°): seno −, cosseno +</li>
+    </ol>
+    <div class="section-title">Voltas completas</div>
+    <p>Dar uma volta inteira (360°) cai no mesmo ponto. Então 390° é o mesmo lugar que 30°. Pra achar a <b>menor determinação positiva</b>, tire 360° quantas vezes precisar.</p>`,
+    examples:[
+      {title:'Exemplo 1', text:'π/4 rad = 45°', steps:['180° ÷ 4 = 45°']},
+      {title:'Exemplo 2', text:'5π/6 rad = 150°', steps:['5 × 180° ÷ 6 = 900° ÷ 6 = 150°']},
+      {title:'Exemplo 3 (voltas)', text:'780° → 60°', steps:['780° − 360° = 420°', '420° − 360° = 60°']},
+    ],
+    gen:{
+      facil:()=>{ const k=pick([2,3,4,5,6,9,10,12,18]);
+        return mkSingle(`Quantos graus são π/${k} rad?`, 180/k, ['π rad = 180°', `180° ÷ ${k} = ${180/k}°`]); },
+      medio:()=>{ const [m,k]=pick([[2,3],[3,4],[5,6],[7,6],[5,4],[4,3],[3,2],[5,3],[7,4],[11,6]]);
+        return mkSingle(`Quantos graus são ${m}π/${k} rad?`, m*180/k, ['Troque π por 180°', `${m} × 180° ÷ ${k} = ${m*180}° ÷ ${k} = ${m*180/k}°`]); },
+      dificil:()=>{ const base=randInt(1,359);
+        if(Math.random()<0.35) return mkSingle(`Qual é a menor determinação positiva (entre 0° e 360°) do ângulo de −${base}°?`, 360-base, ['Ângulo negativo: é só andar no sentido contrário.', `Some uma volta: −${base}° + 360° = ${360-base}°`]);
+        const k=randInt(1,3), X=base+360*k;
+        return mkSingle(`Qual é a menor determinação positiva (entre 0° e 360°) do ângulo de ${X}°?`, base, [`Tire as voltas completas: ${X}° − ${k} × 360° = ${X} − ${360*k}`, `= ${base}°`]); },
+    }
+  },
+  {
+    id:'identidades', name:'Identidades trigonométricas', sym:'≡',
+    learn:`<p>Identidades são igualdades que valem <b>pra qualquer ângulo</b>. Elas servem pra descobrir um valor a partir de outro e pra simplificar expressões.</p>
+    <div class="section-title">A relação fundamental</div>
+    <div class="example-box mono" style="margin-top:8px">sen²x + cos²x = 1</div>
+    <p>Ela vem do Pitágoras no ciclo de raio 1. Sabendo o seno, você acha o cosseno (e vice-versa). Cuidado com o sinal, que depende do quadrante!</p>
+    <div class="section-title">Outras que caem muito</div>
+    <ol style="margin:0 0 10px; padding-left:20px; line-height:1.7;">
+      <li>tg x = sen x ÷ cos x</li>
+      <li>sen 2x = 2 · sen x · cos x</li>
+      <li>cos 2x = cos²x − sen²x</li>
+      <li>sen(a + b) = sen a · cos b + sen b · cos a</li>
+    </ol>`,
+    examples:[
+      {title:'Exemplo 1 (achar o cosseno)', text:'sen x = 3/5 (1º quadrante) → cos x = 4/5', steps:['cos²x = 1 − (3/5)² = 1 − 9/25 = 16/25', 'cos x = 4/5 (positivo no 1º quadrante)']},
+      {title:'Exemplo 2 (tangente)', text:'sen x = 3/5 e cos x = 4/5 → tg x = 3/4', steps:['tg x = sen ÷ cos = (3/5) ÷ (4/5) = 3/4']},
+      {title:'Exemplo 3 (arco duplo)', text:'sen 2x = 2 × 3/5 × 4/5 = 24/25', steps:['sen 2x = 2 · sen x · cos x', '2 × 3/5 × 4/5 = 24/25']},
+    ],
+    gen:{
+      facil:()=>{ const [p,q,h]=pick([[3,4,5],[4,3,5],[5,12,13],[12,5,13],[8,15,17],[15,8,17],[7,24,25]]), useSen=Math.random()<0.5;
+        const [g,w,gn,wn]= useSen ? [p,q,'sen','cos'] : [q,p,'cos','sen'];
+        return mkFrac(`Se ${gn} x = ${g}/${h} e x está no 1º quadrante, quanto vale ${wn} x?`, w, h, [`${wn}²x = 1 − ${gn}²x = 1 − ${g*g}/${h*h} = ${h*h-g*g}/${h*h}`, `${wn} x = √(${w*w}/${h*h}) = ${w}/${h} (positivo no 1º quadrante)`]); },
+      medio:()=>{ const [p,q,h]=pick([[3,4,5],[4,3,5],[5,12,13],[12,5,13],[8,15,17],[15,8,17],[7,24,25]]);
+        return mkFrac(`Se sen x = ${p}/${h} e cos x = ${q}/${h}, quanto vale tg x?`, p, q, ['tg x = sen x ÷ cos x', `(${p}/${h}) ÷ (${q}/${h}) = ${p}/${q}`]); },
+      dificil:()=>{ const [p,q,h]=pick([[3,4,5],[4,3,5],[5,12,13],[12,5,13],[8,15,17],[7,24,25]]);
+        return mkFrac(`Se sen x = ${p}/${h} e cos x = ${q}/${h}, quanto vale sen 2x?`, 2*p*q, h*h, ['sen 2x = 2 · sen x · cos x', `2 × ${p}/${h} × ${q}/${h} = ${2*p*q}/${h*h}`]); },
+    }
+  },
+  {
+    id:'leis', name:'Leis dos senos e cossenos', sym:'△',
+    learn:`<p>Pitágoras e SOH-CAH-TOA só funcionam no triângulo retângulo. Pra <b>qualquer</b> triângulo, usamos estas duas leis. Os lados são a, b, c e os ângulos opostos a eles são A, B, C.</p>
+    <div class="section-title">Lei dos senos</div>
+    <div class="example-box mono" style="margin-top:8px">a / sen A = b / sen B = c / sen C = 2R</div>
+    <p>Use quando conhece <b>dois ângulos e um lado</b>. R é o raio da circunferência que passa pelos três vértices.</p>
+    <div class="section-title">Lei dos cossenos</div>
+    <div class="example-box mono" style="margin-top:8px">a² = b² + c² − 2·b·c·cos A</div>
+    <p>Use quando conhece <b>dois lados e o ângulo entre eles</b>. Lembre: cos 60° = 1/2 e cos 120° = −1/2.</p>`,
+    examples:[
+      {title:'Exemplo 1 (lei dos senos)', text:'a = 5 oposto a 30°, B = 90° → b = 10', steps:['a / sen 30° = b / sen 90°', '5 / 0,5 = b / 1 → b = 10']},
+      {title:'Exemplo 2 (lei dos cossenos, 60°)', text:'b = 3, c = 8, A = 60° → a = 7', steps:['a² = 9 + 64 − 2 × 3 × 8 × 1/2', 'a² = 73 − 24 = 49 → a = 7']},
+      {title:'Exemplo 3 (lei dos cossenos, 120°)', text:'b = 3, c = 5, A = 120° → a = 7', steps:['cos 120° = −1/2, então o "−" vira "+"', 'a² = 9 + 25 + 15 = 49 → a = 7']},
+    ],
+    gen:{
+      facil:()=>{ const a=randInt(2,20);
+        if(Math.random()<0.5) return mkSingle(`Num triângulo, o lado a mede ${a} cm e o ângulo oposto a ele mede 30°. O ângulo B mede 90°. Quanto mede o lado b (em cm)?`, 2*a, ['Lei dos senos: a / sen A = b / sen B', `${a} / 0,5 = b / 1`, `b = ${2*a} cm`]);
+        return mkSingle(`Num triângulo, o lado a mede ${a} cm e o ângulo oposto a ele mede 30°. Qual é o raio R da circunferência circunscrita (em cm)?`, a, ['Lei dos senos: a / sen A = 2R', `${a} / 0,5 = 2R → 2R = ${2*a}`, `R = ${a} cm`]); },
+      medio:()=>{ const [b,c,a]=pick([[3,8,7],[5,8,7],[7,15,13],[8,15,13],[5,21,19],[16,21,19],[6,16,14],[10,16,14]]);
+        return mkSingle(`Num triângulo, dois lados medem ${b} cm e ${c} cm e o ângulo entre eles é 60°. Quanto mede o terceiro lado (em cm)?`, a, ['Lei dos cossenos: a² = b² + c² − 2bc · cos 60°', `a² = ${b*b} + ${c*c} − 2 × ${b} × ${c} × 1/2 = ${b*b+c*c} − ${b*c}`, `a² = ${a*a} → a = ${a} cm`]); },
+      dificil:()=>{ const [b,c,a]=pick([[3,5,7],[7,8,13],[5,16,19],[6,10,14],[9,15,21]]);
+        return mkSingle(`Num triângulo, dois lados medem ${b} cm e ${c} cm e o ângulo entre eles é 120°. Quanto mede o terceiro lado (em cm)?`, a, ['Lei dos cossenos com cos 120° = −1/2: a² = b² + c² + bc', `a² = ${b*b} + ${c*c} + ${b*c} = ${a*a}`, `a = ${a} cm`]); },
+    }
+  },
+  /* =================== ENSINO MÉDIO — Estatística e Probabilidade =================== */
+  {
+    id:'combinatoria', name:'Análise combinatória', sym:'n!',
+    learn:`<p>A análise combinatória conta <b>quantas possibilidades</b> existem, sem precisar listar uma por uma.</p>
+    <div class="section-title">Princípio multiplicativo</div>
+    <p>Se uma escolha tem m opções e outra tem n opções, juntas elas têm <b>m × n</b> possibilidades. 3 camisas e 4 calças = 12 roupas diferentes.</p>
+    <div class="section-title">Fatorial</div>
+    <div class="example-box mono" style="margin-top:8px">n! = n × (n − 1) × … × 2 × 1      (0! = 1)</div>
+    <div class="section-title">A ordem importa?</div>
+    <ol style="margin:0 0 10px; padding-left:20px; line-height:1.7;">
+      <li><b>Permutação</b> (organizar todos): Pₙ = n! — ex.: anagramas.</li>
+      <li><b>Arranjo</b> (escolher p e a ordem importa): A = n! / (n − p)! — ex.: pódio, senha.</li>
+      <li><b>Combinação</b> (escolher p e a ordem <b>não</b> importa): C = n! / [p! (n − p)!] — ex.: comissão, grupo.</li>
+    </ol>`,
+    examples:[
+      {title:'Exemplo 1 (princípio multiplicativo)', text:'3 camisas × 4 calças = 12', steps:['Para cada camisa há 4 calças: 3 × 4 = 12']},
+      {title:'Exemplo 2 (anagramas)', text:'AMOR → 4! = 24 anagramas', steps:['4 letras diferentes: 4 × 3 × 2 × 1 = 24']},
+      {title:'Exemplo 3 (combinação)', text:'Comissão de 2 entre 5 pessoas → 10', steps:['A ordem não importa: C(5,2) = 5 × 4 ÷ 2 = 10']},
+    ],
+    gen:{
+      facil:()=>{ const m=randInt(2,8), n=randInt(2,7);
+        if(Math.random()<0.5) return mkSingle(`Uma lanchonete tem ${m} tipos de sanduíche e ${n} tipos de suco. De quantas formas dá pra montar um combo (1 sanduíche + 1 suco)?`, m*n, ['Princípio multiplicativo: multiplique as opções.', `${m} × ${n} = ${m*n}`]);
+        const k=randInt(2,4); return mkSingle(`Você tem ${m} camisas, ${n} calças e ${k} pares de tênis. Quantas roupas diferentes dá pra montar?`, m*n*k, ['Princípio multiplicativo', `${m} × ${n} × ${k} = ${m*n*k}`]); },
+      medio:()=>{ const w=pick(['SOL','AMOR','GATO','LIVRO','PRATO','CINEMA','BRASIL']), n=w.length, f=[...Array(n).keys()].reduce((a,i)=>a*(i+1),1);
+        return mkSingle(`Quantos anagramas tem a palavra ${w}?`, f, [`${n} letras, todas diferentes: permutação P = ${n}!`, `${[...Array(n).keys()].map(i=>n-i).join(' × ')} = ${f}`]); },
+      dificil:()=>{
+        if(Math.random()<0.5){ const n=randInt(5,12), p=pick([2,3]), C=p===2?n*(n-1)/2:n*(n-1)*(n-2)/6;
+          return mkSingle(`De um grupo de ${n} pessoas, quantas comissões diferentes de ${p} pessoas podem ser formadas?`, C, ['A ordem não importa: é combinação.', `C(${n},${p}) = ${p===2?`${n} × ${n-1} ÷ 2`:`${n} × ${n-1} × ${n-2} ÷ 6`}`, `= ${C}`]); }
+        const n=randInt(5,12), A=n*(n-1)*(n-2);
+        return mkSingle(`Numa corrida com ${n} atletas, de quantas formas diferentes pode ficar o pódio (1º, 2º e 3º lugares)?`, A, ['A ordem importa: é arranjo.', `${n} opções pro 1º × ${n-1} pro 2º × ${n-2} pro 3º`, `= ${A}`]); },
+    }
+  },
+  {
+    id:'probabilidade', name:'Probabilidade', sym:'P(A)',
+    learn:`<p>Probabilidade mede a <b>chance</b> de algo acontecer. Vai de 0 (impossível) a 1 (certeza), ou de 0% a 100%.</p>
+    <div class="example-box mono" style="margin-top:8px">P = casos favoráveis ÷ casos possíveis</div>
+    <ol style="margin:0 0 10px; padding-left:20px; line-height:1.7;">
+      <li><b>Complementar:</b> P(não acontecer) = 1 − P(acontecer).</li>
+      <li><b>"E" (eventos independentes):</b> multiplique as probabilidades.</li>
+      <li><b>"OU" (sem nada em comum):</b> some as probabilidades.</li>
+    </ol>
+    <p><b>Dois dados:</b> são 6 × 6 = <b>36</b> resultados possíveis. A soma mais comum é 7 (6 jeitos).</p>`,
+    examples:[
+      {title:'Exemplo 1 (dado)', text:'Sair número par → 3/6 = 1/2', steps:['Pares: 2, 4, 6 → 3 casos', 'P = 3/6 = 1/2 = 50%']},
+      {title:'Exemplo 2 (urna)', text:'3 bolas vermelhas e 5 azuis → P(vermelha) = 3/8', steps:['Total: 3 + 5 = 8 bolas', 'P = 3/8']},
+      {title:'Exemplo 3 (dois dados)', text:'Soma 5 → 4/36 = 1/9', steps:['(1,4), (2,3), (3,2), (4,1) → 4 casos', 'P = 4/36 = 1/9']},
+    ],
+    gen:{
+      facil:()=>{ const opts=[['um número par',[2,4,6]],['um número ímpar',[1,3,5]],['um múltiplo de 3',[3,6]],['um número maior que 4',[5,6]],['um número menor que 3',[1,2]],['um número primo',[2,3,5]],['o número 6',[6]],['um número maior que 1',[2,3,4,5,6]]];
+        const [t,list]=pick(opts);
+        return mkFrac(`Ao jogar um dado comum, qual é a probabilidade de sair ${t}?`, list.length, 6, [`Casos favoráveis: ${list.join(', ')} → ${list.length}`, `P = ${list.length}/6${fracStr(list.length,6)!==list.length+'/6'?` = ${fracStr(list.length,6)}`:''}`]); },
+      medio:()=>{ const r=randInt(1,8), a=randInt(1,8), v=randInt(1,8), tot=r+a+v, [nome,k]=pick([['vermelha',r],['azul',a],['verde',v]]);
+        return mkFrac(`Uma urna tem ${r} bola${r>1?'s':''} vermelha${r>1?'s':''}, ${a} azu${a>1?'is':'l'} e ${v} verde${v>1?'s':''}. Tirando uma ao acaso, qual é a probabilidade de ela ser ${nome}?`, k, tot, [`Total de bolas: ${r} + ${a} + ${v} = ${tot}`, `P = ${k}/${tot}${fracStr(k,tot)!==k+'/'+tot?` = ${fracStr(k,tot)}`:''}`]); },
+      dificil:()=>{
+        if(Math.random()<0.7){ const s=randInt(3,11), n=6-Math.abs(s-7), pairs=[]; for(let i=1;i<=6;i++){ const j=s-i; if(j>=1&&j<=6) pairs.push(`(${i},${j})`); }
+          return mkFrac(`Jogando dois dados, qual é a probabilidade de a soma dar ${s}?`, n, 36, ['São 6 × 6 = 36 resultados possíveis.', `Soma ${s}: ${pairs.join(', ')} → ${n} casos`, `P = ${n}/36 = ${fracStr(n,36)}`]); }
+        const k=randInt(2,4);
+        return mkFrac(`Jogando uma moeda ${k} vezes, qual é a probabilidade de sair cara em todas?`, 1, Math.pow(2,k), ['Cada jogada: P(cara) = 1/2, e as jogadas são independentes.', `Multiplique: (1/2)<sup>${k}</sup> = 1/${Math.pow(2,k)}`]); },
+    }
+  },
+  {
+    id:'dispersao', name:'Desvio padrão', sym:'σ',
+    learn:`<p>A média diz onde os dados estão "no meio". Mas dois grupos podem ter a mesma média e ser bem diferentes: notas 5, 5, 5 e notas 0, 5, 10 têm média 5! As medidas de <b>dispersão</b> dizem o quanto os dados se <b>espalham</b>.</p>
+    <ol style="margin:0 0 10px; padding-left:20px; line-height:1.7;">
+      <li><b>Amplitude:</b> maior valor − menor valor.</li>
+      <li><b>Variância (σ²):</b> a média dos quadrados das distâncias até a média.</li>
+      <li><b>Desvio padrão (σ):</b> a raiz quadrada da variância.</li>
+    </ol>
+    <div class="section-title">Passo a passo</div>
+    <ol style="margin:0 0 10px; padding-left:20px; line-height:1.7;">
+      <li>Calcule a média.</li>
+      <li>Subtraia a média de cada valor (o desvio).</li>
+      <li>Eleve cada desvio ao quadrado e tire a média deles → variância.</li>
+      <li>Tire a raiz → desvio padrão.</li>
+    </ol>
+    <p>Desvio padrão <b>pequeno</b>: dados parecidos, grupo regular. <b>Grande</b>: dados espalhados.</p>`,
+    examples:[
+      {title:'Exemplo 1 (amplitude)', text:'3, 9, 5, 12 → amplitude 9', steps:['12 − 3 = 9']},
+      {title:'Exemplo 2 (variância e desvio)', text:'2, 4, 4, 6 → σ² = 2, σ ≈ 1,41', steps:['Média = 16 ÷ 4 = 4', 'Desvios: −2, 0, 0, 2 → quadrados: 4, 0, 0, 4', 'σ² = 8 ÷ 4 = 2 → σ = √2 ≈ 1,41']},
+    ],
+    gen:{
+      facil:()=>{ const nums=Array.from({length:6},()=>randInt(1,40)), mx=Math.max(...nums), mn=Math.min(...nums);
+        return mkSingle(`Qual é a amplitude dos dados ${nums.join(', ')}?`, mx-mn, ['Amplitude = maior − menor', `${mx} − ${mn} = ${mx-mn}`]); },
+      medio:()=>{ const devs=pick([[-2,-1,0,1,2],[-3,-1,1,3],[-2,0,0,2],[-4,-2,2,4],[-1,-1,1,1],[-3,0,3],[-2,-2,2,2],[-6,0,0,6]]), m=randInt(5,20), nums=shuffle(devs.map(d=>m+d)), v=devs.reduce((a,d)=>a+d*d,0)/devs.length;
+        return mkSingle(`Qual é a variância dos dados ${nums.join(', ')}?`, v, [`Média: ${nums.reduce((a,b)=>a+b,0)} ÷ ${nums.length} = ${m}`, `Desvios ao quadrado: ${devs.map(d=>d*d).join(', ')}`, `Variância = ${devs.reduce((a,d)=>a+d*d,0)} ÷ ${devs.length} = ${fmt(v)}`]); },
+      dificil:()=>{ const devs=pick([[-2,-2,2,2],[-3,-3,3,3],[-1,-1,1,1],[-4,-4,4,4],[-3,-1,1,3],[-2,-1,0,1,2],[-5,-5,5,5]]), m=randInt(6,20), nums=shuffle(devs.map(d=>m+d)), v=devs.reduce((a,d)=>a+d*d,0)/devs.length, s=round2(Math.sqrt(v));
+        return mkSingle(`Qual é o desvio padrão dos dados ${nums.join(', ')}? (se precisar, arredonde para 2 casas)`, s, [`Média = ${m}`, `Desvios ao quadrado: ${devs.map(d=>d*d).join(', ')} → variância = ${fmt(v)}`, `σ = √${fmt(v)} ${Number.isInteger(s)?'=':'≈'} ${fmt(s)}`]); },
+    }
+  },
+  {
+    id:'graficos', name:'Análise de gráficos', sym:'▥',
+    learn:`<p>Gráficos aparecem em quase toda prova do ENEM. Antes de fazer qualquer conta, <b>leia com calma</b>:</p>
+    <ol style="margin:0 0 10px; padding-left:20px; line-height:1.7;">
+      <li><b>Título:</b> do que o gráfico fala?</li>
+      <li><b>Eixos e unidades:</b> é em reais, em mil, em %?</li>
+      <li><b>Legenda:</b> o que cada cor representa?</li>
+    </ol>
+    <div class="section-title">Qual gráfico serve pra quê</div>
+    <ol style="margin:0 0 10px; padding-left:20px; line-height:1.7;">
+      <li><b>Colunas/barras:</b> comparar quantidades.</li>
+      <li><b>Linhas:</b> ver como algo muda com o tempo.</li>
+      <li><b>Setores (pizza):</b> partes de um todo. O círculo inteiro (360°) é 100%, então 1% = 3,6°.</li>
+    </ol>
+    <div class="section-title">Variação percentual</div>
+    <div class="example-box mono" style="margin-top:8px">variação = (novo − antigo) ÷ antigo × 100</div>`,
+    examples:[
+      {title:'Exemplo 1 (ler o gráfico)', text:'Vendas: Jan 40, Fev 60 → aumento de 20', qVisual: barChartSVG('Vendas (unidades)', ['Jan','Fev','Mar'], [40,60,50]), steps:['Leia no topo de cada coluna: Jan = 40, Fev = 60', 'Aumento: 60 − 40 = 20 unidades']},
+      {title:'Exemplo 2 (variação %)', text:'De 40 para 60 → aumento de 50%', steps:['(60 − 40) ÷ 40 = 0,5', '0,5 × 100 = 50%']},
+      {title:'Exemplo 3 (setores)', text:'Setor de 90° → 25% do total', steps:['90° ÷ 360° = 0,25 = 25%']},
+    ],
+    gen:{
+      facil:()=>{ const meses=['Jan','Fev','Mar','Abr','Mai'], vals=meses.map(()=>randInt(2,12)*10), i=randInt(0,4), svg=barChartSVG('Vendas de sorvete (unidades)', meses, vals), q=`Quantos sorvetes foram vendidos em ${['janeiro','fevereiro','março','abril','maio'][i]}?`;
+        return mkSingle(q, vals[i], [`Procure a coluna "${meses[i]}" e leia o número em cima dela: ${vals[i]}`], null, geoQ(q, svg), svg); },
+      medio:()=>{ const meses=['Jan','Fev','Mar','Abr','Mai'], vals=meses.map(()=>randInt(2,12)*10), svg=barChartSVG('Vendas de sorvete (unidades)', meses, vals);
+        if(Math.random()<0.5){ const mx=Math.max(...vals), mn=Math.min(...vals), q='Qual é a diferença entre o mês que mais vendeu e o que menos vendeu?';
+          return mkSingle(q, mx-mn, [`Maior: ${mx} · Menor: ${mn}`, `${mx} − ${mn} = ${mx-mn}`], null, geoQ(q, svg), svg); }
+        const tot=vals.reduce((a,b)=>a+b,0), q='Quantos sorvetes foram vendidos no total, nos 5 meses?';
+        return mkSingle(q, tot, [`Some todas as colunas: ${vals.join(' + ')}`, `= ${tot}`], null, geoQ(q, svg), svg); },
+      dificil:()=>{
+        if(Math.random()<0.3){ const p=pick([10,15,20,25,30,40,45,50]), ang=p*3.6, q=`Num gráfico de setores (pizza), uma fatia tem ${fmt(ang)}°. Que porcentagem do total ela representa?`;
+          return mkSingle(q, p, ['O círculo todo tem 360° = 100%.', `${fmt(ang)} ÷ 360 = ${fmt(p/100)}`, `= ${p}%`]); }
+        let v1, p; do{ v1=pick([20,40,50,60,80,100]); p=pick([10,20,25,50,75]); }while((v1*p)%100);
+        const v2=v1*(1+p/100), meses=['Jan','Fev','Mar','Abr'], j=randInt(0,2), vals=meses.map(()=>randInt(2,12)*10); vals[j]=v1; vals[j+1]=v2;
+        const svg=barChartSVG('Clientes atendidos', meses, vals), q=`Qual foi o aumento percentual de clientes de ${meses[j]} para ${meses[j+1]}?`;
+        return mkSingle(q, p, [`${meses[j]} = ${v1} · ${meses[j+1]} = ${v2}`, `(${v2} − ${v1}) ÷ ${v1} = ${v2-v1} ÷ ${v1} = ${fmt(p/100)}`, `= ${p}%`], null, geoQ(q, svg), svg); },
+    }
+  },
+  /* =================== ENSINO MÉDIO — Matemática Financeira =================== */
+  {
+    id:'juros', name:'Juros simples e compostos', sym:'J',
+    learn:`<p><b>Juros</b> são o "aluguel" do dinheiro: quem empresta recebe a mais, quem pega emprestado paga a mais. Os nomes: <b>C</b> = capital (valor inicial), <b>i</b> = taxa, <b>t</b> = tempo, <b>J</b> = juros e <b>M</b> = montante (total no fim).</p>
+    <div class="section-title">Juros simples</div>
+    <p>Os juros são calculados <b>sempre sobre o valor inicial</b>, e são iguais todo mês.</p>
+    <div class="example-box mono" style="margin-top:8px">J = C · i · t      M = C + J</div>
+    <div class="section-title">Juros compostos ("juros sobre juros")</div>
+    <p>Cada mês, os juros entram no valor e o mês seguinte rende em cima de tudo. É assim que funcionam a poupança e o cartão de crédito.</p>
+    <div class="example-box mono" style="margin-top:8px">M = C · (1 + i)ᵗ</div>
+    <p><b>Atenção:</b> a taxa e o tempo precisam estar na mesma unidade (ao mês com meses, ao ano com anos), e a taxa entra como decimal: 5% = 0,05.</p>`,
+    examples:[
+      {title:'Exemplo 1 (simples)', text:'R$ 1.000 a 2% ao mês por 5 meses → J = R$ 100', steps:['J = 1000 × 0,02 × 5', 'J = R$ 100']},
+      {title:'Exemplo 2 (composto)', text:'R$ 1.000 a 10% ao mês por 2 meses → M = R$ 1.210', steps:['M = 1000 × 1,1²', '= 1000 × 1,21 = R$ 1.210']},
+      {title:'Exemplo 3 (comparando)', text:'No simples, seriam R$ 1.200', steps:['J = 1000 × 0,1 × 2 = 200 → M = 1.200', 'O composto rende mais: R$ 10 a mais.']},
+    ],
+    gen:{
+      facil:()=>{ const C=randInt(2,30)*100, i=randInt(1,10), t=randInt(2,12), J=C*i*t/100;
+        return mkSingle(`Quanto rende (em juros) um capital de ${reais(C)} aplicado a juros simples de ${i}% ao mês durante ${t} meses?`, J, ['J = C · i · t', `J = ${C} × ${fmt(i/100)} × ${t}`, `J = ${reais(J)}`]); },
+      medio:()=>{ const C=randInt(2,30)*100, i=randInt(1,10), t=randInt(2,12), J=C*i*t/100;
+        return mkSingle(`Qual é o montante (em reais) de ${reais(C)} aplicados a juros simples de ${i}% ao mês durante ${t} meses?`, C+J, [`J = ${C} × ${fmt(i/100)} × ${t} = ${fmt(J)}`, `M = C + J = ${C} + ${fmt(J)} = ${reais(C+J)}`]); },
+      dificil:()=>{ const C=randInt(1,20)*100, i=pick([5,10,20]), t=pick([2,3]), f=Math.pow(1+i/100,t), M=round2(C*f);
+        return mkSingle(`Qual é o montante (em reais) de ${reais(C)} aplicados a juros compostos de ${i}% ao mês durante ${t} meses?`, M, ['M = C · (1 + i)ᵗ', `M = ${C} × ${fmt(1+i/100)}<sup>${t}</sup> = ${C} × ${fmt(round2(f*10000)/10000)}`, `M = ${reais(M)}`]); },
+    }
+  },
+  {
+    id:'descontos', name:'Descontos e aumentos', sym:'−%',
+    learn:`<p>O jeito mais rápido de calcular descontos e aumentos é usar um <b>fator</b> e fazer uma multiplicação só:</p>
+    <ol style="margin:0 0 10px; padding-left:20px; line-height:1.7;">
+      <li><b>Desconto de d%:</b> multiplique por (1 − d). 20% de desconto → × 0,80.</li>
+      <li><b>Aumento de a%:</b> multiplique por (1 + a). 15% de aumento → × 1,15.</li>
+    </ol>
+    <div class="section-title">Descontos sucessivos — a pegadinha</div>
+    <p>Descontos seguidos <b>não se somam</b>! Cada desconto é aplicado sobre o preço que já foi descontado. Multiplique os fatores:</p>
+    <div class="example-box mono" style="margin-top:8px">10% e depois 20%: 0,90 × 0,80 = 0,72</div>
+    <p>Pagar 72% do preço = desconto total de <b>28%</b>, e não de 30%.</p>`,
+    examples:[
+      {title:'Exemplo 1', text:'R$ 250 com 20% de desconto → R$ 200', steps:['Fator: 1 − 0,20 = 0,80', '250 × 0,80 = R$ 200']},
+      {title:'Exemplo 2 (sucessivos)', text:'R$ 200 com 10% e depois 20% → R$ 144', steps:['200 × 0,90 = 180', '180 × 0,80 = R$ 144']},
+      {title:'Exemplo 3 (desconto único equivalente)', text:'10% + 20% sucessivos = 28%', steps:['0,90 × 0,80 = 0,72', '1 − 0,72 = 0,28 = 28%']},
+    ],
+    gen:{
+      facil:()=>{ const P=randInt(2,50)*10, d=pick([10,20,25,30,40,50]), V=round2(P*(1-d/100));
+        return mkSingle(`Um produto de ${reais(P)} está com ${d}% de desconto. Quanto ele custa agora (em reais)?`, V, [`Fator: 1 − ${fmt(d/100)} = ${fmt(1-d/100)}`, `${P} × ${fmt(1-d/100)} = ${reais(V)}`]); },
+      medio:()=>{ const P=randInt(2,50)*20, d1=pick([10,20,25,50]), d2=pick([10,20,25,50]), V=round2(P*(1-d1/100)*(1-d2/100));
+        return mkSingle(`Um produto de ${reais(P)} teve um desconto de ${d1}% e, depois, mais ${d2}% sobre o novo preço. Quanto custa agora (em reais)?`, V, [`Depois do 1º desconto: ${P} × ${fmt(1-d1/100)} = ${fmt(round2(P*(1-d1/100)))}`, `Depois do 2º: ${fmt(round2(P*(1-d1/100)))} × ${fmt(1-d2/100)} = ${reais(V)}`]); },
+      dificil:()=>{ const d1=pick([10,20,25,30,50]), d2=pick([10,20,25,40,50]), f=(1-d1/100)*(1-d2/100), D=round2((1-f)*100);
+        return mkSingle(`Dois descontos sucessivos de ${d1}% e ${d2}% equivalem a um único desconto de quantos por cento?`, D, [`Multiplique os fatores: ${fmt(1-d1/100)} × ${fmt(1-d2/100)} = ${fmt(round2(f*10000)/10000)}`, `Você paga ${fmt(round2(f*100))}% do preço`, `Desconto único: 100% − ${fmt(round2(f*100))}% = ${fmt(D)}%`]); },
+    }
+  },
+  {
+    id:'inflacao', name:'Taxas de inflação', sym:'↑%',
+    learn:`<p><b>Inflação</b> é o aumento geral dos preços. Se a inflação do ano foi 5%, o que custava R$ 100 passa a custar R$ 105: seu dinheiro compra menos.</p>
+    <div class="section-title">Inflação acumulada</div>
+    <p>Taxas de meses (ou anos) seguidos <b>não se somam</b>, se multiplicam, igual aos juros compostos:</p>
+    <div class="example-box mono" style="margin-top:8px">acumulada = (1 + i₁) · (1 + i₂) − 1</div>
+    <p>10% num ano e 10% no outro = 1,1 × 1,1 − 1 = 0,21 = <b>21%</b> (e não 20%).</p>
+    <div class="section-title">Ganho real</div>
+    <p>Se um investimento rendeu 10% mas a inflação foi 4%, você não ganhou 6%. O <b>ganho real</b> desconta a inflação dividindo os fatores:</p>
+    <div class="example-box mono" style="margin-top:8px">1 + real = (1 + rendimento) ÷ (1 + inflação)</div>`,
+    examples:[
+      {title:'Exemplo 1 (preço corrigido)', text:'R$ 80 com inflação de 5% → R$ 84', steps:['80 × 1,05 = R$ 84']},
+      {title:'Exemplo 2 (acumulada)', text:'5% e depois 10% → 15,5%', steps:['1,05 × 1,10 = 1,155', '1,155 − 1 = 0,155 = 15,5%']},
+      {title:'Exemplo 3 (ganho real)', text:'Rendeu 32%, inflação 10% → real 20%', steps:['1,32 ÷ 1,10 = 1,20', 'Ganho real: 20%']},
+    ],
+    gen:{
+      facil:()=>{ const P=randInt(2,40)*10, i=randInt(2,12), V=round2(P*(1+i/100));
+        return mkSingle(`Um produto custava ${reais(P)}. Com uma inflação de ${i}% no ano, quanto ele passa a custar (em reais)?`, V, [`Fator: 1 + ${fmt(i/100)} = ${fmt(1+i/100)}`, `${P} × ${fmt(1+i/100)} = ${reais(V)}`]); },
+      medio:()=>{ const a=pick([2,4,5,10,20]), b=pick([5,10,20,50]), ac=round2(((1+a/100)*(1+b/100)-1)*100);
+        return mkSingle(`A inflação foi de ${a}% num ano e de ${b}% no ano seguinte. Qual foi a inflação acumulada nos dois anos (em %)?`, ac, ['Multiplique os fatores (não some!)', `${fmt(1+a/100)} × ${fmt(1+b/100)} = ${fmt(round2((1+a/100)*(1+b/100)*10000)/10000)}`, `Acumulada: ${fmt(ac)}%`]); },
+      dificil:()=>{ const inf=pick([10,20,25,50]), r=pick([4,5,10,20]), ap=round2(((1+inf/100)*(1+r/100)-1)*100);
+        return mkSingle(`Um investimento rendeu ${fmt(ap)}% num ano em que a inflação foi de ${inf}%. Qual foi o ganho real (em %)?`, r, ['1 + real = (1 + rendimento) ÷ (1 + inflação)', `${fmt(1+ap/100)} ÷ ${fmt(1+inf/100)} = ${fmt(1+r/100)}`, `Ganho real: ${r}%`]); },
+    }
+  },
+  /* =================== ENSINO MÉDIO — Matrizes e Sistemas =================== */
+  {
+    id:'matrizes', name:'Matrizes', sym:'[ ]',
+    learn:`<p>Uma <b>matriz</b> é uma tabela de números organizada em <b>linhas</b> (deitadas) e <b>colunas</b> (em pé). Uma matriz 2×3 tem 2 linhas e 3 colunas.</p>
+    <p>O elemento <b>aᵢⱼ</b> fica na <b>linha i</b> e na <b>coluna j</b>: a₂₁ é o da 2ª linha, 1ª coluna.</p>
+    <div class="section-title">Operações</div>
+    <ol style="margin:0 0 10px; padding-left:20px; line-height:1.7;">
+      <li><b>Soma:</b> some elemento com elemento na mesma posição (as matrizes precisam ter o mesmo tamanho).</li>
+      <li><b>Número × matriz:</b> multiplique todos os elementos pelo número.</li>
+      <li><b>Produto A·B:</b> só existe se o nº de colunas de A = nº de linhas de B. O elemento cᵢⱼ é a <b>linha i de A "vezes" a coluna j de B</b>: multiplique termo a termo e some.</li>
+    </ol>
+    <p><b>Matriz identidade (I):</b> 1 na diagonal e 0 no resto. A · I = A.</p>`,
+    examples:[
+      {title:'Exemplo 1 (localizar)', text:'Na matriz abaixo, a₂₃ = 6', qVisual: matHTML([[1,2,3],[4,5,6]], 'A'), steps:['Linha 2: 4, 5, 6', 'Coluna 3 dessa linha: 6']},
+      {title:'Exemplo 2 (produto)', text:'c₁₁ = 1·5 + 2·7 = 19', qVisual: `<div class="mat-row">${matHTML([[1,2],[3,4]], 'A')}${matHTML([[5,6],[7,8]], 'B')}</div>`, steps:['Linha 1 de A: (1, 2) · Coluna 1 de B: (5, 7)', '1×5 + 2×7 = 5 + 14 = 19']},
+    ],
+    gen:{
+      facil:()=>{ const r=pick([2,3]), c=3, M=Array.from({length:r},()=>Array.from({length:c},()=>randInt(-9,9))), i=randInt(1,r), j=randInt(1,c), q=`Na matriz A, qual é o elemento a${SUBD[i]}${SUBD[j]}?`;
+        return mkSingle(q, M[i-1][j-1], [`Vá até a linha ${i}: ${M[i-1].map(nm).join(', ')}`, `Pegue a coluna ${j}: ${nm(M[i-1][j-1])}`], null, matQ(q, [matHTML(M,'A')]), matHTML(M,'A')); },
+      medio:()=>{ const A=[[randInt(-6,9),randInt(-6,9)],[randInt(-6,9),randInt(-6,9)]], B=[[randInt(-6,9),randInt(-6,9)],[randInt(-6,9),randInt(-6,9)]], k=pick([1,2,3]), i=randInt(1,2), j=randInt(1,2), v=k*A[i-1][j-1]+B[i-1][j-1];
+        const q=`Sendo C = ${k===1?'':k}A + B, qual é o elemento c${SUBD[i]}${SUBD[j]}?`;
+        return mkSingle(q, v, [`c${SUBD[i]}${SUBD[j]} = ${k===1?'':k+' × '}a${SUBD[i]}${SUBD[j]} + b${SUBD[i]}${SUBD[j]}`, `= ${k===1?'':k+' × '}${np(A[i-1][j-1])} + ${np(B[i-1][j-1])} = ${nm(v)}`], null, matQ(q, [matHTML(A,'A'), matHTML(B,'B')])); },
+      dificil:()=>{ const A=[[randInt(-3,5),randInt(-3,5)],[randInt(-3,5),randInt(-3,5)]], B=[[randInt(-3,5),randInt(-3,5)],[randInt(-3,5),randInt(-3,5)]], i=randInt(1,2), j=randInt(1,2);
+        const v=A[i-1][0]*B[0][j-1]+A[i-1][1]*B[1][j-1], q=`Sendo C = A · B, qual é o elemento c${SUBD[i]}${SUBD[j]}?`;
+        return mkSingle(q, v, [`Linha ${i} de A: (${A[i-1].map(nm).join(', ')}) · Coluna ${j} de B: (${nm(B[0][j-1])}, ${nm(B[1][j-1])})`, `${np(A[i-1][0])}×${np(B[0][j-1])} + ${np(A[i-1][1])}×${np(B[1][j-1])} = ${nm(A[i-1][0]*B[0][j-1])} + ${np(A[i-1][1]*B[1][j-1])}`, `= ${nm(v)}`], null, matQ(q, [matHTML(A,'A'), matHTML(B,'B')])); },
+    }
+  },
+  {
+    id:'determinantes', name:'Determinantes', sym:'det',
+    learn:`<p>O <b>determinante</b> é um número calculado a partir de uma matriz <b>quadrada</b> (mesmo número de linhas e colunas). Ele diz, por exemplo, se a matriz tem inversa (só tem se det ≠ 0) e se um sistema linear tem solução única.</p>
+    <div class="section-title">Matriz 2×2</div>
+    <p>Diagonal principal menos diagonal secundária:</p>
+    <div class="example-box mono" style="margin-top:8px">| a  b |<br>| c  d |  = a·d − b·c</div>
+    <div class="section-title">Matriz 3×3 — Regra de Sarrus</div>
+    <ol style="margin:0 0 10px; padding-left:20px; line-height:1.7;">
+      <li>Repita as duas primeiras colunas à direita da matriz.</li>
+      <li>Multiplique as 3 diagonais que descem pra direita e some.</li>
+      <li>Multiplique as 3 diagonais que sobem pra direita e some.</li>
+      <li>det = (1ª soma) − (2ª soma).</li>
+    </ol>`,
+    examples:[
+      {title:'Exemplo 1 (2×2)', text:'det = 3·4 − 1·2 = 10', qVisual: matHTML([[3,1],[2,4]]), steps:['Diagonal principal: 3 × 4 = 12', 'Diagonal secundária: 1 × 2 = 2', 'det = 12 − 2 = 10']},
+      {title:'Exemplo 2 (Sarrus)', text:'det = −17', qVisual: matHTML([[1,2,0],[3,1,2],[0,1,3]]), steps:['Descendo: 1·1·3 + 2·2·0 + 0·3·1 = 3', 'Subindo: 0·1·0 + 1·2·1 + 2·3·3 = 20', 'det = 3 − 20 = −17']},
+    ],
+    gen:{
+      facil:()=>{ const M=[[randInt(1,9),randInt(1,9)],[randInt(1,9),randInt(1,9)]], d=M[0][0]*M[1][1]-M[0][1]*M[1][0], q='Qual é o determinante da matriz?';
+        return mkSingle(q, d, [`Diagonal principal: ${M[0][0]} × ${M[1][1]} = ${M[0][0]*M[1][1]}`, `Diagonal secundária: ${M[0][1]} × ${M[1][0]} = ${M[0][1]*M[1][0]}`, `det = ${M[0][0]*M[1][1]} − ${M[0][1]*M[1][0]} = ${nm(d)}`], null, matQ(q, [matHTML(M)]), matHTML(M)); },
+      medio:()=>{ const M=[[randInt(-8,9),randInt(-8,9)],[randInt(-8,9),randInt(-8,9)]], p=M[0][0]*M[1][1], s=M[0][1]*M[1][0], d=p-s, q='Qual é o determinante da matriz?';
+        return mkSingle(q, d, [`Diagonal principal: ${np(M[0][0])} × ${np(M[1][1])} = ${nm(p)}`, `Diagonal secundária: ${np(M[0][1])} × ${np(M[1][0])} = ${nm(s)}`, `det = ${nm(p)} − ${np(s)} = ${nm(d)}`], null, matQ(q, [matHTML(M)]), matHTML(M)); },
+      dificil:()=>{ const M=Array.from({length:3},()=>Array.from({length:3},()=>randInt(-3,4)));
+        const [[a,b,c],[d,e,f],[g,h,i]]=M, down=a*e*i+b*f*g+c*d*h, up=c*e*g+a*f*h+b*d*i, det=down-up, q='Qual é o determinante da matriz 3×3? (use a regra de Sarrus)';
+        return mkSingle(q, det, [`Descendo: ${np(a)}·${np(e)}·${np(i)} + ${np(b)}·${np(f)}·${np(g)} + ${np(c)}·${np(d)}·${np(h)} = ${nm(down)}`, `Subindo: ${np(c)}·${np(e)}·${np(g)} + ${np(a)}·${np(f)}·${np(h)} + ${np(b)}·${np(d)}·${np(i)} = ${nm(up)}`, `det = ${nm(down)} − ${np(up)} = ${nm(det)}`], null, matQ(q, [matHTML(M)]), matHTML(M)); },
+    }
+  },
 ];
+
+/* ordem dos assuntos no app (Trilha, Aprender, Exercícios...): a ordem em que aparecem na escola */
+const SUBJECT_ORDER = ['adicao','subtracao','multiplicacao','divisao','dinheiro','fracoes','decimais','porcentagem','geometria',
+  'mmcmdc','potenciacao','expressoes','estatistica','regra3','eq1','sistemas','eq2','func1grau',
+  // Ensino Médio
+  'conjuntos','funcquad','modular','exponencial','logaritmo','pa','pg','juros','descontos','inflacao','trigret','espacial',
+  'ciclo','functrig','identidades','leis','combinatoria','probabilidade','graficos','dispersao','matrizes','determinantes','analitica'];
+SUBJECTS.sort((a,b)=>{ const ia = SUBJECT_ORDER.indexOf(a.id), ib = SUBJECT_ORDER.indexOf(b.id); return (ia<0?99:ia) - (ib<0?99:ib); });
+
+/* ano escolar em que cada assunto costuma aparecer, segundo a BNCC (referência aproximada) */
+const BNCC_ANO = {adicao:'1º ao 5º ano', subtracao:'1º ao 5º ano', multiplicacao:'2º ao 5º ano', divisao:'3º ao 5º ano',
+  fracoes:'4º ao 6º ano', decimais:'4º ao 6º ano', porcentagem:'5º ao 7º ano', regra3:'7º ano', potenciacao:'6º ao 9º ano',
+  expressoes:'6º ano', eq1:'7º ano', eq2:'9º ano', sistemas:'8º ano', func1grau:'9º ano e 1º do EM', mmcmdc:'6º ano',
+  geometria:'5º ao 7º ano', estatistica:'6º ao 8º ano', dinheiro:'2º ao 5º ano',
+  conjuntos:'1º do EM', funcquad:'1º do EM', modular:'1º do EM', exponencial:'1º do EM', logaritmo:'1º do EM',
+  functrig:'2º do EM', pa:'1º do EM', pg:'1º do EM', espacial:'2º do EM', analitica:'3º do EM', trigret:'9º ano e 1º do EM',
+  ciclo:'2º do EM', identidades:'2º do EM', leis:'2º do EM', combinatoria:'2º do EM', probabilidade:'2º do EM',
+  dispersao:'3º do EM', graficos:'6º ano ao EM', juros:'1º do EM', descontos:'1º do EM', inflacao:'1º do EM',
+  matrizes:'2º do EM', determinantes:'2º do EM'};
+
+/* como os assuntos aparecem agrupados em Aprender e Exercícios */
+const SUBJECT_AREAS = [
+  {name:'Álgebra e Funções', ids:['conjuntos','func1grau','funcquad','modular','exponencial','logaritmo','functrig']},
+  {name:'Progressões e Sequências', ids:['pa','pg']},
+  {name:'Geometria', ids:['geometria','espacial','analitica']},
+  {name:'Trigonometria', ids:['trigret','ciclo','identidades','leis']},
+  {name:'Estatística e Probabilidade', ids:['combinatoria','probabilidade','estatistica','dispersao','graficos']},
+  {name:'Matemática Financeira', ids:['porcentagem','juros','descontos','inflacao']},
+  {name:'Matrizes e Sistemas', ids:['matrizes','determinantes','sistemas']},
+];
+/* lista de assuntos com títulos: primeiro o Fundamental (o que não está em nenhuma área), depois as áreas do Ensino Médio */
+function subjectListWithAreas(container, makeRow){
+  const inArea = new Set(SUBJECT_AREAS.flatMap(a=>a.ids));
+  const idx = id=> SUBJECTS.findIndex(s=>s.id===id);
+  const sec = (title, sub)=> container.appendChild(h(`<div class="subj-area"><span>${title}</span>${sub?`<small>${sub}</small>`:''}</div>`));
+  container.appendChild(h(`<div class="subj-level">📘 Ensino Fundamental</div>`));
+  SUBJECTS.filter(s=>!inArea.has(s.id)).forEach(s=> container.appendChild(makeRow(s, idx(s.id))));
+  container.appendChild(h(`<div class="subj-level">🎓 Ensino Médio</div>`));
+  SUBJECT_AREAS.forEach(a=>{
+    const list = a.ids.filter(id=>idx(id)>=0);
+    sec(a.name, `${list.length} assunto${list.length===1?'':'s'}`);
+    list.forEach(id=> container.appendChild(makeRow(SUBJECTS[idx(id)], idx(id))));
+  });
+}
 
 function fmtSigned(n){ return n>=0? `+ ${n}` : `− ${Math.abs(n)}`; }
 
@@ -1799,13 +2899,22 @@ function snapshotExercise(ex){
   try{ return JSON.parse(JSON.stringify(ex)); }catch(e){ return null; }
 }
 
+/* única forma de somar uma resposta no progresso do assunto (exercícios, trilha, Arena,
+   simulado, revisão de erros...): acertos, data da última prática e últimas 10 respostas */
+function bumpProgress(p, subjectId, correct, difficulty){
+  if(!p[subjectId]) p[subjectId] = {attempted:0, correct:0};
+  const d = p[subjectId];
+  d.attempted++;
+  if(correct) d.correct++;
+  d.last = Date.now(); // usado pela revisão espaçada
+  // últimas 10 respostas (ok + se era difícil), usadas no nível de domínio
+  d.recent = (d.recent || []).concat([{ok:!!correct, h:difficulty==='dificil'}]).slice(-10);
+  return d;
+}
 async function recordAnswer(subjectId, correct, extra){
   extra = extra || {};
   const p = await loadProgress();
-  if(!p[subjectId]) p[subjectId] = {attempted:0, correct:0};
-  p[subjectId].attempted++;
-  if(correct) p[subjectId].correct++;
-  p[subjectId].last = Date.now(); // usado pela revisão espaçada
+  bumpProgress(p, subjectId, correct, extra.difficulty);
   await saveProgress();
   gameOnAnswer(subjectId, correct, extra.difficulty);
 
@@ -1825,31 +2934,72 @@ async function recordAnswer(subjectId, correct, extra){
   if(hist.length > HISTORY_LIMIT) hist.length = HISTORY_LIMIT;
   await saveHistory();
 
-  if(!correct && entry.ex){
-    const errs = await loadErrors();
-    errs.unshift(entry);
-    if(errs.length > ERRORS_LIMIT) errs.length = ERRORS_LIMIT;
-    await saveErrors();
-  }
+  if(!correct && entry.ex) await noteError(entry);
 }
 
-async function resolveError(errorId){
+/* ---------- caderno de erros inteligente (revisão espaçada por questão) ----------
+   Cada erro guarda assunto, dificuldade, quantas vezes foi errado e uma "caixa":
+   caixa 1 = revisar já; acertou na revisão → caixa 2 (volta em 3 dias) → caixa 3 (volta em 7 dias);
+   acertou na caixa 3 → sai do caderno (aprendido). Errou de novo → volta pra caixa 1 (amanhã). */
+const ERROR_BOX_DAYS = [0, 0, 3, 7];
+function errorQuestionKey(e){ return e && e.ex ? `${e.subjectId}|${e.ex.question}|${JSON.stringify(e.ex.answer)}` : ''; }
+function errorIsDue(e, now){ return !e.due || e.due <= (now || Date.now()); }
+async function noteError(entry){
+  const errs = await loadErrors();
+  const key = errorQuestionKey(entry);
+  const i = errs.findIndex(e=>errorQuestionKey(e)===key);
+  if(i >= 0){
+    // mesma questão errada de novo: não duplica, só conta mais um erro e volta pra caixa 1
+    const old = errs.splice(i,1)[0];
+    entry.count = (old.count||1) + 1;
+    entry.firstTs = old.firstTs || old.ts;
+  } else { entry.count = 1; entry.firstTs = entry.ts; }
+  entry.box = 1; entry.due = Date.now();
+  errs.unshift(entry);
+  if(errs.length > ERRORS_LIMIT) errs.length = ERRORS_LIMIT;
+  await saveErrors();
+}
+/* resultado da revisão de um erro. Devolve 'learned' (saiu do caderno), 'up' (subiu de caixa) ou 'again' */
+async function reviewErrorResult(errorId, correct){
   const errs = await loadErrors();
   const idx = errs.findIndex(e=>e.id===errorId);
-  if(idx>=0){ errs.splice(idx,1); await saveErrors(); }
+  if(idx < 0) return correct ? 'learned' : 'again';
+  const e = errs[idx];
+  let res;
+  if(correct){
+    const box = e.box || 1;
+    if(box >= 3){ errs.splice(idx,1); res = 'learned'; const g = loadGame(); g.errLearned = (g.errLearned||0) + 1; saveGame(); }
+    else { e.box = box + 1; e.due = Date.now() + ERROR_BOX_DAYS[e.box]*864e5; res = 'up'; }
+  } else {
+    e.box = 1; e.due = Date.now() + 864e5; e.count = (e.count||1) + 1; e.lastWrong = Date.now(); res = 'again';
+  }
+  await saveErrors();
+  return res;
+}
+/* recomendação: assuntos que mais precisam de treino, somando erros guardados (com peso pelas
+   vezes que a questão foi errada e pela dificuldade) e o % de acerto recente */
+function recommendSubjects(progress, errs, n){
+  const score = {};
+  (errs||[]).forEach(e=>{ score[e.subjectId] = (score[e.subjectId]||0) + (e.count||1) * (e.difficulty==='dificil' ? 1.5 : 1); });
+  Object.entries(progress||{}).forEach(([id,d])=>{
+    if(!d || !d.attempted) return;
+    const rec = d.recent && d.recent.length>=5 ? d.recent.filter(r=>r.ok).length/d.recent.length : d.correct/d.attempted;
+    if(d.attempted >= 3 && rec < .75) score[id] = (score[id]||0) + (1-rec)*6;
+  });
+  return Object.entries(score).filter(([id])=>SUBJECTS.some(s=>s.id===id)).sort((a,b)=>b[1]-a[1]).slice(0, n||3).map(([id])=>id);
 }
 
 /* =========================================================
    Configurações — também separadas por conta
    ========================================================= */
 const SETTINGS_KEY_BASE = 'mathstudy-settings-v1';
-const DEFAULT_SETTINGS = { theme:'dark', sound:true, vibration:true, dailyGoal:10, schoolLevel:null };
+const DEFAULT_SETTINGS = { theme:'dark', sound:true, vibration:true, dailyGoal:10, schoolLevel:null, tts:true, textScale:'normal' };
 /* assuntos "esperados" pra cada nível escolar — cumulativo (médio inclui tudo, fund2 inclui fund1).
    Usado só pra pré-selecionar os assuntos no Treino personalizado, nunca esconde nada: o
    usuário sempre pode marcar/desmarcar qualquer assunto depois. */
 const LEVEL_SUBJECTS = {
-  fund1: ['adicao','subtracao','multiplicacao','divisao'],
-  fund2: ['adicao','subtracao','multiplicacao','divisao','fracoes','decimais','potenciacao','expressoes','regra3','porcentagem','eq1','mmcmdc','geometria','estatistica'],
+  fund1: ['adicao','subtracao','multiplicacao','divisao','dinheiro'],
+  fund2: ['adicao','subtracao','multiplicacao','divisao','fracoes','decimais','potenciacao','expressoes','regra3','porcentagem','eq1','mmcmdc','geometria','estatistica','dinheiro'],
   medio: SUBJECTS.map(s=>s.id),
 };
 let settingsCache = null, settingsCacheUid = null;
@@ -2021,7 +3171,7 @@ function doLogout(){
   if(typeof _toastQueue!=='undefined') _toastQueue.length = 0;
   currentUser = null;
   settingsCache = null; settingsCacheUid = null;
-  applyTheme('dark');
+  applyTheme('dark'); applyTextScale('normal');
   try{ localStorage.removeItem(CURRENT_USER_KEY); }catch(e){}
   boot();
 }
@@ -2084,6 +3234,7 @@ async function exportProgressData(){
     account: currentUser ? currentUser.name : null,
     progress, history, errors, settings,
     game: loadGame(),
+    notes: exportNotes(),
   };
   const safeName = (currentUser && currentUser.name ? currentUser.name : 'progresso').toLowerCase().replace(/[^a-z0-9]+/g,'-');
   const filename = `matematica-show-${safeName}-${new Date().toISOString().slice(0,10)}.json`;
@@ -2157,8 +3308,9 @@ async function importProgressData(file){
   }
   if(data.settings && typeof data.settings === 'object'){
     settingsCache = Object.assign({}, DEFAULT_SETTINGS, data.settings); settingsCacheUid = uid; await saveSettings();
-    applyTheme(settingsCache.theme);
+    applyTheme(settingsCache.theme); applyTextScale(settingsCache.textScale);
   }
+  if(data.notes) importNotes(data.notes);
   if(data.game && typeof data.game === 'object'){
     gameCache = null; gameCacheUid = null;
     try{ localStorage.setItem(`${GAME_KEY_BASE}:${uid}`, JSON.stringify(data.game)); }catch(e){}
@@ -2317,6 +3469,7 @@ function authScreen(mode, users){
     await setCurrentUserId(acc.id);
     await loadSettings();
     applyTheme(settingsCache.theme);
+    applyTextScale(settingsCache.textScale);
     enterApp();
     const st = gameStreakNow();
     queueToast('👋', 'Bem-vindo de volta!', `${acc.name}${st?` · 🔥 ${st} dia${st===1?'':'s'}`:''}`);
@@ -2372,6 +3525,7 @@ function authScreen(mode, users){
     await setCurrentUserId(id);
     await loadSettings();
     applyTheme(settingsCache.theme);
+    applyTextScale(settingsCache.textScale);
     enterApp();
   }
 
@@ -2395,6 +3549,7 @@ async function boot(){
     currentUser = {id: saved.id, name: saved.name};
     await loadSettings();
     applyTheme(settingsCache.theme);
+    applyTextScale(settingsCache.textScale);
     enterApp();
   } else if(users.length){
     renderAuth('login', users);
@@ -2418,6 +3573,7 @@ function go(screen, extra={}){
   Object.assign(state, {screen}, extra);
   pushHistoryState();
   render();
+  try{ const f = app.firstElementChild; if(f && !['lesson','exerciseSession','challengeSession','personalizedSession','reviewErrorsSession','notePage'].includes(screen)) f.classList.add('screen-in'); }catch(e){}
   window.scrollTo(0,0);
 }
 
@@ -2463,6 +3619,7 @@ function sessionInProgress(){
   if(state.screen==='lesson') return !s.finished && !s.failed && (s.asked>1 || s.checked);
   if(['exerciseSession','challengeSession','personalizedSession','reviewErrorsSession'].includes(state.screen))
     return s.index < s.total && (s.index>0 || s.checked);
+  if(state.screen==='examRun') return s.kind==='exam' && !s.submitted;
   return false;
 }
 window.addEventListener('beforeunload', (e)=>{
@@ -2528,11 +3685,12 @@ function topbar(title, showBack, onBack){
 
 /* ---------------- barra de navegação inferior ---------------- */
 const BOTTOM_NAV_ITEMS = [
-  {screen:'home', icon:'⌂', label:'Início', group:['home','achievements','lightning','quizSetup','calculator','help']},
+  {screen:'home', icon:'⌂', label:'Início', group:['home','achievements','calculator','help','certificates','certificate','notebook','notePage','challengeDifficulty','challengeSession','personalizedSetup','personalizedSession','reviewErrorsSession','tabuada','solve','profile','settings','errors','placement','plan']},
   {screen:'path', icon:'★', label:'Trilha', group:['path']},
-  {screen:'content', icon:'∑', label:'Aprender', group:['content','subjectDetail']},
+  {screen:'content', icon:'∑', label:'Aprender', group:['content','subjectDetail','geoLab','cardsDeck']},
   {screen:'exercisesSubjects', icon:'✎', label:'Exercícios', group:['exercisesSubjects','exerciseDifficulty','exerciseSession']},
-  {screen:'progress', icon:'↑', label:'Progresso', group:['progress','report']},
+  {screen:'arena', icon:'⚔', label:'Arena', group:['arena','arenaDaily','examSetup','examResult','lightning','quizSetup','duel']},
+  {screen:'progress', icon:'↑', label:'Progresso', group:['progress','report','history']},
 ];
 function bottomNav(){
   const bar = h(`<div class="bottom-nav"></div>`);
@@ -2566,7 +3724,7 @@ function homeScreen(){
   showStreakNote();
   wrap.appendChild(playerCard());
   wrap.appendChild(pathHero());
-  wrap.appendChild(gameDuo());
+  const duo = gameDuo();
 
   // meta diária de questões — editável direto aqui, sem precisar ir em Configurações
   const goalRow = h(`
@@ -2618,24 +3776,59 @@ function homeScreen(){
 
   // aviso de erros pendentes — banner compacto, só aparece quando existem, logo no topo por ser acionável
   const reviewBanner = h(`
-    <button type="button" class="alert-banner" style="display:none">
+    <button type="button" class="alert-banner danger" style="display:none">
       <span class="sym">🔁</span>
       <span class="txt"><span class="title">Revisar meus erros</span><span class="sub review-count-text">Volte nas questões que você errou e tente de novo.</span></span>
       <span class="chev">›</span>
     </button>`);
-  reviewBanner.onclick = ()=>startReviewErrors();
+  reviewBanner.onclick = ()=> go('errors');
   wrap.appendChild(reviewBanner);
   loadErrors().then(errs=>{
-    if(errs.length>0){
+    // só aparece quando tem erro "vencido" hoje (os outros esperam o dia certo no caderno)
+    const due = errs.filter(e=>errorIsDue(e)).length;
+    if(due>0){
       reviewBanner.style.display = '';
+      reviewBanner.querySelector('.title').textContent = 'Caderno de erros';
       reviewBanner.querySelector('.review-count-text').textContent =
-        errs.length===1 ? 'Você tem 1 questão errada pra revisar.' : `Você tem ${errs.length} questões erradas pra revisar.`;
+        due===1 ? '1 questão errada pra revisar hoje.' : `${due} questões erradas pra revisar hoje.`;
     }
   });
 
+  // Arena: Desafio do Dia (igual pra todo mundo) e plano de estudos até a prova
+  const dk = isoDay(), dailyDone = arenaData().daily[dk];
+  const dailyBanner = h(`<button type="button" class="alert-banner ${dailyDone?'':'purple'}"><span class="sym">📅</span>
+    <span class="txt"><span class="title">Desafio do Dia #${dailyNumber(dk)}</span><span class="sub">${dailyDone ? `Feito: ${dailyDone.marks} ${dailyDone.ok}/${dailyDone.n}` : `${DAILY_N} perguntas, as mesmas pra todo mundo hoje · +${DAILY_BONUS_XP} XP`}</span></span><span class="chev">${dailyDone?'✓':'›'}</span></button>`);
+  dailyBanner.onclick = ()=> startDaily();
+  const pt = planToday(), plan = studyData().plan;
+  let planBanner = null;
+  if(plan){
+    const left = Math.round((new Date(plan.examDate+'T12:00') - new Date(dk+'T12:00'))/864e5);
+    planBanner = h(`<button type="button" class="alert-banner"><span class="sym">🗺️</span><span class="txt"><span class="title">${left>0 ? `Prova em ${left} dia${left===1?'':'s'}` : left===0 ? 'A prova é hoje!' : 'Plano de estudos'}</span>
+      <span class="sub">${pt ? 'Hoje: ' + (pt.subjects.map(id=>(SUBJECTS.find(x=>x.id===id)||{}).name).filter(Boolean).join(' + ') || '') + (pt.exam ? (pt.subjects.length?' + ':'')+'simulado' : '') : 'Ver o plano'}</span></span><span class="chev">›</span></button>`);
+    planBanner.onclick = ()=> go('plan');
+  }
+  // conta nova: sugere o teste de nivelamento; aparelho com o antigo Arena: oferece trazer o progresso
+  let placementCard = null;
+  if(!studyData().placement && totalAnswered() < 5){
+    placementCard = h(`<button type="button" class="alert-banner purple"><span class="sym">🧭</span><span class="txt"><span class="title">Descubra seu nível</span><span class="sub">Teste de nivelamento com 10 perguntas: mostra por onde começar</span></span><span class="chev">›</span></button>`);
+    placementCard.onclick = ()=> startPlacement();
+  }
+  let importCard = null;
+  const arenaOld = arenaV2Pending();
+  if(arenaOld){
+    importCard = h(`<div class="card ar-import"><b>📦 Encontramos progresso do Matemática Show Arena</b><p>${arenaOld.answered} questões e ${arenaOld.xp} XP guardados neste aparelho. Quer juntar tudo nesta conta? (XP, estrelas, simulados, caderno de erros e conquistas)</p>
+      <div class="cta-row"><button type="button" class="btn secondary" data-a="no">Agora não</button><button type="button" class="btn primary" data-a="yes">Trazer meu progresso</button></div></div>`);
+    importCard.querySelector('[data-a=no]').onclick = ()=>{ arenaV2Dismiss(); importCard.remove(); };
+    importCard.querySelector('[data-a=yes]').onclick = async ()=>{
+      const r = await arenaV2Import();
+      if(r){ queueToast('📦', 'Progresso do Arena trazido!', `+${r.xp} XP · ${r.answered} questões`); launchConfetti(120); }
+      render();
+    };
+  }
+
   // revisão espaçada — assuntos que já "venceram" e precisam ser relembrados
   const spacedBanner = h(`
-    <button type="button" class="alert-banner" style="display:none">
+    <button type="button" class="alert-banner purple" style="display:none">
       <span class="sym">🧠</span>
       <span class="txt"><span class="title">Revisão do dia</span><span class="sub spaced-text"></span></span>
       <span class="chev">›</span>
@@ -2651,26 +3844,896 @@ function homeScreen(){
   });
   if(tutorialDone()) setTimeout(()=>{ if(state.screen==='home' && wrap.isConnected) maybeAskBackup(); }, 1500);
 
-  // outras formas de praticar — acesso rápido, compacto
-  wrap.appendChild(h(`<h3 style="font-size:12.5px;text-transform:uppercase;color:var(--ink-soft);font-weight:600;margin:0 20px 10px;letter-spacing:.08em;">Mais formas de praticar</h3>`));
-  const quickGrid = h(`<div class="quick-grid six"></div>`);
-  [
+  // ordem da tela: continuar → pra fazer hoje → jogos rápidos → praticar → ferramentas e progresso
+  const secTitle = t=> h(`<h3 class="home-sec">${t}</h3>`);
+  const tileGrid = items=>{
+    const grid = h(`<div class="quick-grid six"></div>`);
+    items.forEach(item=>{
+      const tile = h(`<button type="button" class="quick-tile ${item.cls}"><span class="sym">${item.sym}</span><span class="label">${item.label}</span></button>`);
+      tile.onclick = ()=> item.screen==='placement' ? startPlacement() : go(item.screen, item.screen==='geoLab' ? {geoBack:'home'} : {});
+      grid.appendChild(tile);
+    });
+    return grid;
+  };
+  // "Pra fazer hoje": avisos (quando existem), meta e missões — appendChild move os blocos já criados pra cá
+  wrap.appendChild(secTitle('Pra fazer hoje'));
+  if(importCard) wrap.appendChild(importCard);
+  if(placementCard) wrap.appendChild(placementCard);
+  wrap.appendChild(dailyBanner);
+  if(planBanner) wrap.appendChild(planBanner);
+  wrap.appendChild(reviewBanner);
+  wrap.appendChild(spacedBanner);
+  wrap.appendChild(goalRow);
+  wrap.appendChild(wrap.querySelector('.missions'));
+  wrap.appendChild(secTitle('Jogos rápidos'));
+  wrap.appendChild(duo);
+  wrap.appendChild(secTitle('Praticar'));
+  wrap.appendChild(tileGrid([
     {sym:'🎯', cls:'tile-train', label:'Treino personalizado', screen:'personalizedSetup'},
     {sym:'🏆', cls:'challenge', label:'Desafios', screen:'challengeDifficulty'},
     {sym:'×', cls:'tabuada', label:'Tabuada', screen:'tabuada'},
+    {sym:'⚔️', cls:'tile-duel', label:'Duelo a dois', screen:'duel'},
     {sym:'?', cls:'solve', label:'Resolver questão', screen:'solve'},
+    {sym:'🔺', cls:'tile-geo', label:'Laboratório de Geometria', screen:'geoLab'},
+    {sym:'📝', cls:'tile-exam', label:'Simulado', screen:'examSetup'},
+    {sym:'🗺️', cls:'tile-plan', label:'Plano de estudos', screen:'plan'},
+    {sym:'🧭', cls:'tile-place', label:'Teste de nivelamento', screen:'placement'},
+  ]));
+  wrap.appendChild(secTitle('Ferramentas e progresso'));
+  wrap.appendChild(tileGrid([
+    {sym:'✏️', cls:'tile-report', label:'Caderno', screen:'notebook'},
     {sym:'#', cls:'tile-calc', label:'Calculadora', screen:'calculator'},
+    {sym:'🕘', cls:'tile-hist', label:'Histórico', screen:'history'},
     {sym:'🏅', cls:'tile-ach', label:'Conquistas', screen:'achievements'},
-  ].forEach(item=>{
-    const tile = h(`<button type="button" class="quick-tile ${item.cls}"><span class="sym">${item.sym}</span><span class="label">${item.label}</span></button>`);
-    tile.onclick = ()=>go(item.screen);
-    quickGrid.appendChild(tile);
-  });
-  wrap.appendChild(quickGrid);
+    {sym:'📜', cls:'tile-cert', label:'Certificados', screen:'certificates'},
+    {sym:'📝', cls:'tile-rep', label:'Relatório semanal', screen:'report'},
+  ]));
 
   wrap.appendChild(h(`<div class="footer-note">Seu professor de matemática digital 📐</div>`));
   // primeiro acesso: tour guiado pelo Pi
   if(!tutorialDone()) setTimeout(()=>{ if(state.screen==='home' && !tutorialDone() && wrap.isConnected) startTour(); }, 700);
+  return wrap;
+}
+
+/* ---------- nível de domínio por assunto ----------
+   Olha as últimas 10 respostas (não o histórico inteiro), pra refletir o que a pessoa sabe hoje. */
+const MASTERY_LEVELS = [
+  {lvl:0, ico:'⚪', name:'Não iniciado', next:'Responda 5 questões pra descobrir seu nível.'},
+  {lvl:1, ico:'🌱', name:'Aprendendo',   next:'Chegue a 60% de acerto nas últimas questões.'},
+  {lvl:2, ico:'📘', name:'Praticando',   next:'Chegue a 80% de acerto nas últimas questões.'},
+  {lvl:3, ico:'⭐', name:'Proficiente',  next:'Acerte 9 das últimas 10, com pelo menos 2 no difícil.'},
+  {lvl:4, ico:'👑', name:'Dominado',     next:'Você domina este assunto! Revise de vez em quando pra não esquecer.'},
+];
+function masteryOf(d){
+  if(!d || !d.attempted) return MASTERY_LEVELS[0];
+  const rec = d.recent || [];
+  const n = rec.length >= 5 ? rec.length : d.attempted;
+  const ok = rec.length >= 5 ? rec.filter(r=>r.ok).length : d.correct;
+  if(n < 5) return MASTERY_LEVELS[1];
+  const acc = ok/n;
+  const hardOk = rec.filter(r=>r.ok && r.h).length;
+  if(rec.length>=10 && acc>=0.9 && hardOk>=2) return MASTERY_LEVELS[4];
+  if(acc>=0.8) return MASTERY_LEVELS[3];
+  if(acc>=0.6) return MASTERY_LEVELS[2];
+  return MASTERY_LEVELS[1];
+}
+/* versão síncrona pras telas que desenham na hora: se o progresso ainda não foi carregado
+   na memória, lê direto do armazenamento (antes aparecia "Não iniciado" pra tudo) */
+function progressSync(){
+  const uid = currentUserId();
+  if(!(progressCache && progressCacheUid===uid)){
+    try{ const raw = localStorage.getItem(`${PROGRESS_KEY_BASE}:${uid}`); progressCache = raw ? JSON.parse(raw) : {}; }catch(e){ progressCache = {}; }
+    progressCacheUid = uid;
+  }
+  return progressCache;
+}
+function masterySync(subjectId){ return masteryOf(progressSync()[subjectId]); }
+function masteryChip(m){ return `<span class="mst-chip mst-${m.lvl}" title="${m.name}">${m.ico} ${m.name}</span>`; }
+
+/* ---------- ouvir a questão (leitura em voz alta) ---------- */
+function speechText(ex){
+  let t = String((ex && (ex.question || ex.text)) || '').replace(/<[^>]+>/g,' ');
+  t = t.replace(/(\d+)\/(\d+)/g, '$1 sobre $2')
+       .replace(/×/g,' vezes ').replace(/÷/g,' dividido por ').replace(/−/g,' menos ').replace(/\+/g,' mais ')
+       .replace(/²/g,' ao quadrado').replace(/³/g,' ao cubo').replace(/√/g,' raiz quadrada de ')
+       .replace(/=\s*\?/g,' é igual a quanto?').replace(/=/g,' igual a ').replace(/R\$\s*/g,'').replace(/\s+/g,' ');
+  return t.trim();
+}
+function speak(text){
+  try{
+    if(!('speechSynthesis' in window) || !text) return false;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'pt-BR'; u.rate = 0.95;
+    const v = speechSynthesis.getVoices().find(v=>/pt[-_]BR/i.test(v.lang));
+    if(v) u.voice = v;
+    speechSynthesis.speak(u);
+    return true;
+  }catch(e){ return false; }
+}
+function addSpeakButton(card, ex){
+  if(!('speechSynthesis' in window) || currentSettingsSync().tts===false) return;
+  const text = speechText(ex);
+  if(!text) return;
+  const b = h(`<button type="button" class="tts-btn" aria-label="Ouvir a questão" title="Ouvir a questão">🔊</button>`);
+  b.onclick = e=>{ e.stopPropagation(); speak(text); };
+  questionTools(card).appendChild(b);
+}
+/* tamanho do texto das questões/explicações: normal, grande, enorme */
+const TEXT_SCALES = {normal:1, grande:1.15, enorme:1.3};
+function applyTextScale(v){ document.documentElement.style.setProperty('--fs', TEXT_SCALES[v] || 1); }
+
+/* =========================================================
+   CADERNO DIGITAL — escrever à mão como numa mesa digitalizadora
+   - caneta com pressão (canetas stylus) ou pela velocidade (dedo/mouse)
+   - "só caneta": quando uma caneta é detectada, o dedo passa a só mover a página
+     (rejeição da palma da mão, como nas mesas digitalizadoras)
+   - dois dedos: arrastar e dar zoom
+   - ferramentas: caneta, marca-texto, borracha, linha, retângulo, círculo e texto
+   - fundos: liso, pautado, quadriculado, pontilhado e plano cartesiano
+   Cada página é guardada como traços (vetores), não como imagem: ocupa pouco
+   espaço, fica nítida em qualquer zoom e permite desfazer/refazer.
+   ========================================================= */
+const NOTE_W = 1000, NOTE_H = 1414; // proporção de uma folha A4
+const NOTES_KEY_BASE = 'mathstudy-notes-v1';   // índice das páginas (sem os traços)
+const NOTE_KEY_BASE = 'mathstudy-note-v1';     // traços de cada página
+const NOTE_COLORS = ['#1B1B2F','#E0405A','#2F6BFF','#12A150','#E09A00','#9B3FE0'];
+const NOTE_HL_COLORS = ['#FFE14D','#7DF0A0','#7FD4FF','#FF9EC4'];
+const NOTE_SIZES = {pen:[2.5,5,9], hl:[18,28,40], eraser:[12,24,44], shape:[2.5,5,9], text:[30,42,60]};
+const NOTE_BGS = [['grid','Quadriculado'],['lines','Pautado'],['dots','Pontilhado'],['cartesian','Plano cartesiano'],['plain','Liso']];
+const NOTE_TOOLS = [['pen','✒️','Caneta'],['hl','🖍️','Marca-texto'],['eraser','🧽','Borracha'],['line','📏','Linha reta'],['rect','▭','Retângulo'],['circle','◯','Círculo'],['text','T','Texto']];
+
+function notesIndex(){ try{ return JSON.parse(localStorage.getItem(`${NOTES_KEY_BASE}:${currentUserId()}`)||'[]'); }catch(e){ return []; } }
+function saveNotesIndex(list){ localStorage.setItem(`${NOTES_KEY_BASE}:${currentUserId()}`, JSON.stringify(list)); }
+function loadNotePage(id){
+  const meta = notesIndex().find(n=>n.id===id);
+  if(!meta) return null;
+  let strokes = [];
+  try{ strokes = JSON.parse(localStorage.getItem(`${NOTE_KEY_BASE}:${currentUserId()}:${id}`)||'[]'); }catch(e){}
+  return Object.assign({}, meta, {strokes});
+}
+/* salva traços + miniatura; avisa se o armazenamento do aparelho encheu */
+function saveNotePage(page){
+  try{
+    localStorage.setItem(`${NOTE_KEY_BASE}:${currentUserId()}:${page.id}`, JSON.stringify(page.strokes));
+    const list = notesIndex();
+    const meta = {id:page.id, title:page.title, subjectId:page.subjectId||null, bg:page.bg, updated:Date.now(), created:page.created||Date.now(), thumb:noteThumb(page)};
+    const i = list.findIndex(n=>n.id===page.id);
+    if(i>=0) list[i] = meta; else list.unshift(meta);
+    saveNotesIndex(list);
+    return true;
+  }catch(e){
+    queueToast('⚠️', 'Não deu pra salvar', 'O armazenamento do aparelho está cheio. Apague páginas antigas.');
+    return false;
+  }
+}
+function deleteNotePage(id){
+  try{ localStorage.removeItem(`${NOTE_KEY_BASE}:${currentUserId()}:${id}`); }catch(e){}
+  saveNotesIndex(notesIndex().filter(n=>n.id!==id));
+}
+function newNotePage(opts){
+  opts = opts || {};
+  const subj = opts.subjectId ? SUBJECTS.find(s=>s.id===opts.subjectId) : null;
+  const page = {id:`n${Date.now().toString(36)}${Math.random().toString(36).slice(2,6)}`, title: opts.title || (subj ? `Anotações · ${subj.name}` : 'Nova página'),
+    subjectId: opts.subjectId || null, bg: opts.bg || 'grid', strokes: opts.strokes || [], created: Date.now()};
+  saveNotePage(page);
+  return page;
+}
+/* tudo das anotações, pro backup */
+function exportNotes(){
+  const index = notesIndex();
+  const pages = {};
+  index.forEach(n=>{ try{ pages[n.id] = JSON.parse(localStorage.getItem(`${NOTE_KEY_BASE}:${currentUserId()}:${n.id}`)||'[]'); }catch(e){} });
+  return {index, pages};
+}
+function importNotes(data){
+  if(!data || !Array.isArray(data.index)) return;
+  notesIndex().forEach(n=>{ try{ localStorage.removeItem(`${NOTE_KEY_BASE}:${currentUserId()}:${n.id}`); }catch(e){} });
+  try{
+    saveNotesIndex(data.index);
+    data.index.forEach(n=>{ localStorage.setItem(`${NOTE_KEY_BASE}:${currentUserId()}:${n.id}`, JSON.stringify((data.pages||{})[n.id]||[])); });
+  }catch(e){}
+}
+
+/* ---------- desenho ---------- */
+function drawNoteBg(ctx, bg){
+  ctx.fillStyle = '#FFFDF7';
+  ctx.fillRect(0, 0, NOTE_W, NOTE_H);
+  ctx.lineWidth = 1;
+  if(bg==='grid' || bg==='cartesian'){
+    ctx.strokeStyle = bg==='cartesian' ? '#D7DEEC' : '#DCE3F0';
+    ctx.beginPath();
+    for(let x=0; x<=NOTE_W; x+=50){ ctx.moveTo(x,0); ctx.lineTo(x,NOTE_H); }
+    for(let y=7; y<=NOTE_H; y+=50){ ctx.moveTo(0,y); ctx.lineTo(NOTE_W,y); }
+    ctx.stroke();
+  } else if(bg==='lines'){
+    ctx.strokeStyle = '#C9D6EE';
+    ctx.beginPath();
+    for(let y=120; y<NOTE_H; y+=56){ ctx.moveTo(0,y); ctx.lineTo(NOTE_W,y); }
+    ctx.stroke();
+    ctx.strokeStyle = '#F2A3AE'; ctx.beginPath(); ctx.moveTo(90,0); ctx.lineTo(90,NOTE_H); ctx.stroke();
+  } else if(bg==='dots'){
+    ctx.fillStyle = '#B9C3D6';
+    for(let x=25; x<NOTE_W; x+=50) for(let y=32; y<NOTE_H; y+=50){ ctx.beginPath(); ctx.arc(x,y,2.2,0,Math.PI*2); ctx.fill(); }
+  }
+  if(bg==='cartesian'){
+    const cx = 500, cy = 707;
+    ctx.strokeStyle = '#5A6680'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(20,cy); ctx.lineTo(NOTE_W-20,cy); ctx.moveTo(cx,20); ctx.lineTo(cx,NOTE_H-20); ctx.stroke();
+    ctx.fillStyle = '#5A6680';
+    ctx.beginPath(); ctx.moveTo(NOTE_W-20,cy); ctx.lineTo(NOTE_W-36,cy-8); ctx.lineTo(NOTE_W-36,cy+8); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(cx,20); ctx.lineTo(cx-8,36); ctx.lineTo(cx+8,36); ctx.fill();
+    ctx.font = 'bold 22px Inter, sans-serif'; ctx.fillText('x', NOTE_W-34, cy-16); ctx.fillText('y', cx+14, 40);
+    ctx.font = '16px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for(let i=-9; i<=9; i++){ if(!i) continue; ctx.fillText(String(i), cx+i*50, cy+6); ctx.fillRect(cx+i*50-1, cy-5, 2, 10); }
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for(let i=-13; i<=13; i++){ if(!i) continue; ctx.fillText(String(-i), cx-8, cy+i*50); ctx.fillRect(cx-5, cy+i*50-1, 10, 2); }
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('0', cx-18, cy+16);
+  }
+}
+function drawNoteStroke(ctx, s){
+  ctx.save();
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.strokeStyle = s.c; ctx.fillStyle = s.c;
+  const p = s.p;
+  if(s.t==='pen' || s.t==='hl'){
+    if(s.t==='hl'){ ctx.globalAlpha = 0.38; ctx.lineCap = 'butt'; }
+    const n = p.length/3;
+    if(n===1){ // um toque só: um pontinho
+      ctx.beginPath(); ctx.arc(p[0], p[1], s.w*(s.t==='hl'?0.5:0.35+0.6*p[2]/100), 0, Math.PI*2); ctx.fill();
+    } else if(s.t==='hl'){
+      ctx.lineWidth = s.w; ctx.beginPath(); ctx.moveTo(p[0],p[1]);
+      for(let i=1;i<n;i++) ctx.lineTo(p[i*3], p[i*3+1]);
+      ctx.stroke();
+    } else {
+      // largura muda com a pressão: desenha segmento por segmento, suavizando pelos pontos médios
+      let px = p[0], py = p[1];
+      for(let i=1;i<n;i++){
+        const x0 = p[(i-1)*3], y0 = p[(i-1)*3+1], x1 = p[i*3], y1 = p[i*3+1];
+        const mx = i<n-1 ? (x1+p[(i+1)*3])/2 : x1, my = i<n-1 ? (y1+p[(i+1)*3+1])/2 : y1;
+        const pr = ((p[(i-1)*3+2]+p[i*3+2])/2)/100;
+        ctx.lineWidth = s.w*(0.35+0.9*pr);
+        ctx.beginPath(); ctx.moveTo(px,py); ctx.quadraticCurveTo(x1,y1,mx,my); ctx.stroke();
+        px = mx; py = my;
+      }
+    }
+  } else if(s.t==='line'){
+    ctx.lineWidth = s.w; ctx.beginPath(); ctx.moveTo(p[0],p[1]); ctx.lineTo(p[2],p[3]); ctx.stroke();
+  } else if(s.t==='rect'){
+    ctx.lineWidth = s.w; ctx.strokeRect(Math.min(p[0],p[2]), Math.min(p[1],p[3]), Math.abs(p[2]-p[0]), Math.abs(p[3]-p[1]));
+  } else if(s.t==='circle'){
+    ctx.lineWidth = s.w; ctx.beginPath(); ctx.arc(p[0], p[1], Math.hypot(p[2]-p[0], p[3]-p[1]), 0, Math.PI*2); ctx.stroke();
+  } else if(s.t==='text'){
+    ctx.font = `600 ${s.w}px Inter, sans-serif`; ctx.textBaseline = 'top';
+    String(s.txt).split('\n').forEach((ln,i)=> ctx.fillText(ln, p[0], p[1]+i*s.w*1.25));
+  }
+  ctx.restore();
+}
+/* borracha: o traço encosta no ponto (x,y) com raio r? */
+function noteStrokeHit(s, x, y, r){
+  const p = s.p;
+  const segDist = (ax,ay,bx,by)=>{ const dx=bx-ax, dy=by-ay, L=dx*dx+dy*dy; let t = L ? ((x-ax)*dx+(y-ay)*dy)/L : 0; t = Math.max(0,Math.min(1,t)); return Math.hypot(x-(ax+t*dx), y-(ay+t*dy)); };
+  const pad = r + s.w/2;
+  if(s.t==='pen' || s.t==='hl'){
+    const n = p.length/3;
+    if(n===1) return Math.hypot(x-p[0], y-p[1]) < pad;
+    for(let i=1;i<n;i++) if(segDist(p[(i-1)*3],p[(i-1)*3+1],p[i*3],p[i*3+1]) < pad) return true;
+    return false;
+  }
+  if(s.t==='line') return segDist(p[0],p[1],p[2],p[3]) < pad;
+  if(s.t==='rect'){ const [a,b,c,d] = p; return [[a,b,c,b],[c,b,c,d],[c,d,a,d],[a,d,a,b]].some(q=>segDist(...q) < pad); }
+  if(s.t==='circle') return Math.abs(Math.hypot(x-p[0],y-p[1]) - Math.hypot(p[2]-p[0],p[3]-p[1])) < pad;
+  if(s.t==='text'){ const lines = String(s.txt).split('\n'); const w = Math.max(...lines.map(l=>l.length))*s.w*0.6, hh = lines.length*s.w*1.25; return x>p[0]-r && x<p[0]+w+r && y>p[1]-r && y<p[1]+hh+r; }
+  return false;
+}
+function renderNotePage(ctx, page){ drawNoteBg(ctx, page.bg); page.strokes.forEach(s=>drawNoteStroke(ctx, s)); }
+function noteThumb(page){
+  try{
+    const c = document.createElement('canvas'); c.width = 150; c.height = Math.round(150*NOTE_H/NOTE_W);
+    const x = c.getContext('2d'); x.scale(150/NOTE_W, 150/NOTE_W); renderNotePage(x, page);
+    return c.toDataURL('image/jpeg', 0.6);
+  }catch(e){ return ''; }
+}
+
+/* caixinha pra digitar texto, com teclas de símbolos de matemática */
+const MATH_KEYS = ['²','³','√','π','×','÷','−','±','≠','≤','≥','≈','½','¼','°','∞','Δ','∑','α','β','θ','→'];
+function askMathText(initial){
+  return new Promise(resolve=>{
+    const bg = document.createElement('div');
+    bg.className = 'gm-modal-bg sheet';
+    bg.innerHTML = `<div class="gm-modal nb-textbox"><h2 style="font-size:20px">Escrever texto</h2>
+      <textarea rows="3" placeholder="Ex.: x² + 2x = 15"></textarea>
+      <div class="nb-keys">${MATH_KEYS.map(k=>`<button type="button" class="nb-key">${k}</button>`).join('')}</div>
+      <button type="button" class="nb-ok">Colocar na página</button>
+      <button type="button" class="nb-cancel" style="margin-top:8px;background:rgba(255,255,255,.1);color:#fff">Cancelar</button></div>`;
+    const ta = bg.querySelector('textarea'); ta.value = initial || '';
+    bg.querySelectorAll('.nb-key').forEach(k=> k.onclick = ()=>{
+      const a = ta.selectionStart, b = ta.selectionEnd;
+      ta.value = ta.value.slice(0,a) + k.textContent + ta.value.slice(b);
+      ta.focus(); ta.selectionStart = ta.selectionEnd = a + k.textContent.length;
+    });
+    const close = v=>{ bg.remove(); resolve(v); };
+    bg.querySelector('.nb-ok').onclick = ()=> close(ta.value.trim());
+    bg.querySelector('.nb-cancel').onclick = ()=> close('');
+    bg.addEventListener('click', e=>{ if(e.target===bg) close(''); });
+    document.body.appendChild(bg);
+    setTimeout(()=>ta.focus(), 50);
+  });
+}
+
+/* ---------- a "mesa digitalizadora": liga o canvas aos toques/caneta ----------
+   host: elemento que o canvas vai preencher · page: {bg, strokes} · onChange: chamado a cada mudança */
+function createBoard(host, page, onChange){
+  const canvas = document.createElement('canvas');
+  canvas.className = 'nb-canvas';
+  host.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+  const cache = document.createElement('canvas'), cctx = cache.getContext('2d');
+  const st = {tool:'pen', color:NOTE_COLORS[0], hlColor:NOTE_HL_COLORS[0], size:1, penOnly:false, zoom:1, ox:0, oy:0};
+  let cssW = 0, cssH = 0, dpr = 1, fit = 1;
+  let cur = null, erasing = null, pinch = null, pan = null, raf = 0;
+  const undo = [], redo = [];
+  const pointers = new Map();
+
+  function scale(){ return fit*st.zoom; }
+  function toPage(cx, cy){ const r = canvas.getBoundingClientRect(); return [(cx-r.left-st.ox)/scale(), (cy-r.top-st.oy)/scale()]; }
+  function clampView(){
+    const pw = NOTE_W*scale(), ph = NOTE_H*scale();
+    st.ox = pw <= cssW ? (cssW-pw)/2 : Math.min(0, Math.max(cssW-pw, st.ox));
+    st.oy = ph <= cssH ? 0 : Math.min(0, Math.max(cssH-ph, st.oy));
+  }
+  function resize(){
+    const r = host.getBoundingClientRect();
+    if(!r.width || !r.height) return;
+    cssW = r.width; cssH = r.height; dpr = Math.min(window.devicePixelRatio||1, 2.5);
+    canvas.width = cache.width = Math.round(cssW*dpr); canvas.height = cache.height = Math.round(cssH*dpr);
+    canvas.style.width = cssW+'px'; canvas.style.height = cssH+'px';
+    fit = cssW/NOTE_W;
+    clampView(); rebuild();
+  }
+  function applyView(c){ c.setTransform(dpr*scale(), 0, 0, dpr*scale(), dpr*st.ox, dpr*st.oy); }
+  function rebuild(){
+    cctx.setTransform(1,0,0,1,0,0);
+    cctx.fillStyle = '#C9CEDA'; cctx.fillRect(0,0,cache.width,cache.height);
+    applyView(cctx);
+    cctx.save(); cctx.beginPath(); cctx.rect(0,0,NOTE_W,NOTE_H); cctx.clip();
+    renderNotePage(cctx, page);
+    cctx.restore();
+    frame();
+  }
+  function frame(){
+    raf = 0;
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.drawImage(cache, 0, 0);
+    if(cur){ applyView(ctx); drawNoteStroke(ctx, cur); }
+    if(erasing && erasing.at){ applyView(ctx); ctx.strokeStyle = '#8891A6'; ctx.lineWidth = 1.5/scale(); ctx.beginPath(); ctx.arc(erasing.at[0], erasing.at[1], erasing.r, 0, Math.PI*2); ctx.stroke(); }
+  }
+  function schedule(){ if(!raf) raf = requestAnimationFrame(frame); }
+  function snapshot(){ undo.push(page.strokes.slice()); if(undo.length>60) undo.shift(); redo.length = 0; }
+  function changed(){ rebuild(); onChange && onChange(); }
+
+  function startStroke(e){
+    const [x,y] = toPage(e.clientX, e.clientY);
+    const key = ['line','rect','circle'].includes(st.tool) ? 'shape' : st.tool;
+    const size = (NOTE_SIZES[key] || [5,5,5])[st.size];
+    if(st.tool==='eraser'){
+      snapshot(); erasing = {r:size, removed:false, at:[x,y]}; eraseAt(x,y); return;
+    }
+    if(st.tool==='text'){
+      askMathText().then(txt=>{ if(!txt) return; snapshot(); page.strokes.push({t:'text', c:st.color, w:NOTE_SIZES.text[st.size], p:[Math.round(x),Math.round(y)], txt}); changed(); });
+      return;
+    }
+    const color = st.tool==='hl' ? st.hlColor : st.color;
+    if(st.tool==='pen' || st.tool==='hl') cur = {t:st.tool, c:color, w:size, p:[], _last:null};
+    else cur = {t:st.tool, c:color, w:size, p:[Math.round(x),Math.round(y),Math.round(x),Math.round(y)]};
+    addPoint(e);
+  }
+  function pressureOf(e){
+    if(e.pointerType==='pen' && e.pressure>0) return e.pressure;
+    // dedo/mouse não têm pressão: usa a velocidade (rápido = traço mais fino, como tinta de verdade)
+    const now = e.timeStamp || performance.now();
+    if(cur._last){ const dt = Math.max(1, now-cur._last.t); const v = Math.hypot(e.clientX-cur._last.x, e.clientY-cur._last.y)/dt;
+      cur._pr = (cur._pr==null?0.6:cur._pr)*0.7 + Math.max(0.25, Math.min(0.85, 0.9 - v*0.35))*0.3; }
+    cur._last = {x:e.clientX, y:e.clientY, t:now};
+    return cur._pr==null ? 0.6 : cur._pr;
+  }
+  function addPoint(e){
+    if(!cur) return;
+    const [x,y] = toPage(e.clientX, e.clientY);
+    if(cur.t==='pen' || cur.t==='hl'){
+      const n = cur.p.length;
+      if(n && Math.hypot(x-cur.p[n-3], y-cur.p[n-2]) < 0.8/st.zoom) return;
+      cur.p.push(Math.round(x*10)/10, Math.round(y*10)/10, Math.round(pressureOf(e)*100));
+    } else {
+      let x2 = x, y2 = y;
+      if(cur.t==='line'){ // ímã pra ficar reta na horizontal, vertical ou 45°
+        const dx = x-cur.p[0], dy = y-cur.p[1], ang = Math.atan2(dy,dx), L = Math.hypot(dx,dy);
+        const snap = Math.round(ang/(Math.PI/4))*(Math.PI/4);
+        if(Math.abs(ang-snap) < 0.09){ x2 = cur.p[0]+Math.cos(snap)*L; y2 = cur.p[1]+Math.sin(snap)*L; }
+      }
+      cur.p[2] = Math.round(x2); cur.p[3] = Math.round(y2);
+    }
+    schedule();
+  }
+  function endStroke(){
+    if(!cur) return;
+    const s = cur; cur = null;
+    delete s._last; delete s._pr;
+    const tiny = s.t!=='pen' && s.t!=='hl' && Math.hypot(s.p[2]-s.p[0], s.p[3]-s.p[1]) < 4;
+    if(s.p.length && !tiny){ snapshot(); page.strokes.push(s); changed(); } else frame();
+  }
+  function eraseAt(x,y){
+    // apaga ao longo do caminho desde o último ponto (movimento rápido não "pula" traços)
+    const [lx,ly] = erasing.at || [x,y];
+    const steps = Math.max(1, Math.ceil(Math.hypot(x-lx, y-ly)/(erasing.r/2)));
+    const pts = []; for(let i=1;i<=steps;i++) pts.push([lx+(x-lx)*i/steps, ly+(y-ly)*i/steps]);
+    erasing.at = [x,y];
+    const before = page.strokes.length;
+    page.strokes = page.strokes.filter(s=>!pts.some(([px,py])=>noteStrokeHit(s, px, py, erasing.r)));
+    if(page.strokes.length !== before){ erasing.removed = true; rebuild(); } else schedule();
+  }
+
+  function onDown(e){
+    if(e.pointerType==='pen' && !st.penOnly){ st.penOnly = true; ui.onPenDetected && ui.onPenDetected(); }
+    canvas.setPointerCapture(e.pointerId);
+    pointers.set(e.pointerId, {x:e.clientX, y:e.clientY, type:e.pointerType});
+    const touches = [...pointers.values()].filter(p=>p.type==='touch');
+    if(e.pointerType==='touch' && (st.penOnly || touches.length>=2)){
+      // gesto: 1 dedo no modo só-caneta arrasta; 2 dedos arrastam e dão zoom
+      if(cur && touches.length>=2 && cur.p.length < 30) cur = null; // era o começo de um toque de 2 dedos, não um traço
+      if(touches.length>=2){
+        const [a,b] = touches;
+        pinch = {d:Math.hypot(a.x-b.x, a.y-b.y), zoom:st.zoom, mx:(a.x+b.x)/2, my:(a.y+b.y)/2, ox:st.ox, oy:st.oy};
+        pan = null;
+      } else pan = {x:e.clientX, y:e.clientY, ox:st.ox, oy:st.oy};
+      frame();
+      return;
+    }
+    if(pointers.size>1) return;
+    startStroke(e);
+  }
+  function onMove(e){
+    if(!pointers.has(e.pointerId)) return;
+    pointers.set(e.pointerId, {x:e.clientX, y:e.clientY, type:e.pointerType});
+    if(pinch){
+      const t = [...pointers.values()].filter(p=>p.type==='touch');
+      if(t.length<2) return;
+      const [a,b] = t, d = Math.hypot(a.x-b.x, a.y-b.y), mx = (a.x+b.x)/2, my = (a.y+b.y)/2;
+      const r = canvas.getBoundingClientRect();
+      const z = Math.max(1, Math.min(5, pinch.zoom*d/pinch.d));
+      // mantém fixo o ponto da página que estava entre os dedos
+      const px = (pinch.mx-r.left-pinch.ox)/(fit*pinch.zoom), py = (pinch.my-r.top-pinch.oy)/(fit*pinch.zoom);
+      st.zoom = z; st.ox = mx-r.left-px*fit*z; st.oy = my-r.top-py*fit*z;
+      clampView(); rebuild(); ui.onZoom && ui.onZoom(st.zoom);
+      return;
+    }
+    if(pan){ st.ox = pan.ox + e.clientX-pan.x; st.oy = pan.oy + e.clientY-pan.y; clampView(); rebuild(); return; }
+    if(erasing){ const [x,y] = toPage(e.clientX, e.clientY); eraseAt(x,y); return; }
+    if(cur){
+      const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+      (evs.length ? evs : [e]).forEach(addPoint);
+    }
+  }
+  function onUp(e){
+    pointers.delete(e.pointerId);
+    const touches = [...pointers.values()].filter(p=>p.type==='touch');
+    if(pinch && touches.length<2){ pinch = null; if(touches.length===1 && st.penOnly){ const t = touches[0]; pan = {x:t.x, y:t.y, ox:st.ox, oy:st.oy}; } return; }
+    if(pan && !touches.length){ pan = null; return; }
+    if(erasing){ if(!erasing.removed) undo.pop(); else onChange && onChange(); erasing = null; frame(); return; }
+    endStroke();
+  }
+  canvas.addEventListener('pointerdown', onDown);
+  canvas.addEventListener('pointermove', onMove);
+  canvas.addEventListener('pointerup', onUp);
+  canvas.addEventListener('pointercancel', e=>{ pointers.delete(e.pointerId); cur = null; pinch = null; pan = null; erasing = null; frame(); });
+  canvas.addEventListener('wheel', e=>{
+    e.preventDefault();
+    if(e.ctrlKey){ const r = canvas.getBoundingClientRect(), z0 = st.zoom, z = Math.max(1, Math.min(5, z0*(e.deltaY<0?1.1:0.9)));
+      const px = (e.clientX-r.left-st.ox)/(fit*z0), py = (e.clientY-r.top-st.oy)/(fit*z0);
+      st.zoom = z; st.ox = e.clientX-r.left-px*fit*z; st.oy = e.clientY-r.top-py*fit*z; ui.onZoom && ui.onZoom(z); }
+    else { st.ox -= e.deltaX; st.oy -= e.deltaY; }
+    clampView(); rebuild();
+  }, {passive:false});
+  const ro = ('ResizeObserver' in window) ? new ResizeObserver(()=>resize()) : null;
+  if(ro) ro.observe(host); else window.addEventListener('resize', resize);
+  requestAnimationFrame(resize);
+
+  const ui = {
+    state: st,
+    setTool(t){ st.tool = t; },
+    setColor(c){ if(st.tool==='hl') st.hlColor = c; else st.color = c; },
+    setSize(i){ st.size = i; },
+    setPenOnly(v){ st.penOnly = v; },
+    setBg(bg){ snapshot(); page.bg = bg; changed(); },
+    undo(){ if(!undo.length) return false; redo.push(page.strokes); page.strokes = undo.pop(); changed(); return true; },
+    redo(){ if(!redo.length) return false; undo.push(page.strokes); page.strokes = redo.pop(); changed(); return true; },
+    clear(){ if(!page.strokes.length) return; snapshot(); page.strokes = []; changed(); },
+    resetZoom(){ st.zoom = 1; st.ox = 0; st.oy = 0; clampView(); rebuild(); },
+    canUndo(){ return undo.length>0; }, canRedo(){ return redo.length>0; },
+    destroy(){ if(ro) ro.disconnect(); else window.removeEventListener('resize', resize); },
+  };
+  return ui;
+}
+
+/* imagem da página em alta resolução (pra salvar/compartilhar) */
+function notePageBlob(page){
+  return new Promise(resolve=>{
+    const c = document.createElement('canvas'); c.width = NOTE_W*1.6; c.height = NOTE_H*1.6;
+    const x = c.getContext('2d'); x.scale(1.6,1.6); renderNotePage(x, page);
+    c.toBlob(b=>resolve(b), 'image/png');
+  });
+}
+async function shareNotePage(page){
+  const blob = await notePageBlob(page);
+  if(!blob) return;
+  const name = `${(page.title||'pagina').toLowerCase().replace(/[^a-z0-9]+/g,'-')}.png`;
+  try{
+    const file = new File([blob], name, {type:'image/png'});
+    if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file], title:page.title}); return; }
+  }catch(e){ if(e && e.name==='AbortError') return; }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(()=>{ a.remove(); URL.revokeObjectURL(url); }, 1500);
+}
+
+/* ---------- barra de ferramentas (usada no caderno e no rascunho) ---------- */
+function boardToolbar(board, opts){
+  opts = opts || {};
+  const tools = opts.tools || NOTE_TOOLS.map(t=>t[0]);
+  const bar = h(`<div class="nb-toolbar">
+    <div class="nb-row nb-tools"></div>
+    <div class="nb-row nb-style"><div class="nb-colors"></div><div class="nb-sizes"></div></div>
+  </div>`);
+  const toolsBox = bar.querySelector('.nb-tools'), colorsBox = bar.querySelector('.nb-colors'), sizesBox = bar.querySelector('.nb-sizes');
+  function paintColors(){
+    colorsBox.innerHTML = '';
+    const isHl = board.state.tool==='hl';
+    const list = isHl ? NOTE_HL_COLORS : (opts.colors || NOTE_COLORS);
+    const curC = isHl ? board.state.hlColor : board.state.color;
+    const hide = ['eraser'].includes(board.state.tool);
+    colorsBox.style.visibility = hide ? 'hidden' : '';
+    list.forEach(c=>{
+      const b = h(`<button type="button" class="nb-color ${c===curC?'on':''}" style="--c:${c}" aria-label="Cor ${c}"></button>`);
+      b.onclick = ()=>{ board.setColor(c); paintColors(); };
+      colorsBox.appendChild(b);
+    });
+  }
+  function paintSizes(){
+    sizesBox.innerHTML = '';
+    [0,1,2].forEach(i=>{
+      const b = h(`<button type="button" class="nb-size ${board.state.size===i?'on':''}" aria-label="Espessura ${i+1}"><i style="width:${5+i*5}px;height:${5+i*5}px"></i></button>`);
+      b.onclick = ()=>{ board.setSize(i); paintSizes(); };
+      sizesBox.appendChild(b);
+    });
+  }
+  NOTE_TOOLS.filter(t=>tools.includes(t[0])).forEach(([id,ico,label])=>{
+    const b = h(`<button type="button" class="nb-tool ${board.state.tool===id?'on':''}" data-t="${id}" title="${label}" aria-label="${label}"><span>${ico}</span><small>${label.split(' ')[0]}</small></button>`);
+    b.onclick = ()=>{ board.setTool(id); toolsBox.querySelectorAll('.nb-tool').forEach(x=>x.classList.toggle('on', x.dataset.t===id)); paintColors(); };
+    toolsBox.appendChild(b);
+  });
+  paintColors(); paintSizes();
+  return bar;
+}
+
+/* ---------- tela: lista de páginas do caderno ---------- */
+function notebookScreen(){
+  const wrap = document.createElement('div');
+  wrap.appendChild(topbar('✏️ Caderno', true, ()=>go('home')));
+  const c = h(`<div class="content"></div>`);
+  const list = notesIndex();
+  let filter = state.noteFilter || 'all';
+  c.appendChild(h(`<p style="color:var(--ink-soft); font-size:14px; margin:2px 0 14px;">Escreva à mão como numa mesa digitalizadora: com o dedo ou com uma caneta (stylus). Use dois dedos pra mover e dar zoom.</p>`));
+  const newBtn = h(`<button class="btn primary" style="width:100%; margin-bottom:14px">＋ Nova página</button>`);
+  newBtn.onclick = ()=> chooseNewPage();
+  c.appendChild(newBtn);
+
+  const used = [...new Set(list.map(n=>n.subjectId).filter(Boolean))];
+  if(used.length){
+    const chips = h(`<div class="subj-chip-grid" style="margin-bottom:14px"></div>`);
+    [['all','Todas'], ['none','Sem assunto'], ...used.map(id=>{ const s = SUBJECTS.find(x=>x.id===id); return [id, s ? s.name : id]; })].forEach(([id,label])=>{
+      const b = h(`<button type="button" class="subj-chip ${filter===id?'active':''}" style="padding:7px 12px"></button>`);
+      b.textContent = label;
+      b.onclick = ()=>{ state.noteFilter = id; render(); };
+      chips.appendChild(b);
+    });
+    c.appendChild(chips);
+  }
+  const shown = list.filter(n=> filter==='all' ? true : filter==='none' ? !n.subjectId : n.subjectId===filter)
+    .sort((a,b)=>(b.updated||0)-(a.updated||0));
+  if(!shown.length){
+    c.appendChild(h(`<div class="empty-note">Nenhuma página ainda.<br>Toque em <b>Nova página</b> pra começar a anotar. 📝</div>`));
+  } else {
+    const grid = h(`<div class="nb-grid"></div>`);
+    shown.forEach(n=>{
+      const s = n.subjectId ? SUBJECTS.find(x=>x.id===n.subjectId) : null;
+      const d = new Date(n.updated||n.created||Date.now());
+      const card = h(`<button type="button" class="nb-card"><div class="nb-thumb">${n.thumb?`<img src="${n.thumb}" alt="">`:''}</div><div class="nb-t"></div><div class="nb-s">${s?`${s.sym} ${escHTML(s.name)} · `:''}${fmtDM(d)}</div></button>`);
+      card.querySelector('.nb-t').textContent = n.title || 'Sem título';
+      card.onclick = ()=> go('notePage', {noteId:n.id});
+      grid.appendChild(card);
+    });
+    c.appendChild(grid);
+  }
+  wrap.appendChild(c);
+  return wrap;
+}
+function chooseNewPage(subjectId){
+  const bg = document.createElement('div');
+  bg.className = 'gm-modal-bg sheet';
+  bg.innerHTML = `<div class="gm-modal"><h2 style="font-size:20px">Escolha o papel</h2><div class="nb-papers"></div>
+    <button type="button" class="nb-cancel" style="margin-top:12px;background:rgba(255,255,255,.1);color:#fff">Cancelar</button></div>`;
+  const box = bg.querySelector('.nb-papers');
+  NOTE_BGS.forEach(([id,label])=>{
+    const b = h(`<button type="button" class="nb-paper"><canvas width="90" height="127"></canvas><span>${label}</span></button>`);
+    const cx = b.querySelector('canvas').getContext('2d'); cx.scale(90/NOTE_W, 90/NOTE_W); drawNoteBg(cx, id);
+    b.onclick = ()=>{ bg.remove(); const p = newNotePage({bg:id, subjectId}); go('notePage', {noteId:p.id}); };
+    box.appendChild(b);
+  });
+  bg.querySelector('.nb-cancel').onclick = ()=> bg.remove();
+  bg.addEventListener('click', e=>{ if(e.target===bg) bg.remove(); });
+  document.body.appendChild(bg);
+}
+
+/* ---------- tela: editar uma página ---------- */
+let _noteBoard = null;
+function notePageScreen(){
+  if(_noteBoard){ _noteBoard.destroy(); _noteBoard = null; }
+  const page = loadNotePage(state.noteId);
+  const wrap = h(`<div class="nb-editor"></div>`);
+  if(!page){ setTimeout(()=>go('notebook'), 0); return wrap; }
+  let saveTimer = 0;
+  const saveSoon = ()=>{ clearTimeout(saveTimer); saveTimer = setTimeout(()=>saveNotePage(page), 500); paintUndo(); };
+
+  const head = h(`<div class="nb-head">
+    <button class="back-btn" aria-label="Voltar">‹</button>
+    <input class="nb-title" maxlength="60" aria-label="Título da página">
+    <button type="button" class="nb-icon nb-undo" aria-label="Desfazer" title="Desfazer">↶</button>
+    <button type="button" class="nb-icon nb-redo" aria-label="Refazer" title="Refazer">↷</button>
+    <button type="button" class="nb-icon nb-more" aria-label="Mais opções" title="Mais opções">⋯</button>
+  </div>`);
+  const title = head.querySelector('.nb-title'); title.value = page.title;
+  title.oninput = ()=>{ page.title = title.value.trim() || 'Sem título'; saveSoon(); };
+  head.querySelector('.back-btn').onclick = ()=>{ clearTimeout(saveTimer); saveNotePage(page); go('notebook'); };
+  wrap.appendChild(head);
+
+  const area = h(`<div class="nb-area"></div>`);
+  const hint = h(`<div class="nb-hint"></div>`);
+  const board = createBoard(area, page, saveSoon);
+  _noteBoard = board;
+  const toolbar = boardToolbar(board);
+  wrap.appendChild(toolbar);
+  wrap.appendChild(area);
+  area.appendChild(hint);
+  function showHint(t){ hint.textContent = t; hint.classList.add('on'); clearTimeout(showHint._t); showHint._t = setTimeout(()=>hint.classList.remove('on'), 2200); }
+  board.onPenDetected = ()=> showHint('✒️ Caneta detectada: agora o dedo só move a página');
+  board.onZoom = z=> showHint(`🔍 ${Math.round(z*100)}%`);
+  function paintUndo(){ head.querySelector('.nb-undo').disabled = !board.canUndo(); head.querySelector('.nb-redo').disabled = !board.canRedo(); }
+  head.querySelector('.nb-undo').onclick = ()=>{ board.undo(); saveSoon(); };
+  head.querySelector('.nb-redo').onclick = ()=>{ board.redo(); saveSoon(); };
+  paintUndo();
+
+  head.querySelector('.nb-more').onclick = ()=>{
+    const bg = document.createElement('div');
+    bg.className = 'gm-modal-bg sheet';
+    const s = page.subjectId ? SUBJECTS.find(x=>x.id===page.subjectId) : null;
+    bg.innerHTML = `<div class="gm-modal nb-menu"><h2 style="font-size:20px">Opções da página</h2>
+      <div class="nb-sec">Papel</div><div class="nb-bgs"></div>
+      <div class="nb-sec">Assunto</div><select class="nb-subj"><option value="">Sem assunto</option>${SUBJECTS.map(x=>`<option value="${x.id}" ${s&&s.id===x.id?'selected':''}>${escHTML(x.name)}</option>`).join('')}</select>
+      <button type="button" class="nb-m nb-pen ${board.state.penOnly?'on':''}">✒️ Só caneta (o dedo só move a página): ${board.state.penOnly?'ligado':'desligado'}</button>
+      <button type="button" class="nb-m nb-zoom">🔍 Voltar o zoom ao normal</button>
+      <button type="button" class="nb-m nb-share">📤 Salvar / compartilhar como imagem</button>
+      <button type="button" class="nb-m nb-clear">🧹 Limpar a página</button>
+      <button type="button" class="nb-m nb-del">🗑️ Excluir a página</button>
+      <button type="button" class="nb-cancel" style="margin-top:10px;background:rgba(255,255,255,.1);color:#fff">Fechar</button></div>`;
+    const bgs = bg.querySelector('.nb-bgs');
+    NOTE_BGS.forEach(([id,label])=>{
+      const b = h(`<button type="button" class="nb-chip ${page.bg===id?'on':''}">${label}</button>`);
+      b.onclick = ()=>{ board.setBg(id); bgs.querySelectorAll('.nb-chip').forEach(x=>x.classList.remove('on')); b.classList.add('on'); saveSoon(); };
+      bgs.appendChild(b);
+    });
+    bg.querySelector('.nb-subj').onchange = e=>{ page.subjectId = e.target.value || null; saveSoon(); };
+    bg.querySelector('.nb-pen').onclick = e=>{ board.setPenOnly(!board.state.penOnly); e.target.textContent = `✒️ Só caneta (o dedo só move a página): ${board.state.penOnly?'ligado':'desligado'}`; };
+    bg.querySelector('.nb-zoom').onclick = ()=>{ board.resetZoom(); bg.remove(); };
+    bg.querySelector('.nb-share').onclick = ()=>{ saveNotePage(page); shareNotePage(page); };
+    bg.querySelector('.nb-clear').onclick = ()=>{ bg.remove(); showConfirm({icon:'🧹', title:'Limpar a página?', message:'Tudo o que está escrito nela vai sumir (dá pra desfazer com ↶).', ok:'Limpar', cancel:'Cancelar', danger:true}).then(ok=>{ if(ok){ board.clear(); saveSoon(); } }); };
+    bg.querySelector('.nb-del').onclick = ()=>{ bg.remove(); showConfirm({icon:'🗑️', title:'Excluir a página?', message:'Ela some do caderno e não dá pra desfazer.', ok:'Excluir', cancel:'Cancelar', danger:true}).then(ok=>{ if(ok){ clearTimeout(saveTimer); deleteNotePage(page.id); go('notebook'); } }); };
+    bg.querySelector('.nb-cancel').onclick = ()=> bg.remove();
+    bg.addEventListener('click', e=>{ if(e.target===bg) bg.remove(); });
+    document.body.appendChild(bg);
+  };
+  return wrap;
+}
+
+/* ---------- rascunho rápido durante as questões ---------- */
+function openScratchPad(ex){
+  const page = {bg:'grid', strokes:[]};
+  const root = h(`<div class="nb-scratch" role="dialog" aria-label="Rascunho">
+    <div class="nb-head">
+      <div class="nb-sq"></div>
+      <button type="button" class="nb-icon nb-undo" aria-label="Desfazer">↶</button>
+      <button type="button" class="nb-icon nb-clr" aria-label="Limpar">🧹</button>
+      <button type="button" class="nb-icon nb-keep" aria-label="Salvar no caderno" title="Salvar no caderno">💾</button>
+      <button type="button" class="nb-icon nb-x" aria-label="Fechar rascunho">✕</button>
+    </div>
+  </div>`);
+  root.querySelector('.nb-sq').textContent = '✏️ Rascunho · ' + (speechText(ex) ? String(ex.question||'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').slice(0,80) : '');
+  const area = h(`<div class="nb-area"></div>`);
+  document.body.appendChild(root);
+  const board = createBoard(area, page, ()=>{});
+  root.appendChild(boardToolbar(board, {tools:['pen','eraser','line','text'], colors:NOTE_COLORS.slice(0,4)}));
+  root.appendChild(area);
+  const close = ()=>{ board.destroy(); root.remove(); };
+  root.querySelector('.nb-x').onclick = close;
+  root.querySelector('.nb-undo').onclick = ()=> board.undo();
+  root.querySelector('.nb-clr').onclick = ()=> board.clear();
+  root.querySelector('.nb-keep').onclick = ()=>{
+    if(!page.strokes.length){ showFloat('O rascunho está vazio'); return; }
+    const sid = state.session && (state.session.currentSubjectId || state.session.subjectId);
+    newNotePage({title:'Rascunho · ' + fmtDM(new Date()), subjectId: sid || null, bg:'grid', strokes: page.strokes.slice()});
+    queueToast('💾', 'Salvo no caderno!', 'Veja em Caderno, na tela inicial');
+  };
+}
+function questionTools(card){
+  let box = card.querySelector('.qc-tools');
+  if(!box){ box = h(`<div class="qc-tools"></div>`); card.appendChild(box); card.classList.add('has-tools'); }
+  return box;
+}
+function addScratchButton(card, ex){
+  const b = h(`<button type="button" class="tts-btn" aria-label="Abrir rascunho" title="Rascunho: faça a conta à mão">✏️</button>`);
+  b.onclick = e=>{ e.stopPropagation(); openScratchPad(ex); };
+  questionTools(card).appendChild(b);
+}
+
+/* ---------------- DUELO A DOIS (mesmo aparelho) ----------------
+   Tela dividida: o jogador de cima vê tudo de cabeça pra baixo, pra jogar frente a frente
+   com o celular deitado na mesa. Mesma conta pros dois; quem tocar primeiro na certa
+   leva o ponto. Errou? Fica travado até a próxima conta. */
+const DUEL_ROUNDS = 10;
+function duelScreen(){
+  const wrap = document.createElement('div');
+  wrap.appendChild(topbar('⚔️ Duelo a dois', true, ()=>go('home')));
+  const c = h(`<div class="content"></div>`);
+  wrap.appendChild(c);
+  let level = 0, names = ['Jogador 1','Jogador 2'];
+  try{ const saved = JSON.parse(localStorage.getItem('mathstudy-duel-names')||'null'); if(Array.isArray(saved)) names = saved; }catch(e){}
+
+  c.appendChild(h(`<div class="lt-start"><div class="big">⚔️</div><h2>Duelo a dois</h2><p>Dois jogadores no mesmo celular, frente a frente. Deite o aparelho na mesa: cada um fica com uma metade da tela. Quem acertar primeiro leva o ponto! São ${DUEL_ROUNDS} contas.</p></div>`));
+  const form = h(`<div class="answer-form">
+    <div><label>Jogador de baixo</label><input class="duel-n1" maxlength="14" aria-label="Nome do jogador de baixo"></div>
+    <div><label>Jogador de cima</label><input class="duel-n2" maxlength="14" aria-label="Nome do jogador de cima"></div>
+  </div>`);
+  form.querySelector('.duel-n1').value = names[0]; form.querySelector('.duel-n2').value = names[1];
+  c.appendChild(form);
+  c.appendChild(h(`<h3 style="font-size:12.5px;text-transform:uppercase;color:var(--ink-soft);font-weight:600;margin:6px 0 8px;letter-spacing:.08em;">Nível das contas</h3>`));
+  const lvRow = h(`<div class="diff-row"></div>`);
+  [['Fácil',0],['Médio',8],['Difícil',16]].forEach(([label,v],i)=>{
+    const chip = h(`<button type="button" class="diff-chip ${i===0?'active':''}">${label}</button>`);
+    chip.onclick = ()=>{ level = v; lvRow.querySelectorAll('.diff-chip').forEach(x=>x.classList.remove('active')); chip.classList.add('active'); };
+    lvRow.appendChild(chip);
+  });
+  c.appendChild(lvRow);
+  const start = h(`<button class="btn primary" style="width:100%">Começar duelo ⚔️</button>`);
+  start.onclick = ()=>{
+    names = [form.querySelector('.duel-n1').value.trim()||'Jogador 1', form.querySelector('.duel-n2').value.trim()||'Jogador 2'];
+    try{ localStorage.setItem('mathstudy-duel-names', JSON.stringify(names)); }catch(e){}
+    runDuel(names, level);
+  };
+  c.appendChild(start);
+  return wrap;
+}
+function runDuel(names, level){
+  const score = [0,0];
+  let round = 0, q = null, locked = [false,false], done = false;
+  const root = h(`<div class="duel-root" role="application">
+    <div class="duel-half top" data-p="1"></div>
+    <div class="duel-mid"><span class="duel-sc"></span><button type="button" class="duel-quit" aria-label="Sair do duelo">✕</button></div>
+    <div class="duel-half bottom" data-p="0"></div>
+  </div>`);
+  const halves = [root.querySelector('.bottom'), root.querySelector('.top')];
+  const sc = root.querySelector('.duel-sc');
+  root.querySelector('.duel-quit').onclick = ()=>{ done = true; root.remove(); };
+  document.body.appendChild(root);
+
+  function paintScore(){ sc.textContent = `${names[0]} ${score[0]} × ${score[1]} ${names[1]} · ${Math.min(round+1,DUEL_ROUNDS)}/${DUEL_ROUNDS}`; }
+  function next(){
+    if(done) return;
+    if(round >= DUEL_ROUNDS) return finish();
+    q = boltQuestion(level + round); locked = [false,false];
+    paintScore();
+    halves.forEach((el,p)=>{
+      el.innerHTML = `<div class="duel-name">${escHTML(names[p])} · ${score[p]} pts</div><div class="duel-q mono">${q.text} = ?</div><div class="duel-opts"></div>`;
+      const box = el.querySelector('.duel-opts');
+      q.opts.forEach(v=>{
+        const b = h(`<button type="button" class="duel-opt mono">${v}</button>`);
+        b.onclick = ()=> answer(p, v, b);
+        box.appendChild(b);
+      });
+    });
+  }
+  function answer(p, v, btn){
+    if(done || locked[p] || locked[2]) return;
+    if(v === q.ans){
+      locked[2] = true; score[p]++; paintScore();
+      btn.classList.add('ok');
+      halves[p].classList.add('win'); halves[1-p].classList.add('lose');
+      playTones([660,990], 0.06, 'triangle', 0.08);
+      halves[1-p].querySelectorAll('.duel-opt').forEach(b=>{ if(Number(b.textContent)===q.ans) b.classList.add('ok'); });
+      setTimeout(()=>{ halves.forEach(x=>x.classList.remove('win','lose')); round++; next(); }, 1100);
+    } else {
+      locked[p] = true; btn.classList.add('bad'); halves[p].classList.add('lock');
+      playTones([220], 0.12, 'sawtooth', 0.05);
+      if(locked[0] && locked[1]){ locked[2] = true; setTimeout(()=>{ halves.forEach(x=>x.classList.remove('lock')); round++; next(); }, 1100); }
+      else setTimeout(()=> halves[p].classList.remove('lock'), 1100);
+    }
+  }
+  function finish(){
+    const w = score[0]===score[1] ? -1 : (score[0]>score[1] ? 0 : 1);
+    halves.forEach((el,p)=>{
+      el.innerHTML = `<div class="duel-end"><div class="big">${w===-1?'🤝':w===p?'🏆':'💪'}</div><div class="duel-q">${w===-1?'Empate!':w===p?'Você venceu!':'Quase! Revanche?'}</div><div class="duel-name">${score[p]} × ${score[1-p]}</div><div class="duel-actions"><button type="button" class="duel-opt again">Revanche</button><button type="button" class="duel-opt exit">Sair</button></div></div>`;
+      el.querySelector('.again').onclick = ()=>{ score[0]=score[1]=0; round=0; next(); };
+      el.querySelector('.exit').onclick = ()=>{ done = true; root.remove(); };
+    });
+    sc.textContent = w===-1 ? 'Empate!' : `${names[w]} venceu!`;
+    launchConfetti(140);
+    gameTouchDay();
+    const gd = loadGame(); gd.duels = (gd.duels||0) + 1; gameUnlock('duelist');
+    saveGame();
+  }
+  next();
+}
+
+/* ---------------- CERTIFICADOS ----------------
+   Cada episódio da trilha concluído (grande final vencida) libera um certificado
+   que dá pra imprimir ou salvar em PDF. */
+function completedUnits(){
+  const done = pathDone(), all = allPathNodes();
+  return SUBJECTS.filter(s=>all.filter(n=>n.subject.id===s.id).every(n=>done[n.key]));
+}
+function certificatesScreen(){
+  const wrap = document.createElement('div');
+  wrap.appendChild(topbar('📜 Certificados', true, ()=>go('home')));
+  const c = h(`<div class="content"></div>`);
+  const units = completedUnits();
+  c.appendChild(h(`<p style="color:var(--ink-soft); font-size:14px; margin:2px 0 16px;">Vença a <b>Grande final</b> de um episódio da Trilha pra ganhar o certificado daquele assunto. Dá pra imprimir ou salvar em PDF.</p>`));
+  SUBJECTS.forEach(s=>{
+    const got = units.includes(s);
+    const row = h(`<button class="subject-row" ${got?'':'disabled style="opacity:.5"'}><span class="sym">${got?'📜':'🔒'}</span><span class="txt"><span class="name">${s.name}</span><span class="subj-meta">${got?'Certificado liberado · toque pra ver':'Complete o episódio na Trilha'}</span></span><span class="chev">›</span></button>`);
+    if(got) row.onclick = ()=> go('certificate', {subjectId:s.id});
+    c.appendChild(row);
+  });
+  wrap.appendChild(c);
+  return wrap;
+}
+function certificateScreen(){
+  const s = SUBJECTS.find(x=>x.id===state.subjectId) || SUBJECTS[0];
+  const wrap = document.createElement('div');
+  wrap.appendChild(topbar('Certificado', true, ()=>go('certificates')));
+  const c = h(`<div class="content"></div>`);
+  const name = currentUser ? currentUser.name : '';
+  const g = loadGame();
+  const when = new Date(); const dt = `${String(when.getDate()).padStart(2,'0')}/${String(when.getMonth()+1).padStart(2,'0')}/${when.getFullYear()}`;
+  const cert = h(`<div class="cert">
+    <div class="cert-in">
+      <img src="${LOGO_URI}" alt="" class="cert-logo">
+      <div class="cert-k">Matemática Show</div>
+      <h2>Certificado de Conclusão</h2>
+      <p>Certificamos que</p>
+      <div class="cert-name"></div>
+      <p>concluiu com sucesso o episódio</p>
+      <div class="cert-subj">${s.sym} ${escHTML(s.name)}</div>
+      <p class="cert-small">passando pelas fases fácil, média e difícil e vencendo a Grande final.<br>Nível ${levelInfo(g.xp).level} · ${escHTML(levelInfo(g.xp).title)}</p>
+      <div class="cert-foot"><span>${dt}</span><span>🎤 Pi, o apresentador</span></div>
+    </div>
+  </div>`);
+  cert.querySelector('.cert-name').textContent = name || 'Estudante';
+  c.appendChild(cert);
+  const actions = h(`<div class="cta-row rp-actions" style="margin-top:16px"></div>`);
+  const pr = h(`<button class="btn primary">🖨️ Imprimir / PDF</button>`);
+  pr.onclick = ()=> window.print();
+  actions.appendChild(pr);
+  c.appendChild(actions);
+  wrap.appendChild(c);
   return wrap;
 }
 
@@ -2903,10 +4966,13 @@ function contentScreen(){
   wrap.appendChild(topbar('Aprender', true, ()=>go('home')));
   const c = h(`<div class="content"></div>`);
   c.appendChild(h(`<p style="color:var(--ink-soft); font-size:14px; margin:2px 0 16px;">Escolha um assunto para estudar a teoria e ver exemplos.</p>`));
-  SUBJECTS.forEach(s=>{
-    const row = h(`<button class="subject-row"><span class="sym">${s.sym}</span><span class="txt"><span class="name">${s.name}</span></span><span class="chev">›</span></button>`);
+  const lab = h(`<button type="button" class="alert-banner" style="margin:0 0 14px"><span class="sym">🔺</span><span class="txt"><span class="title">Laboratório de Geometria</span><span class="sub">Mexa nas figuras e veja área, perímetro, volume e ângulos mudando</span></span><span class="chev">›</span></button>`);
+  lab.onclick = ()=> go('geoLab', {geoBack:'content'});
+  c.appendChild(lab);
+  subjectListWithAreas(c, (s,u)=>{
+    const row = h(`<button class="subject-row" style="${unitStyle(u)}"><span class="sym">${s.sym}</span><span class="txt"><span class="name">${s.name}</span><span class="subj-meta">${BNCC_ANO[s.id]?`📚 ${BNCC_ANO[s.id]} · `:''}${masteryChip(masterySync(s.id))}</span></span><span class="chev">›</span></button>`);
     row.onclick = ()=>go('subjectDetail', {subjectId:s.id});
-    c.appendChild(row);
+    return row;
   });
   wrap.appendChild(c);
   return wrap;
@@ -2926,7 +4992,9 @@ function subjectDetailScreen(){
   const wrap = document.createElement('div');
   wrap.appendChild(topbar(s.name, true, ()=>go('content')));
   const c = h(`<div class="content"></div>`);
-  c.appendChild(h(`<div class="learn-hero"><span class="sym-big mono">${s.sym}</span><h2>${s.name}</h2></div>`));
+  c.appendChild(h(`<div class="learn-hero" style="${unitStyle(Math.max(0, SUBJECTS.indexOf(s)))}"><span class="sym-big mono">${s.sym}</span><h2>${s.name}</h2></div>`));
+  { const m = masterySync(s.id);
+    c.appendChild(h(`<div class="mst-box"><div>${masteryChip(m)}${BNCC_ANO[s.id]?`<span class="bncc-tag">📚 BNCC · ${BNCC_ANO[s.id]}</span>`:''}</div><p>${m.next}</p></div>`)); }
   const explain = h(`<div class="explain-card"></div>`);
   const examplesList = s.examples || [s.example];
   const boxesHtml = examplesList.map(ex=>{
@@ -2935,8 +5003,19 @@ function subjectDetailScreen(){
   }).join('');
   explain.innerHTML = s.learn + boxesHtml;
   c.appendChild(explain);
-  const cta = h(`<div class="cta-row"><button class="btn primary">Praticar este assunto</button></div>`);
-  cta.querySelector('button').onclick = ()=>go('exerciseDifficulty', {subjectId:s.id});
+  const cta = h(`<div class="cta-row"><button class="btn primary sd-practice">Praticar este assunto</button><button class="btn secondary sd-cards">🃏 Cartões de revisão</button><button class="btn secondary sd-note">✏️ Anotar no caderno</button></div>`);
+  cta.querySelector('.sd-practice').onclick = ()=>go('exerciseDifficulty', {subjectId:s.id});
+  cta.querySelector('.sd-cards').onclick = ()=> chooseCardsLevel(s.id);
+  if(s.id==='geometria'){
+    const labBtn = h(`<button class="btn secondary sd-lab" style="flex-basis:100%">🔺 Abrir o Laboratório de Geometria</button>`);
+    labBtn.onclick = ()=> go('geoLab', {geoBack:'subjectDetail'});
+    cta.prepend(labBtn);
+  }
+  // cada botão pelo seu próprio nome (antes o ".secondary" pegava o do Laboratório e abria o caderno)
+  cta.querySelector('.sd-note').onclick = ()=>{
+    const mine = notesIndex().filter(n=>n.subjectId===s.id);
+    if(mine.length){ state.noteFilter = s.id; go('notebook'); } else chooseNewPage(s.id);
+  };
   c.appendChild(cta);
   wrap.appendChild(c);
   return wrap;
@@ -2948,10 +5027,10 @@ function exercisesSubjectsScreen(){
   wrap.appendChild(topbar('Exercícios', true, ()=>go('home')));
   const c = h(`<div class="content"></div>`);
   c.appendChild(h(`<p style="color:var(--ink-soft); font-size:14px; margin:2px 0 16px;">Escolha um assunto para praticar.</p>`));
-  SUBJECTS.forEach(s=>{
-    const row = h(`<button class="subject-row"><span class="sym">${s.sym}</span><span class="txt"><span class="name">${s.name}</span></span><span class="chev">›</span></button>`);
+  subjectListWithAreas(c, (s,u)=>{
+    const row = h(`<button class="subject-row" style="${unitStyle(u)}"><span class="sym">${s.sym}</span><span class="txt"><span class="name">${s.name}</span><span class="subj-meta">${masteryChip(masterySync(s.id))}</span></span><span class="chev">›</span></button>`);
     row.onclick = ()=>go('exerciseDifficulty', {subjectId:s.id});
-    c.appendChild(row);
+    return row;
   });
   wrap.appendChild(c);
   return wrap;
@@ -2979,6 +5058,30 @@ function exerciseDifficultyScreen(){
    ========================================================= */
 /* dica curta, por assunto: lembra o método geral, sem revelar o resultado da questão atual */
 const HINTS = {
+  conjuntos: 'ℕ ⊂ ℤ ⊂ ℚ ⊂ ℝ. Raiz de quadrado perfeito é racional; raiz de número que não é quadrado perfeito (e o π) é irracional. Dízima com período de 2 algarismos: período sobre 99.',
+  funcquad: 'Pra calcular f(x), troque x pelo número (com parênteses se for negativo). Vértice: <b>xᵥ = −b / 2a</b> e yᵥ = f(xᵥ). a > 0 → mínimo; a < 0 → máximo.',
+  modular: 'O módulo tira o sinal: |−5| = 5. Em |x − a| = k, o que está dentro vale <b>k</b> ou <b>−k</b> — são duas equações.',
+  exponencial: 'Escreva os dois lados como potência da <b>mesma base</b> (fatore os números) e iguale os expoentes.',
+  logaritmo: 'logₐ b é o expoente que transforma a em b. Soma de logs = log do produto; diferença = log da divisão. log 2 ≈ 0,30 e log 3 ≈ 0,48.',
+  functrig: 'sen e cos variam de −1 a 1. Em a + b·sen x: máximo = a + |b|, mínimo = a − |b|. Período de sen(cx) = 360° ÷ c.',
+  pa: 'Razão r = um termo − o anterior. aₙ = a₁ + (n − 1)·r. Soma: Sₙ = (a₁ + aₙ)·n / 2.',
+  pg: 'Razão q = um termo ÷ o anterior. aₙ = a₁ · qⁿ⁻¹. Soma: Sₙ = a₁·(qⁿ − 1)/(q − 1).',
+  espacial: 'Prisma e cilindro: base × altura. Pirâmide e cone: base × altura ÷ 3. Esfera: 4πr³/3. Cilindro/cone têm base circular: π·r².',
+  analitica: 'Distância: √(Δx² + Δy²). Coeficiente angular: Δy ÷ Δx. Circunferência x² + y² − 2ax − 2by + c = 0: centro (a, b) e r² = a² + b² − c.',
+  trigret: 'Pitágoras: h² = c² + c². sen = oposto/hipotenusa, cos = adjacente/hipotenusa, tg = oposto/adjacente. sen 30° = cos 60° = 1/2 e tg 45° = 1.',
+  ciclo: 'π rad = 180°: troque π por 180 e faça a conta. Pra achar a menor determinação, tire (ou some) 360° até cair entre 0° e 360°.',
+  identidades: 'sen²x + cos²x = 1 (use pra achar um a partir do outro). tg = sen ÷ cos. sen 2x = 2·sen x·cos x.',
+  leis: 'Lei dos senos: a/sen A = b/sen B = 2R. Lei dos cossenos: a² = b² + c² − 2bc·cos A (cos 60° = 1/2, cos 120° = −1/2).',
+  combinatoria: 'Escolhas independentes: multiplique. Ordem importa (pódio, senha): arranjo. Ordem não importa (comissão, grupo): combinação. Anagramas: n!.',
+  probabilidade: 'P = favoráveis ÷ possíveis. Dois dados: 36 resultados. Eventos independentes (“e”): multiplique as probabilidades.',
+  dispersao: 'Amplitude = maior − menor. Variância: média dos quadrados das distâncias até a média. Desvio padrão = √variância.',
+  graficos: 'Leia título, eixos e unidades antes de calcular. Variação % = (novo − antigo) ÷ antigo × 100. Pizza: 360° = 100%.',
+  juros: 'Simples: J = C·i·t (i em decimal: 5% = 0,05) e M = C + J. Compostos: M = C·(1 + i)ᵗ.',
+  descontos: 'Desconto de d%: multiplique por (1 − d). Descontos sucessivos: multiplique os fatores, não some as porcentagens.',
+  inflacao: 'Taxas seguidas se multiplicam: (1 + i₁)(1 + i₂) − 1. Ganho real: (1 + rendimento) ÷ (1 + inflação) − 1.',
+  matrizes: 'aᵢⱼ = linha i, coluna j. Soma: posição com posição. Produto: linha de A × coluna de B, multiplicando termo a termo e somando.',
+  determinantes: '2×2: diagonal principal − diagonal secundária. 3×3 (Sarrus): repita as 2 primeiras colunas; descendo − subindo.',
+  dinheiro: 'Transforme tudo em <b>centavos</b> (R$ 2,50 = 250), faça a conta com números inteiros e volte pra reais no fim. Troco = valor pago − total.<br><b>Exemplo:</b> pagou R$ 10 numa compra de R$ 6,30 → 1000 − 630 = 370 → troco R$ 3,70.',
   mmcmdc: 'Decomponha os dois números em fatores primos. <b>MMC</b>: pegue todos os fatores com o maior expoente. <b>MDC</b>: pegue só os fatores em comum com o menor expoente.<br><b>Exemplo:</b> 12 = 2² × 3 e 18 = 2 × 3² → MMC = 2² × 3² = 36 · MDC = 2 × 3 = 6.',
   geometria: 'Perímetro = soma de todos os lados. Área: retângulo = base × altura · triângulo = base × altura ÷ 2 · trapézio = (B + b) × h ÷ 2 · círculo = 3,14 × raio².<br><b>Exemplo:</b> triângulo de base 8 e altura 5 → 8 × 5 ÷ 2 = 20.',
   estatistica: '<b>Média</b>: some tudo e divida pela quantidade. <b>Mediana</b>: coloque em ordem e pegue o do meio (se forem 2 no meio, faça a média deles). <b>Moda</b>: o que mais se repete.<br><b>Exemplo:</b> 2, 5, 5, 8 → média 5 · mediana 5 · moda 5.',
@@ -3109,6 +5212,7 @@ function exerciseSessionScreen(){
   const ex = sess.current;
   const qcard = h(`<div class="question-card"><div class="qlabel">QUESTÃO ${sess.index+1} DE ${sess.total} · ${({facil:'FÁCIL',medio:'MÉDIO',dificil:'DIFÍCIL'})[sess.difficulty]}</div><div class="qtext mono"></div></div>`);
   const qtextEl = qcard.querySelector('.qtext');
+  addSpeakButton(qcard, ex); addScratchButton(qcard, ex);
   if(ex.columns){
     qtextEl.classList.add('stacked');
     qtextEl.innerHTML = contaArmada(ex.columns.nums, ex.columns.op) + `<div class="ca-caption">= ?</div>`;
@@ -3196,12 +5300,20 @@ function exerciseSessionScreen(){
 }
 
 /* ---------------- REVISAR MEUS ERROS ---------------- */
-async function startReviewErrors(){
+const REVIEW_ERRORS_MAX = 15;
+async function startReviewErrors(opts){
+  opts = opts || {};
   const errs = await loadErrors();
   if(!errs.length){ go('home'); return; }
+  // primeiro os que venceram hoje (caixa menor = mais urgente), depois os demais se a pessoa pediu tudo
+  const now = Date.now();
+  let pool = errs.filter(e=>errorIsDue(e, now) && (!opts.subjectId || e.subjectId===opts.subjectId));
+  if(!pool.length || opts.all) pool = errs.filter(e=>!opts.subjectId || e.subjectId===opts.subjectId);
+  if(!pool.length){ go('home'); return; }
+  pool = pool.slice().sort((a,b)=>(a.box||1)-(b.box||1) || (b.count||1)-(a.count||1)).slice(0, REVIEW_ERRORS_MAX);
   state.session = {
-    errorQueue: errs.map(e=>({...e})),
-    index:0, total: errs.length,
+    errorQueue: pool.map(e=>({...e})),
+    index:0, total: pool.length,
     correct:0, wrong:0, results:[], checked:false, wasCorrect:null,
   };
   go('reviewErrorsSession');
@@ -3218,12 +5330,10 @@ async function recordReviewAnswer(item, correct){
   await saveHistory();
 
   const p = await loadProgress();
-  if(!p[item.subjectId]) p[item.subjectId] = {attempted:0, correct:0};
-  p[item.subjectId].attempted++;
-  if(correct) p[item.subjectId].correct++;
+  bumpProgress(p, item.subjectId, correct, item.difficulty);
   await saveProgress();
 
-  if(correct) await resolveError(item.id);
+  item.reviewResult = await reviewErrorResult(item.id, correct);
   gameOnAnswer(item.subjectId, correct, item.difficulty, {review:true});
 }
 
@@ -3259,8 +5369,9 @@ function reviewErrorsSessionScreen(){
   c.appendChild(sessionHud());
 
   const diffLabel = ({facil:'FÁCIL',medio:'MÉDIO',dificil:'DIFÍCIL'})[item.difficulty] || '';
-  const qcard = h(`<div class="question-card"><div class="qlabel">ERRO ${sess.index+1} DE ${sess.total} · ${item.subjectName}${diffLabel? ' · '+diffLabel : ''}</div><div class="qtext mono"></div></div>`);
+  const qcard = h(`<div class="question-card"><div class="qlabel">ERRO ${sess.index+1} DE ${sess.total} · ${item.subjectName}${diffLabel? ' · '+diffLabel : ''}${(item.count||1)>1? ` · ERRADA ${item.count}x` : ''}</div><div class="qtext mono"></div></div>`);
   const qtextEl = qcard.querySelector('.qtext');
+  addSpeakButton(qcard, ex); addScratchButton(qcard, ex);
   if(ex.columns){
     qtextEl.classList.add('stacked');
     qtextEl.innerHTML = contaArmada(ex.columns.nums, ex.columns.op) + `<div class="ca-caption">= ?</div>`;
@@ -3312,7 +5423,7 @@ function reviewErrorsSessionScreen(){
     wireSlashButtons(form);
   } else {
     const correct = sess.wasCorrect;
-    const fb = h(`<div class="feedback ${correct?'correct':'wrong'}"><div class="fb-title">${correct? '✓ Certinho! Esse erro foi resolvido.' : '✕ Ainda não foi — continua salvo pra tentar de novo depois:'}</div><div class="fb-explain"></div></div>`);
+    const fb = h(`<div class="feedback ${correct?'correct':'wrong'}"><div class="fb-title">${correct? (item.reviewResult==='learned' ? '✓ Aprendido! Essa questão saiu do seu caderno de erros.' : `✓ Certinho! Ela volta em ${ERROR_BOX_DAYS[Math.min(3,(item.box||1)+1)]} dias pra fixar de vez.`) : '✕ Ainda não foi — ela volta amanhã pra você tentar de novo:'}</div><div class="fb-explain"></div></div>`);
     let stepsList = ex.steps;
     if(ex.columns){
       stepsList = [contaArmada(ex.columns.nums, ex.columns.op, fmt(ex.answer), ex.columns.carries, ex.columns.marks), ...ex.steps];
@@ -3406,6 +5517,7 @@ function challengeSessionScreen(){
   const ex = sess.current;
   const qcard = h(`<div class="question-card"><div class="qlabel">QUESTÃO ${sess.index+1} DE ${sess.total} · ${({facil:'FÁCIL',medio:'MÉDIO',dificil:'DIFÍCIL'})[sess.difficulty]} · ${s.sym} ${s.name}</div><div class="qtext mono"></div></div>`);
   const qtextEl = qcard.querySelector('.qtext');
+  addSpeakButton(qcard, ex); addScratchButton(qcard, ex);
   if(ex.columns){
     qtextEl.classList.add('stacked');
     qtextEl.innerHTML = contaArmada(ex.columns.nums, ex.columns.op) + `<div class="ca-caption">= ?</div>`;
@@ -3833,6 +5945,7 @@ function personalizedSessionScreen(){
   const ex = sess.current;
   const qcard = h(`<div class="question-card"><div class="qlabel">QUESTÃO ${sess.index+1} DE ${sess.total} · ${diffLabel}${sess.lvlMsg?`<span class="pt-lvl">${sess.lvlMsg}</span>`:''} · ${s.sym} ${s.name}</div><div class="qtext mono"></div></div>`);
   const qtextEl = qcard.querySelector('.qtext');
+  addSpeakButton(qcard, ex); addScratchButton(qcard, ex);
   if(ex.columns){
     qtextEl.classList.add('stacked');
     qtextEl.innerHTML = contaArmada(ex.columns.nums, ex.columns.op) + `<div class="ca-caption">= ?</div>`;
@@ -3947,7 +6060,11 @@ function solveScreen(){
     const val = card.querySelector('#solveInput').value.trim();
     const resultBox = card.querySelector('#solveResult');
     resultBox.innerHTML = '';
-    if(!val){ return; }
+    if(!val){
+      resultBox.appendChild(h(`<div class="unrecognized">✏️ Digite uma conta ou equação primeiro, ou toque num dos exemplos acima.</div>`));
+      card.querySelector('#solveInput').focus();
+      return;
+    }
     const r = solveQuestion(val);
     if(!r){
       resultBox.appendChild(h(`<div class="unrecognized">Não consegui entender essa questão. 🤔<br>Tente reescrever de forma mais simples, como nos exemplos acima.</div>`));
@@ -3975,6 +6092,9 @@ function solveScreen(){
         <div class="sec-label"><span class="n">4</span>Resposta final</div>
         <div class="final-answer-box"><div class="lbl">RESULTADO</div><div class="val">${r.final}</div></div>
       </div>`));
+    const practice = solvePracticeCard(val);
+    if(practice) resultBox.appendChild(practice);
+    const gs = loadGame(); gs.solves = (gs.solves||0) + 1; gameCheckAchievements(); saveGame();
   };
   c.appendChild(card);
   wrap.appendChild(c);
@@ -4034,7 +6154,8 @@ function calculatorScreen(){
   ];
   keys.forEach(([label,cls])=>{
     if(cls==='ghost'){ grid.appendChild(h(`<div></div>`)); return; }
-    const btn = h(`<button class="calc-key ${cls}">${label}</button>`);
+    const CALC_NAMES = {'⌫':'Apagar','%':'Porcentagem','÷':'Dividir','×':'Multiplicar','−':'Menos','+':'Mais',',':'Vírgula','=':'Igual','C':'Limpar tudo'};
+    const btn = h(`<button class="calc-key ${cls}"${CALC_NAMES[label]?` aria-label="${CALC_NAMES[label]}"`:''}>${label}</button>`);
     btn.onclick = ()=> calcPress(label);
     grid.appendChild(btn);
   });
@@ -4119,7 +6240,7 @@ async function profileScreen(){
   ids.forEach(id=>{
     totalAttempted += p[id].attempted; totalCorrect += p[id].correct;
     const acc = p[id].attempted? (p[id].correct/p[id].attempted*100) : 0;
-    if(p[id].attempted>=5 && acc>=80) mastered++;
+    if(masteryOf(p[id]).lvl>=3) mastered++;
   });
   const pct = totalAttempted? Math.round(totalCorrect/totalAttempted*100) : 0;
   const errs = await loadErrors();
@@ -4127,7 +6248,7 @@ async function profileScreen(){
   const grid = h(`<div class="stat-grid"></div>`);
   grid.appendChild(h(`<div class="stat-card"><div class="num">${totalAttempted}</div><div class="lbl">Questões resolvidas</div></div>`));
   grid.appendChild(h(`<div class="stat-card acc"><div class="num">${pct}%</div><div class="lbl">Acerto geral</div></div>`));
-  grid.appendChild(h(`<div class="stat-card"><div class="num">${mastered}</div><div class="lbl">Assuntos dominados</div></div>`));
+  grid.appendChild(h(`<div class="stat-card"><div class="num">${mastered}</div><div class="lbl">Assuntos proficientes ou dominados</div></div>`));
   c.appendChild(grid);
 
   // menu em lista (antes era uma fileira de botões que ficava mais larga que a tela
@@ -4140,10 +6261,19 @@ async function profileScreen(){
     b.onclick = fn;
     menu.appendChild(b);
   };
+  const group = t=> menu.appendChild(h(`<div class="pm-group">${t}</div>`));
+  group('Seu progresso');
   item('📊', 'Ver progresso detalhado', 'Acertos por assunto e histórico', ()=> go('progress'));
-  item('📝', 'Relatório semanal', 'Resumo pra pais e professores', ()=> go('report'));
-  if(errs.length) item('🔁', `Revisar ${errs.length} erro${errs.length===1?'':'s'}`, 'Tente de novo as questões que errou', ()=> startReviewErrors());
+  item('🔁', 'Caderno de erros', errs.length ? `${errs.length} questão(ões) guardada(s) · ${errs.filter(e=>errorIsDue(e)).length} pra hoje` : 'As questões que você errar aparecem aqui', ()=> go('errors'));
+  item('⚔️', 'Arena', `⭐ ${arenaTotalStars()} estrelas · Desafio do Dia, simulados e fases`, ()=> go('arena'));
+  item('🧭', 'Teste de nivelamento', studyData().placement ? `Último: ${studyData().placement.ok}/${studyData().placement.n}` : 'Descubra por onde começar', ()=> startPlacement());
+  item('🗺️', 'Plano de estudos', studyData().plan ? `Prova em ${studyData().plan.examDate.split('-').reverse().join('/')}` : 'Monte um plano até o dia da prova', ()=> go('plan'));
   item('🏅', 'Conquistas', 'Suas medalhas e títulos', ()=> go('achievements'));
+  item('📜', 'Certificados', 'Episódios da trilha concluídos', ()=> go('certificates'));
+  item('📝', 'Relatório semanal', 'Resumo pra pais e professores', ()=> go('report'));
+  group('Ferramentas');
+  item('✏️', 'Caderno', 'Suas anotações escritas à mão', ()=> go('notebook'));
+  group('Ajuda e conta');
   item('📘', 'Como usar o app', 'Guia e tour guiado', ()=> go('help'));
   item('⚙️', 'Configurações', 'Tema, som, meta, senha e backup', ()=> go('settings'));
   item('🚪', 'Sair da conta', '', ()=> showConfirm({
@@ -4180,6 +6310,30 @@ async function settingsScreen(){
     themeRow.appendChild(chip);
   });
   c.appendChild(themeRow);
+
+  // --- Acessibilidade ---
+  c.appendChild(h(`<section class="block"><h3>Leitura e acessibilidade</h3></section>`));
+  c.appendChild(h(`<p style="color:var(--ink-soft); font-size:12.5px; margin:-6px 0 8px;">Tamanho do texto das questões e explicações</p>`));
+  const scaleRow = h(`<div class="diff-row"></div>`);
+  [['normal','A'],['grande','A+'],['enorme','A++']].forEach(([id,label],i)=>{
+    const chip = h(`<button type="button" class="diff-chip" style="font-size:${13+i*3}px" aria-label="Texto ${id}">${label}</button>`);
+    if((settings.textScale||'normal')===id) chip.classList.add('active');
+    chip.onclick = async ()=>{
+      settings.textScale = id; await saveSettings(); applyTextScale(id);
+      scaleRow.querySelectorAll('.diff-chip').forEach(ch=>ch.classList.remove('active')); chip.classList.add('active');
+    };
+    scaleRow.appendChild(chip);
+  });
+  c.appendChild(scaleRow);
+  if('speechSynthesis' in window){
+    const ttsToggle = h(`<button type="button" class="weak-toggle ${settings.tts!==false?'active':''}"><span class="check">✓</span><span>🔊 Botão de ouvir as questões em voz alta</span></button>`);
+    ttsToggle.onclick = async ()=>{
+      settings.tts = settings.tts===false; await saveSettings();
+      ttsToggle.classList.toggle('active', settings.tts);
+      if(settings.tts) speak('Pronto! Agora você pode ouvir as questões.');
+    };
+    c.appendChild(ttsToggle);
+  }
 
   // --- Som e vibração ---
   c.appendChild(h(`<section class="block"><h3>Som e vibração</h3></section>`));
@@ -4237,7 +6391,7 @@ async function settingsScreen(){
 
   // --- Conta ---
   c.appendChild(h(`<section class="block" style="margin-top:22px"><h3>Conta</h3></section>`));
-  const nameBox = h(`<div class="auth-field"><label>Nome</label><input type="text" class="settingsNameInput" value="${escHTML((currentUser&&currentUser.name)||'')}"></div>`);
+  const nameBox = h(`<div class="auth-field"><label>Nome</label><input type="text" class="settingsNameInput" aria-label="Nome" value="${escHTML((currentUser&&currentUser.name)||'')}"></div>`);
   c.appendChild(nameBox);
   const nameErrBox = h(`<div class="authErrorBox"></div>`);
   c.appendChild(nameErrBox);
@@ -4250,12 +6404,12 @@ async function settingsScreen(){
   };
   c.appendChild(saveNameBtn);
 
-  c.appendChild(h(`<div class="auth-field"><label>Senha atual</label><input type="password" class="settingsCurPass"></div>`));
-  const newPassField = h(`<div class="auth-field"><label>Nova senha</label><input type="password" class="settingsNewPass" autocomplete="new-password"></div>`);
+  c.appendChild(h(`<div class="auth-field"><label>Senha atual</label><input type="password" class="settingsCurPass" aria-label="Senha atual"></div>`));
+  const newPassField = h(`<div class="auth-field"><label>Nova senha</label><input type="password" class="settingsNewPass" autocomplete="new-password" aria-label="Nova senha"></div>`);
   const newPassMeter = attachStrengthMeter(newPassField.querySelector('input'), ()=> currentUser ? currentUser.name : '');
   newPassField.appendChild(newPassMeter);
   c.appendChild(newPassField);
-  c.appendChild(h(`<div class="auth-field"><label>Confirmar nova senha</label><input type="password" class="settingsNewPass2"></div>`));
+  c.appendChild(h(`<div class="auth-field"><label>Confirmar nova senha</label><input type="password" class="settingsNewPass2" aria-label="Confirmar nova senha"></div>`));
   const passErrBox = h(`<div class="authErrorBox"></div>`);
   c.appendChild(passErrBox);
   const savePassBtn = h(`<button class="btn secondary" style="width:100%;margin-bottom:20px;">Alterar senha</button>`);
@@ -4301,7 +6455,7 @@ async function settingsScreen(){
       importMsgBox.innerHTML = `<div class="auth-error">${res.error}</div>`;
     } else {
       importMsgBox.innerHTML = `<div class="auth-error" style="color:var(--pine);border-color:rgba(51,210,227,.3);background:rgba(51,210,227,.08);">Progresso importado! Atualizando…</div>`;
-      setTimeout(()=> go('profile'), 900);
+      setTimeout(()=>{ if(state.screen==='settings') go('profile'); }, 900); // só se a pessoa ainda estiver aqui
     }
   };
   c.appendChild(importBtn);
@@ -4355,12 +6509,12 @@ async function progressScreen(){
       if(!s) return;
       const d = p[id];
       const acc = d.attempted? Math.round(d.correct/d.attempted*100) : 0;
-      const mastered = d.attempted>=5 && acc>=80;
+      const mst = masteryOf(d);
       const barCls = acc>=80? '' : acc>=50? 'mid':'low';
       const row = h(`
         <div class="mastery-row">
           <div class="top">
-            <span class="name">${s.sym} &nbsp;${s.name} ${mastered? '<span class="mastered-badge" style="margin-left:6px">DOMINA</span>':''}</span>
+            <span class="name">${s.sym} &nbsp;${s.name} ${masteryChip(mst)}</span>
             <span class="pct">${acc}%</span>
           </div>
           <div class="bar-track"><div class="bar-fill ${barCls}" style="width:${acc}%"></div></div>
@@ -4482,7 +6636,30 @@ const ACHIEVEMENTS = [
   {id:'unit',      ico:'🗺️', name:'Desbravador',       desc:'Vença a grande final de um episódio'},
   {id:'chests',    ico:'🎁', name:'Caça-prêmios',      desc:'Abra 5 prêmios surpresa'},
   {id:'quiz5000',  ico:'🎤', name:'Estrela do Quiz',   desc:'Faça 10.000 pontos no Quiz do Show'},
+  // --- fusão com o Arena: conquistas novas. As que têm check() são conferidas sozinhas
+  //     (gameCheckAchievements); para criar outra basta acrescentar uma linha aqui.
+  {id:'ans10',     ico:'✏️', name:'Aquecendo',         desc:'Responda 10 questões',       check:g=>totalAnswered()>=10},
+  {id:'ans100',    ico:'💯', name:'Cem questões',      desc:'Responda 100 questões',      check:g=>totalAnswered()>=100},
+  {id:'arenaWin',  ico:'⚔️', name:'Primeira vitória na Arena', desc:'Ganhe estrela numa fase da Arena'},
+  {id:'arenaPerfect', ico:'🌟', name:'Fase perfeita',  desc:'3 estrelas numa fase da Arena'},
+  {id:'arenaStars30', ico:'🌌', name:'Constelação',    desc:'Junte 30 estrelas na Arena', check:g=>arenaTotalStars()>=30},
+  {id:'daily1',    ico:'📅', name:'Desafiante',        desc:'Complete um Desafio do Dia'},
+  {id:'daily7',    ico:'🗓️', name:'Desafio da semana', desc:'Complete 7 Desafios do Dia'},
+  {id:'exam1',     ico:'📝', name:'Primeira prova',    desc:'Faça um simulado'},
+  {id:'exam10',    ico:'🏆', name:'Nota 10',           desc:'Tire 10 num simulado de 10+ questões'},
+  {id:'notebook5', ico:'🩹', name:'Aprendi com o erro', desc:'Tire 5 questões do caderno de erros', check:g=>(g.errLearned||0)>=5},
+  {id:'masterFrac', ico:'🍕', name:'Mestre das frações', desc:'Chegue a Dominado em Frações', check:g=>masteryOf(progressSync().fracoes).lvl>=4},
+  {id:'placement', ico:'🧭', name:'Ponto de partida',  desc:'Faça o teste de nivelamento'},
+  {id:'plan',      ico:'🗺️', name:'Estrategista',      desc:'Crie um plano de estudos'},
+  {id:'solver10',  ico:'🔍', name:'Detetive',          desc:'Resolva 10 contas no Resolver', check:g=>(g.solves||0)>=10},
+  {id:'duelist',   ico:'🤝', name:'Duelista',          desc:'Jogue um duelo a dois'},
 ];
+function totalAnswered(){ return Object.values(progressSync()).reduce((a,d)=>a+((d&&d.attempted)||0),0); }
+/* confere as conquistas automáticas (as que têm check) */
+function gameCheckAchievements(){
+  const g = loadGame();
+  ACHIEVEMENTS.forEach(a=>{ if(a.check && !g.ach[a.id]){ try{ if(a.check(g)) gameUnlock(a.id); }catch(e){} } });
+}
 const DAILY_MISSIONS = [
   {id:'lesson', ico:'🗺️', reward:30, title:()=>'Complete 1 fase da trilha', progress:g=>[Math.min(g.today.lessons||0,1), 1]},
   {id:'goal',  ico:'🎯', reward:40, title:g=>`Responda ${g.goal} questões`,   progress:g=>[g.today.answered, g.goal]},
@@ -4511,11 +6688,10 @@ function gameEnsureToday(){
   if(!g.today || g.today.day !== k) g.today = {day:k, answered:0, bestCombo:0, bolts:0, claimed:{}};
 }
 /* ---------- ofensiva (dias seguidos) ----------
-   - g.days guarda o histórico recente: 1 = jogou, 'f' = protegido por um protetor 🧊
-   - protetores (máx. STREAK_FREEZE_MAX) são gastos sozinhos quando a pessoa
-     pula dia(s); se não houver protetores suficientes, a ofensiva zera
+   - g.days guarda o histórico recente: 1 = jogou ('f' = dia salvo por protetor, só em dados antigos)
+   - passou um dia inteiro sem jogar, a ofensiva volta pra zero (não existe mais protetor)
    - marcos (3, 7, 14, 30...) dão moedas e uma comemoração */
-const STREAK_FREEZE_MAX = 2, STREAK_FREEZE_COST = 50, STREAK_DAYS_KEEP = 70;
+const STREAK_DAYS_KEEP = 70;
 const STREAK_MILESTONES = [[3,10],[7,25],[14,40],[30,75],[50,100],[100,200],[200,300],[365,500]];
 function keyToDate(k){ const [y,m,d] = String(k).split('-').map(Number); return new Date(y, m-1, d); }
 function dayDiff(a, b){ return Math.round((keyToDate(b) - keyToDate(a)) / 864e5); } // b - a, em dias
@@ -4524,10 +6700,9 @@ function dayShift(n){ const d = new Date(); d.setDate(d.getDate()+n); return day
 function streakFromData(g){
   if(!g || !g.lastDay || !g.streak) return 0;
   const gap = dayDiff(g.lastDay, dayKey());
-  if(gap<=1) return g.streak;
-  return (g.freezes||0) >= gap-1 ? g.streak : 0;
+  return gap<=1 ? g.streak : 0; // jogou hoje ou ontem: vale; pulou um dia inteiro: zerou
 }
-/* ao abrir o jogo: cobre dias pulados com protetores ou zera a ofensiva */
+/* ao abrir o jogo (e quando o dia vira): se pulou um dia inteiro, a ofensiva zera */
 function gameCheckStreak(){
   const g = gameCache;
   if(g.days===undefined){
@@ -4538,21 +6713,12 @@ function gameCheckStreak(){
       for(let i=0; i<Math.min(g.streak, STREAK_DAYS_KEEP); i++){ const d = new Date(last); d.setDate(d.getDate()-i); g.days[dayKey(d)] = 1; }
     }
   }
-  if(g.freezes===undefined) g.freezes = 1; // todo mundo começa com 1 protetor de presente
   if(g.bestStreak===undefined) g.bestStreak = g.streak||0;
   if(!g.lastDay || !g.streak) return;
   const gap = dayDiff(g.lastDay, dayKey());
   if(gap<=1) return;
-  const missed = gap-1;
-  if(g.freezes >= missed){
-    for(let i=1; i<=missed; i++) g.days[dayShift(-i)] = 'f';
-    g.freezes -= missed;
-    g.lastDay = dayShift(-1);
-    g.streakNote = {type:'freeze', n:missed, streak:g.streak};
-  } else {
-    g.streakNote = {type:'lost', streak:g.streak};
-    g.streak = 0;
-  }
+  g.streakNote = {type:'lost', streak:g.streak};
+  g.streak = 0;
   saveGame();
 }
 function streakNextMilestone(n){ return STREAK_MILESTONES.find(([d])=>d>n) || null; }
@@ -4584,25 +6750,34 @@ function gameTouchDay(){
     }
   }
 }
-/* ofensiva: vale se jogou hoje ou ontem (ou se os protetores cobrem o intervalo); senão 0 */
+/* ofensiva: vale se jogou hoje ou ontem; senão 0 */
 function gameStreakNow(){ return streakFromData(loadGame()); }
 function playedToday(){ return loadGame().lastDay===dayKey(); }
-function buyStreakFreeze(){
-  const g = loadGame(); heartsNow();
-  if(g.freezes >= STREAK_FREEZE_MAX || g.gems < STREAK_FREEZE_COST) return false;
-  g.gems -= STREAK_FREEZE_COST; g.freezes++;
-  saveGame(); playTones([523,784,1047], 0.08, 'triangle', 0.1);
-  return true;
-}
-/* avisos pendentes (protetor usado / ofensiva perdida), mostrados uma vez */
+/* aviso pendente de ofensiva perdida, mostrado uma vez */
 function showStreakNote(){
   const g = loadGame(), n = g.streakNote;
   if(!n) return;
   delete g.streakNote; saveGame();
-  if(n.type==='freeze') queueToast('🧊', n.n===1 ? 'Protetor usado!' : `${n.n} protetores usados!`, `Sua ofensiva de ${n.streak} dia${n.streak===1?'':'s'} foi salva`);
-  else if(n.streak>=2) queueToast('💔', 'A ofensiva apagou', `Você tinha ${n.streak} dias. Jogue hoje pra acender de novo!`);
+  if(n.type==='lost' && n.streak>=2) queueToast('💔', 'A ofensiva apagou', `Você tinha ${n.streak} dias. Jogue hoje pra acender de novo!`);
 }
-/* painel da ofensiva: dias da semana, recorde, próximo marco e protetores */
+/* o app pode ficar aberto de um dia pro outro: quando o dia muda, zera a meta e as missões
+   do dia, confere a ofensiva e redesenha a tela (menos no meio de uma atividade) */
+let _dayWatchKey = dayKey();
+function checkDayChange(){
+  const k = dayKey();
+  if(k === _dayWatchKey) return;
+  _dayWatchKey = k;
+  if(!currentUser) return;
+  loadGame(); gameEnsureToday(); gameCheckStreak(); saveGame();
+  const busy = ['lesson','exerciseSession','challengeSession','personalizedSession','reviewErrorsSession','notePage','lightning','duel','examRun','placement','cardsDeck'].includes(state.screen);
+  if(!busy && typeof render==='function') render();
+  showStreakNote();
+}
+setInterval(checkDayChange, 30000);
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) checkDayChange(); });
+window.addEventListener('focus', checkDayChange);
+
+/* painel da ofensiva: dias da semana, recorde e próximo marco */
 function showStreakPanel(){
   const g = loadGame(), streak = gameStreakNow(), today = playedToday();
   const WD = ['D','S','T','Q','Q','S','S'];
@@ -4623,30 +6798,18 @@ function showStreakPanel(){
     <div class="big ${streak?'':'sk-off'}">🔥</div>
     <h2>${streak} dia${streak===1?'':'s'} de ofensiva</h2>
     <p>${today ? 'Você já jogou hoje. A chama está garantida! ✅'
-      : streak ? 'Responda 1 pergunta hoje pra não perder sua ofensiva!'
+      : streak ? 'Responda 1 pergunta hoje! Se passar o dia sem jogar, a ofensiva volta pra zero.'
       : 'Responda 1 pergunta pra acender sua ofensiva!'}</p>
     <div class="sk-week">${week}</div>
     <div class="sk-stats">
       <div><b>🏆 ${g.bestStreak||0}</b><span>recorde</span></div>
-      <div><b>🧊 <i class="sk-fz">${g.freezes}</i>/${STREAK_FREEZE_MAX}</b><span>protetores</span></div>
+      <div><b>📅 ${Object.keys(g.days||{}).filter(k=>g.days[k]===1 && dayDiff(k, dayKey())<7).length}/7</b><span>dias nesta semana</span></div>
     </div>
     ${next ? `<div class="sk-goal"><div class="sk-goal-t">Próximo marco: <b>${next[0]} dias</b> · +${next[1]} 🪙</div><div class="sk-bar"><i style="width:${pct}%"></i></div><small>faltam ${next[0]-streak} dia${next[0]-streak===1?'':'s'}</small></div>` : ''}
-    <p class="sk-help">O protetor 🧊 salva sua ofensiva sozinho se você ficar um dia sem jogar.</p>
-    <button type="button" class="sk-buy"></button>
+    <p class="sk-help">Jogue pelo menos 1 pergunta todo dia. Ficou um dia inteiro sem jogar, a ofensiva volta pra zero.</p>
     <button type="button" class="sk-close" style="margin-top:10px;background:rgba(255,255,255,.1);color:#fff">Fechar</button>
   </div>`;
-  const buy = bg.querySelector('.sk-buy');
-  function paintBuy(){
-    const full = g.freezes >= STREAK_FREEZE_MAX, gems = gemsNow();
-    buy.disabled = full || gems < STREAK_FREEZE_COST;
-    buy.textContent = full ? 'Protetores no máximo 🧊' : `Comprar protetor 🧊 por ${STREAK_FREEZE_COST} 🪙 (você tem ${gems})`;
-    bg.querySelector('.sk-fz').textContent = g.freezes;
-  }
-  paintBuy();
-  let bought = false;
-  buy.onclick = ()=>{ if(buyStreakFreeze()){ bought = true; paintBuy(); showFloat('+1 protetor 🧊'); } };
-  // só redesenha a tela se as moedas mudaram (e só nas telas que mostram moedas/ofensiva)
-  const close = ()=>{ bg.remove(); if(bought && ['home','path','achievements'].includes(state.screen)) render(); };
+  const close = ()=> bg.remove();
   bg.querySelector('.sk-close').onclick = close;
   bg.addEventListener('click', e=>{ if(e.target===bg) close(); });
   document.body.appendChild(bg);
@@ -4713,14 +6876,15 @@ function gameOnAnswer(subjectId, correct, difficulty, opts){
     if(Object.keys(g.subjectsHit).length>=6) gameUnlock('explorer');
     if(sess) sess.xp = (sess.xp||0) + gain;
     gameAddXP(gain);
-    const inLesson = sess && (sess.kind==='lesson' || sess.kind==='quiz');
+    const inLesson = sess && (sess.kind==='lesson' || sess.kind==='quiz' || sess.kind==='placement');
     if(!inLesson) showFloat(`+${gain} XP${combo>=2? ` · 🔥x${combo}`:''}`);
     if(combo>=3) playComboSound(combo);
-  } else if(prevCombo>=2 && !(sess && (sess.kind==='lesson' || sess.kind==='quiz'))){
+  } else if(prevCombo>=2 && !(sess && (sess.kind==='lesson' || sess.kind==='quiz' || sess.kind==='placement'))){
     showFloat('Combo perdido 💔', true);
   }
   const goal = (currentSettingsSync().dailyGoal)||10;
   if(g.today.answered>=goal) gameUnlock('goal');
+  gameCheckAchievements();
   saveGame();
 }
 
@@ -5320,7 +7484,8 @@ function startQuiz(difficulty){
 function lessonAdvance(sess){
   sess.selected = null; sess.checked = false; sess.wasCorrect = null; sess.tryAgain = false;
   if(sess.kind==='quiz'){
-    if(sess.asked >= sess.needed){ sess.finished = true; return; }
+    if(sess.asked >= sess.needed || sess.outOfLives){ sess.finished = true; return; }
+    if(sess.mode){ arenaNextQuestion(sess); return; } // Arena: fase de um assunto ou Desafio do Dia
     sess.subjectId = pick(SUBJECTS).id;
     sess.q = newLessonQuestion(sess); sess.asked++; sess.qStart = Date.now();
     return;
@@ -5341,16 +7506,16 @@ function lessonScreen(){
   const isQuiz = sess.kind==='quiz';
   if(sess.finished || sess.failed){ lessonEnd(wrap, sess); return wrap; }
 
-  const exitTo = isQuiz ? 'quizSetup' : 'path';
+  const exitTo = sess.exitTo || (isQuiz ? 'quizSetup' : 'path');
   const top = h(`<div class="lesson-top"><button class="lesson-x" aria-label="Sair">✕</button><div class="lesson-prog"><i style="width:${Math.round((isQuiz? (sess.asked-1+(sess.checked?1:0)) : sess.cleared)/sess.needed*100)}%"></i></div>${
-    isQuiz ? `<span class="lesson-score">🏅 ${sess.score}</span>` : sess.maxWrong!==null ? `<span class="lesson-hearts">🛡️ ${Math.max(0,sess.maxWrong+1-sess.wrong)}</span>` : `<span class="lesson-hearts">❤️ ${heartsNow()}</span>`
+    isQuiz ? `${sess.lives!==undefined ? `<span class="lesson-hearts" aria-label="${sess.lives} vidas">❤️ ${sess.lives}</span>` : ''}<span class="lesson-score">🏅 ${sess.score}</span>` : sess.maxWrong!==null ? `<span class="lesson-hearts">🛡️ ${Math.max(0,sess.maxWrong+1-sess.wrong)}</span>` : `<span class="lesson-hearts">❤️ ${heartsNow()}</span>`
   }</div>`);
   top.querySelector('.lesson-x').onclick = ()=>{
     showConfirm({
-      icon:'🚪', title: isQuiz ? 'Sair do quiz?' : 'Sair da fase?',
-      message: isQuiz ? 'Sua pontuação desta partida será perdida.' : 'Você vai perder o progresso desta fase.',
+      icon:'🚪', title: sess.mode==='daily' ? 'Sair do desafio?' : isQuiz && !sess.mode ? 'Sair do quiz?' : 'Sair da fase?',
+      message: sess.mode==='daily' ? 'O Desafio do Dia vale uma tentativa: se sair agora, conta só o que você já respondeu.' : isQuiz && !sess.mode ? 'Sua pontuação desta partida será perdida.' : 'Você vai perder o progresso desta fase.',
       ok:'Sair', cancel: isQuiz ? 'Continuar jogando' : 'Continuar a fase', danger:true,
-    }).then(ok=>{ if(ok) go(exitTo); });
+    }).then(ok=>{ if(ok){ if(sess.mode) arenaQuit(sess); go(exitTo); } });
   };
   wrap.appendChild(top);
   const c = h(`<div class="content lesson-body"></div>`);
@@ -5359,7 +7524,7 @@ function lessonScreen(){
   const q = sess.q, ex = q.ex;
   const subj = SUBJECTS.find(s=>s.id===q.subjectId);
   if(isQuiz){
-    const meta = h(`<div class="quiz-meta"><div class="qm-t">PERGUNTA ${sess.asked} DE ${sess.needed}<br>${subj.sym} ${subj.name}</div>
+    const meta = h(`<div class="quiz-meta"><div class="qm-t">${sess.mode==='daily' ? `DESAFIO DO DIA · ${sess.asked}/${sess.needed}` : `PERGUNTA ${sess.asked} DE ${sess.needed}`}<br>${subj.sym} ${subj.name}${sess.mode==='arena' ? ` · ${({facil:'Fácil',medio:'Médio',dificil:'Difícil'})[sess.diff]}` : ''}</div>
       <div class="quiz-ring"><svg viewBox="0 0 58 58"><defs><linearGradient id="qr-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4C7DFF"/><stop offset="1" stop-color="#B23FE0"/></linearGradient></defs>
       <circle class="trk" cx="29" cy="29" r="25" fill="none" stroke-width="6"/><circle class="bar" cx="29" cy="29" r="25" fill="none" stroke-width="6" stroke-linecap="round" stroke-dasharray="157.08"/></svg><span></span></div></div>`);
     c.appendChild(meta);
@@ -5384,6 +7549,7 @@ function lessonScreen(){
   }
   const qv = questionHTML(ex);
   const qcard = h(`<div class="question-card lesson-q"><div class="qtext mono ${qv.stacked?'stacked':''}">${qv.html}</div></div>`);
+  addSpeakButton(qcard, ex); addScratchButton(qcard, ex);
   if(!isQuiz){
     const row = h(`<div class="lesson-q-row"></div>`);
     row.appendChild(h(`<div class="lesson-mascot">${mascotSVG(sess.checked ? (sess.wasCorrect?'joy':'sad') : (sess.tryAgain ? 'sad' : 'happy'), 64)}</div>`));
@@ -5501,6 +7667,7 @@ async function lessonCheck(sess, idx){
     if(ok){ sess.qStreak++; sess.lastPoints = Math.round(500 + 500*left/QUIZ_SECONDS) + Math.min(sess.qStreak-1,5)*100; sess.score += sess.lastPoints; sess.correct++; }
     else { sess.qStreak = 0; sess.lastPoints = 0; sess.wrong++; }
     sess.cleared++;
+    if(sess.mode) arenaAfterCheck(sess, ok);
   } else {
     // acertou: conta como resolvida; só conta "de primeira" (e dá XP) se não tinha errado antes
     sess.cleared++;
@@ -5512,6 +7679,7 @@ async function lessonCheck(sess, idx){
 function lessonEnd(wrap, sess){
   const c = h(`<div class="content lesson-end"></div>`);
   wrap.appendChild(c);
+  if(sess.kind==='quiz' && sess.mode){ arenaQuizEnd(c, sess); return; }
   const secs = Math.round((Date.now()-sess.startTs)/1000);
   const answered = sess.correct + sess.wrong;
   const acc = answered ? Math.round(sess.correct/answered*100) : 0;
@@ -5543,7 +7711,7 @@ function lessonEnd(wrap, sess){
       } else {
         pathDone()[sess.nodeKey] = true;
         const node = allPathNodes().find(n=>n.key===sess.nodeKey);
-        if(node && node.type==='trophy') gameUnlock('unit');
+        if(node && node.type==='trophy'){ gameUnlock('unit'); queueToast('📜', 'Certificado liberado!', `${node.subject.name}: veja em Certificados`); }
         gems = sess.wrong===0 ? 15 : 10;
       }
       g.lessonsDone = (g.lessonsDone||0) + 1;
@@ -5632,7 +7800,7 @@ function statusPills(){
     <span class="sp gem">🪙 ${gemsNow()}</span>
     <button type="button" class="sp heart" aria-label="Vidas">❤️ ${hearts}${hearts<HEARTS_MAX?` <small>${fmtMinSec(nextHeartIn())}</small>`:''}</button>
   </div>`);
-  bar.querySelector('.heart').onclick = ()=>{ if(heartsNow()<HEARTS_MAX) showNoHearts(); };
+  bar.querySelector('.heart').onclick = ()=>{ if(heartsNow()<HEARTS_MAX) showNoHearts(); else showFloat('Vidas cheias ❤️'); };
   bar.querySelector('.fire').onclick = ()=> showStreakPanel();
   return bar;
 }
@@ -5683,7 +7851,7 @@ function pathScreen(){
   SUBJECTS.forEach((s,u)=>{
     const color = unitStyle(u);
     const unitNodes = all.filter(n=>n.unit===u);
-    const unitLocked = all.indexOf(unitNodes[0]) > cur;
+    const unitLocked = all.indexOf(unitNodes[0]) > cur && !unitNodes.some(n=>done[n.key]);
     const unitDone = unitNodes.every(n=>done[n.key]);
     const banner = h(`<div class="unit-banner" style="${color}">
       <div><div class="u-k">EPISÓDIO ${u+1}${unitDone?' · ✓ CONCLUÍDO':''}</div><div class="u-n">${s.name}</div></div>
@@ -5701,7 +7869,7 @@ function pathScreen(){
     const col = h(`<div class="path-col"></div>`);
     unitNodes.forEach(n=>{
       const gi = all.indexOf(n);
-      const isDone = !!done[n.key], isCur = gi===cur, locked = gi>cur;
+      const isDone = !!done[n.key], isCur = gi===cur, locked = gi>cur && !isDone;
       const ico = locked ? '🔒' : n.type==='chest' ? (isDone?'✨':'🎁') : n.type==='trophy' ? '🎤' : (isDone?'✓':'★');
       const wrapN = h(`<div class="pnode-wrap ${isCur?'is-cur':''}" style="transform:translateX(${PATH_OFFSETS[gi % PATH_OFFSETS.length]}px)"></div>`);
       const btn = h(`<button type="button" class="pnode ${n.type} ${isDone?'done':''} ${isCur?'cur':''} ${locked?'locked':''}" style="${color}" aria-label="${n.label}">${ico}</button>`);
@@ -5803,7 +7971,9 @@ function markTutorialDone(){ const g = loadGame(); g.tutorialDone = true; saveGa
 
 function startTour(){
   if(_tourActive) return;
-  if(state.screen!=='home'){ go('home'); setTimeout(startTour, 400); return; }
+  // vai pro Início e começa o tour lá — mas só se a pessoa ainda estiver no Início
+  // (antes, se ela trocasse de tela nesse meio-tempo, era puxada de volta à força)
+  if(state.screen!=='home'){ go('home'); setTimeout(()=>{ if(state.screen==='home' && !_tourActive) startTour(); }, 400); return; }
   _tourActive = true;
   let i = 0;
   const root = document.createElement('div');
@@ -5883,9 +8053,15 @@ const HELP_TOPICS = [
   {ico:'🗺️', t:'Trilha, episódios e fases', d:'Cada assunto é um episódio com 5 etapas: Fase 1 (fácil), Fase 2 (médio), Prêmio surpresa 🎁, Fase 3 (difícil) e a Grande final 🎤. Cada fase tem perguntas de múltipla escolha: toque numa resposta e depois em <b>CONFIRMAR</b>. Se errar, a resposta <b>não</b> é revelada: a alternativa errada fica riscada e você tenta de novo (tem o botão 💡 <b>Ver dica</b>). A explicação completa aparece quando você acertar. Já sabe um assunto? Use <b>Pular pra cá ⏩</b> e faça um teste de nivelamento.'},
   {ico:'❤️', t:'Vidas e moedas', d:'Você tem 5 vidas. Errar uma pergunta da Trilha gasta uma (só o primeiro erro de cada pergunta — tentar de novo não gasta mais), e elas voltam sozinhas (1 a cada 20 minutos). Sem vidas? Recarregue com 50 🪙 moedas, ou continue treinando em Exercícios, Quiz e Relâmpago, que não gastam vidas. Você ganha moedas completando fases e abrindo prêmios.'},
   {ico:'⭐', t:'XP e níveis', d:'Todo acerto dá XP (fácil 10, médio 15, difícil 25). Acertos seguidos formam um <b>combo 🔥</b> que aumenta o XP. Junte XP pra subir de nível e ganhar títulos novos, de "Aprendiz dos Números" até "Lenda da Matemática".'},
-  {ico:'🔥', t:'Ofensiva', d:'É quantos dias seguidos você jogou. Responda pelo menos uma pergunta por dia (ou jogue uma partida do Relâmpago) pra manter a chama acesa! Toque no 🔥 pra ver sua semana, seu recorde e o próximo marco: 3, 7, 14, 30 dias e além dão 🪙 moedas. O <b>protetor 🧊</b> salva sua ofensiva sozinho se você ficar um dia sem jogar (você começa com 1 e pode ter até 2; compre mais por 50 🪙).'},
+  {ico:'🔥', t:'Ofensiva', d:'É quantos dias seguidos você jogou. Responda pelo menos uma pergunta por dia (ou jogue uma partida do Relâmpago) pra manter a chama acesa. <b>Se passar um dia inteiro sem jogar, a ofensiva volta pra zero.</b> Toque no 🔥 pra ver sua semana, seu recorde e o próximo marco: 3, 7, 14, 30 dias e além dão 🪙 moedas.'},
   {ico:'🧠', t:'Revisão do dia', d:'O app lembra quando você praticou cada assunto. Depois de um tempo (1 dia se você ainda erra muito, até 7 dias se já domina), o assunto aparece em <b>Revisão do dia</b> na tela inicial. Revisar no momento certo é o que faz a matéria ficar na cabeça.'},
   {ico:'📝', t:'Relatório semanal', d:'Em Perfil → <b>Relatório semanal</b> você vê um resumo dos últimos 7 dias: dias estudados, questões, % de acerto, comparação com a semana anterior e sugestões. Dá pra <b>compartilhar</b> (WhatsApp, e-mail) ou <b>imprimir / salvar em PDF</b> pra mostrar a pais e professores.'},
+  {ico:'👑', t:'Nível de domínio', d:'Cada assunto mostra seu nível: 🌱 Aprendendo, 📘 Praticando, ⭐ Proficiente e 👑 Dominado. Ele olha as suas <b>últimas 10 respostas</b>, então mostra o que você sabe hoje. Pra chegar em Dominado, acerte 9 de 10 com pelo menos 2 no difícil.'},
+  {ico:'🔊', t:'Ouvir a questão e tamanho do texto', d:'Toque no 🔊 no canto da questão pra ouvir em voz alta. Em Configurações → <b>Leitura e acessibilidade</b> você aumenta o tamanho do texto (A, A+, A++) ou desliga o botão de ouvir.'},
+  {ico:'✏️', t:'Caderno (escrever à mão)', d:'Funciona como uma mesa digitalizadora: escreva com o dedo ou com uma caneta stylus (ela sente a pressão: aperte mais pra um traço mais grosso). Com caneta, o dedo passa a só mover a página, então você pode apoiar a mão na tela. Dois dedos movem e dão zoom. Tem caneta, marca-texto, borracha, linha reta (fica reta sozinha na horizontal/vertical), retângulo, círculo, texto com símbolos (², √, π...) e papel quadriculado, pautado, pontilhado ou <b>plano cartesiano</b>. Nas questões, o botão ✏️ abre um <b>rascunho</b> pra fazer a conta à mão.'},
+  {ico:'🔺', t:'Laboratório de Geometria', d:'Em Aprender → <b>Laboratório de Geometria</b>. <b>Áreas</b>: escolha a figura (quadrado, retângulo, triângulo, paralelogramo, trapézio, losango, círculo), mexa nas medidas e veja os quadradinhos de 1 cm², a área e o perímetro mudando, com a explicação de onde vem cada fórmula. <b>Sólidos</b>: cubo, paralelepípedo e cilindro com volume e área total. <b>Ângulos</b>: arraste os cantos do triângulo e veja que os ângulos sempre somam 180°.'},
+  {ico:'⚔️', t:'Duelo a dois', d:'Dois jogadores no mesmo celular, frente a frente: deite o aparelho na mesa e cada um fica com metade da tela. Quem acertar primeiro leva o ponto; errou, fica travado até a próxima conta.'},
+  {ico:'📜', t:'Certificados', d:'Venceu a Grande final de um episódio? Ganha um certificado com seu nome, que dá pra imprimir ou salvar em PDF. Veja em <b>Certificados</b>, na tela inicial.'},
   {ico:'💾', t:'Backup do progresso', d:'Seu progresso fica salvo só neste aparelho. De vez em quando o app lembra você de salvar uma cópia. Você também pode fazer isso quando quiser em Configurações → <b>Exportar progresso</b>, e depois restaurar com <b>Importar</b>.'},
   {ico:'📜', t:'Missões e meta do dia', d:'Todo dia aparecem missões novas na tela inicial. Quando completar uma, toque em <b>Pegar</b> pra receber o XP. A meta diária (quantas questões responder) você pode mudar ali mesmo, em "Mudar meta".'},
   {ico:'🎤', t:'Quiz do Show', d:'10 perguntas de todos os assuntos, com 20 segundos cada. Quanto mais rápido você responde certo, mais pontos ganha, e acertos seguidos dão bônus. Pra sair no meio, toque no ✕ lá em cima.'},
@@ -5898,6 +8074,15 @@ const HELP_TOPICS = [
   {ico:'🏅', t:'Conquistas', d:'Medalhas que você desbloqueia jogando: combos, dias seguidos, recordes e muito mais. Veja todas na tela de Conquistas.'},
   {ico:'⚙️', t:'Perfil e configurações', d:'No Perfil (o círculo com sua inicial, lá em cima) você vê suas estatísticas. Em Configurações dá pra trocar entre tema claro e escuro, ligar/desligar som e vibração, e <b>exportar/importar</b> seu progresso pra não perder nada ao trocar de celular.'},
 ];
+/* grupos do "Como usar", na ordem em que a pessoa usa o app */
+const HELP_GROUPS = [
+  ['🚀 Começando', ['Trilha, episódios e fases','Vidas e moedas','XP e níveis','Ofensiva','Missões e meta do dia']],
+  ['📚 Estudar', ['Aprender','Dicas e explicações','Exercícios, Desafios e Treino personalizado','Revisar meus erros','Revisão do dia','Nível de domínio']],
+  ['🎮 Jogar', ['Quiz do Show','Relâmpago','Duelo a dois']],
+  ['🧰 Ferramentas', ['Resolver questão','Laboratório de Geometria','Caderno (escrever à mão)','Ouvir a questão e tamanho do texto']],
+  ['🏆 Seu progresso', ['Conquistas','Certificados','Relatório semanal']],
+  ['⚙️ Conta e dados', ['Perfil e configurações','Backup do progresso']],
+];
 function helpScreen(){
   const wrap = document.createElement('div');
   wrap.appendChild(topbar('📘 Como usar', true, ()=>go('home')));
@@ -5906,7 +8091,13 @@ function helpScreen(){
   const tourBtn = h(`<button type="button" class="show-btn" style="margin-bottom:18px">🎬 Rever o tour guiado</button>`);
   tourBtn.onclick = ()=> startTour();
   c.appendChild(tourBtn);
-  HELP_TOPICS.forEach((tp, idx)=>{
+  // em grupos; algum tópico fora dos grupos entra no fim, pra nada sumir
+  const placed = new Set(HELP_GROUPS.flatMap(g=>g[1]));
+  const groups = HELP_GROUPS.map(([g,ts])=>[g, ts.map(t=>HELP_TOPICS.find(x=>x.t===t)).filter(Boolean)]);
+  const rest = HELP_TOPICS.filter(x=>!placed.has(x.t));
+  if(rest.length) groups.push(['Outros', rest]);
+  groups.flatMap(([g,list])=>[{group:g}, ...list]).forEach((tp, idx)=>{
+    if(tp.group){ c.appendChild(h(`<div class="help-group">${tp.group}</div>`)); return; }
     const item = h(`<div class="help-item"><button type="button" class="hi-head"><span class="hi-ico">${tp.ico}</span><span class="hi-t">${tp.t}</span><span class="hi-chev">›</span></button><div class="hi-body">${tp.d}</div></div>`);
     item.querySelector('.hi-head').onclick = ()=> item.classList.toggle('open');
     if(idx===0) item.classList.add('open');
@@ -5932,6 +8123,12 @@ const SCREENS = {
   challengeSession: challengeSessionScreen,
   personalizedSession: personalizedSessionScreen,
   achievements: achievementsScreen,
+  duel: duelScreen,
+  geoLab: geoLabScreen,
+  notebook: notebookScreen,
+  notePage: notePageScreen,
+  certificates: certificatesScreen,
+  certificate: certificateScreen,
   lightning: lightningScreen,
   path: pathScreen,
   lesson: lessonScreen,
@@ -5940,6 +8137,15 @@ const SCREENS = {
   tabuada: tabuadaScreen,
   solve: solveScreen,
   calculator: calculatorScreen,
+  arena: arenaScreen,
+  arenaDaily: arenaDailyScreen,
+  examSetup: examSetupScreen,
+  examRun: examRunScreen,
+  examResult: examResultScreen,
+  placement: placementScreen,
+  plan: planScreen,
+  cardsDeck: cardsDeckScreen,
+  errors: errorsScreen,
   profile: null, // async, handled specially below
   progress: null, // async, handled specially below
   history: null, // async, handled specially below
@@ -5993,7 +8199,7 @@ function renderAsyncSafe(){
   }
   const fn = SCREENS[state.screen] || homeScreen;
   app.appendChild(fn());
-  if(state.screen !== 'lesson') app.appendChild(bottomNav());
+  if(!['lesson','notePage','examRun'].includes(state.screen)) app.appendChild(bottomNav());
 }
 render = renderAsyncSafe;
 
