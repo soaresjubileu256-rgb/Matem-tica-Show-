@@ -144,7 +144,7 @@ Em **Aprender** e **Exercícios** a lista agora é separada em *Ensino Fundament
 
 - O Simulado ganhou o grupo **Ensino Médio**.
 - Na Trilha, os assuntos novos vêm depois dos 18 que já existiam (a ordem antiga não mudou, então ninguém perde progresso).
-- O service worker passou para `mat-show-v22`, pra todo mundo receber a versão nova.
+- O service worker passou para `mat-show-v23`, pra todo mundo receber a versão nova.
 
 ## 8. Desafio do Dia melhorado
 
@@ -155,3 +155,10 @@ Em **Aprender** e **Exercícios** a lista agora é separada em *Ensino Fundament
 - **Correção comentada**: cada pergunta com a sua resposta, a certa, a explicação e um botão para praticar o assunto errado. Dá para abrir também nos dias anteriores.
 - **Tela de resultado** com contagem regressiva para o próximo desafio, estatísticas (sequência, melhor sequência, jogados, perfeitos, média) e os últimos 7 dias.
 - O texto para compartilhar mostra o nível e a sequência.
+
+## 9. Feedback
+
+Nova tela **Enviar feedback** (Perfil → Ajuda e conta, fim da tela Como usar e link no fim do Início):
+nota de 1 a 5 estrelas, tipo (Sugestão, Problema, Elogio, Dúvida), mensagem de até 1500 caracteres e,
+opcionalmente, informações do aparelho. O botão abre o app de e-mail com tudo pronto, endereçado a
+`soaresjubileu256@gmail.com` (constante `FEEDBACK_EMAIL` no `app.js`). Sem app de e-mail, dá para copiar o texto.

@@ -4026,6 +4026,9 @@ function homeScreen(){
   ]));
 
   wrap.appendChild(h(`<div class="footer-note">Seu professor de matemática digital 📐</div>`));
+  const fbLink = h(`<button type="button" class="link-btn home-fb">💬 Dar feedback sobre o app</button>`);
+  fbLink.onclick = ()=> go('feedback', {fbBack:'home'});
+  wrap.appendChild(fbLink);
   // primeiro acesso: tour guiado pelo Pi
   if(!tutorialDone()) setTimeout(()=>{ if(state.screen==='home' && !tutorialDone() && wrap.isConnected) startTour(); }, 700);
   return wrap;
@@ -6411,6 +6414,7 @@ async function profileScreen(){
   item('✏️', 'Caderno', 'Suas anotações escritas à mão', ()=> go('notebook'));
   group('Ajuda e conta');
   item('📘', 'Como usar o app', 'Guia e tour guiado', ()=> go('help'));
+  item('💬', 'Enviar feedback', 'Dê sua nota, sugestões ou avise de um problema', ()=> go('feedback', {fbBack:'profile'}));
   item('⚙️', 'Configurações', 'Tema, som, meta, senha e backup', ()=> go('settings'));
   item('🚪', 'Sair da conta', '', ()=> showConfirm({
     icon:'🚪', title:'Sair da conta?', message:'Seu progresso continua salvo neste aparelho. É só entrar de novo com seu nome e senha.',
@@ -8244,13 +8248,133 @@ function helpScreen(){
   const reset = h(`<button type="button" class="link-btn" style="margin:18px auto 0;display:block;font-size:12.5px">Mostrar de novo as dicas de primeira vez</button>`);
   reset.onclick = ()=>{ const g = loadGame(); g.tips = {}; saveGame(); showFloat('💡 Dicas reativadas!'); };
   c.appendChild(reset);
+  const fbBtn = h(`<button type="button" class="alert-banner purple" style="margin:18px 0 0; width:100%"><span class="sym">💬</span><span class="txt"><span class="title">Não achou o que procurava?</span><span class="sub">Mande sua dúvida, sugestão ou problema</span></span><span class="chev">›</span></button>`);
+  fbBtn.onclick = ()=> go('feedback', {fbBack:'help'});
+  c.appendChild(fbBtn);
   wrap.appendChild(c);
+  return wrap;
+}
+
+/* ---------------- FEEDBACK ----------------
+   O app não tem servidor: a mensagem é montada aqui e enviada pelo app de e-mail do celular
+   (mailto). Se não houver app de e-mail, dá pra copiar o texto e mandar do jeito que preferir. */
+const FEEDBACK_EMAIL = 'soaresjubileu256@gmail.com';
+const FEEDBACK_TYPES = [
+  {id:'sugestao', ico:'💡', name:'Sugestão', ph:'Que ideia você tem pra deixar o app melhor?'},
+  {id:'problema', ico:'🐞', name:'Problema', ph:'O que aconteceu? Em qual tela? O que você esperava que acontecesse?'},
+  {id:'elogio', ico:'❤️', name:'Elogio', ph:'Do que você mais gosta no app?'},
+  {id:'duvida', ico:'❓', name:'Dúvida', ph:'Qual é a sua dúvida?'},
+];
+const FEEDBACK_STARS = ['', 'Não gostei', 'Pode melhorar', 'É legal', 'Muito bom', 'Amei! 😍'];
+function feedbackText(fb){
+  const t = FEEDBACK_TYPES.find(x=>x.id===fb.type);
+  const lines = [
+    `Nota: ${fb.stars ? '★'.repeat(fb.stars) + '☆'.repeat(5-fb.stars) + ` (${fb.stars}/5 · ${FEEDBACK_STARS[fb.stars]})` : 'não deu nota'}`,
+    `Tipo: ${t ? t.ico + ' ' + t.name : 'não escolheu'}`,
+    '',
+    fb.msg.trim() || '(sem mensagem)',
+  ];
+  if(fb.tech){
+    const g = loadGame(), set = settingsCache || {};
+    lines.push('', '— informações do aparelho —',
+      `Nome: ${(currentUser && currentUser.name) || 'sem conta'}`,
+      `XP: ${g.xp||0} · Ofensiva: ${g.streak||0} dia(s) · Nível escolar: ${set.schoolLevel || 'não definido'}`,
+      `Tema: ${set.theme || 'dark'} · Tela: ${window.innerWidth}×${window.innerHeight}`,
+      `Navegador: ${navigator.userAgent}`,
+      `Data: ${new Date().toLocaleString('pt-BR')}`);
+  }
+  return lines.join('\n');
+}
+function feedbackScreen(){
+  const fb = state.fb = state.fb || {stars:0, type:null, msg:'', tech:true};
+  const wrap = document.createElement('div');
+  wrap.appendChild(topbar('💬 Enviar feedback', true, ()=>go(state.fbBack || 'profile')));
+  const c = h(`<div class="content"></div>`);
+  wrap.appendChild(c);
+  const sent = (loadGame().feedbackSent || 0);
+  c.appendChild(h(`<div class="help-hero">${mascotSVG('joy', 84)}<div><h2>Sua opinião importa!</h2><p>Conte o que achou do Matemática Show. Cada mensagem é lida e ajuda a deixar o app melhor.${sent ? ` Você já mandou ${sent} feedback${sent>1?'s':''} — obrigado! 💜` : ''}</p></div></div>`));
+
+  // nota
+  c.appendChild(h(`<h3 class="fb-label">Que nota você dá pro app?</h3>`));
+  const stars = h(`<div class="fbk-stars" role="radiogroup" aria-label="Nota de 1 a 5"></div>`);
+  const starTxt = h(`<div class="fbk-star-t"></div>`);
+  const paintStars = ()=>{
+    stars.querySelectorAll('button').forEach((b,i)=>{ b.classList.toggle('on', i < fb.stars); b.setAttribute('aria-checked', String(i+1===fb.stars)); });
+    starTxt.textContent = fb.stars ? FEEDBACK_STARS[fb.stars] : 'Toque nas estrelas';
+  };
+  for(let i=1;i<=5;i++){
+    const b = h(`<button type="button" role="radio" aria-label="${i} estrela${i>1?'s':''}">★</button>`);
+    b.onclick = ()=>{ fb.stars = i; playTones([440+i*80], 0.05, 'sine', 0.05); paintStars(); paintSend(); };
+    stars.appendChild(b);
+  }
+  c.appendChild(stars); c.appendChild(starTxt);
+
+  // tipo
+  c.appendChild(h(`<h3 class="fb-label">Sobre o que você quer falar?</h3>`));
+  const types = h(`<div class="fbk-types"></div>`);
+  const ta = h(`<textarea class="fbk-msg" rows="6" maxlength="1500"></textarea>`);
+  const paintTypes = ()=>{
+    types.querySelectorAll('button').forEach(b=> b.classList.toggle('on', b.dataset.t===fb.type));
+    const t = FEEDBACK_TYPES.find(x=>x.id===fb.type);
+    ta.placeholder = t ? t.ph : 'Escreva aqui a sua mensagem…';
+  };
+  FEEDBACK_TYPES.forEach(t=>{
+    const b = h(`<button type="button" data-t="${t.id}"><span>${t.ico}</span>${t.name}</button>`);
+    b.onclick = ()=>{ fb.type = fb.type===t.id ? null : t.id; paintTypes(); paintSend(); };
+    types.appendChild(b);
+  });
+  c.appendChild(types);
+
+  // mensagem
+  c.appendChild(h(`<h3 class="fb-label">Sua mensagem</h3>`));
+  ta.value = fb.msg;
+  const count = h(`<div class="fbk-count"></div>`);
+  ta.oninput = ()=>{ fb.msg = ta.value; count.textContent = `${ta.value.length}/1500`; paintSend(); };
+  count.textContent = `${fb.msg.length}/1500`;
+  c.appendChild(ta); c.appendChild(count);
+  const tech = h(`<label class="fbk-tech"><input type="checkbox" ${fb.tech?'checked':''}><span>Enviar junto informações do aparelho (ajuda a encontrar problemas)</span></label>`);
+  tech.querySelector('input').onchange = e=>{ fb.tech = e.target.checked; };
+  c.appendChild(tech);
+
+  // enviar
+  const actions = h(`<div class="fbk-actions">
+    <button type="button" class="show-btn fbk-send">✉️ ENVIAR POR E-MAIL</button>
+    <button type="button" class="btn secondary fbk-copy">📋 Copiar mensagem</button>
+    <p class="fbk-note">O botão abre o seu app de e-mail com tudo já escrito, é só tocar em enviar. Se não abrir, copie a mensagem e mande para <b>${FEEDBACK_EMAIL}</b>.</p>
+  </div>`);
+  const send = actions.querySelector('.fbk-send');
+  const paintSend = ()=>{ send.disabled = !fb.stars && !fb.msg.trim(); };
+  const done = ()=>{
+    const g = loadGame(); g.feedbackSent = (g.feedbackSent||0) + 1; saveGame();
+    state.fb = null;
+    c.innerHTML = '';
+    c.appendChild(h(`<div class="fbk-thanks">${mascotSVG('joy', 110)}<h2>Obrigado! 💜</h2><p>Seu feedback ajuda o Matemática Show a ficar cada vez melhor.</p></div>`));
+    const back = h(`<button type="button" class="show-btn">VOLTAR</button>`);
+    back.onclick = ()=> go(state.fbBack || 'profile');
+    c.appendChild(back);
+    launchConfetti(80);
+  };
+  send.onclick = ()=>{
+    if(send.disabled) return;
+    const t = FEEDBACK_TYPES.find(x=>x.id===fb.type);
+    const subject = `Feedback Matemática Show${t ? ' · ' + t.name : ''}${fb.stars ? ' · ' + fb.stars + '/5' : ''}`;
+    location.href = `mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(feedbackText(fb))}`;
+    setTimeout(done, 600);
+  };
+  actions.querySelector('.fbk-copy').onclick = async e=>{
+    const b = e.currentTarget, txt = feedbackText(fb);
+    try{ await navigator.clipboard.writeText(txt); b.textContent = `Copiado! Mande para ${FEEDBACK_EMAIL}`; }
+    catch(err){ ta.value = txt; ta.select(); b.textContent = 'Selecionei o texto: copie pelo menu'; }
+  };
+  c.appendChild(actions);
+  paintStars(); paintTypes(); paintSend();
   return wrap;
 }
 
 /* ---------------- router table ---------------- */
 const SCREENS = {
   home: homeScreen,
+  feedback: feedbackScreen,
   content: contentScreen,
   subjectDetail: subjectDetailScreen,
   exercisesSubjects: exercisesSubjectsScreen,
