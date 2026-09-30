@@ -8,8 +8,8 @@
 <!-- PWA: manifest + cor do tema + ícones -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#07070F">
-<link rel="icon" type="image/png" sizes="48x48" href="favicon-48.png">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="48x48" href="img/favicon-48.png">
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
 <!-- iOS não lê o manifest.json pra isso, precisa dessas tags separadas -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -19,12 +19,37 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 <div id="app"></div>
 
-<script src="app.js"></script>
+<!-- os scripts dividem o mesmo escopo global e precisam ser carregados nesta ordem (veja LEIA-ME.md) -->
+<script src="js/jogo/arena.js"></script>
+<script src="js/telas/estudo.js"></script>
+<script src="js/base/ferramentas.js"></script>
+<script src="js/base/geometria.js"></script>
+<script src="js/assuntos/ensino-medio-visual.js"></script>
+<script src="js/assuntos/fundamental.js"></script>
+<script src="js/assuntos/ensino-medio.js"></script>
+<script src="js/assuntos/catalogo.js"></script>
+<script src="js/base/resolvedor.js"></script>
+<script src="js/dados/progresso.js"></script>
+<script src="js/dados/configuracoes.js"></script>
+<script src="js/dados/contas.js"></script>
+<script src="js/telas/entrada.js"></script>
+<script src="js/base/navegacao.js"></script>
+<script src="js/telas/inicio.js"></script>
+<script src="js/telas/caderno.js"></script>
+<script src="js/telas/aprender.js"></script>
+<script src="js/telas/exercicios.js"></script>
+<script src="js/telas/ferramentas.js"></script>
+<script src="js/telas/perfil.js"></script>
+<script src="js/jogo/xp-e-conquistas.js"></script>
+<script src="js/jogo/relampago.js"></script>
+<script src="js/jogo/trilha.js"></script>
+<script src="js/telas/ajuda.js"></script>
+<script src="js/iniciar.js"></script>
 
 <script>
 // registra o service worker (funcionamento offline + instalação como app). Se o navegador
