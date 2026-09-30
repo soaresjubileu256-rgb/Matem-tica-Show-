@@ -155,3 +155,7 @@ Em **Aprender** e **Exercícios** a lista agora é separada em *Ensino Fundament
 - **Correção comentada**: cada pergunta com a sua resposta, a certa, a explicação e um botão para praticar o assunto errado. Dá para abrir também nos dias anteriores.
 - **Tela de resultado** com contagem regressiva para o próximo desafio, estatísticas (sequência, melhor sequência, jogados, perfeitos, média) e os últimos 7 dias.
 - O texto para compartilhar mostra o nível e a sequência.
+
+## 9. Organização dos arquivos
+
+O antigo `app.js` (8.300 linhas) foi dividido em arquivos por assunto dentro de `js/`, sem mudar nenhuma linha de código (juntando as partes na ordem do `index.html` dá exatamente o arquivo antigo). O CSS foi para `css/`, as imagens para `img/` e este relatório para `docs/`. O `LEIA-ME.md` explica o que tem em cada arquivo e como acrescentar um assunto.

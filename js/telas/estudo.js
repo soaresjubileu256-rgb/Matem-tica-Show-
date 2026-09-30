@@ -7,7 +7,7 @@
    - "Praticar parecidas" depois de resolver uma conta no Resolver
    - Importação única do progresso do antigo Matemática Show Arena
    Usa só os sistemas únicos do app (recordAnswer, noteError, loadGame/saveGame, SUBJECTS...).
-   Este arquivo só declara funções e constantes: é carregado antes do app.js.
+   Este arquivo só declara funções e constantes: é carregado antes dos outros scripts (veja index.html).
    ========================================================= */
 
 const GRADES = [

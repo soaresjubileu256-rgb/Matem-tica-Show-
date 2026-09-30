@@ -10,7 +10,7 @@
    resposta (recordAnswer → progresso, histórico, caderno de erros, XP e combo),
    XP extra (gameAddXP), moedas (addGems), conquistas (gameUnlock) e o motor do Quiz
    (tela 'lesson', kind 'quiz' com sess.mode = 'arena' | 'daily').
-   Este arquivo só declara funções e constantes: é carregado antes do app.js.
+   Este arquivo só declara funções e constantes: é carregado antes dos outros scripts (veja index.html).
    ========================================================= */
 
 const ARENA_PHASE_Q = 10;
