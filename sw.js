@@ -3,9 +3,9 @@
      versão mais nova, e usa a cópia guardada quando estiver offline
    - fontes do Google: usa a cópia guardada (elas não mudam)
    Mude CACHE_VERSION quando quiser forçar todo mundo a baixar tudo de novo. */
-const CACHE_VERSION = 'mat-show-v19';
+const CACHE_VERSION = 'mat-show-v20';
 const APP_SHELL = [
-  './', './index.html', './style.css', './arena.js', './estudo.js', './conteudos.js', './app.js', './manifest.json',
+  './', './index.html', './style.css', './arena.js', './estudo.js', './app.js', './manifest.json',
   './logo.png', './favicon-48.png', './apple-touch-icon.png', './icon-192.png', './icon-512.png', './maskable-512.png',
 ];
 

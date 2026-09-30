@@ -296,6 +296,7 @@ const EXAM_GROUPS = [
   {id:'f1', name:'1º ao 5º ano', ids:['adicao','subtracao','multiplicacao','divisao','dinheiro']},
   {id:'f2', name:'6º e 7º ano', ids:['fracoes','decimais','porcentagem','geometria','mmcmdc','potenciacao','expressoes','estatistica','regra3','eq1']},
   {id:'f3', name:'8º e 9º ano', ids:['potenciacao','regra3','eq1','sistemas','eq2','func1grau']},
+  {id:'em', name:'Ensino Médio', ids:['conjuntos','func1grau','funcquad','modular','exponencial','logaritmo','functrig','pa','pg','geometria','espacial','analitica','trigret','ciclo','identidades','leis','combinatoria','probabilidade','estatistica','dispersao','graficos','porcentagem','juros','descontos','inflacao','matrizes','determinantes','sistemas']},
   {id:'all', name:'Tudo', ids:null},
 ];
 function examGroupIds(gr){ const ids = gr.ids || SUBJECTS.map(s=>s.id); return ids.filter(id=> SUBJECTS.some(s=>s.id===id)); }

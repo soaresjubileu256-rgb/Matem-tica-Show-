@@ -126,21 +126,22 @@ Nenhuma funcionalidade do Completo foi removida ou trocada.
 
 **Não testado:** a instalação pelo botão "Instalar" de um celular de verdade, e o botão "Compartilhar", que precisa de celular e não existe no navegador automático. O botão "Copiar" foi testado.
 
-## 7. Conteúdos do Ensino Médio (novo)
+## 7. Conteúdos do Ensino Médio (23 assuntos novos)
 
-Nova tela **Conteúdos do Ensino Médio** (arquivo `conteudos.js`), aberta pelo topo de **Aprender** e pelo Início (seção Praticar). Organiza a lista do ENEM/vestibulares em 7 áreas:
+Os conteúdos da lista do ENEM/vestibulares entraram como **assuntos normais**, iguais aos outros: cada um tem explicação, exemplos resolvidos, exercícios Fácil/Médio/Difícil com passo a passo, dica, cartões de revisão, e aparece na Trilha, na Arena, no Simulado, no Treino personalizado e no Caderno de erros.
 
-| # | Área | Tópicos |
-|---|---|---|
-| 1 | Álgebra e Funções | conjuntos numéricos, função afim, quadrática, modular, exponencial, logarítmica e trigonométricas |
-| 2 | Progressões e Sequências | PA e PG |
-| 3 | Geometria | plana (áreas e perímetros), espacial (prismas, pirâmides, cilindros, cones e esferas) e analítica (ponto, reta e circunferência) |
-| 4 | Trigonometria | triângulo retângulo, ciclo trigonométrico, identidades, leis dos senos e dos cossenos |
-| 5 | Estatística e Probabilidade | análise combinatória, probabilidade, estatística descritiva (média, moda, mediana, desvio padrão) e análise de gráficos |
-| 6 | Matemática Financeira | porcentagem, juros simples e compostos, descontos e taxas de inflação |
-| 7 | Matrizes e Sistemas | matrizes, determinantes e sistemas lineares |
+Em **Aprender** e **Exercícios** a lista agora é separada em *Ensino Fundamental* e *Ensino Médio*, e o Ensino Médio é dividido nas 7 áreas:
 
-- Cada tópico abre com **resumo, fórmulas principais e um exemplo**.
-- Tópicos que o app já ensina têm a etiqueta **no app** e botões para *Estudar* e *Praticar* (Função afim, Quadrática, Áreas e perímetros, Estatística, Porcentagem, Sistemas); Geometria espacial abre o Laboratório de Geometria.
-- **✓ Já estudei** marca o tópico; o progresso (barra e contador por área) fica salvo na conta (`game.syllabus`).
-- O service worker passou para `mat-show-v19` e guarda o `conteudos.js` para uso offline.
+| Área | Assuntos (novos em negrito) |
+|---|---|
+| Álgebra e Funções | **Conjuntos numéricos**, Função do 1º grau, **Função quadrática**, **Função modular**, **Função exponencial**, **Logaritmo**, **Funções trigonométricas** |
+| Progressões e Sequências | **Progressão aritmética (PA)**, **Progressão geométrica (PG)** |
+| Geometria | Áreas e perímetros, **Geometria espacial**, **Geometria analítica** |
+| Trigonometria | **Triângulo retângulo**, **Ciclo trigonométrico**, **Identidades trigonométricas**, **Leis dos senos e cossenos** |
+| Estatística e Probabilidade | **Análise combinatória**, **Probabilidade**, Média, moda e mediana, **Desvio padrão**, **Análise de gráficos** |
+| Matemática Financeira | Porcentagem, **Juros simples e compostos**, **Descontos e aumentos**, **Taxas de inflação** |
+| Matrizes e Sistemas | **Matrizes**, **Determinantes**, Sistemas de equações |
+
+- O Simulado ganhou o grupo **Ensino Médio**.
+- Na Trilha, os assuntos novos vêm depois dos 18 que já existiam (a ordem antiga não mudou, então ninguém perde progresso).
+- O service worker passou para `mat-show-v20`, pra todo mundo receber a versão nova.
