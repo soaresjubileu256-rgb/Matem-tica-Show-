@@ -66,7 +66,13 @@ function certSealSVG(){
 const CERT_SYMS = [
   ['π', 47, 12.5, 4.2, -12], ['√', 62, 9, 3.4, 8], ['∑', 88.5, 9.5, 3.2, -6],
   ['÷', 57, 33, 2.8, 10], ['∞', 40, 47, 3.6, -8], ['x²', 64, 46, 2.9, 6],
-  ['Δ', 9.5, 41.5, 2.6, -10], ['%', 52.5, 62, 2.6, 12], ['=', 31.5, 7.8, 2.6, 0],
+  ['Δ', 9.5, 41.5, 2.6, -10], ['%', 56, 25, 2.6, 12], ['=', 31.5, 7.8, 2.6, 0],
+];
+/* assinaturas da diretoria (imagens em img/assinaturas, traço claro com fundo transparente) */
+const CERT_SIGNERS = [
+  {img:'img/assinaturas/diretor-executivo.png', role:'Diretor Executivo'},
+  {img:'img/assinaturas/diretor-desenvolvedor.png', role:'Diretor Desenvolvedor'},
+  {img:'img/assinaturas/diretora-financeira.png', role:'Diretora Financeira'},
 ];
 const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 /* o certificado em si (usado no de verdade e na prévia) */
@@ -94,11 +100,11 @@ function certificateEl(s, preview, style){
         <div class="cert-bar" aria-hidden="true"></div>
         <div class="cert-subj">por concluir o <b>Episódio ${num} · ${escHTML(s.name)}</b></div>
         <div class="cert-lvl">${lv ? escHTML(lv.name) : ''}${g ? ` · ${escHTML(g.name)}` : ''}</div>
+        <div class="cert-feat">Fases fácil, média e difícil concluídas e Grande final vencida.</div>
       </div>
       <div class="cert-bottom">
         ${certSealSVG()}
-        <div class="cert-feat">Fases fácil, média e difícil concluídas<br>e Grande final vencida.</div>
-        <div class="cert-sign"><span class="cert-sig">Matemática Show</span><span class="cert-sig-l">Emitido pelo app Matemática Show</span></div>
+        <div class="cert-signs">${CERT_SIGNERS.map(x=>`<div class="cert-sign"><img src="${x.img}" alt="Assinatura" class="cert-sig-img"><span class="cert-sig-l">${x.role}</span></div>`).join('')}</div>
       </div>
     </div>
     ${preview ? '<div class="cert-ribbon">PRÉVIA</div>' : ''}
