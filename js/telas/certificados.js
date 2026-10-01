@@ -16,7 +16,7 @@ function unitProgress(subjectId){
 /* as duas versões do certificado: fundo escuro com linhas onduladas e o número do episódio
    grandão em degradê. Sem escolha salva, o Fundamental usa a 1 e o Ensino Médio a 2. */
 const CERT_STYLES = [
-  {id:'v1', name:'Versão 1 · Amarelo e verde'},
+  {id:'v1', name:'Versão 1 · Verde'},
   {id:'v2', name:'Versão 2 · Roxo'},
 ];
 function certStyleFor(s){
@@ -48,6 +48,26 @@ function certWavesSVG(){
   }
   return `<svg class="cert-waves" viewBox="0 0 1000 707" preserveAspectRatio="none" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1">${paths}</g></svg>`;
 }
+/* selo redondo: logo no meio e o texto em volta */
+let _sealSeq = 0;
+function certSealSVG(){
+  const id = 'seal' + (++_sealSeq);
+  return `<svg class="cert-seal" viewBox="0 0 120 120" aria-hidden="true">
+    <defs><path id="${id}" d="M60 60 m-43 0 a43 43 0 1 1 86 0 a43 43 0 1 1 -86 0"/></defs>
+    <circle cx="60" cy="60" r="57" class="seal-out"/>
+    <circle cx="60" cy="60" r="50" class="seal-ring"/>
+    <circle cx="60" cy="60" r="33" class="seal-in"/>
+    <text class="seal-txt"><textPath href="#${id}" startOffset="0">★ MATEMÁTICA SHOW ★ EPISÓDIO CONCLUÍDO</textPath></text>
+    <image href="${LOGO_URI}" x="38" y="38" width="44" height="44"/>
+  </svg>`;
+}
+/* alguns símbolos de matemática bem clarinhos no fundo, só nos espaços vazios
+   (texto, posição x/y e tamanho em cqw, giro em graus) */
+const CERT_SYMS = [
+  ['π', 47, 12.5, 4.2, -12], ['√', 62, 9, 3.4, 8], ['∑', 88.5, 9.5, 3.2, -6],
+  ['÷', 57, 33, 2.8, 10], ['∞', 40, 47, 3.6, -8], ['x²', 64, 46, 2.9, 6],
+  ['Δ', 9.5, 41.5, 2.6, -10], ['%', 52.5, 62, 2.6, 12], ['=', 31.5, 7.8, 2.6, 0],
+];
 const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 /* o certificado em si (usado no de verdade e na prévia) */
 function certificateEl(s, preview, style){
@@ -59,6 +79,9 @@ function certificateEl(s, preview, style){
   const cert = h(`<div class="cert cert-${style} ${preview?'preview':''}">
     <div class="cert-in">
       ${certWavesSVG()}
+      <div class="cert-glow" aria-hidden="true"></div>
+      <div class="cert-syms" aria-hidden="true">${CERT_SYMS.map(([t,x,y,sz,r])=>`<span style="left:${x}cqw;top:${y}cqw;font-size:${sz}cqw;transform:rotate(${r}deg)">${t}</span>`).join('')}</div>
+      <div class="cert-frame" aria-hidden="true"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i></div>
       <div class="cert-top">
         <div class="cert-brand"><img src="${LOGO_URI}" alt="" class="cert-logo"><span>Matemática Show</span></div>
         <div class="cert-date">${dt}</div>
@@ -66,13 +89,16 @@ function certificateEl(s, preview, style){
       <div class="cert-num ${num>=10?'two':''}" aria-hidden="true">${num}</div>
       <div class="cert-main">
         <div class="cert-tags"><span class="cert-tag">Certificado</span><span class="cert-k">de conclusão</span></div>
+        <div class="cert-to">concedido a</div>
         <div class="cert-name"></div>
-        <div class="cert-subj">Episódio ${num} · ${escHTML(s.name)}</div>
+        <div class="cert-bar" aria-hidden="true"></div>
+        <div class="cert-subj">por concluir o <b>Episódio ${num} · ${escHTML(s.name)}</b></div>
         <div class="cert-lvl">${lv ? escHTML(lv.name) : ''}${g ? ` · ${escHTML(g.name)}` : ''}</div>
       </div>
       <div class="cert-bottom">
-        <span>Fases fácil, média e difícil concluídas<br>e Grande final vencida.</span>
-        <em>Este certificado de progresso em matemática é emitido pelo app Matemática Show.</em>
+        ${certSealSVG()}
+        <div class="cert-feat">Fases fácil, média e difícil concluídas<br>e Grande final vencida.</div>
+        <div class="cert-sign"><span class="cert-sig">Matemática Show</span><span class="cert-sig-l">Emitido pelo app Matemática Show</span></div>
       </div>
     </div>
     ${preview ? '<div class="cert-ribbon">PRÉVIA</div>' : ''}
