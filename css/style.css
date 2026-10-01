@@ -1394,6 +1394,8 @@ section.block h3{font-size:12.5px; text-transform:uppercase; color:var(--ink-sof
 .cert-waves{position:absolute; inset:0; width:100%; height:100%; color:var(--acc); opacity:.16;}
 .cert-glow{position:absolute; right:-6cqw; top:12cqw; width:52cqw; height:52cqw; border-radius:50%;
   background:radial-gradient(circle, color-mix(in srgb, var(--acc) 38%, transparent) 0%, transparent 68%); filter:blur(1cqw);}
+.cert-syms{position:absolute; inset:0; z-index:1; pointer-events:none;}
+.cert-syms span{position:absolute; font-family:'Fraunces',serif; font-weight:700; line-height:1; color:var(--acc2); opacity:.17;}
 .cert-frame{position:absolute; inset:2.4cqw; border:.18cqw solid color-mix(in srgb, var(--acc2) 55%, transparent); border-radius:1cqw; z-index:2; pointer-events:none;}
 .cert-frame::after{content:''; position:absolute; inset:.7cqw; border:.08cqw solid color-mix(in srgb, var(--acc2) 30%, transparent); border-radius:.6cqw;}
 .cert-frame i{position:absolute; width:1.6cqw; height:1.6cqw; background:var(--acc2); transform:rotate(45deg); box-shadow:0 0 1cqw color-mix(in srgb, var(--acc2) 60%, transparent);}

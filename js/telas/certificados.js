@@ -61,6 +61,13 @@ function certSealSVG(){
     <image href="${LOGO_URI}" x="38" y="38" width="44" height="44"/>
   </svg>`;
 }
+/* alguns símbolos de matemática bem clarinhos no fundo, só nos espaços vazios
+   (texto, posição x/y e tamanho em cqw, giro em graus) */
+const CERT_SYMS = [
+  ['π', 47, 12.5, 4.2, -12], ['√', 62, 9, 3.4, 8], ['∑', 88.5, 9.5, 3.2, -6],
+  ['÷', 57, 33, 2.8, 10], ['∞', 40, 47, 3.6, -8], ['x²', 64, 46, 2.9, 6],
+  ['Δ', 9.5, 41.5, 2.6, -10], ['%', 52.5, 62, 2.6, 12], ['=', 31.5, 7.8, 2.6, 0],
+];
 const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 /* o certificado em si (usado no de verdade e na prévia) */
 function certificateEl(s, preview, style){
@@ -73,6 +80,7 @@ function certificateEl(s, preview, style){
     <div class="cert-in">
       ${certWavesSVG()}
       <div class="cert-glow" aria-hidden="true"></div>
+      <div class="cert-syms" aria-hidden="true">${CERT_SYMS.map(([t,x,y,sz,r])=>`<span style="left:${x}cqw;top:${y}cqw;font-size:${sz}cqw;transform:rotate(${r}deg)">${t}</span>`).join('')}</div>
       <div class="cert-frame" aria-hidden="true"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i></div>
       <div class="cert-top">
         <div class="cert-brand"><img src="${LOGO_URI}" alt="" class="cert-logo"><span>Matemática Show</span></div>

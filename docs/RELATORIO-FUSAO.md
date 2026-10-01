@@ -198,4 +198,4 @@ A pergunta "Quer sair do app?" (botão voltar na tela Início) foi retirada. O "
 
 ## 17. Certificado mais bonito (verde e roxo)
 
-As duas versões ganharam cores próprias: **Verde** (esmeralda com dourado) e **Roxo** (violeta com lilás). Também ganharam moldura dupla com cantos em losango, brilho atrás do número do episódio, "concedido a" acima do nome, um traço colorido sob o nome, um **selo** redondo com a logo e a frase "Episódio concluído", e uma **assinatura** do Matemática Show. Os textos de baixo ficaram maiores, e o número fica sempre dentro da moldura.
+As duas versões ganharam cores próprias: **Verde** (esmeralda com dourado) e **Roxo** (violeta com lilás). Também ganharam moldura dupla com cantos em losango, brilho atrás do número do episódio, "concedido a" acima do nome, um traço colorido sob o nome, um **selo** redondo com a logo e a frase "Episódio concluído", e uma **assinatura** do Matemática Show. Os textos de baixo ficaram maiores, e o número fica sempre dentro da moldura. No fundo há alguns símbolos de matemática bem clarinhos (π, √, ∑, ÷, ∞, x², Δ, %, =), só nos espaços vazios.
