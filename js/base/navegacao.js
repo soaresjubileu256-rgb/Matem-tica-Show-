@@ -17,39 +17,72 @@ function go(screen, extra={}){
   window.scrollTo(0,0);
 }
 
+/* Rodando como APLICATIVO (APK / app instalado na tela inicial)? Só nesse caso o "voltar" pergunta
+   "Tem certeza que quer sair?" e o Perfil mostra "Sair do aplicativo". No site (aba do navegador), não. */
+const IS_APP = (()=>{
+  try{
+    if(sessionStorage.getItem('ms-app') === '1') return true;
+    const ua = navigator.userAgent || '';
+    const yes = /; wv\)|\bwv\b/.test(ua)                                  // WebView do Android (conversores de site → APK)
+      || (document.referrer || '').startsWith('android-app://')                // TWA (PWABuilder / Bubblewrap)
+      || matchMedia('(display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui)').matches
+      || navigator.standalone === true                                         // iPhone, app na tela inicial
+      || new URLSearchParams(location.search).has('app');                      // o conversor pode abrir index.html?app=1
+    if(yes) sessionStorage.setItem('ms-app', '1');
+    return yes;
+  }catch(e){ return false; }
+})();
+/* entrada "raiz" no histórico: quando o "voltar" chega nela, o app pergunta se quer sair (só no aplicativo) */
+function armExitGuard(){
+  if(!IS_APP) return;
+  try{ history.replaceState({__root:true}, '', location.pathname + location.search); }catch(e){}
+  try{ history.pushState(currentUser ? cloneState(state) : {__auth:true}, '', currentUser ? hashForState(state) : location.pathname + location.search); }catch(e){}
+}
+
 /* volta ao estado inicial (tela Início) já registrando essa entrada no histórico do navegador,
    pra que "voltar" a partir de qualquer tela funcione mesmo vindo direto do login. */
 function enterApp(){
   state.screen = 'home';
-  // entrada "raiz" embaixo da tela Início: quando o botão voltar chega nela,
+  // no aplicativo: entrada "raiz" embaixo da tela Início — quando o botão voltar chega nela,
   // em vez de fechar o app direto, perguntamos se a pessoa quer mesmo sair
-  try{ history.replaceState({__root:true}, '', location.pathname + location.search); }catch(e){}
-  pushHistoryState();
+  if(IS_APP) armExitGuard(); else pushHistoryState();
   render();
 }
 
-/* aviso "quer sair do aplicativo?" (botão voltar do celular na tela Início) */
-let _exitAsking = false;
-function askExitApp(){
+/* "Tem certeza que quer sair?" — botão voltar na tela Início (ou na entrada) e botão "Sair do aplicativo".
+   Só existe no aplicativo; no site o voltar funciona normal. */
+let _exitAsking = false, _exitConfirmed = false;
+function askExitApp(fromButton){
   if(_exitAsking) return;
   _exitAsking = true;
-  const streak = gameStreakNow();
+  const streak = currentUser ? gameStreakNow() : 0;
   showConfirm({
-    icon:'👋', title:'Quer sair do app?',
+    icon:'👋', title:'Tem certeza que quer sair?',
     message: streak>0 ? `Seu progresso fica salvo. Volte amanhã pra manter sua ofensiva de ${streak} dia${streak===1?'':'s'}! 🔥` : 'Seu progresso fica salvo neste aparelho. Volte logo pra continuar o show! 🎬',
     ok:'Sair', cancel:'Ficar',
   }).then(ok=>{
     _exitAsking = false;
-    if(!ok){ pushHistoryState(); render(); return; }
-    // tenta sair de verdade (volta pra página anterior / fecha o app instalado);
-    // se o navegador não deixar, mostra a tela de despedida
-    app.innerHTML = '';
-    const bye = h(`<div class="content lesson-end"><div class="le-mascot">${mascotSVG('joy',120)}</div><h2 class="le-title">Até logo! 👋</h2><p class="le-sub">Seu progresso está salvo. Pode fechar o app.</p><div class="lesson-footer static"><button class="show-btn">Voltar pro app</button></div></div>`);
-    bye.querySelector('button').onclick = ()=>{ pushHistoryState(); render(); };
-    app.appendChild(bye);
-    try{ history.back(); }catch(e){}
-    setTimeout(()=>{ try{ window.close(); }catch(e){} }, 250);
+    if(!ok){
+      // continua no app: devolve a entrada que o "voltar" consumiu
+      if(!fromButton){ if(currentUser){ pushHistoryState(); render(); } else { try{ history.pushState({__auth:true}, '', location.pathname + location.search); }catch(e){} } }
+      return;
+    }
+    _exitConfirmed = true;
+    exitApp();
   });
+}
+function exitApp(){
+  // 1) pontes que alguns conversores de APK oferecem para fechar o app
+  try{ if(navigator.app && navigator.app.exitApp) return navigator.app.exitApp(); }catch(e){}
+  try{ if(window.Android && typeof window.Android.exitApp === 'function') return window.Android.exitApp(); }catch(e){}
+  try{ if(window.AndroidInterface && typeof window.AndroidInterface.exitApp === 'function') return window.AndroidInterface.exitApp(); }catch(e){}
+  // 2) tela de despedida; o próximo "voltar" fecha o app (já não há mais nada no histórico)
+  app.innerHTML = '';
+  const bye = h(`<div class="content lesson-end"><div class="le-mascot">${mascotSVG('joy',120)}</div><h2 class="le-title">Até logo! 👋</h2><p class="le-sub">Seu progresso está salvo.<br>Toque em <b>voltar</b> no celular pra fechar o app.</p><div class="lesson-footer static"><button class="show-btn">Voltar pro app</button></div></div>`);
+  bye.querySelector('button').onclick = ()=>{ _exitConfirmed = false; if(currentUser){ armExitGuard(); render(); } else { armExitGuard(); boot(); } };
+  app.appendChild(bye);
+  try{ history.go(-(history.length)); }catch(e){}
+  setTimeout(()=>{ try{ window.close(); }catch(e){} }, 250);
 }
 
 /* sessão em andamento? (usado no aviso ao fechar/recarregar a aba) */
@@ -89,8 +122,8 @@ function replaceHistoryState(){
   try{ history.replaceState(cloneState(state), '', hashForState(state)); }catch(e){}
 }
 window.addEventListener('popstate', (e)=>{
+  if(e.state && e.state.__root && IS_APP && !_exitConfirmed){ askExitApp(); return; }
   if(!currentUser) return; // ainda na tela de login/cadastro — nada pra restaurar
-  if(e.state && e.state.__root){ askExitApp(); return; }
   if(e.state){
     Object.assign(state, e.state);
   } else {

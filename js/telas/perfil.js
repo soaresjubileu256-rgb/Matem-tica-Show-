@@ -52,6 +52,7 @@ async function profileScreen(){
   group('Ajuda e conta');
   item('📘', 'Como usar o app', 'Guia e tour guiado', ()=> go('help'));
   item('⚙️', 'Configurações', 'Tema, som, meta, senha e backup', ()=> go('settings'));
+  if(IS_APP) item('📴', 'Sair do aplicativo', 'Fecha o app (seu progresso fica salvo)', ()=> askExitApp(true));
   item('🚪', 'Sair da conta', '', ()=> showConfirm({
     icon:'🚪', title:'Sair da conta?', message:'Seu progresso continua salvo neste aparelho. É só entrar de novo com seu nome e senha.',
     ok:'Sair da conta', cancel:'Cancelar', danger:true,
