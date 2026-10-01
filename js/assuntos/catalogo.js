@@ -3,12 +3,28 @@
    Ordem dos assuntos, ano escolar (BNCC), áreas do Ensino Médio e os
    formatos de questão (mkSingle, mkFrac, mkPair, mkXY).
    ========================================================= */
-/* ordem dos assuntos no app (Trilha, Aprender, Exercícios...): a ordem em que aparecem na escola */
-const SUBJECT_ORDER = ['adicao','subtracao','multiplicacao','divisao','dinheiro','fracoes','decimais','porcentagem','geometria',
-  'mmcmdc','potenciacao','expressoes','estatistica','regra3','eq1','sistemas','eq2','func1grau',
-  // Ensino Médio
-  'conjuntos','funcquad','modular','exponencial','logaritmo','pa','pg','juros','descontos','inflacao','trigret','espacial',
-  'ciclo','functrig','identidades','leis','combinatoria','probabilidade','graficos','dispersao','matrizes','determinantes','analitica'];
+/* GRUPOS DE ASSUNTOS — a lista única que organiza o app inteiro.
+   Cada assunto aparece em um grupo só, na ordem da escola. Aprender, Exercícios, Arena,
+   Simulado, Treino e Trilha usam esta mesma ordem. */
+const SUBJECT_GROUPS = [
+  {id:'f1', level:'fund', name:'1º ao 5º ano', ids:['adicao','subtracao','multiplicacao','divisao','dinheiro']},
+  {id:'f2', level:'fund', name:'6º e 7º ano', ids:['fracoes','decimais','porcentagem','geometria','mmcmdc','potenciacao','expressoes','estatistica','regra3','eq1']},
+  {id:'f3', level:'fund', name:'8º e 9º ano', ids:['sistemas','eq2','func1grau']},
+  {id:'em-alg',  level:'em', name:'Álgebra e Funções', ids:['conjuntos','funcquad','modular','exponencial','logaritmo','functrig']},
+  {id:'em-seq',  level:'em', name:'Progressões e Sequências', ids:['pa','pg']},
+  {id:'em-geo',  level:'em', name:'Geometria', ids:['espacial','analitica']},
+  {id:'em-trig', level:'em', name:'Trigonometria', ids:['trigret','ciclo','identidades','leis']},
+  {id:'em-est',  level:'em', name:'Estatística e Probabilidade', ids:['combinatoria','probabilidade','dispersao','graficos']},
+  {id:'em-fin',  level:'em', name:'Matemática Financeira', ids:['juros','descontos','inflacao']},
+  {id:'em-mat',  level:'em', name:'Matrizes e Determinantes', ids:['matrizes','determinantes']},
+];
+const SUBJECT_LEVELS = [
+  {id:'fund', name:'Ensino Fundamental', ico:'📘'},
+  {id:'em', name:'Ensino Médio', ico:'🎓'},
+];
+const SUBJECT_ORDER = SUBJECT_GROUPS.flatMap(g=>g.ids);
+function subjectGroupOf(id){ return SUBJECT_GROUPS.find(g=>g.ids.includes(id)); }
+function levelIds(level){ return SUBJECT_GROUPS.filter(g=>g.level===level).flatMap(g=>g.ids); }
 SUBJECTS.sort((a,b)=>{ const ia = SUBJECT_ORDER.indexOf(a.id), ib = SUBJECT_ORDER.indexOf(b.id); return (ia<0?99:ia) - (ib<0?99:ib); });
 
 /* ano escolar em que cada assunto costuma aparecer, segundo a BNCC (referência aproximada) */
@@ -22,28 +38,19 @@ const BNCC_ANO = {adicao:'1º ao 5º ano', subtracao:'1º ao 5º ano', multiplic
   dispersao:'3º do EM', graficos:'6º ano ao EM', juros:'1º do EM', descontos:'1º do EM', inflacao:'1º do EM',
   matrizes:'2º do EM', determinantes:'2º do EM'};
 
-/* como os assuntos aparecem agrupados em Aprender e Exercícios */
-const SUBJECT_AREAS = [
-  {name:'Álgebra e Funções', ids:['conjuntos','func1grau','funcquad','modular','exponencial','logaritmo','functrig']},
-  {name:'Progressões e Sequências', ids:['pa','pg']},
-  {name:'Geometria', ids:['geometria','espacial','analitica']},
-  {name:'Trigonometria', ids:['trigret','ciclo','identidades','leis']},
-  {name:'Estatística e Probabilidade', ids:['combinatoria','probabilidade','estatistica','dispersao','graficos']},
-  {name:'Matemática Financeira', ids:['porcentagem','juros','descontos','inflacao']},
-  {name:'Matrizes e Sistemas', ids:['matrizes','determinantes','sistemas']},
-];
-/* lista de assuntos com títulos: primeiro o Fundamental (o que não está em nenhuma área), depois as áreas do Ensino Médio */
-function subjectListWithAreas(container, makeRow){
-  const inArea = new Set(SUBJECT_AREAS.flatMap(a=>a.ids));
-  const idx = id=> SUBJECTS.findIndex(s=>s.id===id);
-  const sec = (title, sub)=> container.appendChild(h(`<div class="subj-area"><span>${title}</span>${sub?`<small>${sub}</small>`:''}</div>`));
-  container.appendChild(h(`<div class="subj-level">📘 Ensino Fundamental</div>`));
-  SUBJECTS.filter(s=>!inArea.has(s.id)).forEach(s=> container.appendChild(makeRow(s, idx(s.id))));
-  container.appendChild(h(`<div class="subj-level">🎓 Ensino Médio</div>`));
-  SUBJECT_AREAS.forEach(a=>{
-    const list = a.ids.filter(id=>idx(id)>=0);
-    sec(a.name, `${list.length} assunto${list.length===1?'':'s'}`);
-    list.forEach(id=> container.appendChild(makeRow(SUBJECTS[idx(id)], idx(id))));
+/* lista de assuntos com títulos (nível → grupo), igual em todas as telas que listam assuntos.
+   makeRow(subject, index) devolve o elemento de cada assunto; index é a posição em SUBJECTS (dá a cor). */
+function subjectListGrouped(container, makeRow, onlyIds){
+  SUBJECT_LEVELS.forEach(lv=>{
+    const groups = SUBJECT_GROUPS.filter(g=>g.level===lv.id)
+      .map(g=>({g, list:g.ids.filter(id=> (!onlyIds || onlyIds.includes(id)) && SUBJECTS.some(s=>s.id===id))}))
+      .filter(x=>x.list.length);
+    if(!groups.length) return;
+    container.appendChild(h(`<div class="subj-level">${lv.ico} ${lv.name}</div>`));
+    groups.forEach(({g, list})=>{
+      container.appendChild(h(`<div class="subj-area"><span>${g.name}</span><small>${list.length} assunto${list.length===1?'':'s'}</small></div>`));
+      list.forEach(id=>{ const i = SUBJECTS.findIndex(s=>s.id===id); container.appendChild(makeRow(SUBJECTS[i], i)); });
+    });
   });
 }
 

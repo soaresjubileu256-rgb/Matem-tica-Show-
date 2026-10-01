@@ -1,6 +1,52 @@
 /* =========================================================
-   Dicas e explicação alternativa (Fase 2 — aprendizado)
+   ABA EXERCÍCIOS
+   Lista de assuntos e modos de treino, sessões de exercícios, dicas,
+   revisão de erros, Desafios e Treino personalizado.
    ========================================================= */
+
+/* ---------------- EXERCISES: subject list ---------------- */
+function exercisesSubjectsScreen(){
+  const wrap = document.createElement('div');
+  wrap.appendChild(topbar('Exercícios', true, ()=>go('home')));
+  const c = h(`<div class="content"></div>`);
+  // modos de treino (cada um mora aqui, na aba Exercícios)
+  c.appendChild(h(`<h3 class="home-sec" style="margin:4px 0 10px">Modos de treino</h3>`));
+  const modes = h(`<div class="quick-grid ex-modes" style="padding:0"></div>`);
+  [
+    {sym:'🎯', cls:'tile-train', label:'Treino personalizado', go:()=>go('personalizedSetup')},
+    {sym:'🏆', cls:'challenge', label:'Desafios', go:()=>go('challengeDifficulty')},
+    {sym:'×', cls:'tabuada', label:'Tabuada', go:()=>go('tabuada')},
+    {sym:'🔁', cls:'tile-hist', label:'Caderno de erros', go:()=>go('errors')},
+  ].forEach(m=>{ const t = h(`<button type="button" class="quick-tile ${m.cls}"><span class="sym">${m.sym}</span><span class="label">${m.label}</span></button>`); t.onclick = m.go; modes.appendChild(t); });
+  c.appendChild(modes);
+  c.appendChild(h(`<h3 class="home-sec" style="margin:18px 0 6px">Por assunto</h3>`));
+  c.appendChild(h(`<p style="color:var(--ink-soft); font-size:14px; margin:2px 0 8px;">Escolha um assunto para praticar.</p>`));
+  subjectListGrouped(c, (s,u)=>{
+    const row = h(`<button class="subject-row" style="${unitStyle(u)}"><span class="sym">${s.sym}</span><span class="txt"><span class="name">${s.name}</span><span class="subj-meta">${masteryChip(masterySync(s.id))}</span></span><span class="chev">›</span></button>`);
+    row.onclick = ()=>go('exerciseDifficulty', {subjectId:s.id});
+    return row;
+  });
+  wrap.appendChild(c);
+  return wrap;
+}
+
+function exerciseDifficultyScreen(){
+  const s = SUBJECTS.find(x=>x.id===state.subjectId) || SUBJECTS[0];
+  const wrap = document.createElement('div');
+  wrap.appendChild(topbar(s.name, true, ()=>go('exercisesSubjects')));
+  const c = h(`<div class="content"></div>`);
+  c.appendChild(h(`<p style="color:var(--ink-soft); font-size:14px; margin:2px 0 16px;">Escolha a dificuldade para começar 5 exercícios.</p>`));
+  const row = h(`<div class="diff-row"></div>`);
+  [['facil','Fácil'],['medio','Médio'],['dificil','Difícil']].forEach(([id,label])=>{
+    const chip = h(`<button class="diff-chip" data-d="${id}">${label}</button>`);
+    chip.onclick = ()=> startSession(s.id, id);
+    row.appendChild(chip);
+  });
+  c.appendChild(row);
+  wrap.appendChild(c);
+  return wrap;
+}
+
 /* dica curta, por assunto: lembra o método geral, sem revelar o resultado da questão atual */
 const HINTS = {
   conjuntos: 'ℕ ⊂ ℤ ⊂ ℚ ⊂ ℝ. Raiz de quadrado perfeito é racional; raiz de número que não é quadrado perfeito (e o π) é irracional. Dízima com período de 2 algarismos: período sobre 99.',
@@ -285,7 +331,7 @@ async function recordReviewAnswer(item, correct){
 function reviewErrorsSessionScreen(){
   const sess = state.session;
   const wrap = document.createElement('div');
-  wrap.appendChild(topbar('Revisar erros', true, ()=>go('home')));
+  wrap.appendChild(topbar('Revisar erros', true, ()=>go('exercisesSubjects')));
   const c = h(`<div class="content"></div>`);
 
   if(!sess || sess.index >= sess.total){
@@ -401,7 +447,7 @@ function reviewErrorsSessionScreen(){
 /* ---------------- DESAFIOS (perguntas de todos os assuntos misturadas, por dificuldade) ---------------- */
 function challengeDifficultyScreen(){
   const wrap = document.createElement('div');
-  wrap.appendChild(topbar('Desafios', true, ()=>go('home')));
+  wrap.appendChild(topbar('Desafios', true, ()=>go('exercisesSubjects')));
   const c = h(`<div class="content"></div>`);
   c.appendChild(h(`<div class="greeting" style="margin-bottom:4px"><h2>🏆 Desafios</h2><p>10 questões sorteadas de todos os assuntos. Escolha a dificuldade.</p></div>`));
   const row = h(`<div class="diff-row"></div>`);
@@ -685,7 +731,7 @@ function genQuestionAvoidingRepeat(subject, difficulty, lastSignature){
 
 async function personalizedSetupScreen(){
   const wrap = document.createElement('div');
-  wrap.appendChild(topbar('Treino personalizado', true, ()=>go('home')));
+  wrap.appendChild(topbar('Treino personalizado', true, ()=>go('exercisesSubjects')));
   const c = h(`<div class="content"></div>`);
   c.appendChild(h(`<p style="color:var(--ink-soft); font-size:14px; margin:2px 0 18px;">Monte um treino sob medida: escolha os assuntos, a dificuldade e quantas questões quer praticar.</p>`));
 
@@ -713,7 +759,9 @@ async function personalizedSetupScreen(){
   c.appendChild(selLinks);
   const subjGrid = h(`<div class="subj-chip-grid"></div>`);
   const chips = {};
-  SUBJECTS.forEach(s=>{
+  SUBJECT_GROUPS.forEach(g=> g.ids.forEach((id,k)=>{
+    const s = SUBJECTS.find(x=>x.id===id); if(!s) return;
+    if(k===0) subjGrid.appendChild(h(`<div class="subj-chip-group">${g.level==='em'?'🎓 ':'📘 '}${g.name}</div>`));
     const chip = h(`<button type="button" class="subj-chip ${selected.has(s.id)?'active':''}"><span class="sym">${s.sym}</span>${s.name}${accBadgeHTML(accuracyFor(progress, s.id))}</button>`);
     chip.onclick = ()=>{
       if(selected.has(s.id)) selected.delete(s.id); else selected.add(s.id);
@@ -721,7 +769,7 @@ async function personalizedSetupScreen(){
     };
     chips[s.id] = chip;
     subjGrid.appendChild(chip);
-  });
+  }));
   c.appendChild(subjGrid);
   c.appendChild(h(`<p style="color:var(--ink-soft); font-size:12px; margin:-12px 0 18px;">O selo mostra seu % de acerto em cada assunto.</p>`));
   const [selAllBtn, selNoneBtn, selWeakBtn] = selLinks.querySelectorAll('button');

@@ -272,3 +272,27 @@ async function resetCurrentUserProgress(){
   errorsCache = []; errorsCacheUid = uid;
   await saveProgress(); await saveHistory(); await saveErrors();
 }
+
+
+/* ---------- lembrete de backup ----------
+   o progresso fica só neste aparelho; de tempos em tempos lembramos de exportar uma cópia */
+const BACKUP_KEY_BASE = 'mathstudy-backup-v1';
+const BACKUP_EVERY_DAYS = 14, BACKUP_MIN_ANSWERS = 30;
+function backupInfo(){ try{ return JSON.parse(localStorage.getItem(`${BACKUP_KEY_BASE}:${currentUserId()}`)||'{}'); }catch(e){ return {}; } }
+function saveBackupInfo(o){ try{ localStorage.setItem(`${BACKUP_KEY_BASE}:${currentUserId()}`, JSON.stringify(Object.assign(backupInfo(), o))); }catch(e){} }
+let _backupAskedThisRun = false;
+async function maybeAskBackup(){
+  if(_backupAskedThisRun || !currentUser) return;
+  const progress = await loadProgress();
+  const total = Object.values(progress).reduce((a,d)=>a+(d.attempted||0), 0);
+  if(total < BACKUP_MIN_ANSWERS) return;
+  const info = backupInfo(), now = Date.now();
+  if(!info.since){ saveBackupInfo({since: now}); return; } // começa a contar a partir de agora
+  const ref = Math.max(info.last||0, info.since||0, info.snooze||0);
+  if(now - ref < BACKUP_EVERY_DAYS*864e5) return;
+  _backupAskedThisRun = true;
+  const ok = await showConfirm({icon:'💾', title:'Guarde uma cópia do seu progresso',
+    message:`Você já respondeu ${total} questões! Seu progresso fica salvo só neste aparelho: se limpar o navegador ou trocar de celular, ele se perde. Quer salvar uma cópia agora?`,
+    ok:'Salvar cópia', cancel:'Depois'});
+  if(ok) exportProgressData(); else saveBackupInfo({snooze: now});
+}

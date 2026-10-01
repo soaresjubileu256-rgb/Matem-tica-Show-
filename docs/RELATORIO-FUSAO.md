@@ -172,3 +172,10 @@ O antigo `app.js` (8.300 linhas) foi dividido em arquivos por assunto dentro de 
 - Erro com duas notas descendo, baixinho, sem susto.
 - Áudio "acordado" no primeiro toque (iPhone/Android começam com o áudio pausado) e nenhum som com o app em segundo plano.
 - Configurações → Som e vibração: novo **Volume** (Baixo, Médio, Alto), com prévia ao tocar.
+
+## 12. Tudo em ordem, cada coisa no seu lugar
+
+- **Assuntos:** uma lista única (`SUBJECT_GROUPS` em `catalogo.js`) com os grupos 1º ao 5º ano, 6º e 7º, 8º e 9º e as 7 áreas do Ensino Médio. Cada assunto aparece em um grupo só. Aprender, Exercícios, Arena, Treino personalizado, Simulado e Trilha seguem a mesma ordem e mostram os mesmos títulos. O progresso da trilha é guardado pelo nome do assunto, então ninguém perde nada. O sorteio do Desafio do Dia usa listas fixas, então as perguntas e a correção dos dias já jogados não mudam.
+- **Menus:** cada função mora num lugar só (tabela no `LEIA-ME.md`). Treinos foram para a aba Exercícios, os jogos ficam na Arena, conquistas, certificados, relatório e histórico na aba Progresso, e nivelamento, plano e configurações no Perfil. O botão voltar de cada tela leva para a sua aba, e o menu de baixo acende a aba certa.
+- **Configurações:** Conta → Estudo → Som e vibração → Aparência → Leitura e acessibilidade → Dados.
+- **Arquivos:** cada tela no seu arquivo (`progresso.js`, `perfil.js`, `configuracoes.js`, `relatorio.js`, `certificados.js`, `tabuada.js`, `duelo.js`) e todos os sons em `base/sons.js`. O código foi só movido, sem mudanças.

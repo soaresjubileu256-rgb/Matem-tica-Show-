@@ -23,7 +23,6 @@ function homeScreen(){
   showStreakNote();
   wrap.appendChild(playerCard());
   wrap.appendChild(pathHero());
-  const duo = gameDuo();
 
   // meta diária de questões — editável direto aqui, sem precisar ir em Configurações
   const goalRow = h(`
@@ -143,8 +142,9 @@ function homeScreen(){
   });
   if(tutorialDone()) setTimeout(()=>{ if(state.screen==='home' && wrap.isConnected) maybeAskBackup(); }, 1500);
 
-  // ordem da tela: continuar → pra fazer hoje → jogos rápidos → atalhos
-  // (Simulado, Duelo e Fases ficam na Arena; conquistas, certificados, relatório e histórico no Perfil/Progresso)
+  // ordem da tela: continuar a trilha → pra fazer hoje → ferramentas.
+  // Cada coisa mora na sua aba: treinos em Exercícios, jogos na Arena, conquistas/relatório/histórico em Progresso,
+  // nivelamento/plano/configurações no Perfil.
   const secTitle = t=> h(`<h3 class="home-sec">${t}</h3>`);
   const tileGrid = items=>{
     const grid = h(`<div class="quick-grid six"></div>`);
@@ -175,23 +175,12 @@ function homeScreen(){
   setOpen(msReady || !!state.missionsOpen);
   mToggle.onclick = ()=>{ state.missionsOpen = missions.classList.contains('collapsed'); setOpen(state.missionsOpen); };
   wrap.appendChild(missions);
-  wrap.appendChild(secTitle('Jogos rápidos'));
-  wrap.appendChild(duo);
-  wrap.appendChild(secTitle('Atalhos'));
+  wrap.appendChild(secTitle('Ferramentas'));
   wrap.appendChild(tileGrid([
-    {sym:'🎯', cls:'tile-train', label:'Treino personalizado', screen:'personalizedSetup'},
-    {sym:'🏆', cls:'challenge', label:'Desafios', screen:'challengeDifficulty'},
-    {sym:'×', cls:'tabuada', label:'Tabuada', screen:'tabuada'},
     {sym:'?', cls:'solve', label:'Resolver questão', screen:'solve'},
     {sym:'#', cls:'tile-calc', label:'Calculadora', screen:'calculator'},
     {sym:'✏️', cls:'tile-report', label:'Caderno', screen:'notebook'},
   ]));
-  const more = h(`<div class="home-more">
-    <button type="button" data-go="arena"><span>⚔️</span><span><b>Arena</b><small>Simulado, duelo e fases com estrelas</small></span><i>›</i></button>
-    <button type="button" data-go="profile"><span>👤</span><span><b>Perfil</b><small>Conquistas, certificados, plano e relatório</small></span><i>›</i></button>
-  </div>`);
-  more.querySelectorAll('button').forEach(b=> b.onclick = ()=> go(b.dataset.go));
-  wrap.appendChild(more);
 
   wrap.appendChild(h(`<div class="footer-note">Seu professor de matemática digital 📐</div>`));
   // primeiro acesso: tour guiado pelo Pi

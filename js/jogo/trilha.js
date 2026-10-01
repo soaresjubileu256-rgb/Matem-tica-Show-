@@ -548,17 +548,6 @@ function pathHero(){
   el.querySelector('button').onclick = ()=> go('path');
   return el;
 }
-function gameDuo(){
-  const g = loadGame(); const qb = g.quizBest || {};
-  const best = Math.max(0, ...Object.values(qb));
-  const el = h(`<div class="game-duo">
-    <button type="button" class="game-card quiz"><span class="gc-best">🏆 ${best.toLocaleString('pt-BR')}</span><div class="gc-ico">🎤</div><div class="gc-t">Quiz do Show</div><div class="gc-s">Responda rápido, ganhe mais pontos!</div></button>
-    <button type="button" class="game-card bolt"><span class="gc-best">🏆 ${g.boltBest}</span><div class="gc-ico">⚡</div><div class="gc-t">Relâmpago</div><div class="gc-s">60 segundos de contas sem parar!</div></button>
-  </div>`);
-  el.querySelector('.quiz').onclick = ()=> go('quizSetup');
-  el.querySelector('.bolt').onclick = ()=> go('lightning');
-  return el;
-}
 
 /* ---------- tela da trilha ---------- */
 function pathScreen(){
@@ -589,6 +578,11 @@ function pathScreen(){
           .then(ok=>{ if(ok) startPathLesson(unitNodes[0], true); });
       };
       banner.appendChild(jump);
+    }
+    const grp = subjectGroupOf(s.id);
+    if(grp && grp.ids[0]===s.id){
+      const lv = SUBJECT_LEVELS.find(l=>l.id===grp.level);
+      c.appendChild(h(`<div class="path-group"><small>${lv.ico} ${lv.name}</small><b>${grp.name}</b></div>`));
     }
     c.appendChild(banner);
     const col = h(`<div class="path-col"></div>`);
@@ -652,7 +646,7 @@ function openChest(n, isDone){
 /* ---------- escolha do quiz ---------- */
 function quizSetupScreen(){
   const wrap = document.createElement('div');
-  wrap.appendChild(topbar('🎤 Quiz do Show', true, ()=>go('home')));
+  wrap.appendChild(topbar('🎤 Quiz do Show', true, ()=>go('arena')));
   const c = h(`<div class="content"></div>`);
   const g = loadGame(); const best = g.quizBest || {};
   c.appendChild(h(`<div class="quiz-hero"><span class="beam l"></span><span class="beam r"></span><div class="mic">🎤</div><h2>Quiz do Show</h2><p>${QUIZ_TOTAL} perguntas de todos os assuntos. Você tem <b>${QUIZ_SECONDS}s</b> por pergunta — quanto mais rápido, mais pontos! Acertos seguidos dão bônus. 🔥</p></div>`));

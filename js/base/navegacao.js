@@ -125,12 +125,12 @@ function topbar(title, showBack, onBack){
 
 /* ---------------- barra de navegação inferior ---------------- */
 const BOTTOM_NAV_ITEMS = [
-  {screen:'home', icon:'⌂', label:'Início', group:['home','achievements','calculator','help','certificates','certificate','notebook','notePage','challengeDifficulty','challengeSession','personalizedSetup','personalizedSession','reviewErrorsSession','tabuada','solve','profile','settings','errors','placement','plan']},
+  {screen:'home', icon:'⌂', label:'Início', group:['home','calculator','solve','notebook','notePage','help','profile','settings','placement','plan']},
   {screen:'path', icon:'★', label:'Trilha', group:['path']},
   {screen:'content', icon:'∑', label:'Aprender', group:['content','subjectDetail','geoLab','cardsDeck']},
-  {screen:'exercisesSubjects', icon:'✎', label:'Exercícios', group:['exercisesSubjects','exerciseDifficulty','exerciseSession']},
+  {screen:'exercisesSubjects', icon:'✎', label:'Exercícios', group:['exercisesSubjects','exerciseDifficulty','exerciseSession','personalizedSetup','personalizedSession','challengeDifficulty','challengeSession','tabuada','errors','reviewErrorsSession']},
   {screen:'arena', icon:'⚔', label:'Arena', group:['arena','arenaDaily','dailyIntro','dailyReview','examSetup','examResult','lightning','quizSetup','duel']},
-  {screen:'progress', icon:'↑', label:'Progresso', group:['progress','report','history']},
+  {screen:'progress', icon:'↑', label:'Progresso', group:['progress','report','history','achievements','certificates','certificate']},
 ];
 function bottomNav(){
   const bar = h(`<div class="bottom-nav"></div>`);

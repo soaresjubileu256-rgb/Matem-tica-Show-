@@ -149,3 +149,26 @@ function recommendSubjects(progress, errs, n){
   });
   return Object.entries(score).filter(([id])=>SUBJECTS.some(s=>s.id===id)).sort((a,b)=>b[1]-a[1]).slice(0, n||3).map(([id])=>id);
 }
+
+
+/* ---------- revisão espaçada ----------
+   Cada assunto já praticado "vence" depois de um intervalo que cresce com o % de acerto:
+   quem erra muito revê amanhã; quem domina, só daqui a uma semana. */
+const REVIEW_MIN_ATTEMPTS = 3;
+function reviewIntervalDays(acc){ return acc>=0.9 ? 7 : acc>=0.75 ? 4 : acc>=0.5 ? 2 : 1; }
+function dueReviewSubjects(progress){
+  const now = Date.now();
+  return SUBJECTS.filter(s=>{
+    const d = progress[s.id];
+    if(!d || d.attempted < REVIEW_MIN_ATTEMPTS) return false;
+    const acc = d.correct/d.attempted;
+    if(!d.last) return acc < 0.75; // dados antigos, sem data: revisa só o que ainda está fraco
+    return now - d.last >= reviewIntervalDays(acc)*864e5;
+  }).sort((a,b)=>(progress[a.id].correct/progress[a.id].attempted)-(progress[b.id].correct/progress[b.id].attempted));
+}
+async function startSpacedReview(){
+  const progress = await loadProgress();
+  const due = dueReviewSubjects(progress).slice(0,4);
+  if(!due.length) return;
+  startPersonalizedSession({subjectIds: due.map(s=>s.id), difficultyMode:'adaptativa', qty: Math.min(10, Math.max(5, due.length*3)), focusWeak: due.length>1, progress, isReview:true});
+}
