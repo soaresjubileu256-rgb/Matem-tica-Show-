@@ -63,7 +63,7 @@ function certificateEl(s, preview, style){
         <div class="cert-brand"><img src="${LOGO_URI}" alt="" class="cert-logo"><span>Matemática Show</span></div>
         <div class="cert-date">${dt}</div>
       </div>
-      <div class="cert-num" aria-hidden="true">${num}</div>
+      <div class="cert-num ${num>=10?'two':''}" aria-hidden="true">${num}</div>
       <div class="cert-main">
         <div class="cert-tags"><span class="cert-tag">Certificado</span><span class="cert-k">de conclusão</span></div>
         <div class="cert-name"></div>

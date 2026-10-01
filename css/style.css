@@ -2160,3 +2160,6 @@ section.block h3::before, .rp-sec::before, .hq-head span::before{content:''; wid
 .cert-note{background:var(--leaf-bg); border:1px solid var(--border); border-radius:14px; padding:12px 14px; font-size:13.5px; line-height:1.5; color:var(--ink); margin-bottom:14px;}
 @media print{ .cert.preview{display:none !important;} }
 .cert.preview .cert-date{visibility:hidden;}
+/* número do episódio com 2 algarismos: um pouco menor, pra não encostar no nome */
+.cert-num.two{font-size:31cqw; right:-2cqw;}
+.cert-num.two ~ .cert-main{width:54%;}
