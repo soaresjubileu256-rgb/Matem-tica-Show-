@@ -296,3 +296,59 @@ async function maybeAskBackup(){
     ok:'Salvar cópia', cancel:'Depois'});
   if(ok) exportProgressData(); else saveBackupInfo({snooze: now});
 }
+
+/* ---------- dados apagados pelo navegador com o app aberto ----------
+   Se a pessoa apaga os dados do site (Chrome → Configurações do site → Excluir dados) com o app
+   aberto ou em segundo plano, a memória do app ainda tem tudo e salvaria de volta na próxima ação.
+   Aqui o app percebe que a lista de contas sumiu e recomeça do zero (recarrega a página) — e nada
+   é regravado enquanto isso. */
+let _wipeReloading = false;
+function storageWiped(){
+  try{ return !!currentUser && localStorage.getItem(USERS_KEY) === null; }catch(e){ return false; }
+}
+function reloadIfWiped(){
+  if(_wipeReloading) return true;
+  if(!storageWiped()) return false;
+  _wipeReloading = true;
+  location.reload();
+  return true;
+}
+(function(){
+  try{
+    const orig = Storage.prototype.setItem;
+    Storage.prototype.setItem = function(k, v){
+      // bloqueia qualquer gravação depois que os dados foram apagados (ou enquanto o app apaga tudo)
+      if(this === window.localStorage && k !== USERS_KEY && (_wipeReloading || storageWiped())){ reloadIfWiped(); return; }
+      return orig.call(this, k, v);
+    };
+  }catch(e){}
+  ['visibilitychange','focus','pageshow'].forEach(ev=> window.addEventListener(ev, ()=>{ if(document.visibilityState !== 'hidden') reloadIfWiped(); }));
+  setInterval(reloadIfWiped, 3000);
+})();
+
+/* ---------- excluir a conta / apagar tudo (Configurações → Dados) ---------- */
+function accountKeys(uid){
+  const out = [];
+  try{ for(let i=0;i<localStorage.length;i++){ const k = localStorage.key(i); if(k && (k.endsWith(':'+uid) || k.includes(':'+uid+':'))) out.push(k); } }catch(e){}
+  return out;
+}
+/* apaga a conta logada: progresso, histórico, erros, jogo, configurações, caderno e a própria conta */
+async function deleteCurrentAccount(){
+  if(!currentUser) return;
+  const uid = currentUser.id;
+  accountKeys(uid).forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
+  const users = (await loadUsers()).filter(u=>u.id !== uid);
+  await saveUsers(users);
+  gameCache = null; gameCacheUid = null;
+  progressCache = {}; progressCacheUid = null; historyCache = []; historyCacheUid = null; errorsCache = []; errorsCacheUid = null;
+  doLogout();
+}
+/* apaga tudo que o app guardou neste aparelho (todas as contas, cópias offline) e recomeça do zero */
+async function wipeAllDeviceData(){
+  _wipeReloading = true; // nada mais é gravado a partir daqui
+  try{ localStorage.clear(); }catch(e){}
+  try{ sessionStorage.clear(); }catch(e){}
+  try{ if(window.caches){ const ks = await caches.keys(); await Promise.all(ks.map(k=>caches.delete(k))); } }catch(e){}
+  try{ if(navigator.serviceWorker){ const regs = await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map(r=>r.unregister())); } }catch(e){}
+  location.replace(location.pathname);
+}

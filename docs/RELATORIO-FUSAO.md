@@ -187,3 +187,8 @@ A logo do "M" com o capelo de formatura substitui a antiga em todos os lugares: 
 ## 14. Prévia do certificado
 
 Na tela de Certificados (aba Progresso), o topo mostra uma **prévia** de como vai ficar o certificado do próximo assunto, já com o nome da pessoa, marcada com a faixa "PRÉVIA". Os assuntos ainda bloqueados mostram quantas etapas da Trilha já foram feitas e, ao tocar, abrem a prévia daquele assunto com um botão "Ir para a Trilha". Só o certificado de verdade tem o botão de imprimir; a prévia não sai na impressão. O certificado mostra só o essencial: logo, nome, assunto e data (sem o "Pi, o apresentador" e sem o nível).
+
+## 15. Apagar os dados de verdade
+
+- **Correção:** quando a pessoa apagava os dados do site no Chrome com o app aberto (ou em segundo plano), a memória do app ainda tinha tudo e regravava progresso, XP e histórico na próxima ação; parecia que nada tinha sido apagado. Agora o app percebe que os dados sumiram, bloqueia qualquer gravação e recomeça do zero (`js/dados/contas.js`).
+- **Configurações → Dados:** novos botões **Excluir minha conta** (apaga a conta logada e tudo dela: progresso, histórico, conquistas, caderno e configurações; as outras contas continuam) e **Apagar tudo deste aparelho** (todas as contas, a cópia offline e o service worker; o app recomeça do zero). Os dois pedem confirmação.

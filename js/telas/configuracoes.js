@@ -205,6 +205,21 @@ async function settingsScreen(){
   };
   c.appendChild(resetBtn);
 
+  // excluir de verdade: só esta conta, ou tudo que o app guardou neste aparelho
+  c.appendChild(h(`<p class="danger-note">Excluir apaga de vez, sem volta. Se quiser guardar uma cópia antes, use "Exportar progresso".</p>`));
+  const delAccBtn = h(`<button class="btn secondary danger-btn">🗑️ Excluir minha conta</button>`);
+  delAccBtn.onclick = async ()=>{
+    const ok = await showConfirm({icon:'🗑️', title:'Excluir sua conta?', message:`A conta "${escHTML(currentUser.name)}" e tudo dela (progresso, histórico, conquistas, caderno e configurações) serão apagados deste aparelho. Não dá pra desfazer.`, ok:'Excluir conta', cancel:'Cancelar', danger:true});
+    if(ok) await deleteCurrentAccount();
+  };
+  c.appendChild(delAccBtn);
+  const wipeBtn = h(`<button class="btn secondary danger-btn">🧹 Apagar tudo deste aparelho</button>`);
+  wipeBtn.onclick = async ()=>{
+    const ok = await showConfirm({icon:'🧹', title:'Apagar tudo?', message:'Todas as contas deste aparelho e tudo que o Matemática Show guardou aqui serão apagados. O app vai recomeçar do zero. Não dá pra desfazer.', ok:'Apagar tudo', cancel:'Cancelar', danger:true});
+    if(ok) await wipeAllDeviceData();
+  };
+  c.appendChild(wipeBtn);
+
   wrap.appendChild(c);
   return wrap;
 }
