@@ -191,3 +191,7 @@ Na tela de Certificados (aba Progresso), o topo mostra uma **prévia** de como v
 ## 15. Certificado novo, em duas versões
 
 O certificado agora é em paisagem, com fundo escuro e linhas onduladas, o nome em letras grandes e o número do episódio enorme em degradê do lado direito. Há duas versões de cor: **Versão 1 · Amarelo e verde** e **Versão 2 · Roxo**. Na tela do certificado dá pra trocar entre elas com os botões acima dele, e a escolha fica salva na conta. Sem escolha, o Ensino Fundamental usa a versão 1 e o Ensino Médio a versão 2. Na impressão o certificado sai sozinho numa folha A4 deitada. Nos episódios com 2 algarismos (10 a 41) o número fica um pouco menor, pra não encostar no nome.
+
+## 16. Sem pergunta ao sair
+
+A pergunta "Quer sair do app?" (botão voltar na tela Início) foi retirada. O "voltar" volta tela por tela até o Início e, no Início, sai do app/site direto.
