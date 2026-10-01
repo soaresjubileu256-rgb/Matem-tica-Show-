@@ -93,7 +93,7 @@ function arenaScreen(){
   c.appendChild(h(`<h3 class="ar-label">Fases da Arena</h3>`));
   c.appendChild(h(`<p class="ar-muted" style="margin:-4px 0 10px">${ARENA_PHASE_Q} perguntas por fase · ${ARENA_LIVES} vidas · ${QUIZ_SECONDS}s por pergunta · acerte 5, 7 ou 9 para ganhar 1, 2 ou 3 estrelas</p>`));
   const list = h(`<div class="ar-phases"></div>`);
-  SUBJECTS.forEach(s=>{
+  subjectListGrouped(list, s=>{
     const nextD = ARENA_DIFFS.find(d=> arenaUnlocked(s.id,d) && !arenaStars(s.id,d));
     const got = ARENA_DIFFS.reduce((x,d)=> x + arenaStars(s.id,d), 0);
     const row = h(`<div class="ar-subj ${got===9?'full':''}"><div class="ar-subj-h"><span class="ar-sym">${s.sym}</span><b>${s.name}</b><small>⭐ ${got}/9</small></div>
@@ -103,7 +103,7 @@ function arenaScreen(){
           <span>${un?'':'🔒 '}${ARENA_DIFF_NAME[d]}</span><span class="ar-st">${[0,1,2].map(i=>`<i class="${i<st?'on':''}">★</i>`).join('')}</span></button>`;
       }).join('')}</div></div>`);
     row.querySelectorAll('.ar-diff').forEach(b=> b.onclick = ()=>{ if(arenaUnlocked(s.id, b.dataset.d)) startArenaPhase(s.id, b.dataset.d); });
-    list.appendChild(row);
+    return row;
   });
   c.appendChild(list);
   return wrap;
@@ -137,7 +137,13 @@ const DAILY_PERFECT_XP = 20;   // acertou as 7
 const DAILY_STREAK_XP = 5;     // por dia seguido de desafio (a partir do 2º)
 const DAILY_STREAK_MAX = 25;
 function dailyTrack(id){ return DAILY_TRACKS.find(t=>t.id===id) || DAILY_TRACKS[0]; }
-function dailyTrackIds(id){ return [...new Set(dailyTrack(id).groups.flatMap(g=> examGroupIds(EXAM_GROUPS.find(x=>x.id===g))))]; }
+// listas fixas do sorteio: não mudam quando a ordem dos assuntos no app muda, assim as perguntas
+// (e a correção comentada) de qualquer dia continuam as mesmas
+const DAILY_POOLS = {
+  fund: ['adicao','subtracao','multiplicacao','divisao','dinheiro','fracoes','decimais','porcentagem','geometria','mmcmdc','potenciacao','expressoes','estatistica','regra3','eq1','sistemas','eq2','func1grau'],
+  em: ['conjuntos','func1grau','funcquad','modular','exponencial','logaritmo','functrig','pa','pg','geometria','espacial','analitica','trigret','ciclo','identidades','leis','combinatoria','probabilidade','estatistica','dispersao','graficos','porcentagem','juros','descontos','inflacao','matrizes','determinantes','sistemas'],
+};
+function dailyTrackIds(id){ return (DAILY_POOLS[id] || DAILY_POOLS.fund).filter(x=> SUBJECTS.some(s=>s.id===x)); }
 function dailyDefaultTrack(){
   const a = arenaData();
   if(a.dailyTrack) return a.dailyTrack;
@@ -481,11 +487,10 @@ function arenaDailyScreen(){
 /* =========================================================
    SIMULADO — prova com tempo, nota e correção
    ========================================================= */
+// grupos do Simulado, tirados da lista única de assuntos (catalogo.js)
 const EXAM_GROUPS = [
-  {id:'f1', name:'1º ao 5º ano', ids:['adicao','subtracao','multiplicacao','divisao','dinheiro']},
-  {id:'f2', name:'6º e 7º ano', ids:['fracoes','decimais','porcentagem','geometria','mmcmdc','potenciacao','expressoes','estatistica','regra3','eq1']},
-  {id:'f3', name:'8º e 9º ano', ids:['potenciacao','regra3','eq1','sistemas','eq2','func1grau']},
-  {id:'em', name:'Ensino Médio', ids:['conjuntos','func1grau','funcquad','modular','exponencial','logaritmo','functrig','pa','pg','geometria','espacial','analitica','trigret','ciclo','identidades','leis','combinatoria','probabilidade','estatistica','dispersao','graficos','porcentagem','juros','descontos','inflacao','matrizes','determinantes','sistemas']},
+  ...SUBJECT_GROUPS.filter(g=>g.level==='fund').map(g=>({id:g.id, name:g.name, ids:g.ids})),
+  {id:'em', name:'Ensino Médio', ids:levelIds('em')},
   {id:'all', name:'Tudo', ids:null},
 ];
 function examGroupIds(gr){ const ids = gr.ids || SUBJECTS.map(s=>s.id); return ids.filter(id=> SUBJECTS.some(s=>s.id===id)); }

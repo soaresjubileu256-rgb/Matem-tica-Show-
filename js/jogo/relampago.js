@@ -26,7 +26,7 @@ function boltQuestion(score){
 }
 function lightningScreen(){
   const wrap = document.createElement('div');
-  wrap.appendChild(topbar('⚡ Modo Relâmpago', true, ()=>go('home')));
+  wrap.appendChild(topbar('⚡ Modo Relâmpago', true, ()=>go('arena')));
   const c = h(`<div class="content"></div>`);
   wrap.appendChild(c);
   const g = loadGame();

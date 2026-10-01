@@ -371,30 +371,6 @@ function launchConfetti(count){
   }catch(e){}
 }
 
-/* ---------- sons (Web Audio, sem arquivos) ---------- */
-function playTones(freqs, step, type, vol){
-  if(!currentSettingsSync().sound) return;
-  try{
-    _audioCtx = _audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-    const ctx = _audioCtx, t0 = ctx.currentTime;
-    freqs.forEach((f,i)=>{
-      const osc = ctx.createOscillator(), gain = ctx.createGain();
-      osc.connect(gain); gain.connect(ctx.destination);
-      osc.type = type || 'sine';
-      osc.frequency.value = f;
-      const s = t0 + i*step;
-      gain.gain.setValueAtTime(0.0001, s);
-      gain.gain.exponentialRampToValueAtTime(vol || 0.14, s+0.015);
-      gain.gain.exponentialRampToValueAtTime(0.0001, s+step+0.18);
-      osc.start(s); osc.stop(s+step+0.2);
-    });
-  }catch(e){}
-}
-function playComboSound(combo){
-  const up = Math.min(combo,10)*40;
-  playTones([660+up, 880+up, 1100+up], 0.06, 'triangle', 0.08);
-}
-
 /* ---------- pedaços de interface reutilizados nas sessões ---------- */
 const CHEERS = ['✓ Mandou bem!','✓ Show de bola!','✓ Certinho!','✓ Genial!','✓ Arrasou!','✓ Na mosca! 🎯'];
 function cheerLine(){
@@ -502,7 +478,7 @@ function missionsCard(){
 /* ---------- tela de conquistas ---------- */
 function achievementsScreen(){
   const wrap = document.createElement('div');
-  wrap.appendChild(topbar('🏅 Conquistas', true, ()=>go('home')));
+  wrap.appendChild(topbar('🏅 Conquistas', true, ()=>go('progress')));
   const c = h(`<div class="content"></div>`);
   const g = loadGame();
   const lv = levelInfo(g.xp);

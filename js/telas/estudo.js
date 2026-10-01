@@ -169,7 +169,7 @@ function planDayDone(p, byDay){
 function planToday(){ const P = studyData().plan; return P ? (P.schedule.find(p=>p.day===isoDay()) || null) : null; }
 function planScreen(){
   const wrap = document.createElement('div');
-  wrap.appendChild(topbar('🗺️ Plano de estudos', true, ()=>go('home')));
+  wrap.appendChild(topbar('🗺️ Plano de estudos', true, ()=>go('profile')));
   const c = h(`<div class="content"></div>`);
   wrap.appendChild(c);
   const st = studyData();
@@ -333,7 +333,7 @@ function chooseCardsLevel(subjectId){
    ========================================================= */
 function errorsScreen(){
   const wrap = document.createElement('div');
-  wrap.appendChild(topbar('🔁 Caderno de erros', true, ()=>go('home')));
+  wrap.appendChild(topbar('🔁 Caderno de erros', true, ()=>go('exercisesSubjects')));
   const c = h(`<div class="content"><div class="ar-muted" style="padding:20px 0;text-align:center">Carregando…</div></div>`);
   wrap.appendChild(c);
   Promise.all([loadErrors(), loadProgress()]).then(([errs, progress])=>{
