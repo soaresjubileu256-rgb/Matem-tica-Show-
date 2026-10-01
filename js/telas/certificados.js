@@ -13,20 +13,67 @@ function unitProgress(subjectId){
   const done = pathDone(), nodes = allPathNodes().filter(n=>n.subject.id===subjectId);
   return {done: nodes.filter(n=>done[n.key]).length, total: nodes.length};
 }
+/* as duas versões do certificado: fundo escuro com linhas onduladas e o número do episódio
+   grandão em degradê. Sem escolha salva, o Fundamental usa a 1 e o Ensino Médio a 2. */
+const CERT_STYLES = [
+  {id:'v1', name:'Versão 1 · Amarelo e verde'},
+  {id:'v2', name:'Versão 2 · Roxo'},
+];
+function certStyleFor(s){
+  const st = currentSettingsSync().certStyle;
+  if(CERT_STYLES.some(x=>x.id===st)) return st;
+  const g = subjectGroupOf(s.id);
+  return g && g.level==='em' ? 'v2' : 'v1';
+}
+/* linhas onduladas do fundo (tipo curva de nível), em SVG */
+function certWavesSVG(){
+  let paths = '';
+  for(let i=0;i<26;i++){
+    const y0 = -40 + i*26, ph = i*0.55, amp = 26 + 14*Math.sin(i*0.7);
+    let d = '';
+    for(let x=0;x<=1000;x+=25){
+      const y = y0 + amp*Math.sin(x/140 + ph) + 18*Math.sin(x/53 - ph*1.3);
+      d += (x? ' L':'M') + x + ' ' + y.toFixed(1);
+    }
+    paths += `<path d="${d}"/>`;
+  }
+  for(let i=0;i<34;i++){
+    const x0 = -30 + i*32, ph = i*0.4;
+    let d = '';
+    for(let y=0;y<=710;y+=25){
+      const x = x0 + 30*Math.sin(y/120 + ph) + 10*Math.sin(y/41 + ph*2);
+      d += (y? ' L':'M') + x.toFixed(1) + ' ' + y;
+    }
+    paths += `<path d="${d}"/>`;
+  }
+  return `<svg class="cert-waves" viewBox="0 0 1000 707" preserveAspectRatio="none" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1">${paths}</g></svg>`;
+}
+const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 /* o certificado em si (usado no de verdade e na prévia) */
-function certificateEl(s, preview){
-  const when = new Date(); const dt = `${String(when.getDate()).padStart(2,'0')}/${String(when.getMonth()+1).padStart(2,'0')}/${when.getFullYear()}`;
-  const cert = h(`<div class="cert ${preview?'preview':''}">
+function certificateEl(s, preview, style){
+  style = style || certStyleFor(s);
+  const when = new Date();
+  const dt = `${when.getDate()} de ${MESES[when.getMonth()]} de ${when.getFullYear()}`;
+  const num = SUBJECT_ORDER.indexOf(s.id) + 1 || SUBJECTS.indexOf(s) + 1;
+  const g = subjectGroupOf(s.id), lv = g && SUBJECT_LEVELS.find(l=>l.id===g.level);
+  const cert = h(`<div class="cert cert-${style} ${preview?'preview':''}">
     <div class="cert-in">
-      <img src="${LOGO_URI}" alt="" class="cert-logo">
-      <div class="cert-k">Matemática Show</div>
-      <h2>Certificado de Conclusão</h2>
-      <p>Certificamos que</p>
-      <div class="cert-name"></div>
-      <p>concluiu com sucesso o episódio</p>
-      <div class="cert-subj">${s.sym} ${escHTML(s.name)}</div>
-      <p class="cert-small">passando pelas fases fácil, média e difícil e vencendo a Grande final.</p>
-      <div class="cert-foot"><span>${dt}</span></div>
+      ${certWavesSVG()}
+      <div class="cert-top">
+        <div class="cert-brand"><img src="${LOGO_URI}" alt="" class="cert-logo"><span>Matemática Show</span></div>
+        <div class="cert-date">${dt}</div>
+      </div>
+      <div class="cert-num ${num>=10?'two':''}" aria-hidden="true">${num}</div>
+      <div class="cert-main">
+        <div class="cert-tags"><span class="cert-tag">Certificado</span><span class="cert-k">de conclusão</span></div>
+        <div class="cert-name"></div>
+        <div class="cert-subj">Episódio ${num} · ${escHTML(s.name)}</div>
+        <div class="cert-lvl">${lv ? escHTML(lv.name) : ''}${g ? ` · ${escHTML(g.name)}` : ''}</div>
+      </div>
+      <div class="cert-bottom">
+        <span>Fases fácil, média e difícil concluídas<br>e Grande final vencida.</span>
+        <em>Este certificado de progresso em matemática é emitido pelo app Matemática Show.</em>
+      </div>
     </div>
     ${preview ? '<div class="cert-ribbon">PRÉVIA</div>' : ''}
   </div>`);
@@ -69,7 +116,22 @@ function certificateScreen(){
     const up = unitProgress(s.id), left = up.total - up.done;
     c.appendChild(h(`<div class="cert-note">🔒 Esta é uma <b>prévia</b>. Vença a <b>Grande final</b> de ${escHTML(s.name)} na Trilha pra ganhar o certificado de verdade${left>0?` — faltam ${left} etapa${left===1?'':'s'}`:''}.</div>`));
   }
-  c.appendChild(certificateEl(s, preview));
+  const picker = h(`<div class="cert-styles" role="group" aria-label="Escolha a versão do certificado"></div>`);
+  const holder = h(`<div></div>`);
+  const draw = ()=>{
+    const cur = certStyleFor(s);
+    holder.innerHTML = '';
+    holder.appendChild(certificateEl(s, preview, cur));
+    picker.querySelectorAll('button').forEach(b=> b.setAttribute('aria-pressed', b.dataset.st===cur));
+  };
+  CERT_STYLES.forEach(st=>{
+    const b = h(`<button type="button" class="cert-style-btn" data-st="${st.id}"><i class="cs-dot cs-${st.id}"></i>${st.name}</button>`);
+    b.onclick = async ()=>{ const set = await loadSettings(); set.certStyle = st.id; await saveSettings(); draw(); };
+    picker.appendChild(b);
+  });
+  c.appendChild(picker);
+  c.appendChild(holder);
+  draw();
   const actions = h(`<div class="cta-row rp-actions" style="margin-top:16px"></div>`);
   if(preview){
     const tr = h(`<button class="btn primary">🗺️ Ir para a Trilha</button>`);

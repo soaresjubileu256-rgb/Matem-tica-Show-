@@ -17,39 +17,12 @@ function go(screen, extra={}){
   window.scrollTo(0,0);
 }
 
-/* volta ao estado inicial (tela Início) já registrando essa entrada no histórico do navegador,
-   pra que "voltar" a partir de qualquer tela funcione mesmo vindo direto do login. */
+/* volta ao estado inicial (tela Início): a tela Início vira a primeira entrada do histórico,
+   então o "voltar" a partir dela sai do app/site direto, sem pergunta. */
 function enterApp(){
   state.screen = 'home';
-  // entrada "raiz" embaixo da tela Início: quando o botão voltar chega nela,
-  // em vez de fechar o app direto, perguntamos se a pessoa quer mesmo sair
-  try{ history.replaceState({__root:true}, '', location.pathname + location.search); }catch(e){}
-  pushHistoryState();
+  replaceHistoryState();
   render();
-}
-
-/* aviso "quer sair do aplicativo?" (botão voltar do celular na tela Início) */
-let _exitAsking = false;
-function askExitApp(){
-  if(_exitAsking) return;
-  _exitAsking = true;
-  const streak = gameStreakNow();
-  showConfirm({
-    icon:'👋', title:'Quer sair do app?',
-    message: streak>0 ? `Seu progresso fica salvo. Volte amanhã pra manter sua ofensiva de ${streak} dia${streak===1?'':'s'}! 🔥` : 'Seu progresso fica salvo neste aparelho. Volte logo pra continuar o show! 🎬',
-    ok:'Sair', cancel:'Ficar',
-  }).then(ok=>{
-    _exitAsking = false;
-    if(!ok){ pushHistoryState(); render(); return; }
-    // tenta sair de verdade (volta pra página anterior / fecha o app instalado);
-    // se o navegador não deixar, mostra a tela de despedida
-    app.innerHTML = '';
-    const bye = h(`<div class="content lesson-end"><div class="le-mascot">${mascotSVG('joy',120)}</div><h2 class="le-title">Até logo! 👋</h2><p class="le-sub">Seu progresso está salvo. Pode fechar o app.</p><div class="lesson-footer static"><button class="show-btn">Voltar pro app</button></div></div>`);
-    bye.querySelector('button').onclick = ()=>{ pushHistoryState(); render(); };
-    app.appendChild(bye);
-    try{ history.back(); }catch(e){}
-    setTimeout(()=>{ try{ window.close(); }catch(e){} }, 250);
-  });
 }
 
 /* sessão em andamento? (usado no aviso ao fechar/recarregar a aba) */
@@ -90,7 +63,6 @@ function replaceHistoryState(){
 }
 window.addEventListener('popstate', (e)=>{
   if(!currentUser) return; // ainda na tela de login/cadastro — nada pra restaurar
-  if(e.state && e.state.__root){ askExitApp(); return; }
   if(e.state){
     Object.assign(state, e.state);
   } else {
