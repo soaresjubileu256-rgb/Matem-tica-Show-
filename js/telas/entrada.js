@@ -222,8 +222,8 @@ async function boot(){
     applyTextScale(settingsCache.textScale);
     enterApp();
   } else if(users.length){
-    renderAuth('login', users); armExitGuard();
+    renderAuth('login', users);
   } else {
-    renderAuth('register', []); armExitGuard();
+    renderAuth('register', []);
   }
 }

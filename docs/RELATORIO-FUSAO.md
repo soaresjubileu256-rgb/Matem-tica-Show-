@@ -191,11 +191,3 @@ Na tela de Certificados (aba Progresso), o topo mostra uma **prévia** de como v
 ## 15. Certificado novo, em duas versões
 
 O certificado agora é em paisagem, com fundo escuro e linhas onduladas, o nome em letras grandes e o número do episódio enorme em degradê do lado direito. Há duas versões de cor: **Versão 1 · Amarelo e verde** e **Versão 2 · Roxo**. Na tela do certificado dá pra trocar entre elas com os botões acima dele, e a escolha fica salva na conta. Sem escolha, o Ensino Fundamental usa a versão 1 e o Ensino Médio a versão 2. Na impressão o certificado sai sozinho numa folha A4 deitada. Nos episódios com 2 algarismos (10 a 41) o número fica um pouco menor, pra não encostar no nome.
-
-## 16. Saída do aplicativo (só no APK / app instalado)
-
-O app percebe quando está rodando como **aplicativo** (APK feito a partir do site, app instalado na tela inicial ou aberto com `index.html?app=1`). Só nesse caso:
-- o botão **voltar** do celular na tela Início **e na tela de entrada** pergunta **"Tem certeza que quer sair?"** (Sair / Ficar);
-- o Perfil mostra **📴 Sair do aplicativo**, com a mesma pergunta.
-
-Ao confirmar, o app tenta fechar (pontes `navigator.app.exitApp`, `Android.exitApp`, `window.close`) e, se o conversor não deixar, mostra "Até logo! 👋" — o próximo "voltar" fecha o app. No **site** (aba do navegador) nada disso aparece e o voltar funciona normal. Código em `js/base/navegacao.js` (`IS_APP`, `armExitGuard`, `askExitApp`, `exitApp`).
