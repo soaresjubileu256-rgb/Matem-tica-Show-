@@ -179,3 +179,11 @@ O antigo `app.js` (8.300 linhas) foi dividido em arquivos por assunto dentro de 
 - **Menus:** cada função mora num lugar só (tabela no `LEIA-ME.md`). Treinos foram para a aba Exercícios, os jogos ficam na Arena, conquistas, certificados, relatório e histórico na aba Progresso, e nivelamento, plano e configurações no Perfil. O botão voltar de cada tela leva para a sua aba, e o menu de baixo acende a aba certa.
 - **Configurações:** Conta → Estudo → Som e vibração → Aparência → Leitura e acessibilidade → Dados.
 - **Arquivos:** cada tela no seu arquivo (`progresso.js`, `perfil.js`, `configuracoes.js`, `relatorio.js`, `certificados.js`, `tabuada.js`, `duelo.js`) e todos os sons em `base/sons.js`. O código foi só movido, sem mudanças.
+
+## 13. Logo nova
+
+A logo do "M" com o capelo de formatura substitui a antiga em todos os lugares: topo do app, tela de entrada, certificados, ícone instalado no celular (192, 512 e "maskable" do Android), ícone do iPhone (180) e favicon (48). O mascote Pi também usa a logo nova como emblema na cartola (no lugar do "π"). Na logo do topo o fundo preto virou transparente, para ficar bonita nos temas escuro e claro; nos ícones o fundo preto foi mantido.
+
+## 14. Prévia do certificado
+
+Na tela de Certificados (aba Progresso), o topo mostra uma **prévia** de como vai ficar o certificado do próximo assunto, já com o nome da pessoa, marcada com a faixa "PRÉVIA". Os assuntos ainda bloqueados mostram quantas etapas da Trilha já foram feitas e, ao tocar, abrem a prévia daquele assunto com um botão "Ir para a Trilha". Só o certificado de verdade tem o botão de imprimir; a prévia não sai na impressão. O certificado mostra só o essencial: logo, nome, assunto e data (sem o "Pi, o apresentador" e sem o nível).
