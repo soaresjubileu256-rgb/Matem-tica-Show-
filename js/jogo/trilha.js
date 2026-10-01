@@ -64,7 +64,7 @@ function refillHeartsWithGems(){
 }
 function fmtMinSec(ms){ const s = Math.ceil(ms/1000); return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; }
 
-/* ---------- mascote: Pi, o apresentador do show (cartola + gravata-borboleta) ---------- */
+/* ---------- mascote: Pi, o apresentador do show (cartola com a logo + gravata-borboleta) ---------- */
 let _mascotSeq = 0;
 function mascotSVG(mood, size){
   mood = mood || 'happy'; size = size || 88;
@@ -99,7 +99,7 @@ function mascotSVG(mood, size){
       <ellipse cx="50" cy="32" rx="25" ry="5" fill="url(#${id}h)"/>
       <rect x="36" y="6" width="28" height="26" rx="4" fill="url(#${id}h)"/>
       <rect x="36" y="23" width="28" height="5" fill="#B23FE0"/>
-      <text x="50" y="20" text-anchor="middle" font-family="Fraunces,serif" font-weight="700" font-size="13" fill="#FFB800">π</text>
+      <image href="${LOGO_URI}" x="40.5" y="5" width="19" height="19" preserveAspectRatio="xMidYMid meet"/>
     </g>
   </svg>`;
 }

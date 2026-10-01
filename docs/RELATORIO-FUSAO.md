@@ -182,4 +182,4 @@ O antigo `app.js` (8.300 linhas) foi dividido em arquivos por assunto dentro de 
 
 ## 13. Logo nova
 
-A logo do "M" com o capelo de formatura substitui a antiga em todos os lugares: topo do app, tela de entrada, certificados, ícone instalado no celular (192, 512 e "maskable" do Android), ícone do iPhone (180) e favicon (48). Na logo do topo o fundo preto virou transparente, para ficar bonita nos temas escuro e claro; nos ícones o fundo preto foi mantido.
+A logo do "M" com o capelo de formatura substitui a antiga em todos os lugares: topo do app, tela de entrada, certificados, ícone instalado no celular (192, 512 e "maskable" do Android), ícone do iPhone (180) e favicon (48). O mascote Pi também usa a logo nova como emblema na cartola (no lugar do "π"). Na logo do topo o fundo preto virou transparente, para ficar bonita nos temas escuro e claro; nos ícones o fundo preto foi mantido.
