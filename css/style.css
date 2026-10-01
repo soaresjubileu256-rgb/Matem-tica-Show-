@@ -2078,3 +2078,26 @@ section.block h3::before, .rp-sec::before, .hq-head span::before{content:''; wid
 .dl-rev .drill-btn{margin-top:8px;}
 .ar-drow.tap{width:100%; text-align:left; cursor:pointer;}
 .ar-drow .chev{font-style:normal; color:var(--ink-soft); font-size:17px;}
+
+/* ---------- tela de entrada: sem espaço do menu de baixo, cartão centralizado ---------- */
+#app:has(> .auth-wrap){padding-bottom:0;}
+.auth-wrap{min-height:100vh; min-height:100dvh;}
+.auth-card{margin:auto 0;}
+.auth-card .hint-toggle{display:block; margin:0 auto 14px;}
+
+/* ---------- Início mais enxuto: meta + missões num cartão, missões recolhíveis ---------- */
+.missions .mastery-row.in-missions{margin:0 0 12px !important; padding:0 0 12px; background:none !important; border:none; border-bottom:1px solid var(--border); border-radius:0; box-shadow:none !important;}
+.m-toggle{display:flex; align-items:center; gap:8px; width:100%; background:none; border:none; padding:2px 0; color:var(--ink); cursor:pointer; text-align:left;}
+.m-toggle span{flex:1; font:700 13px 'Inter',sans-serif; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-soft);}
+.m-toggle b{font:800 12.5px 'JetBrains Mono',monospace; color:var(--pine);}
+.m-toggle i{font-style:normal; color:var(--ink-soft); transition:transform .2s ease;}
+.missions:not(.collapsed) .m-toggle{margin-bottom:10px;}
+.missions:not(.collapsed) .m-toggle i{transform:rotate(180deg);}
+.missions.collapsed .mission{display:none;}
+.home-more{display:flex; flex-direction:column; gap:8px; margin:0 20px 18px;}
+.home-more button{display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:16px; background:var(--white); border:1px solid var(--border); color:var(--ink); text-align:left; cursor:pointer;}
+.home-more button > span:first-child{font-size:20px;}
+.home-more button > span:nth-child(2){flex:1; display:flex; flex-direction:column;}
+.home-more b{font-family:'Fraunces',serif; font-size:14.5px;}
+.home-more small{font-size:12px; color:var(--ink-soft); margin-top:1px;}
+.home-more i{font-style:normal; font-size:18px; color:var(--ink-soft);}

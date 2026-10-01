@@ -143,7 +143,8 @@ function homeScreen(){
   });
   if(tutorialDone()) setTimeout(()=>{ if(state.screen==='home' && wrap.isConnected) maybeAskBackup(); }, 1500);
 
-  // ordem da tela: continuar → pra fazer hoje → jogos rápidos → praticar → ferramentas e progresso
+  // ordem da tela: continuar → pra fazer hoje → jogos rápidos → atalhos
+  // (Simulado, Duelo e Fases ficam na Arena; conquistas, certificados, relatório e histórico no Perfil/Progresso)
   const secTitle = t=> h(`<h3 class="home-sec">${t}</h3>`);
   const tileGrid = items=>{
     const grid = h(`<div class="quick-grid six"></div>`);
@@ -162,31 +163,35 @@ function homeScreen(){
   if(planBanner) wrap.appendChild(planBanner);
   wrap.appendChild(reviewBanner);
   wrap.appendChild(spacedBanner);
-  wrap.appendChild(goalRow);
-  wrap.appendChild(wrap.querySelector('.missions'));
+  // meta do dia + missões num cartão só; as missões ficam recolhidas (abrem sozinhas quando tem prêmio pra pegar)
+  const missions = wrap.querySelector('.missions');
+  const ms = missionState(), msDone = ms.filter(x=>x.claimed).length, msReady = ms.some(x=>x.done && !x.claimed);
+  goalRow.classList.add('in-missions');
+  missions.prepend(goalRow);
+  const mTitle = missions.querySelector('h3');
+  const mToggle = h(`<button type="button" class="m-toggle" aria-expanded="false"><span>📜 Missões do dia</span><b>${msDone}/${ms.length}${msReady ? ' · 🎁 prêmio!' : ''}</b><i>▾</i></button>`);
+  mTitle.replaceWith(mToggle);
+  const setOpen = open=>{ missions.classList.toggle('collapsed', !open); mToggle.setAttribute('aria-expanded', String(open)); };
+  setOpen(msReady || !!state.missionsOpen);
+  mToggle.onclick = ()=>{ state.missionsOpen = missions.classList.contains('collapsed'); setOpen(state.missionsOpen); };
+  wrap.appendChild(missions);
   wrap.appendChild(secTitle('Jogos rápidos'));
   wrap.appendChild(duo);
-  wrap.appendChild(secTitle('Praticar'));
+  wrap.appendChild(secTitle('Atalhos'));
   wrap.appendChild(tileGrid([
     {sym:'🎯', cls:'tile-train', label:'Treino personalizado', screen:'personalizedSetup'},
     {sym:'🏆', cls:'challenge', label:'Desafios', screen:'challengeDifficulty'},
     {sym:'×', cls:'tabuada', label:'Tabuada', screen:'tabuada'},
-    {sym:'⚔️', cls:'tile-duel', label:'Duelo a dois', screen:'duel'},
     {sym:'?', cls:'solve', label:'Resolver questão', screen:'solve'},
-    {sym:'🔺', cls:'tile-geo', label:'Laboratório de Geometria', screen:'geoLab'},
-    {sym:'📝', cls:'tile-exam', label:'Simulado', screen:'examSetup'},
-    {sym:'🗺️', cls:'tile-plan', label:'Plano de estudos', screen:'plan'},
-    {sym:'🧭', cls:'tile-place', label:'Teste de nivelamento', screen:'placement'},
-  ]));
-  wrap.appendChild(secTitle('Ferramentas e progresso'));
-  wrap.appendChild(tileGrid([
-    {sym:'✏️', cls:'tile-report', label:'Caderno', screen:'notebook'},
     {sym:'#', cls:'tile-calc', label:'Calculadora', screen:'calculator'},
-    {sym:'🕘', cls:'tile-hist', label:'Histórico', screen:'history'},
-    {sym:'🏅', cls:'tile-ach', label:'Conquistas', screen:'achievements'},
-    {sym:'📜', cls:'tile-cert', label:'Certificados', screen:'certificates'},
-    {sym:'📝', cls:'tile-rep', label:'Relatório semanal', screen:'report'},
+    {sym:'✏️', cls:'tile-report', label:'Caderno', screen:'notebook'},
   ]));
+  const more = h(`<div class="home-more">
+    <button type="button" data-go="arena"><span>⚔️</span><span><b>Arena</b><small>Simulado, duelo e fases com estrelas</small></span><i>›</i></button>
+    <button type="button" data-go="profile"><span>👤</span><span><b>Perfil</b><small>Conquistas, certificados, plano e relatório</small></span><i>›</i></button>
+  </div>`);
+  more.querySelectorAll('button').forEach(b=> b.onclick = ()=> go(b.dataset.go));
+  wrap.appendChild(more);
 
   wrap.appendChild(h(`<div class="footer-note">Seu professor de matemática digital 📐</div>`));
   // primeiro acesso: tour guiado pelo Pi

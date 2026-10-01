@@ -155,7 +155,8 @@ function authScreen(mode, users){
       <div class="auth-field"><label>Seu nome</label><input type="text" class="authName" placeholder="Como quer ser chamado?" autocomplete="username" maxlength="30"></div>
       ${passField('authPass','Crie uma senha','new-password')}
       ${passField('authPass2','Repita a senha','new-password')}
-      <div class="auth-field"><label>Dica da senha <small>(opcional — ajuda se você esquecer)</small></label><input type="text" class="authHint" placeholder="Ex.: meu bicho favorito + número da camisa" maxlength="60"></div>
+      <button type="button" class="auth-link hint-toggle">＋ Adicionar uma dica de senha (opcional)</button>
+      <div class="auth-field hint-field" style="display:none"><label>Dica da senha <small>(ajuda se você esquecer)</small></label><input type="text" class="authHint" placeholder="Ex.: meu bicho favorito + número da camisa" maxlength="60"></div>
       <button type="button" class="show-btn auth-go">Criar conta e começar ▶</button>
       <p class="auth-note">🔒 Tudo fica salvo só neste aparelho. Cada conta tem seu próprio progresso.</p>
       ${users.length ? `<div class="auth-row center"><button type="button" class="auth-link back">‹ Já tenho conta</button></div>` : ''}`;
@@ -163,6 +164,8 @@ function authScreen(mode, users){
     passInput.closest('.auth-field').appendChild(attachStrengthMeter(passInput, ()=> card.querySelector('.authName').value));
     card.querySelector('.authName').addEventListener('input', ()=>{ const m = card.querySelector('.pw-meter'); if(m && m.refresh) m.refresh(); });
     wirePassToggles();
+    // a dica é opcional: fica escondida atrás de um link pra deixar o formulário mais curto
+    card.querySelector('.hint-toggle').onclick = e=>{ e.currentTarget.remove(); const f = card.querySelector('.hint-field'); f.style.display = ''; f.querySelector('input').focus(); };
     const back = card.querySelector('.back'); if(back) back.onclick = paintPicker;
     card.querySelector('.auth-go').onclick = doRegister;
     wireEnter(doRegister);

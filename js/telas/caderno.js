@@ -606,7 +606,7 @@ function openScratchPad(ex){
     if(!page.strokes.length){ showFloat('O rascunho está vazio'); return; }
     const sid = state.session && (state.session.currentSubjectId || state.session.subjectId);
     newNotePage({title:'Rascunho · ' + fmtDM(new Date()), subjectId: sid || null, bg:'grid', strokes: page.strokes.slice()});
-    queueToast('💾', 'Salvo no caderno!', 'Veja em Caderno, na tela inicial');
+    queueToast('💾', 'Salvo no caderno!', 'Veja em Caderno, nos atalhos do Início');
   };
 }
 function questionTools(card){
