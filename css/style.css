@@ -1382,17 +1382,41 @@ section.block h3{font-size:12.5px; text-transform:uppercase; color:var(--ink-sof
 .duel-opt{border:1px solid var(--border); border-radius:16px; background:var(--white); color:var(--ink); font-size:22px; font-weight:800; padding:14px 6px;}
 .duel-opt.ok{background:rgba(51,210,227,.25); border-color:var(--pine);} .duel-opt.bad{background:rgba(255,92,122,.22); border-color:var(--coral);}
 .duel-end{text-align:center;} .duel-end .big{font-size:52px;} .duel-actions .duel-opt{font-size:15px;}
-/* certificado */
-.cert{border-radius:18px; padding:10px; background:linear-gradient(135deg,#FFB800,#B23FE0,#4C7DFF);}
-.cert-in{border-radius:12px; background:#FFFDF5; color:#1B1B2F; text-align:center; padding:26px 18px;}
-.cert-logo{width:56px; height:56px; border-radius:14px;}
-.cert-k{font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:#7A6A3A; font-weight:800; margin-top:6px;}
-.cert h2{font-family:'Fraunces',serif; font-size:24px; color:#1B1B2F; margin:8px 0 12px;}
-.cert p{margin:4px 0; font-size:13.5px; color:#444;}
-.cert-name{font-family:'Fraunces',serif; font-size:28px; font-weight:700; color:#B23FE0; border-bottom:2px solid #E7D9A8; display:inline-block; padding:2px 18px 6px; margin:4px 0 8px;}
-.cert-subj{font-family:'Fraunces',serif; font-size:21px; font-weight:700; color:#1B1B2F; margin:4px 0 8px;}
-.cert-small{font-size:12px !important; color:#666 !important;}
-.cert-foot{display:flex; justify-content:center; margin-top:18px; padding-top:10px; border-top:1px dashed #D8C88E; font-size:12px; color:#555; font-weight:700;}
+/* certificado — paisagem, fundo escuro com linhas onduladas e o número do episódio em degradê.
+   Tudo em cqw pra ficar igual no celular, na prévia pequena e na impressão. */
+.cert{container-type:inline-size; border-radius:14px; background:#141418; box-shadow:0 10px 30px rgba(0,0,0,.28);}
+.cert-in{position:relative; aspect-ratio:1000/707; overflow:hidden; color:#fff; font-family:'Inter',sans-serif; text-align:left;
+  background:radial-gradient(120% 90% at 20% 30%, #1d1d24 0%, #121216 60%, #0d0d10 100%);}
+.cert-v2 .cert-in{background:radial-gradient(120% 90% at 20% 30%, #1c1830 0%, #121019 60%, #0c0b12 100%);}
+.cert-waves{position:absolute; inset:0; width:100%; height:100%; opacity:.32; color:#B88A2E;}
+.cert-v2 .cert-waves{color:#6A4BD8; opacity:.38;}
+.cert-top{position:absolute; top:5.5cqw; left:5.5cqw; right:5.5cqw; display:flex; justify-content:space-between; align-items:center; z-index:2;}
+.cert-brand{display:flex; align-items:center; gap:1.4cqw; font-weight:800; font-size:2.8cqw; letter-spacing:-.01em;}
+.cert-logo{width:5cqw; height:5cqw; border-radius:1.2cqw;}
+.cert-date{font-size:1.5cqw; font-weight:700; opacity:.9;}
+.cert-num{position:absolute; right:-3cqw; top:50%; transform:translateY(-52%); z-index:1;
+  font:900 43cqw/0.8 'Inter',sans-serif; letter-spacing:-.06em;
+  background:conic-gradient(from 210deg at 62% 45%, #F2A81D 0deg, #FFC93C 90deg, #FFF1B8 140deg, #7EE36B 190deg, #2FC56B 250deg, #E9B52A 330deg, #F2A81D 360deg);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  -webkit-mask-image:linear-gradient(90deg,#000 0 22%,transparent 22% 24%,#000 24% 61%,transparent 61% 63%,#000 63%);
+  mask-image:linear-gradient(90deg,#000 0 22%,transparent 22% 24%,#000 24% 61%,transparent 61% 63%,#000 63%);}
+.cert-v2 .cert-num{background-image:conic-gradient(from 210deg at 62% 45%, #7B3FF2 0deg, #9D6BFF 90deg, #E2D2FF 140deg, #B57CFF 190deg, #6A2FE0 260deg, #8A55F5 360deg);}
+.cert-main{position:absolute; left:5.5cqw; top:21cqw; width:58%; z-index:2;}
+.cert-tags{display:flex; align-items:center; gap:1cqw; margin-bottom:.4cqw;}
+.cert-tag{background:#fff; color:#141418; font-size:1.25cqw; font-weight:800; letter-spacing:.14em; text-transform:uppercase; padding:.35cqw .9cqw; border-radius:.5cqw;}
+.cert-k{font-size:1.25cqw; font-weight:700; letter-spacing:.14em; text-transform:uppercase; opacity:.9;}
+.cert-name{font-size:5.4cqw; font-weight:800; line-height:1.08; text-transform:uppercase; letter-spacing:-.005em; word-break:break-word; text-shadow:0 .3cqw 1.2cqw rgba(0,0,0,.45);}
+.cert-subj{margin-top:1.6cqw; font-size:2.9cqw; font-weight:700; line-height:1.25;}
+.cert-lvl{margin-top:.8cqw; font-size:2.1cqw; font-weight:600; opacity:.85;}
+.cert-bottom{position:absolute; left:5.5cqw; right:5.5cqw; bottom:4.5cqw; display:flex; justify-content:space-between; align-items:flex-end; gap:4cqw; z-index:2; font-size:1.35cqw; line-height:1.4;}
+.cert-bottom span{font-weight:700; opacity:.9;}
+.cert-bottom em{max-width:50%; text-align:right; opacity:.85;}
+.cert-styles{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;}
+.cert-style-btn{display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px; border:1px solid var(--border); background:var(--white); color:var(--ink); font:700 13px 'Inter',sans-serif; cursor:pointer;}
+.cert-style-btn[aria-pressed="true"]{border-color:var(--ink); box-shadow:0 0 0 2px var(--ink) inset;}
+.cs-dot{width:16px; height:16px; border-radius:50%; display:inline-block;}
+.cs-v1{background:linear-gradient(135deg,#FFC93C,#2FC56B);}
+.cs-v2{background:linear-gradient(135deg,#B57CFF,#6A2FE0);}
 /* caderno digital */
 .nb-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:12px;}
 .nb-card{border:1px solid var(--border); border-radius:16px; background:var(--white); padding:8px; text-align:left; color:var(--ink);}
@@ -1543,8 +1567,8 @@ section.block h3{font-size:12.5px; text-transform:uppercase; color:var(--ink-sof
   html, body{background:#fff !important; min-height:0 !important; height:auto !important; overflow:visible !important;}
   #app{max-width:none !important; min-height:0 !important; padding:0 !important;}
   .content{padding:0 !important;}
-  .cert{break-inside:avoid; max-width:720px; margin:0 auto;}
-  .cert-in{padding:48px 36px;} .cert h2{font-size:34px;} .cert-name{font-size:40px;} .cert-subj{font-size:28px;} .cert p{font-size:16px;}
+  .cert{break-inside:avoid; page:certificado; width:100%; max-width:none; margin:0 auto; border-radius:0;}
+  .cert-styles, .cert-note{display:none !important;}
   .topbar, .bottom-nav, .rp-actions, .gm-toast, .gm-modal-bg, #gm-confetti, .tour-root{display:none !important;}
   .rp-print-only{display:block;}
   .rp-print-top{display:flex; justify-content:space-between; align-items:baseline; border-bottom:2px solid #4C7DFF; padding-bottom:6px; margin-bottom:12px; font-size:12px; color:#555;}
@@ -2123,14 +2147,16 @@ section.block h3::before, .rp-sec::before, .hq-head span::before{content:''; wid
 .cert{position:relative; overflow:hidden;}
 .cert.preview .cert-in{position:relative;}
 .cert-ribbon{position:absolute; top:22px; right:-44px; transform:rotate(35deg); background:#FF5C7A; color:#fff; font:800 12px 'Inter',sans-serif; letter-spacing:.18em; padding:6px 52px; box-shadow:0 4px 12px rgba(0,0,0,.25); pointer-events:none;}
-.cert.preview .cert-in::after{content:'PRÉVIA'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font:900 56px 'Fraunces',serif; color:rgba(178,63,224,.08); transform:rotate(-22deg); pointer-events:none;}
+.cert.preview .cert-in::after{content:'PRÉVIA'; position:absolute; inset:0; z-index:3; display:flex; align-items:center; justify-content:center; font:900 14cqw 'Inter',sans-serif; color:rgba(255,255,255,.07); transform:rotate(-18deg); pointer-events:none;}
+@page certificado{size:A4 landscape; margin:10mm;}
 .cert-preview-box{border:1px solid var(--border); background:var(--white); border-radius:var(--radius-card); padding:14px; margin-bottom:16px; box-shadow:var(--shadow-soft);}
 .cpb-h{display:flex; flex-direction:column; margin-bottom:10px;}
 .cpb-h b{font-family:'Fraunces',serif; font-size:16px; color:var(--ink);}
 .cpb-h small{font-size:12.5px; color:var(--ink-soft); margin-top:2px;}
 .cert-mini{display:block; width:100%; border:none; background:none; padding:0; cursor:pointer; text-align:inherit;}
-.cert-mini .cert{transform:scale(.86); transform-origin:top center; margin-bottom:-12%;}
+.cert-mini .cert{pointer-events:none;}
 .cert-count{text-align:center; font-size:13px; font-weight:700; color:var(--ink-soft); margin:0 0 4px;}
 .subject-row.cert-locked{opacity:.75;}
 .cert-note{background:var(--leaf-bg); border:1px solid var(--border); border-radius:14px; padding:12px 14px; font-size:13.5px; line-height:1.5; color:var(--ink); margin-bottom:14px;}
 @media print{ .cert.preview{display:none !important;} }
+.cert.preview .cert-date{visibility:hidden;}
