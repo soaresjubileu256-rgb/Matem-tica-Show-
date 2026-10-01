@@ -2,7 +2,7 @@
    Configurações — também separadas por conta
    ========================================================= */
 const SETTINGS_KEY_BASE = 'mathstudy-settings-v1';
-const DEFAULT_SETTINGS = { theme:'dark', sound:true, vibration:true, dailyGoal:10, schoolLevel:null, tts:true, textScale:'normal', volume:'medio' };
+const DEFAULT_SETTINGS = { theme:'dark', sound:true, vibration:true, dailyGoal:10, schoolLevel:null, tts:true, textScale:'normal', volume:'medio', certStyle:null };
 /* assuntos "esperados" pra cada nível escolar — cumulativo (médio inclui tudo, fund2 inclui fund1).
    Usado só pra pré-selecionar os assuntos no Treino personalizado, nunca esconde nada: o
    usuário sempre pode marcar/desmarcar qualquer assunto depois. */
