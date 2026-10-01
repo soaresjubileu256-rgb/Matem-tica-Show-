@@ -1432,14 +1432,10 @@ section.block h3{font-size:12.5px; text-transform:uppercase; color:var(--ink-sof
 .cert-seal .seal-ring{fill:none; stroke:color-mix(in srgb, var(--acc2) 55%, transparent); stroke-width:1; stroke-dasharray:2 3;}
 .cert-seal .seal-in{fill:#0b0b10; stroke:var(--acc); stroke-width:1.5;}
 .cert-seal .seal-txt{font:800 8.6px 'Inter',sans-serif; letter-spacing:1.4px; fill:var(--acc2);}
-.cert-feat{margin-top:1.4cqw; font-size:1.5cqw; line-height:1.45; font-weight:600; color:rgba(255,255,255,.72);}
-.cert-signs{flex:1; display:grid; grid-template-columns:repeat(3,1fr); gap:2.2cqw; align-items:end;}
-.cert-sign{display:flex; flex-direction:column; align-items:center; min-width:0;}
-.cert-sig-img{width:112%; height:8cqw; object-fit:contain; margin-bottom:-1.4cqw; filter:drop-shadow(0 0 .15cqw rgba(255,255,255,.9)) drop-shadow(0 0 .1cqw rgba(255,255,255,.7));}
-.cert-sign::after{content:''; order:1; width:100%; height:.12cqw; background:color-mix(in srgb, var(--acc2) 70%, transparent);}
-.cert-sign .cert-sig-l{order:2;}
+.cert-feat{flex:1; font-size:1.55cqw; line-height:1.45; font-weight:600; color:rgba(255,255,255,.82);}
+.cert-sign{display:flex; flex-direction:column; align-items:center; min-width:24cqw;}
 .cert-sig{font-family:'Fraunces',serif; font-style:italic; font-weight:600; font-size:2.6cqw; color:#fff; padding:0 1.5cqw .5cqw; border-bottom:.12cqw solid color-mix(in srgb, var(--acc2) 70%, transparent);}
-.cert-sig-l{margin-top:.7cqw; font-size:1.3cqw; font-weight:700; letter-spacing:.05em; color:rgba(255,255,255,.78); white-space:nowrap;}
+.cert-sig-l{margin-top:.6cqw; font-size:1.2cqw; font-weight:600; letter-spacing:.06em; color:rgba(255,255,255,.65);}
 .cert-styles{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;}
 .cert-style-btn{display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px; border:1px solid var(--border); background:var(--white); color:var(--ink); font:700 13px 'Inter',sans-serif; cursor:pointer;}
 .cert-style-btn[aria-pressed="true"]{border-color:var(--ink); box-shadow:0 0 0 2px var(--ink) inset;}

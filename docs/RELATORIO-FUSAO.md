@@ -199,7 +199,3 @@ A pergunta "Quer sair do app?" (botão voltar na tela Início) foi retirada. O "
 ## 17. Certificado mais bonito (verde e roxo)
 
 As duas versões ganharam cores próprias: **Verde** (esmeralda com dourado) e **Roxo** (violeta com lilás). Também ganharam moldura dupla com cantos em losango, brilho atrás do número do episódio, "concedido a" acima do nome, um traço colorido sob o nome, um **selo** redondo com a logo e a frase "Episódio concluído", e uma **assinatura** do Matemática Show. Os textos de baixo ficaram maiores, e o número fica sempre dentro da moldura. No fundo há alguns símbolos de matemática bem clarinhos (π, √, ∑, ÷, ∞, x², Δ, %, =), só nos espaços vazios.
-
-## 18. Assinaturas da diretoria no certificado
-
-No rodapé do certificado, ao lado do selo, aparecem três assinaturas com o cargo embaixo: **Diretor Executivo**, **Diretor Desenvolvedor** e **Diretora Financeira**. As imagens ficam em `img/assinaturas/` (traço claro com fundo transparente, recortadas da imagem enviada) e a lista em `CERT_SIGNERS` (`js/telas/certificados.js`). A frase "Fases fácil, média e difícil concluídas e Grande final vencida." subiu para logo abaixo do nome.
