@@ -195,3 +195,7 @@ O certificado agora é em paisagem, com fundo escuro e linhas onduladas, o nome 
 ## 16. Sem pergunta ao sair
 
 A pergunta "Quer sair do app?" (botão voltar na tela Início) foi retirada. O "voltar" volta tela por tela até o Início e, no Início, sai do app/site direto.
+
+## 17. Certificado mais bonito (verde e roxo)
+
+As duas versões ganharam cores próprias: **Verde** (esmeralda com dourado) e **Roxo** (violeta com lilás). Também ganharam moldura dupla com cantos em losango, brilho atrás do número do episódio, "concedido a" acima do nome, um traço colorido sob o nome, um **selo** redondo com a logo e a frase "Episódio concluído", e uma **assinatura** do Matemática Show. Os textos de baixo ficaram maiores, e o número fica sempre dentro da moldura.
