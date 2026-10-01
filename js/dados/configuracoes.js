@@ -2,7 +2,7 @@
    Configurações — também separadas por conta
    ========================================================= */
 const SETTINGS_KEY_BASE = 'mathstudy-settings-v1';
-const DEFAULT_SETTINGS = { theme:'dark', sound:true, vibration:true, dailyGoal:10, schoolLevel:null, tts:true, textScale:'normal' };
+const DEFAULT_SETTINGS = { theme:'dark', sound:true, vibration:true, dailyGoal:10, schoolLevel:null, tts:true, textScale:'normal', volume:'medio' };
 /* assuntos "esperados" pra cada nível escolar — cumulativo (médio inclui tudo, fund2 inclui fund1).
    Usado só pra pré-selecionar os assuntos no Treino personalizado, nunca esconde nada: o
    usuário sempre pode marcar/desmarcar qualquer assunto depois. */
@@ -36,24 +36,11 @@ function applyTheme(theme){
   try{ document.documentElement.classList.toggle('theme-light', theme==='light'); }catch(e){}
 }
 
-/* toca um bipe curtinho (certo = agudo, errado = grave) usando Web Audio, sem precisar de arquivo de áudio */
+/* som de acerto (duas notas subindo) e de erro (duas notas descendo, baixinho, sem susto) */
 let _audioCtx = null;
 function playFeedbackSound(correct){
-  if(!currentSettingsSync().sound) return;
-  if(correct){ playTones([784,1175], 0.07, 'triangle', 0.12); return; }
-  try{
-    _audioCtx = _audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-    const ctx = _audioCtx;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain); gain.connect(ctx.destination);
-    osc.type = 'sine';
-    osc.frequency.value = correct ? 880 : 220;
-    gain.gain.setValueAtTime(0.15, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.25);
-  }catch(e){}
+  if(correct) playTones([784,1175], 0.07, 'triangle', 0.11);
+  else playTones([330,247], 0.12, 'sine', 0.1);
 }
 function playFeedbackVibration(correct){
   if(!currentSettingsSync().vibration) return;

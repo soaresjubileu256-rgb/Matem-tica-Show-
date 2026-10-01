@@ -164,3 +164,11 @@ O antigo `app.js` (8.300 linhas) foi dividido em arquivos por assunto dentro de 
 
 - **Entrada / criar conta:** o cartão fica centralizado e não tem mais a rolagem para um espaço vazio embaixo (o app reservava lugar para o menu inferior também nessa tela). A "Dica da senha" virou um link opcional, deixando o formulário mais curto.
 - **Início:** a meta de hoje e as missões viraram um cartão só. As missões ficam recolhidas num resumo ("0/4") e abrem sozinhas quando tem prêmio para pegar. Os 15 atalhos viraram 6 (Treino personalizado, Desafios, Tabuada, Resolver questão, Calculadora e Caderno), mais dois atalhos para a **Arena** (simulado, duelo e fases) e o **Perfil** (conquistas, certificados, plano e relatório). Nada saiu do app: os outros itens já ficam na Arena, no Perfil, no Progresso ou no Aprender.
+
+## 11. Sons mais agradáveis
+
+- Novo "motor" de som (`playTones` em `js/jogo/xp-e-conquistas.js`): volume geral, limitador (não estoura quando vários sons tocam juntos) e filtro que tira o chiado agudo. Cada nota é um timbre suave, tipo sininho; os sons que usavam onda quadrada ou dente de serra (subir de nível, contagem do Relâmpago, erro no Caderno) deixaram de soar como alarme.
+- Sem atropelo: uma fanfarra cala os bipes curtos logo em seguida, o mesmo som repetido é ignorado e sons diferentes tocam um depois do outro.
+- Erro com duas notas descendo, baixinho, sem susto.
+- Áudio "acordado" no primeiro toque (iPhone/Android começam com o áudio pausado) e nenhum som com o app em segundo plano.
+- Configurações → Som e vibração: novo **Volume** (Baixo, Médio, Alto), com prévia ao tocar.

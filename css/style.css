@@ -2101,3 +2101,8 @@ section.block h3::before, .rp-sec::before, .hq-head span::before{content:''; wid
 .home-more b{font-family:'Fraunces',serif; font-size:14.5px;}
 .home-more small{font-size:12px; color:var(--ink-soft); margin-top:1px;}
 .home-more i{font-style:normal; font-size:18px; color:var(--ink-soft);}
+
+/* ---------- volume dos sons (Configurações) ---------- */
+.vol-row{align-items:center; margin:-2px 0 12px;}
+.vol-row .vol-l{font-size:13px; font-weight:700; color:var(--ink-soft); margin-right:4px; white-space:nowrap;}
+.vol-row .diff-chip{flex:1;}

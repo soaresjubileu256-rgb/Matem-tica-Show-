@@ -130,6 +130,20 @@ async function settingsScreen(){
     if(settings.sound) playFeedbackSound(true);
   };
   c.appendChild(soundToggle);
+  // volume dos sons (só faz diferença com os sons ligados)
+  const volRow = h(`<div class="diff-row vol-row"><span class="vol-l">🔈 Volume</span></div>`);
+  [['baixo','Baixo'],['medio','Médio'],['alto','Alto']].forEach(([id,label])=>{
+    const chip = h(`<button type="button" class="diff-chip">${label}</button>`);
+    if((settings.volume||'medio')===id) chip.classList.add('active');
+    chip.onclick = async ()=>{
+      settings.volume = id; if(!settings.sound){ settings.sound = true; soundToggle.classList.add('active'); }
+      await saveSettings();
+      volRow.querySelectorAll('.diff-chip').forEach(ch=>ch.classList.remove('active')); chip.classList.add('active');
+      playFeedbackSound(true);
+    };
+    volRow.appendChild(chip);
+  });
+  c.appendChild(volRow);
 
   const vibToggle = h(`<button type="button" class="weak-toggle"><span class="check">✓</span><span>Vibração ao responder</span></button>`);
   if(settings.vibration) vibToggle.classList.add('active');
