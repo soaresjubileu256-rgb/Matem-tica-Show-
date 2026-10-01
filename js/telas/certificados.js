@@ -15,7 +15,6 @@ function unitProgress(subjectId){
 }
 /* o certificado em si (usado no de verdade e na prévia) */
 function certificateEl(s, preview){
-  const g = loadGame(), lv = levelInfo(g.xp);
   const when = new Date(); const dt = `${String(when.getDate()).padStart(2,'0')}/${String(when.getMonth()+1).padStart(2,'0')}/${when.getFullYear()}`;
   const cert = h(`<div class="cert ${preview?'preview':''}">
     <div class="cert-in">
@@ -26,8 +25,8 @@ function certificateEl(s, preview){
       <div class="cert-name"></div>
       <p>concluiu com sucesso o episódio</p>
       <div class="cert-subj">${s.sym} ${escHTML(s.name)}</div>
-      <p class="cert-small">passando pelas fases fácil, média e difícil e vencendo a Grande final.<br>Nível ${lv.level} · ${escHTML(lv.title)}</p>
-      <div class="cert-foot"><span>${dt}</span><span>🎤 Pi, o apresentador</span></div>
+      <p class="cert-small">passando pelas fases fácil, média e difícil e vencendo a Grande final.</p>
+      <div class="cert-foot"><span>${dt}</span></div>
     </div>
     ${preview ? '<div class="cert-ribbon">PRÉVIA</div>' : ''}
   </div>`);

@@ -186,4 +186,4 @@ A logo do "M" com o capelo de formatura substitui a antiga em todos os lugares: 
 
 ## 14. Prévia do certificado
 
-Na tela de Certificados (aba Progresso), o topo mostra uma **prévia** de como vai ficar o certificado do próximo assunto, já com o nome da pessoa, marcada com a faixa "PRÉVIA". Os assuntos ainda bloqueados mostram quantas etapas da Trilha já foram feitas e, ao tocar, abrem a prévia daquele assunto com um botão "Ir para a Trilha". Só o certificado de verdade tem o botão de imprimir; a prévia não sai na impressão.
+Na tela de Certificados (aba Progresso), o topo mostra uma **prévia** de como vai ficar o certificado do próximo assunto, já com o nome da pessoa, marcada com a faixa "PRÉVIA". Os assuntos ainda bloqueados mostram quantas etapas da Trilha já foram feitas e, ao tocar, abrem a prévia daquele assunto com um botão "Ir para a Trilha". Só o certificado de verdade tem o botão de imprimir; a prévia não sai na impressão. O certificado mostra só o essencial: logo, nome, assunto e data (sem o "Pi, o apresentador" e sem o nível).
