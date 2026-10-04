@@ -493,3 +493,18 @@ A Tabuada agora tem três partes (antes era só a lista de 1 a 10):
   - Resumo em cartões e filtro Todas / Certas / Erradas.
   - As respostas ficam separadas por dia (Hoje, Ontem, dia da semana), e a dificuldade aparece colorida.
 - Entrou nas **Novidades**.
+
+## 37. Conquistas novas
+
+- **Sala de troféus (topo):**
+  - Anel com quantas medalhas já foram conquistadas e o % da coleção.
+  - Nível, XP, maior combo, ofensiva, maior ofensiva e recorde do Relâmpago.
+- **Quase lá:** mostra a conquista bloqueada mais perto de sair, com barra e números (ex.: 8/10).
+- **Conquistas recentes:** as 3 últimas, com a data.
+- **Medalhas:**
+  - Separadas por categoria (Acertos e combos, Constância, Arena e jogos, Estudo), com o total de cada uma.
+  - Filtro Todas / Conquistadas / Faltam.
+  - As conquistadas aparecem como medalha dourada com a data.
+  - As bloqueadas têm cadeado e, quando dá pra medir, barra de progresso (ex.: 138/200 acertos). O progresso é calculado só pra mostrar; quem desbloqueia continua sendo o jogo.
+- **Títulos em escada:** os títulos já conquistados, o atual em destaque e quantos níveis faltam para os próximos.
+- Entrou nas **Novidades**.
