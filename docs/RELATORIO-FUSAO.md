@@ -283,3 +283,23 @@ A Tabuada agora tem três partes (antes era só a lista de 1 a 10):
   - O toque responde na hora (os dois podem tocar ao mesmo tempo).
   - Para sair é preciso tocar duas vezes no ✕ ("Sair?"), para ninguém sair sem querer.
 - **Final:** troféu, aperto de mão ou "Quase!", placar, quantas certas e erradas cada um teve, a resposta mais rápida, e os botões **Revanche** e **Sair**.
+
+## 24. Relâmpago novo
+
+- **Tela inicial:**
+  - Cartão laranja com o recorde.
+  - **Tipo de conta:** Misturadas, Tabuada, + e −, × e ÷. Cada tipo tem o **seu próprio recorde**; o recorde antigo virou o de Misturadas.
+  - Regras em cartõezinhos.
+  - O app lembra o tipo escolhido.
+- **Partida:**
+  - O tempo fica num **anel** que vai esvaziando e fica vermelho nos últimos 10 segundos. Aparece "+1s" ou "−3s" a cada resposta.
+  - **Combo:** com 5 acertos seguidos aparece "🔥 COMBO ×2", e cada acerto passa a valer 2 pontos.
+  - **Quando erra, mostra a resposta certa** (contorno verde e "Era 24") antes da próxima conta. Antes passava direto, sem mostrar.
+  - A mesma conta não aparece duas vezes seguidas.
+  - No computador dá para responder com as teclas 1, 2, 3 e 4.
+  - O toque responde na hora.
+- **Final:**
+  - Pontos grandes e recorde do tipo jogado.
+  - XP, acertos, **precisão**, **maior sequência** e **contas por minuto**.
+  - Lista das contas erradas para revisar, com o que a pessoa marcou.
+  - Botões **Jogar de novo** e **Trocar tipo**.
