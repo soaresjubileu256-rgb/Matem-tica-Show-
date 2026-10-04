@@ -7,7 +7,7 @@
      o Início pergunta "Está gostando do app?".
    Pra trocar o formulário: mude FEEDBACK_FORM_URL. Se ficar vazio, nada aparece.
    ========================================================= */
-const FEEDBACK_FORM_URL = '';
+const FEEDBACK_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSevMpKfBep9PMkn35I9HcUW9ufkImnhR7R9UhnabS09cmyoEQ/viewform';
 const FEEDBACK_ASK_AFTER = 50;
 const feedbackKey = ()=> `mathstudy-feedback:${currentUserId()}`;
 function feedbackData(){ try{ return JSON.parse(localStorage.getItem(feedbackKey())||'{}'); }catch(e){ return {}; } }
