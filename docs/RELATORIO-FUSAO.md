@@ -320,3 +320,27 @@ A Tabuada agora tem três partes (antes era só a lista de 1 a 10):
 - **Final:**
   - Recorde do nível com os assuntos escolhidos e **maior sequência** de acertos.
   - **Revisão de todas as respostas**: assunto, pergunta, resposta certa, o que a pessoa marcou (ou "acabou o tempo"), o tempo que levou e os pontos de cada uma.
+
+## 26. Simulado novo
+
+- **Montar a prova:**
+  - Cartão azul com quantos simulados você fez, a melhor nota e a média recente.
+  - **Modelos prontos:** Rápido (10 questões, 10 min), Prova (20, 30 min) e Maratona (30, 45 min).
+  - Os 41 assuntos ficam escondidos atrás de um botão ("41 de 41 assuntos escolhidos"). Abertos, aparecem **agrupados por série/área**, com "Todos / Tirar todos" em cada grupo.
+  - Resumo da prova antes de começar: questões, tempo (e segundos por questão), assuntos e dificuldade.
+  - **Gráfico de barras** com as notas dos últimos 10 simulados.
+- **Durante a prova:**
+  - "X de N respondidas" com barra de progresso e uma **barra de tempo**.
+  - Avisos quando faltam 5 minutos e 1 minuto.
+  - Cada questão mostra número, assunto e dificuldade colorida.
+  - **"Apagar resposta"** para deixar em branco de novo.
+  - O botão de entregar mostra quantas estão em branco e fica verde quando tudo foi respondido.
+  - A confirmação lista **quais** questões estão em branco e quais foram marcadas para revisar.
+  - **Atalhos no computador:** A–D (ou 1–4) respondem, ← → trocam de questão e R marca para revisar.
+  - O relógio aparece na hora (antes levava 1 segundo para surgir a cada troca de questão).
+- **Resultado:**
+  - Nota no anel com a cor do resultado e **comparação com o último simulado** (▲ +1,5).
+  - Certas, erradas, em branco e tempo.
+  - **"Refazer as erradas":** uma revisão sem tempo só com as questões que você errou. Ela não entra no histórico de notas.
+  - Botão **Treinar** nos assuntos com menos de 80% de acerto.
+  - Correção com filtro **Todas / Erradas / Certas**. Cada questão mostra as 4 alternativas, com a correta em verde e a sua em vermelho quando errou.
