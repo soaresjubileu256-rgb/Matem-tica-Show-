@@ -354,3 +354,25 @@ A Tabuada agora tem três partes (antes era só a lista de 1 a 10):
 - **Nunca junto com outro aviso:** a janela não aparece por cima do tour do primeiro acesso nem junto com o lembrete de backup.
 - **Versão nova com o app aberto:** quando o app recebe uma versão nova enquanto está aberto, aparece a barra "🎉 Saiu uma versão nova do app! **Atualizar**".
 - Para anunciar algo no futuro, basta acrescentar uma entrada no topo de `NEWS` em `js/telas/novidades.js`.
+
+## 28. Trilha nova
+
+- **Resumo no topo:** anel com a % da trilha concluída, quantos episódios já foram feitos, em qual você está agora e o botão **▶ Continuar**.
+- **Cartões dos episódios:**
+  - Número do episódio (ou ✓), símbolo e nome do assunto.
+  - Barrinhas com as fases feitas ("2/5 fases") e o ano escolar.
+  - O episódio atual ganha contorno dourado e "VOCÊ ESTÁ AQUI".
+  - Os bloqueados ficam apagados, com o botão "Já sei esse assunto · Pular pra cá".
+- **Episódios concluídos ficam recolhidos** (só o cartão), para a trilha não ficar enorme. Tocar em "Rever fases" abre de novo.
+- **Fases:**
+  - Cada fase mostra o nome ao lado (Fase 1 · Fácil, Prêmio surpresa, Grande final).
+  - A linha entre elas fica **colorida até onde você chegou**.
+  - A fase atual fica maior, com o balão "▶ JOGAR". A Grande final é maior que as outras.
+- **Botão "📍 Fase atual"** aparece quando a fase atual sai da tela.
+- **Janela da fase:**
+  - Barrinhas com a posição da fase no episódio.
+  - Cartões com o número de perguntas, a dificuldade, o XP e as moedas (ou o certificado, na Grande final).
+  - Link "Rever a explicação".
+- **A barra do topo** (ofensiva, moedas e vidas) agora fica presa ao rolar. Antes ela sumia, por causa de um ajuste da página que impedia barras fixas.
+- A Trilha também entrou nas **Novidades**.
+- **Correção:** o balão "▶ JOGAR" (e o "🎁 ABRIR" do prêmio) não respondia ao toque; só o hexágono funcionava. Agora o balão e o nome da fase abrem a fase. O "▶ Continuar" do topo abre direto a fase atual.

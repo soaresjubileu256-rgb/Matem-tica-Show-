@@ -10,6 +10,9 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
+  {v:4, date:'2026-10-05', title:'Trilha de cara nova', items:[
+    {ico:'⭐', t:'Trilha', d:'Resumo do seu progresso, episódios concluídos recolhidos, nome de cada fase, linha colorida mostrando até onde você chegou e botão pra voltar à fase atual.', go:'path'},
+  ]},
   {v:3, date:'2026-10-04', title:'Ferramentas e jogos de cara nova', items:[
     {ico:'✏️', t:'Caderno', d:'Miniaturas nítidas, folha sobre a mesa, ícones novos e "✓ Salvo" no topo.', go:'notebook'},
     {ico:'🧮', t:'Calculadora', d:'Conta inteira com parênteses e ordem certa das operações, resultado enquanto digita e histórico.', go:'calculator'},
