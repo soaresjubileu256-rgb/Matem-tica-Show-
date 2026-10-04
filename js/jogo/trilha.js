@@ -599,6 +599,7 @@ function pathHero(){
       <div class="ph-k">${finished ? 'TEMPORADA COMPLETA' : `EPISÓDIO ${n.unit+1} · ${n.idx+1}/${PATH_NODES.length}`}</div>
       <h2>${finished ? 'Você zerou a trilha! 👑' : n.subject.name}</h2>
       <p>${finished ? 'Continue praticando pra ganhar XP.' : n.label}</p>
+      ${finished ? '' : `<div class="ph-prog" aria-label="Fase ${n.idx+1} de ${PATH_NODES.length}">${PATH_NODES.map((_,i)=>`<i class="${i<n.idx?'on':i===n.idx?'cur':''}"></i>`).join('')}</div>`}
       <button class="show-btn light">${cur===0 ? '▶ COMEÇAR O SHOW' : '▶ CONTINUAR'}</button>
     </div>
     <div>${mascotSVG('joy', 86)}</div>

@@ -10,6 +10,9 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
+  {v:14, date:'2026-10-05', title:'Início de cara nova', items:[
+    {ico:'🏠', t:'Início', d:'Bom dia/boa tarde do Pi, a meta de hoje num anel com certas, acerto e combo, as fases do episódio na Trilha, "Tudo em dia" quando não sobra nada e uma Dica do Pi nova todo dia.', go:'home'},
+  ]},
   {v:13, date:'2026-10-05', title:'Configurações de cara nova', items:[
     {ico:'⚙️', t:'Configurações', d:'Cartões com chaves de liga/desliga, prévia do tema e do tamanho do texto, nível escolar em cartões e a data da sua última cópia de segurança.', go:'settings'},
   ]},

@@ -572,3 +572,16 @@ A Tabuada agora tem três partes (antes era só a lista de 1 a 10):
   - O texto explica o que é apagado.
   - O **avatar continua** depois do reset (ajuste em `resetCurrentUserProgress`).
 - Entrou nas **Novidades**.
+
+## 43. Início novo
+
+- **Saudação do Pi** conforme o horário (Bom dia / Boa tarde / Boa noite) com o primeiro nome. O aviso da ofensiva continua com prioridade.
+- **Cartão da Trilha:** barrinhas com as fases do episódio (feitas, atual e que faltam).
+- **Meta de hoje em anel** (dentro do cartão das missões):
+  - Quantas questões faltam e etiquetas de certas, % de acerto e melhor combo do dia.
+  - "Mudar meta" continua no mesmo lugar, e o anel fica verde quando a meta é batida.
+- **Tudo em dia por hoje:** aparece quando o Desafio do Dia já foi feito e não há erros nem assuntos pra revisar.
+- **Ferramentas** com uma descrição curta embaixo de cada nome.
+- **Dica do Pi:** uma curiosidade ou truque de matemática por dia, em rodízio de 20 (`PI_TIPS`).
+- O tour de primeiro acesso continua funcionando: as classes `.player-card`, `.path-hero`, `.missions` e `.quick-grid` não mudaram.
+- Entrou nas **Novidades**.
