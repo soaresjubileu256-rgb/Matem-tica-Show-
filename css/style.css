@@ -2569,3 +2569,38 @@ section.block h3::before, .rp-sec::before, .hq-head span::before{content:''; wid
 .cert-note{background:var(--leaf-bg); border:1px solid var(--border); border-radius:14px; padding:12px 14px; font-size:13.5px; line-height:1.5; color:var(--ink); margin-bottom:14px;}
 @media print{ .cert.preview{display:none !important;} }
 .cert.preview .cert-date{visibility:hidden;}
+/* novidades */
+.news-bell{position:relative; margin-left:auto; font-size:15px;}
+.news-bell + .tut-help-btn{margin-left:8px;}
+.news-bell.dot::after{content:''; position:absolute; top:2px; right:2px; width:10px; height:10px; border-radius:50%; background:#FF5C7A; box-shadow:0 0 0 2px var(--paper); animation:nw-ping 1.6s ease-out infinite;}
+@keyframes nw-ping{0%{box-shadow:0 0 0 2px var(--paper), 0 0 0 2px rgba(255,92,122,.6);} 100%{box-shadow:0 0 0 2px var(--paper), 0 0 0 10px rgba(255,92,122,0);}}
+.nw-sheet{text-align:left; max-height:86vh; display:flex; flex-direction:column; padding-top:0 !important; overflow:hidden;}
+.nw-hero{position:relative; margin:0 -22px 12px; padding:22px 22px 16px; text-align:center; color:#fff; background:radial-gradient(120% 100% at 50% 0%, rgba(255,255,255,.18), transparent 60%), linear-gradient(135deg,#4C7DFF,#B23FE0);}
+.nw-confetti{display:block; font-size:42px; line-height:1; animation:tr-pop .5s cubic-bezier(.3,1.6,.5,1);}
+.nw-hero small{display:block; margin-top:6px; font:800 11px 'Inter',sans-serif; letter-spacing:.14em; opacity:.85;}
+.nw-hero h2{margin:4px 0 2px; font-size:21px; color:#fff !important;}
+.nw-hero p{margin:0; font-size:13.5px; color:rgba(255,255,255,.88);}
+.nw-sheet .nw-list{overflow-y:auto; flex:1; min-height:0; margin:0 -4px; padding:0 4px;}
+.nw-list{display:flex; flex-direction:column; gap:8px;}
+.nw-item{display:flex; align-items:flex-start; gap:12px; padding:11px 12px; border-radius:16px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.1);}
+.nw-ico{flex-shrink:0; width:38px; height:38px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; background:rgba(140,123,255,.22);}
+.nw-txt{flex:1; min-width:0;} .nw-txt b{font-size:14.5px; color:#fff;} .nw-txt p{margin:2px 0 0; font-size:12.5px; line-height:1.45; color:#C9C4F0;}
+.gm-modal .nw-go, .nw-go{flex-shrink:0; align-self:center; width:auto; margin:0; padding:7px 12px; border-radius:999px; border:none; background:rgba(140,123,255,.3); color:#fff; font:800 12.5px 'Inter',sans-serif; cursor:pointer;}
+.gm-modal .nw-ok{margin-top:12px; background:var(--show-grad); color:#fff; font-weight:800;}
+.gm-modal .nw-all{margin-top:8px; background:rgba(255,255,255,.08); color:#fff;}
+.nw-screen{max-width:600px; margin:0 auto;}
+.nw-intro{color:var(--ink-soft); font-size:14px; margin:2px 0 14px;}
+.nw-card{padding:14px; margin-bottom:14px; border-radius:20px; background:var(--white); border:1px solid var(--border);}
+.nw-card.new{border-color:rgba(140,123,255,.6); box-shadow:0 12px 28px -18px rgba(140,123,255,.9);}
+.nw-card-h{display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:10px;}
+.nw-card-h b{display:block; font-size:16px; color:var(--ink);} .nw-card-h small{font-size:12px; color:var(--ink-soft); font-weight:600;}
+.nw-badge{font:800 10.5px 'Inter',sans-serif; letter-spacing:.08em; color:#fff; background:linear-gradient(135deg,#FF5C7A,#FF8A4C); padding:4px 9px; border-radius:999px;}
+.nw-card .nw-item{background:var(--surface-2); border-color:var(--border);}
+.nw-card .nw-txt b{color:var(--ink);} .nw-card .nw-txt p{color:var(--ink-soft);}
+.nw-card .nw-go{background:rgba(76,125,255,.16); color:#8CACFF;}
+:root.theme-light .nw-card .nw-go{color:#3D5BE0;}
+.pm-item.has-news .pm-s{color:#FF5C7A; font-weight:800;}
+.upd-bar{position:fixed; left:12px; right:12px; bottom:calc(92px + env(safe-area-inset-bottom)); max-width:456px; margin:0 auto; z-index:9999; display:flex; align-items:center; gap:10px; padding:10px 10px 10px 16px; border-radius:18px; color:#fff; background:linear-gradient(135deg,#4C7DFF,#B23FE0); box-shadow:0 16px 36px -14px rgba(0,0,0,.6); font-weight:700; font-size:14px; animation:sa-in .35s ease;}
+.upd-bar span{flex:1;}
+.upd-bar button{border:none; border-radius:999px; padding:8px 14px; background:#fff; color:#5B47E0; font:800 13px 'Inter',sans-serif; cursor:pointer;}
+.upd-bar button.x{background:rgba(255,255,255,.2); color:#fff; padding:8px 11px;}

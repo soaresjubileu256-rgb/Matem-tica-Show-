@@ -50,6 +50,7 @@ async function profileScreen(){
   item('🧭', 'Teste de nivelamento', studyData().placement ? `Último: ${studyData().placement.ok}/${studyData().placement.n}` : 'Descubra por onde começar', ()=> startPlacement());
   item('🗺️', 'Plano de estudos', studyData().plan ? `Prova em ${studyData().plan.examDate.split('-').reverse().join('/')}` : 'Monte um plano até o dia da prova', ()=> go('plan'));
   group('Ajuda e conta');
+  item('🔔', 'Novidades', newsUnseen().length ? '✨ Tem novidade pra você!' : 'O que mudou no app', ()=> go('news'), newsUnseen().length ? 'has-news' : '');
   item('📘', 'Como usar o app', 'Guia e tour guiado', ()=> go('help'));
   item('⚙️', 'Configurações', 'Tema, som, meta, senha e backup', ()=> go('settings'));
   item('🚪', 'Sair da conta', '', ()=> showConfirm({

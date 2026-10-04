@@ -227,6 +227,7 @@ function authScreen(mode, users){
     await saveUsers(list);
     currentUser = {id, name};
     await setCurrentUserId(id);
+    markNewsSeen(); // conta nova: as novidades antigas não fazem sentido pra ela
     await loadSettings();
     applyTheme(settingsCache.theme);
     applyTextScale(settingsCache.textScale);

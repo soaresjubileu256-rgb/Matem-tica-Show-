@@ -27,6 +27,7 @@ const SCREENS = {
   lesson: lessonScreen,
   quizSetup: quizSetupScreen,
   help: helpScreen,
+  news: newsScreen,
   tabuada: tabuadaScreen,
   solve: solveScreen,
   calculator: calculatorScreen,

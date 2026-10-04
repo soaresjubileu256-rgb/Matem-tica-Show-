@@ -62,6 +62,7 @@ js/
     perfil.js         Perfil
     configuracoes.js  tela de Configurações
     ajuda.js          tour guiado e "Como usar"
+    novidades.js      Novidades: janela depois de cada atualização, sininho no Início e aviso de versão nova
   iniciar.js          lista de telas e início do app (sempre o último)
 ```
 
@@ -83,7 +84,8 @@ Os assuntos aparecem sempre na mesma ordem e nos mesmos grupos (1º ao 5º ano, 
 
 - **Ordem dos scripts:** os arquivos de `js/` dividem as mesmas variáveis e funções. Eles precisam ser carregados na ordem do `index.html`, e o `iniciar.js` é sempre o último.
 - **Arquivo novo:** coloque o `<script>` no `index.html` e o caminho na lista `APP_SHELL` do `sw.js`.
-- **Depois de qualquer mudança:** aumente o `CACHE_VERSION` no `sw.js` (ex.: `mat-show-v48` → `mat-show-v49`). Assim quem já instalou recebe a versão nova.
+- **Lançou algo novo pras pessoas verem?** Acrescente uma entrada no topo de `NEWS` em `js/telas/novidades.js` (com um `v` maior que o anterior). Quem já usa o app vê a janela "Novidades" ao abrir o Início.
+- **Depois de qualquer mudança:** aumente o `CACHE_VERSION` no `sw.js` (ex.: `mat-show-v49` → `mat-show-v50`). Assim quem já instalou recebe a versão nova.
 
 ## Como acrescentar um assunto
 

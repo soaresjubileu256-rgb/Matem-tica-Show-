@@ -344,3 +344,13 @@ A Tabuada agora tem três partes (antes era só a lista de 1 a 10):
   - **"Refazer as erradas":** uma revisão sem tempo só com as questões que você errou. Ela não entra no histórico de notas.
   - Botão **Treinar** nos assuntos com menos de 80% de acerto.
   - Correção com filtro **Todas / Erradas / Certas**. Cada questão mostra as 4 alternativas, com a correta em verde e a sua em vermelho quando errou.
+
+## 27. Novidades (notificação de atualizações)
+
+- **Janela "Novidades":** ao abrir o Início depois de uma atualização, aparece uma janela com tudo o que mudou. Cada item tem um botão **Ver ›** que leva direto para a tela nova. Aparece **uma vez por conta**: depois de "Entendi!" não volta.
+- **Sininho 🔔** no topo do Início. Fica com uma bolinha vermelha piscando enquanto houver novidade não vista e abre a tela **Novidades**, com todas as atualizações, das mais novas para as mais antigas, e a etiqueta "NOVO".
+- **Perfil:** novo item "🔔 Novidades", que diz "✨ Tem novidade pra você!" quando houver.
+- **Contas novas** não recebem a lista antiga logo de cara.
+- **Nunca junto com outro aviso:** a janela não aparece por cima do tour do primeiro acesso nem junto com o lembrete de backup.
+- **Versão nova com o app aberto:** quando o app recebe uma versão nova enquanto está aberto, aparece a barra "🎉 Saiu uma versão nova do app! **Atualizar**".
+- Para anunciar algo no futuro, basta acrescentar uma entrada no topo de `NEWS` em `js/telas/novidades.js`.
