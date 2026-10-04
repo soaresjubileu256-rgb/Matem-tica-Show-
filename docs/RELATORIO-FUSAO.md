@@ -475,3 +475,21 @@ A Tabuada agora tem três partes (antes era só a lista de 1 a 10):
   - As dificuldades têm cor e a próxima fase está marcada com **JOGAR**.
 - **Correção:** as estrelas conquistadas apareciam apagadas no tema escuro.
 - A Arena entrou nas **Novidades**.
+
+## 36. Progresso e Histórico novos
+
+- **Topo do Progresso:**
+  - Anel com o **nível**, o título do nível e a barra de XP até o próximo nível.
+  - Questões resolvidas, % de acerto, ofensiva e conquistas.
+- **Certas × erradas** numa barra só.
+- **Atividade dos últimos 14 dias:** questões de hoje, dos últimos 7 dias e dias com estudo, com barras por dia (certas em verde, erradas em vermelho) e o dia de hoje marcado.
+- **Domínio dos assuntos:** quantos assuntos estão em cada nível (Dominado, Proficiente, Praticando, Aprendendo, Não iniciado), numa barra colorida com legenda.
+- **Seus registros:** Relatório semanal, Histórico, Conquistas (com barra) e Certificados em cartões, cada um com uma informação.
+- **Assuntos praticados:**
+  - Ordenação: Recentes, Melhores, Precisam de atenção e Mais praticados.
+  - Cada assunto mostra o % com barra colorida, o nível de domínio, as certas e quando foi praticado. Tocar abre o assunto.
+  - Sem prática ainda, aparece um aviso com o botão "Ir para Exercícios".
+- **Histórico:**
+  - Resumo em cartões e filtro Todas / Certas / Erradas.
+  - As respostas ficam separadas por dia (Hoje, Ontem, dia da semana), e a dificuldade aparece colorida.
+- Entrou nas **Novidades**.
