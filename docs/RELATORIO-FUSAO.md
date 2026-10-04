@@ -203,3 +203,11 @@ As duas versões ganharam cores próprias: **Verde** (esmeralda com dourado) e *
 ## 18. Login mais bonito e mais fácil
 
 A tela de entrada ganhou a marca do app no topo ("Matemática Show · Seu professor de matemática digital") e o mascote menor logo abaixo. As contas aparecem numa lista, cada uma com uma cor própria, o nível, a ofensiva e uma setinha. Ao escolher a conta, ela aparece num cartão com o botão "Trocar". O campo de senha agora diz "Digite sua senha" (antes parecia já preenchido) e avisa quando o Caps Lock está ligado. No cadastro, o "Repita a senha" mostra na hora se as senhas são iguais.
+
+## 19. Caderno mais bonito
+
+- **Lista de páginas:** as miniaturas agora são nítidas e mostram o topo da página, com o assunto numa etiqueta. Cada cartão diz quando a página foi editada ("Hoje, 14:30", "Ontem…") e qual é o papel. Os filtros por assunto ficam numa faixa que rola para o lado. As páginas antigas ganham a miniatura nova sozinhas.
+- **Caderno vazio:** aparece uma ilustração e atalhos para começar direto num papel (Quadriculado, Pautado, Pontilhado ou Plano cartesiano).
+- **Escolha do papel:** as prévias agora mostram as linhas, os pontos e o plano cartesiano (antes pareciam em branco).
+- **Página:** fica como uma folha sobre a mesa, com margem e sombra. No computador a folha não passa de uns 880px de largura. O topo mostra "Salvando…" e depois "✓ Salvo".
+- **Ferramentas:** os ícones agora são desenhados, todos no mesmo estilo, e a ferramenta escolhida fica destacada em degradê. Os botões de espessura mostram a cor atual. Isso vale também para o Rascunho das questões.

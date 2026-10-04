@@ -16,7 +16,21 @@ const NOTE_COLORS = ['#1B1B2F','#E0405A','#2F6BFF','#12A150','#E09A00','#9B3FE0'
 const NOTE_HL_COLORS = ['#FFE14D','#7DF0A0','#7FD4FF','#FF9EC4'];
 const NOTE_SIZES = {pen:[2.5,5,9], hl:[18,28,40], eraser:[12,24,44], shape:[2.5,5,9], text:[30,42,60]};
 const NOTE_BGS = [['grid','Quadriculado'],['lines','Pautado'],['dots','Pontilhado'],['cartesian','Plano cartesiano'],['plain','Liso']];
-const NOTE_TOOLS = [['pen','✒️','Caneta'],['hl','🖍️','Marca-texto'],['eraser','🧽','Borracha'],['line','📏','Linha reta'],['rect','▭','Retângulo'],['circle','◯','Círculo'],['text','T','Texto']];
+const NOTE_TOOLS = [['pen','Caneta'],['hl','Marca-texto'],['eraser','Borracha'],['line','Linha reta'],['rect','Retângulo'],['circle','Círculo'],['text','Texto']];
+/* ícones desenhados (iguais em qualquer aparelho, ao contrário dos emojis) */
+const NB_ICONS = {
+  pen:'<path d="M4 20l1.2-4.6L16.6 4a2 2 0 012.8 0l.6.6a2 2 0 010 2.8L8.6 18.8z"/><path d="M14.5 6.1l3.4 3.4"/>',
+  hl:'<path d="M8.5 14.5l-3 3V20h4.5l2-2"/><path d="M8.5 14.5L16 7l3 3-7.5 7.5z"/><path d="M14 20h6" stroke-width="3" opacity=".55"/>',
+  eraser:'<path d="M9 20l-5-5a1.6 1.6 0 010-2.3L12.7 4a1.6 1.6 0 012.3 0l5 5a1.6 1.6 0 010 2.3L11.3 20z"/><path d="M8.5 8.5l7 7"/><path d="M11 20h9"/>',
+  line:'<path d="M6 18L18 6"/><circle cx="5" cy="19" r="1.8" fill="currentColor"/><circle cx="19" cy="5" r="1.8" fill="currentColor"/>',
+  rect:'<rect x="4" y="6" width="16" height="12" rx="1.5"/>',
+  circle:'<circle cx="12" cy="12" r="8"/>',
+  text:'<path d="M5 7V5h14v2"/><path d="M12 5v14"/><path d="M9 19h6"/>',
+  undo:'<path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 010 11H11"/>',
+  redo:'<path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 000 11H13"/>',
+  more:'<circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/>',
+};
+function nbIcon(id){ return `<svg class="nb-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${NB_ICONS[id]||''}</svg>`; }
 
 function notesIndex(){ try{ return JSON.parse(localStorage.getItem(`${NOTES_KEY_BASE}:${currentUserId()}`)||'[]'); }catch(e){ return []; } }
 function saveNotesIndex(list){ localStorage.setItem(`${NOTES_KEY_BASE}:${currentUserId()}`, JSON.stringify(list)); }
@@ -32,7 +46,7 @@ function saveNotePage(page){
   try{
     localStorage.setItem(`${NOTE_KEY_BASE}:${currentUserId()}:${page.id}`, JSON.stringify(page.strokes));
     const list = notesIndex();
-    const meta = {id:page.id, title:page.title, subjectId:page.subjectId||null, bg:page.bg, updated:Date.now(), created:page.created||Date.now(), thumb:noteThumb(page)};
+    const meta = {id:page.id, title:page.title, subjectId:page.subjectId||null, bg:page.bg, updated:Date.now(), created:page.created||Date.now(), thumb:noteThumb(page), tv:2};
     const i = list.findIndex(n=>n.id===page.id);
     if(i>=0) list[i] = meta; else list.unshift(meta);
     saveNotesIndex(list);
@@ -71,10 +85,12 @@ function importNotes(data){
 }
 
 /* ---------- desenho ---------- */
-function drawNoteBg(ctx, bg){
+/* k engrossa linhas e pontos do papel (usado nas miniaturas, que são bem pequenas) */
+function drawNoteBg(ctx, bg, k){
+  k = k || 1;
   ctx.fillStyle = '#FFFDF7';
   ctx.fillRect(0, 0, NOTE_W, NOTE_H);
-  ctx.lineWidth = 1;
+  ctx.lineWidth = k;
   if(bg==='grid' || bg==='cartesian'){
     ctx.strokeStyle = bg==='cartesian' ? '#D7DEEC' : '#DCE3F0';
     ctx.beginPath();
@@ -86,14 +102,14 @@ function drawNoteBg(ctx, bg){
     ctx.beginPath();
     for(let y=120; y<NOTE_H; y+=56){ ctx.moveTo(0,y); ctx.lineTo(NOTE_W,y); }
     ctx.stroke();
-    ctx.strokeStyle = '#F2A3AE'; ctx.beginPath(); ctx.moveTo(90,0); ctx.lineTo(90,NOTE_H); ctx.stroke();
+    ctx.strokeStyle = '#F2A3AE'; ctx.lineWidth = 1.5*k; ctx.beginPath(); ctx.moveTo(90,0); ctx.lineTo(90,NOTE_H); ctx.stroke();
   } else if(bg==='dots'){
     ctx.fillStyle = '#B9C3D6';
-    for(let x=25; x<NOTE_W; x+=50) for(let y=32; y<NOTE_H; y+=50){ ctx.beginPath(); ctx.arc(x,y,2.2,0,Math.PI*2); ctx.fill(); }
+    for(let x=25; x<NOTE_W; x+=50) for(let y=32; y<NOTE_H; y+=50){ ctx.beginPath(); ctx.arc(x,y,2.2*Math.min(k,2.5),0,Math.PI*2); ctx.fill(); }
   }
   if(bg==='cartesian'){
     const cx = 500, cy = 707;
-    ctx.strokeStyle = '#5A6680'; ctx.lineWidth = 2.5;
+    ctx.strokeStyle = '#5A6680'; ctx.lineWidth = 2.5*Math.min(k,2);
     ctx.beginPath(); ctx.moveTo(20,cy); ctx.lineTo(NOTE_W-20,cy); ctx.moveTo(cx,20); ctx.lineTo(cx,NOTE_H-20); ctx.stroke();
     ctx.fillStyle = '#5A6680';
     ctx.beginPath(); ctx.moveTo(NOTE_W-20,cy); ctx.lineTo(NOTE_W-36,cy-8); ctx.lineTo(NOTE_W-36,cy+8); ctx.fill();
@@ -162,12 +178,13 @@ function noteStrokeHit(s, x, y, r){
   if(s.t==='text'){ const lines = String(s.txt).split('\n'); const w = Math.max(...lines.map(l=>l.length))*s.w*0.6, hh = lines.length*s.w*1.25; return x>p[0]-r && x<p[0]+w+r && y>p[1]-r && y<p[1]+hh+r; }
   return false;
 }
-function renderNotePage(ctx, page){ drawNoteBg(ctx, page.bg); page.strokes.forEach(s=>drawNoteStroke(ctx, s)); }
+function renderNotePage(ctx, page, k){ drawNoteBg(ctx, page.bg, k); page.strokes.forEach(s=>drawNoteStroke(ctx, s)); }
+const NOTE_THUMB_W = 260;
 function noteThumb(page){
   try{
-    const c = document.createElement('canvas'); c.width = 150; c.height = Math.round(150*NOTE_H/NOTE_W);
-    const x = c.getContext('2d'); x.scale(150/NOTE_W, 150/NOTE_W); renderNotePage(x, page);
-    return c.toDataURL('image/jpeg', 0.6);
+    const c = document.createElement('canvas'); c.width = NOTE_THUMB_W; c.height = Math.round(NOTE_THUMB_W*NOTE_H/NOTE_W);
+    const x = c.getContext('2d'); x.scale(NOTE_THUMB_W/NOTE_W, NOTE_THUMB_W/NOTE_W); renderNotePage(x, page, 2.6);
+    return c.toDataURL('image/jpeg', 0.72);
   }catch(e){ return ''; }
 }
 
@@ -206,7 +223,8 @@ function createBoard(host, page, onChange){
   const ctx = canvas.getContext('2d');
   const cache = document.createElement('canvas'), cctx = cache.getContext('2d');
   const st = {tool:'pen', color:NOTE_COLORS[0], hlColor:NOTE_HL_COLORS[0], size:1, penOnly:false, zoom:1, ox:0, oy:0};
-  let cssW = 0, cssH = 0, dpr = 1, fit = 1;
+  let cssW = 0, cssH = 0, dpr = 1, fit = 1, M = 10;
+  const desk = document.documentElement.classList.contains('theme-light') ? '#D6DAE5' : '#1C1E31';
   let cur = null, erasing = null, pinch = null, pan = null, raf = 0;
   const undo = [], redo = [];
   const pointers = new Map();
@@ -215,8 +233,8 @@ function createBoard(host, page, onChange){
   function toPage(cx, cy){ const r = canvas.getBoundingClientRect(); return [(cx-r.left-st.ox)/scale(), (cy-r.top-st.oy)/scale()]; }
   function clampView(){
     const pw = NOTE_W*scale(), ph = NOTE_H*scale();
-    st.ox = pw <= cssW ? (cssW-pw)/2 : Math.min(0, Math.max(cssW-pw, st.ox));
-    st.oy = ph <= cssH ? 0 : Math.min(0, Math.max(cssH-ph, st.oy));
+    st.ox = pw <= cssW-2*M ? (cssW-pw)/2 : Math.min(M, Math.max(cssW-pw-M, st.ox));
+    st.oy = ph <= cssH-2*M ? M : Math.min(M, Math.max(cssH-ph-M, st.oy));
   }
   function resize(){
     const r = host.getBoundingClientRect();
@@ -224,14 +242,18 @@ function createBoard(host, page, onChange){
     cssW = r.width; cssH = r.height; dpr = Math.min(window.devicePixelRatio||1, 2.5);
     canvas.width = cache.width = Math.round(cssW*dpr); canvas.height = cache.height = Math.round(cssH*dpr);
     canvas.style.width = cssW+'px'; canvas.style.height = cssH+'px';
-    fit = cssW/NOTE_W;
+    M = cssW < 600 ? 8 : 22;
+    fit = (Math.min(cssW, 880 + 2*M) - 2*M)/NOTE_W; // no computador a folha não passa de ~880px
+    if(!st.ox && !st.oy){ st.ox = M; st.oy = M; }
     clampView(); rebuild();
   }
   function applyView(c){ c.setTransform(dpr*scale(), 0, 0, dpr*scale(), dpr*st.ox, dpr*st.oy); }
   function rebuild(){
     cctx.setTransform(1,0,0,1,0,0);
-    cctx.fillStyle = '#C9CEDA'; cctx.fillRect(0,0,cache.width,cache.height);
+    cctx.fillStyle = desk; cctx.fillRect(0,0,cache.width,cache.height);
     applyView(cctx);
+    cctx.save(); cctx.shadowColor = 'rgba(0,0,0,.35)'; cctx.shadowBlur = 18*dpr; cctx.shadowOffsetY = 4*dpr;
+    cctx.fillStyle = '#FFFDF7'; cctx.fillRect(0,0,NOTE_W,NOTE_H); cctx.restore();
     cctx.save(); cctx.beginPath(); cctx.rect(0,0,NOTE_W,NOTE_H); cctx.clip();
     renderNotePage(cctx, page);
     cctx.restore();
@@ -384,7 +406,7 @@ function createBoard(host, page, onChange){
     undo(){ if(!undo.length) return false; redo.push(page.strokes); page.strokes = undo.pop(); changed(); return true; },
     redo(){ if(!redo.length) return false; undo.push(page.strokes); page.strokes = redo.pop(); changed(); return true; },
     clear(){ if(!page.strokes.length) return; snapshot(); page.strokes = []; changed(); },
-    resetZoom(){ st.zoom = 1; st.ox = 0; st.oy = 0; clampView(); rebuild(); },
+    resetZoom(){ st.zoom = 1; st.ox = M; st.oy = M; clampView(); rebuild(); },
     canUndo(){ return undo.length>0; }, canRedo(){ return redo.length>0; },
     destroy(){ if(ro) ro.disconnect(); else window.removeEventListener('resize', resize); },
   };
@@ -416,10 +438,10 @@ async function shareNotePage(page){
 function boardToolbar(board, opts){
   opts = opts || {};
   const tools = opts.tools || NOTE_TOOLS.map(t=>t[0]);
-  const bar = h(`<div class="nb-toolbar">
+  const bar = h(`<div class="nb-toolbar"><div class="nb-bar-in">
     <div class="nb-row nb-tools"></div>
     <div class="nb-row nb-style"><div class="nb-colors"></div><div class="nb-sizes"></div></div>
-  </div>`);
+  </div></div>`);
   const toolsBox = bar.querySelector('.nb-tools'), colorsBox = bar.querySelector('.nb-colors'), sizesBox = bar.querySelector('.nb-sizes');
   function paintColors(){
     colorsBox.innerHTML = '';
@@ -430,21 +452,22 @@ function boardToolbar(board, opts){
     colorsBox.style.visibility = hide ? 'hidden' : '';
     list.forEach(c=>{
       const b = h(`<button type="button" class="nb-color ${c===curC?'on':''}" style="--c:${c}" aria-label="Cor ${c}"></button>`);
-      b.onclick = ()=>{ board.setColor(c); paintColors(); };
+      b.onclick = ()=>{ board.setColor(c); paintColors(); paintSizes(); };
       colorsBox.appendChild(b);
     });
   }
   function paintSizes(){
     sizesBox.innerHTML = '';
+    const t = board.state.tool, c = t==='hl' ? board.state.hlColor : t==='eraser' ? '' : board.state.color;
     [0,1,2].forEach(i=>{
-      const b = h(`<button type="button" class="nb-size ${board.state.size===i?'on':''}" aria-label="Espessura ${i+1}"><i style="width:${5+i*5}px;height:${5+i*5}px"></i></button>`);
+      const b = h(`<button type="button" class="nb-size ${board.state.size===i?'on':''}" aria-label="Espessura ${i+1}"><i style="width:${5+i*5}px;height:${5+i*5}px${c?`;background:${c}`:''}"></i></button>`);
       b.onclick = ()=>{ board.setSize(i); paintSizes(); };
       sizesBox.appendChild(b);
     });
   }
-  NOTE_TOOLS.filter(t=>tools.includes(t[0])).forEach(([id,ico,label])=>{
-    const b = h(`<button type="button" class="nb-tool ${board.state.tool===id?'on':''}" data-t="${id}" title="${label}" aria-label="${label}"><span>${ico}</span><small>${label.split(' ')[0]}</small></button>`);
-    b.onclick = ()=>{ board.setTool(id); toolsBox.querySelectorAll('.nb-tool').forEach(x=>x.classList.toggle('on', x.dataset.t===id)); paintColors(); };
+  NOTE_TOOLS.filter(t=>tools.includes(t[0])).forEach(([id,label])=>{
+    const b = h(`<button type="button" class="nb-tool ${board.state.tool===id?'on':''}" data-t="${id}" title="${label}" aria-label="${label}">${nbIcon(id)}<small>${label.split(' ')[0]}</small></button>`);
+    b.onclick = ()=>{ board.setTool(id); toolsBox.querySelectorAll('.nb-tool').forEach(x=>x.classList.toggle('on', x.dataset.t===id)); paintColors(); paintSizes(); };
     toolsBox.appendChild(b);
   });
   paintColors(); paintSizes();
@@ -452,22 +475,54 @@ function boardToolbar(board, opts){
 }
 
 /* ---------- tela: lista de páginas do caderno ---------- */
+function noteWhen(t){
+  const d = new Date(t), today = new Date(); today.setHours(0,0,0,0);
+  const day = new Date(d); day.setHours(0,0,0,0);
+  const diff = Math.round((today - day)/86400000);
+  const hm = d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+  return diff===0 ? `Hoje, ${hm}` : diff===1 ? `Ontem, ${hm}` : fmtDM(d);
+}
+/* páginas salvas antes tinham miniatura pequena: refaz uma vez, mais nítida */
+function upgradeNoteThumbs(list){
+  let changed = false;
+  list.forEach(n=>{ if(n.tv!==2){ const p = loadNotePage(n.id); if(p){ n.thumb = noteThumb(p); n.tv = 2; changed = true; } } });
+  if(changed) try{ saveNotesIndex(list); }catch(e){}
+}
 function notebookScreen(){
   const wrap = document.createElement('div');
   wrap.appendChild(topbar('✏️ Caderno', true, ()=>go('home')));
-  const c = h(`<div class="content"></div>`);
+  const c = h(`<div class="content nb-home"></div>`);
   const list = notesIndex();
+  upgradeNoteThumbs(list);
   let filter = state.noteFilter || 'all';
-  c.appendChild(h(`<p style="color:var(--ink-soft); font-size:14px; margin:2px 0 14px;">Escreva à mão como numa mesa digitalizadora: com o dedo ou com uma caneta (stylus). Use dois dedos pra mover e dar zoom.</p>`));
-  const newBtn = h(`<button class="btn primary" style="width:100%; margin-bottom:14px">＋ Nova página</button>`);
+  c.appendChild(h(`<div class="nb-tips"><span>✍️ Dedo ou caneta</span><span>🤏 2 dedos: mover e zoom</span><span>💾 Salva sozinho</span></div>`));
+  const newBtn = h(`<button class="btn primary nb-new">＋ Nova página</button>`);
   newBtn.onclick = ()=> chooseNewPage();
   c.appendChild(newBtn);
 
+  if(!list.length){
+    const empty = h(`<div class="nb-empty">
+      <div class="nb-empty-art" aria-hidden="true"><span class="pg p1"></span><span class="pg p2"></span><span class="pg p3">x² + 1</span></div>
+      <h3>Seu caderno está vazio</h3>
+      <p>Anote explicações, faça contas à mão e desenhe gráficos. Comece com um papel:</p>
+      <div class="nb-quick"></div></div>`);
+    const quick = empty.querySelector('.nb-quick');
+    NOTE_BGS.slice(0,4).forEach(([id,label])=>{
+      const b = h(`<button type="button" class="nb-quick-b"><canvas width="72" height="102"></canvas><span>${label}</span></button>`);
+      const cx = b.querySelector('canvas').getContext('2d'); cx.scale(72/NOTE_W, 72/NOTE_W); drawNoteBg(cx, id, 4);
+      b.onclick = ()=>{ const p = newNotePage({bg:id}); go('notePage', {noteId:p.id}); };
+      quick.appendChild(b);
+    });
+    c.appendChild(empty);
+    wrap.appendChild(c);
+    return wrap;
+  }
+
   const used = [...new Set(list.map(n=>n.subjectId).filter(Boolean))];
   if(used.length){
-    const chips = h(`<div class="subj-chip-grid" style="margin-bottom:14px"></div>`);
-    [['all','Todas'], ['none','Sem assunto'], ...used.map(id=>{ const s = SUBJECTS.find(x=>x.id===id); return [id, s ? s.name : id]; })].forEach(([id,label])=>{
-      const b = h(`<button type="button" class="subj-chip ${filter===id?'active':''}" style="padding:7px 12px"></button>`);
+    const chips = h(`<div class="nb-filters"></div>`);
+    [['all','Todas'], ['none','Sem assunto'], ...used.map(id=>{ const s = SUBJECTS.find(x=>x.id===id); return [id, s ? `${s.sym} ${s.name}` : id]; })].forEach(([id,label])=>{
+      const b = h(`<button type="button" class="nb-filter ${filter===id?'on':''}"></button>`);
       b.textContent = label;
       b.onclick = ()=>{ state.noteFilter = id; render(); };
       chips.appendChild(b);
@@ -476,14 +531,15 @@ function notebookScreen(){
   }
   const shown = list.filter(n=> filter==='all' ? true : filter==='none' ? !n.subjectId : n.subjectId===filter)
     .sort((a,b)=>(b.updated||0)-(a.updated||0));
+  c.appendChild(h(`<div class="nb-count">${shown.length} página${shown.length===1?'':'s'}</div>`));
   if(!shown.length){
-    c.appendChild(h(`<div class="empty-note">Nenhuma página ainda.<br>Toque em <b>Nova página</b> pra começar a anotar. 📝</div>`));
+    c.appendChild(h(`<div class="empty-note">Nenhuma página com esse filtro.</div>`));
   } else {
     const grid = h(`<div class="nb-grid"></div>`);
     shown.forEach(n=>{
       const s = n.subjectId ? SUBJECTS.find(x=>x.id===n.subjectId) : null;
-      const d = new Date(n.updated||n.created||Date.now());
-      const card = h(`<button type="button" class="nb-card"><div class="nb-thumb">${n.thumb?`<img src="${n.thumb}" alt="">`:''}</div><div class="nb-t"></div><div class="nb-s">${s?`${s.sym} ${escHTML(s.name)} · `:''}${fmtDM(d)}</div></button>`);
+      const paper = (NOTE_BGS.find(b=>b[0]===n.bg)||[])[1] || '';
+      const card = h(`<button type="button" class="nb-card"><div class="nb-thumb">${n.thumb?`<img src="${n.thumb}" alt="">`:''}${s?`<span class="nb-tag">${s.sym} ${escHTML(s.name)}</span>`:''}</div><div class="nb-info"><div class="nb-t"></div><div class="nb-s">${noteWhen(n.updated||n.created||Date.now())}${paper?` · ${paper}`:''}</div></div></button>`);
       card.querySelector('.nb-t').textContent = n.title || 'Sem título';
       card.onclick = ()=> go('notePage', {noteId:n.id});
       grid.appendChild(card);
@@ -500,8 +556,8 @@ function chooseNewPage(subjectId){
     <button type="button" class="nb-cancel" style="margin-top:12px;background:rgba(255,255,255,.1);color:#fff">Cancelar</button></div>`;
   const box = bg.querySelector('.nb-papers');
   NOTE_BGS.forEach(([id,label])=>{
-    const b = h(`<button type="button" class="nb-paper"><canvas width="90" height="127"></canvas><span>${label}</span></button>`);
-    const cx = b.querySelector('canvas').getContext('2d'); cx.scale(90/NOTE_W, 90/NOTE_W); drawNoteBg(cx, id);
+    const b = h(`<button type="button" class="nb-paper"><canvas width="128" height="181"></canvas><span>${label}</span></button>`);
+    const cx = b.querySelector('canvas').getContext('2d'); cx.scale(128/NOTE_W, 128/NOTE_W); drawNoteBg(cx, id, 4);
     b.onclick = ()=>{ bg.remove(); const p = newNotePage({bg:id, subjectId}); go('notePage', {noteId:p.id}); };
     box.appendChild(b);
   });
@@ -518,14 +574,20 @@ function notePageScreen(){
   const wrap = h(`<div class="nb-editor"></div>`);
   if(!page){ setTimeout(()=>go('notebook'), 0); return wrap; }
   let saveTimer = 0;
-  const saveSoon = ()=>{ clearTimeout(saveTimer); saveTimer = setTimeout(()=>saveNotePage(page), 500); paintUndo(); };
+  const saveSoon = ()=>{
+    clearTimeout(saveTimer);
+    const sv = wrap.querySelector('.nb-saved'); if(sv){ sv.textContent = 'Salvando…'; sv.classList.remove('ok'); }
+    saveTimer = setTimeout(()=>{ if(saveNotePage(page) && sv){ sv.textContent = '✓ Salvo'; sv.classList.add('ok'); } }, 500);
+    paintUndo();
+  };
 
   const head = h(`<div class="nb-head">
     <button class="back-btn" aria-label="Voltar">‹</button>
     <input class="nb-title" maxlength="60" aria-label="Título da página">
-    <button type="button" class="nb-icon nb-undo" aria-label="Desfazer" title="Desfazer">↶</button>
-    <button type="button" class="nb-icon nb-redo" aria-label="Refazer" title="Refazer">↷</button>
-    <button type="button" class="nb-icon nb-more" aria-label="Mais opções" title="Mais opções">⋯</button>
+    <span class="nb-saved" aria-live="polite"></span>
+    <button type="button" class="nb-icon nb-undo" aria-label="Desfazer" title="Desfazer">${nbIcon('undo')}</button>
+    <button type="button" class="nb-icon nb-redo" aria-label="Refazer" title="Refazer">${nbIcon('redo')}</button>
+    <button type="button" class="nb-icon nb-more" aria-label="Mais opções" title="Mais opções">${nbIcon('more')}</button>
   </div>`);
   const title = head.querySelector('.nb-title'); title.value = page.title;
   title.oninput = ()=>{ page.title = title.value.trim() || 'Sem título'; saveSoon(); };
@@ -540,7 +602,8 @@ function notePageScreen(){
   wrap.appendChild(toolbar);
   wrap.appendChild(area);
   area.appendChild(hint);
-  function showHint(t){ hint.textContent = t; hint.classList.add('on'); clearTimeout(showHint._t); showHint._t = setTimeout(()=>hint.classList.remove('on'), 2200); }
+  function showHint(t){ hint.textContent = t; hint.classList.add('on'); clearTimeout(showHint._t); showHint._t = setTimeout(()=>hint.classList.remove('on'), t.length > 40 ? 3600 : 2200); }
+  if(!page.strokes.length) setTimeout(()=>showHint('✍️ Escreva com o dedo ou a caneta. 🤏 Dois dedos movem e dão zoom.'), 400);
   board.onPenDetected = ()=> showHint('✒️ Caneta detectada: agora o dedo só move a página');
   board.onZoom = z=> showHint(`🔍 ${Math.round(z*100)}%`);
   function paintUndo(){ head.querySelector('.nb-undo').disabled = !board.canUndo(); head.querySelector('.nb-redo').disabled = !board.canRedo(); }
@@ -586,7 +649,7 @@ function openScratchPad(ex){
   const root = h(`<div class="nb-scratch" role="dialog" aria-label="Rascunho">
     <div class="nb-head">
       <div class="nb-sq"></div>
-      <button type="button" class="nb-icon nb-undo" aria-label="Desfazer">↶</button>
+      <button type="button" class="nb-icon nb-undo" aria-label="Desfazer">${nbIcon('undo')}</button>
       <button type="button" class="nb-icon nb-clr" aria-label="Limpar">🧹</button>
       <button type="button" class="nb-icon nb-keep" aria-label="Salvar no caderno" title="Salvar no caderno">💾</button>
       <button type="button" class="nb-icon nb-x" aria-label="Fechar rascunho">✕</button>
