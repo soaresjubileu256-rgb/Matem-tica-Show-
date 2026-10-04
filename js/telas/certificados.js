@@ -165,10 +165,34 @@ function certificateScreen(){
     actions.appendChild(tr);
   } else {
     const pr = h(`<button class="btn primary">🖨️ Imprimir / PDF</button>`);
-    pr.onclick = ()=> window.print();
+    pr.onclick = ()=>{ const el = holder.querySelector('.cert'); if(el) printCertificate(el); };
     actions.appendChild(pr);
   }
   c.appendChild(actions);
   wrap.appendChild(c);
   return wrap;
 }
+
+/* imprime só o certificado, numa folha só.
+   Copia o certificado pra uma área própria (#cert-print) e pede folha A4 deitada.
+   Celulares Android costumam ignorar o "deitado" e imprimir em pé: aí o CSS gira o
+   certificado 90° pra ele ocupar a folha inteira, sem sobrar pedaço pra 2ª página. */
+function printCertificate(certEl){
+  document.getElementById('cert-print')?.remove();
+  document.getElementById('cert-print-page')?.remove();
+  const root = document.createElement('div');
+  root.id = 'cert-print';
+  root.appendChild(certEl.cloneNode(true));
+  document.body.appendChild(root);
+  const st = document.createElement('style');
+  st.id = 'cert-print-page';
+  st.textContent = '@page{size:A4 landscape; margin:0;}';
+  document.head.appendChild(st);
+  document.documentElement.classList.add('cert-printing');
+  const done = ()=>{ document.documentElement.classList.remove('cert-printing'); root.remove(); st.remove(); window.removeEventListener('afterprint', done); };
+  window.addEventListener('afterprint', done);
+  // a limpeza só acontece no 'afterprint' (no Android a janela de impressão abre depois do print() voltar);
+  // fora da impressão o #cert-print fica escondido, então não atrapalha a tela
+  setTimeout(()=> window.print(), 60);
+}
+

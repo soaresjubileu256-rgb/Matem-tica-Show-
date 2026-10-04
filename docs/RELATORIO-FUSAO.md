@@ -419,3 +419,10 @@ A Tabuada agora tem três partes (antes era só a lista de 1 a 10):
 - A frase muda conforme a nota (alta: "Que bom!"; baixa: "Conta o que podemos melhorar").
 - Para trocar o formulário, basta mudar `FEEDBACK_FORM_URL` em `js/telas/feedback.js`. Se o link ficar vazio, nada aparece.
 - Entrou nas **Novidades**.
+
+## 32. Impressão do certificado em uma folha só
+
+- No celular (Android) a impressão vinha em **folha em pé**: o certificado ficava pequeno no topo e um pedaço ia para uma 2ª página.
+- Agora o botão "Imprimir / PDF" imprime **só o certificado, numa folha só**:
+  - Se a impressora aceitar folha deitada, o certificado ocupa a folha inteira deitado.
+  - Se a folha vier em pé, como no Android, o certificado é **girado** para ocupar a folha inteira, sem 2ª página.
