@@ -551,3 +551,24 @@ A Tabuada agora tem três partes (antes era só a lista de 1 a 10):
 - A foto é recortada no centro em formato quadrado, reduzida para 192×192 e salva como JPEG embutido no jogo da conta (`g.avatar.img`, ~5–20 KB). Ela não é enviada para lugar nenhum e fica só no aparelho.
 - **🗑️ Remover a foto** volta para o emoji ou para a inicial. Escolher um emoji também tira a foto.
 - A foto aparece no Perfil, no botão do Início e na lista de contas da tela de entrada. `avatarImg()` só aceita imagem embutida (`data:image/...;base64`).
+
+## 42. Configurações novas
+
+- **Topo:** avatar, nome e um resumo das escolhas (tema, som e meta), que muda na hora.
+- **Conta:** linhas Nome, Senha e Avatar. Nome e Senha abrem um painel dentro do cartão (com o medidor de força da senha), e Avatar abre a janela do avatar.
+- **Estudo:**
+  - Meta diária em botões segmentados, com o tempo aproximado por dia.
+  - Nível escolar em 3 cartões (Fundamental 1, Fundamental 2, Ensino Médio).
+- **Som e vibração:**
+  - Chaves liga/desliga de verdade (`role="switch"`).
+  - Volume com o botão "Testar som". O volume fica apagado com o som desligado, e escolher um volume liga o som.
+- **Aparência:** tema escuro ou claro em cartões com uma miniatura de cada tema.
+- **Leitura:** tamanho do texto com um exemplo que muda de tamanho na hora, e uma chave pra "Ouvir as questões".
+- **Seus dados:**
+  - Aviso com a data da última cópia de segurança (verde se tem menos de 14 dias, amarelo se não).
+  - Botões "Salvar uma cópia" e "Restaurar uma cópia".
+- **Começar do zero:**
+  - O reset agora usa a janela de confirmação, em vez de tocar duas vezes.
+  - O texto explica o que é apagado.
+  - O **avatar continua** depois do reset (ajuste em `resetCurrentUserProgress`).
+- Entrou nas **Novidades**.

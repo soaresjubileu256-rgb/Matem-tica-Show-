@@ -1,209 +1,214 @@
 /* =========================================================
    TELA CONFIGURAÇÕES
-      Em ordem: Conta → Estudo → Som e vibração → Aparência → Leitura → Dados.
+      Cartões em ordem: Conta → Estudo → Som e vibração → Aparência → Leitura → Dados.
+      Tudo é salvo na hora (por conta), sem botão de "salvar" geral.
    ========================================================= */
+/* peças da tela: cartão de seção, linha com ícone, chave liga/desliga e botões segmentados */
+function stCard(ico, title, sub){
+  return h(`<section class="st-card"><div class="st-card-h"><span class="st-card-ico">${ico}</span><div><b>${title}</b>${sub?`<small>${sub}</small>`:''}</div></div></section>`);
+}
+function stRow(ico, tint, label, sub, right){
+  const r = h(`<div class="st-row"><span class="st-ico" style="--t:${tint}">${ico}</span><span class="st-txt"><b></b>${sub!=null?'<small></small>':''}</span><span class="st-right"></span></div>`);
+  r.querySelector('b').textContent = label;
+  if(sub!=null) r.querySelector('small').textContent = sub;
+  if(right) r.querySelector('.st-right').appendChild(right);
+  return r;
+}
+function stSwitch(on, label, onChange){
+  const b = h(`<button type="button" class="st-switch" role="switch" aria-checked="${!!on}" aria-label="${label}"><i></i></button>`);
+  b.onclick = ()=>{ const v = b.getAttribute('aria-checked')!=='true'; b.setAttribute('aria-checked', v); onChange(v); };
+  return b;
+}
+function stSeg(opts, cur, onPick, cls){
+  const s = h(`<div class="st-seg ${cls||''}" role="radiogroup"></div>`);
+  opts.forEach(([id, label, extra])=>{
+    const b = h(`<button type="button" role="radio" aria-checked="${id===cur}" ${extra||''}>${label}</button>`);
+    b.onclick = ()=>{ s.querySelectorAll('button').forEach(x=> x.setAttribute('aria-checked', x===b)); onPick(id); };
+    s.appendChild(b);
+  });
+  return s;
+}
+function stMsg(box, ok, txt){ box.innerHTML = `<div class="st-msg ${ok?'ok':'bad'}">${ok?'✓':'⚠️'} ${txt}</div>`; }
+
 async function settingsScreen(){
   const wrap = document.createElement('div');
-  wrap.appendChild(topbar('Configurações', true, ()=>go('profile')));
-  const c = h(`<div class="content"></div>`);
-
+  wrap.appendChild(topbar('⚙️ Configurações', true, ()=>go('profile')));
+  const c = h(`<div class="content st-screen"></div>`);
   const settings = await loadSettings();
+  const saveNow = async ()=>{ await saveSettings(); };
 
-  // ---- ordem: Conta → Estudo → Som e vibração → Aparência → Leitura → Dados ----
-  // --- Conta ---
-  c.appendChild(h(`<section class="block"><h3>Conta</h3></section>`));
-  const nameBox = h(`<div class="auth-field"><label>Nome</label><input type="text" class="settingsNameInput" aria-label="Nome" value="${escHTML((currentUser&&currentUser.name)||'')}"></div>`);
-  c.appendChild(nameBox);
-  const nameErrBox = h(`<div class="authErrorBox"></div>`);
-  c.appendChild(nameErrBox);
-  const saveNameBtn = h(`<button class="btn secondary" style="width:100%;margin-bottom:20px;">Salvar nome</button>`);
-  saveNameBtn.onclick = async ()=>{
-    const newName = nameBox.querySelector('.settingsNameInput').value;
-    const res = await renameCurrentUser(newName);
-    if(!res.ok){ nameErrBox.innerHTML = `<div class="auth-error">${res.error}</div>`; return; }
-    nameErrBox.innerHTML = `<div class="auth-error" style="color:var(--pine);border-color:rgba(51,210,227,.3);background:rgba(51,210,227,.08);">Nome atualizado!</div>`;
+  // topo: quem está usando e um resumo das escolhas
+  const sum = ()=> `${settings.theme==='light'?'☀️ Claro':'🌙 Escuro'} · ${settings.sound?'🔊 Som ligado':'🔇 Sem som'} · 🎯 Meta ${settings.dailyGoal}`;
+  const hero = h(`<div class="st-hero"><span class="st-av">${avatarFace(currentUser)}</span><div><b></b><small class="st-sum">${sum()}</small></div></div>`);
+  const av = avatarOf(currentUser);
+  hero.querySelector('.st-av').style.background = avatarColor(currentUser);
+  hero.querySelector('.st-av').classList.add(avatarImg(av) ? 'is-img' : av && av.emo ? 'is-emo' : 'x');
+  hero.querySelector('b').textContent = (currentUser && currentUser.name) || '';
+  const refreshSum = ()=>{ hero.querySelector('.st-sum').textContent = sum(); };
+  c.appendChild(hero);
+
+  // ---------- Conta ----------
+  const acc = stCard('👤', 'Conta', 'Nome, senha e avatar');
+  const nameRow = stRow('✏️', '#4C7DFF', 'Nome', (currentUser&&currentUser.name)||'', h(`<button type="button" class="st-link">Editar</button>`));
+  const namePanel = h(`<div class="st-panel" hidden>
+      <div class="auth-field"><label>Novo nome</label><input type="text" class="settingsNameInput" aria-label="Nome" maxlength="40"></div>
+      <div class="authErrorBox"></div>
+      <button type="button" class="st-btn">Salvar nome</button></div>`);
+  namePanel.querySelector('input').value = (currentUser&&currentUser.name)||'';
+  nameRow.querySelector('.st-link').onclick = ()=>{ namePanel.hidden = !namePanel.hidden; if(!namePanel.hidden) namePanel.querySelector('input').focus(); };
+  namePanel.querySelector('.st-btn').onclick = async ()=>{
+    const box = namePanel.querySelector('.authErrorBox');
+    const res = await renameCurrentUser(namePanel.querySelector('input').value);
+    if(!res.ok){ stMsg(box, false, res.error); return; }
+    stMsg(box, true, 'Nome atualizado!');
+    nameRow.querySelector('small').textContent = currentUser.name;
+    hero.querySelector('b').textContent = currentUser.name;
   };
-  c.appendChild(saveNameBtn);
+  acc.appendChild(nameRow); acc.appendChild(namePanel);
 
-  c.appendChild(h(`<div class="auth-field"><label>Senha atual</label><input type="password" class="settingsCurPass" aria-label="Senha atual"></div>`));
-  const newPassField = h(`<div class="auth-field"><label>Nova senha</label><input type="password" class="settingsNewPass" autocomplete="new-password" aria-label="Nova senha"></div>`);
-  const newPassMeter = attachStrengthMeter(newPassField.querySelector('input'), ()=> currentUser ? currentUser.name : '');
-  newPassField.appendChild(newPassMeter);
-  c.appendChild(newPassField);
-  c.appendChild(h(`<div class="auth-field"><label>Confirmar nova senha</label><input type="password" class="settingsNewPass2" aria-label="Confirmar nova senha"></div>`));
-  const passErrBox = h(`<div class="authErrorBox"></div>`);
-  c.appendChild(passErrBox);
-  const savePassBtn = h(`<button class="btn secondary" style="width:100%;margin-bottom:20px;">Alterar senha</button>`);
-  savePassBtn.onclick = async ()=>{
-    const cur = c.querySelector('.settingsCurPass').value;
-    const n1 = c.querySelector('.settingsNewPass').value;
-    const n2 = c.querySelector('.settingsNewPass2').value;
-    if(!cur || !n1){ passErrBox.innerHTML = `<div class="auth-error">Preencha todos os campos.</div>`; return; }
-    if(n1 !== n2){ passErrBox.innerHTML = `<div class="auth-error">As novas senhas não coincidem.</div>`; return; }
+  const passRow = stRow('🔑', '#12B886', 'Senha', 'Troque quando quiser', h(`<button type="button" class="st-link">Alterar</button>`));
+  const passPanel = h(`<div class="st-panel" hidden>
+      <div class="auth-field"><label>Senha atual</label><input type="password" class="settingsCurPass" aria-label="Senha atual" autocomplete="current-password"></div>
+      <div class="auth-field st-newpass"><label>Nova senha</label><input type="password" class="settingsNewPass" autocomplete="new-password" aria-label="Nova senha"></div>
+      <div class="auth-field"><label>Confirmar nova senha</label><input type="password" class="settingsNewPass2" aria-label="Confirmar nova senha" autocomplete="new-password"></div>
+      <div class="authErrorBox"></div>
+      <button type="button" class="st-btn">Alterar senha</button></div>`);
+  const newPassMeter = attachStrengthMeter(passPanel.querySelector('.settingsNewPass'), ()=> currentUser ? currentUser.name : '');
+  passPanel.querySelector('.st-newpass').appendChild(newPassMeter);
+  passRow.querySelector('.st-link').onclick = ()=>{ passPanel.hidden = !passPanel.hidden; if(!passPanel.hidden) passPanel.querySelector('input').focus(); };
+  passPanel.querySelector('.st-btn').onclick = async ()=>{
+    const box = passPanel.querySelector('.authErrorBox');
+    const cur = passPanel.querySelector('.settingsCurPass').value;
+    const n1 = passPanel.querySelector('.settingsNewPass').value;
+    const n2 = passPanel.querySelector('.settingsNewPass2').value;
+    if(!cur || !n1){ stMsg(box, false, 'Preencha todos os campos.'); return; }
+    if(n1 !== n2){ stMsg(box, false, 'As novas senhas não coincidem.'); return; }
     const res = await changeCurrentUserPassword(cur, n1);
-    if(!res.ok){ passErrBox.innerHTML = `<div class="auth-error">${res.error}</div>`; return; }
-    c.querySelector('.settingsCurPass').value = '';
-    c.querySelector('.settingsNewPass').value = '';
-    c.querySelector('.settingsNewPass2').value = '';
+    if(!res.ok){ stMsg(box, false, res.error); return; }
+    passPanel.querySelectorAll('input').forEach(i=> i.value='');
     newPassMeter.refresh();
-    passErrBox.innerHTML = `<div class="auth-error" style="color:var(--pine);border-color:rgba(51,210,227,.3);background:rgba(51,210,227,.08);">Senha alterada!</div>`;
+    stMsg(box, true, 'Senha alterada!');
   };
-  c.appendChild(savePassBtn);
+  acc.appendChild(passRow); acc.appendChild(passPanel);
+  const avRow = stRow('🎨', '#B23FE0', 'Avatar', 'Foto, bichinho ou símbolo e a cor', h(`<button type="button" class="st-link">Trocar</button>`));
+  avRow.querySelector('.st-link').onclick = ()=> showAvatarSheet(()=> render());
+  acc.appendChild(avRow);
+  c.appendChild(acc);
 
-  // --- Estudo ---
-  c.appendChild(h(`<section class="block"><h3>Estudo</h3></section>`));
-  c.appendChild(h(`<p style="color:var(--ink-soft); font-size:12.5px; margin:-6px 0 8px;">Meta diária de questões</p>`));
-  const goalRow = h(`<div class="diff-row"></div>`);
-  [5,10,15,20,30].forEach(n=>{
-    const chip = h(`<button type="button" class="diff-chip">${n}</button>`);
-    if(settings.dailyGoal===n) chip.classList.add('active');
-    chip.onclick = async ()=>{
-      settings.dailyGoal = n;
-      await saveSettings();
-      goalRow.querySelectorAll('.diff-chip').forEach(ch=>ch.classList.remove('active'));
-      chip.classList.add('active');
-    };
-    goalRow.appendChild(chip);
+  // ---------- Estudo ----------
+  const st = stCard('🎯', 'Estudo', 'Sua meta e o seu nível na escola');
+  const goalInfo = h(`<small class="st-hint"></small>`);
+  const paintGoal = ()=>{ goalInfo.textContent = `≈ ${Math.max(3, Math.round(settings.dailyGoal*0.6))} minutos por dia · ${settings.dailyGoal} questões`; };
+  st.appendChild(h(`<div class="st-lbl">Meta diária de questões</div>`));
+  st.appendChild(stSeg([5,10,15,20,30].map(n=>[n, String(n)]), settings.dailyGoal, async n=>{ settings.dailyGoal = n; await saveNow(); paintGoal(); refreshSum(); }));
+  paintGoal(); st.appendChild(goalInfo);
+  st.appendChild(h(`<div class="st-lbl">Nível escolar</div>`));
+  const lv = h(`<div class="st-levels" role="radiogroup"></div>`);
+  [['fund1','📗','Fundamental 1','1º ao 5º ano'],['fund2','📘','Fundamental 2','6º ao 9º ano'],['medio','🎓','Ensino Médio','1ª à 3ª série']].forEach(([id,ico,name,sub])=>{
+    const b = h(`<button type="button" role="radio" aria-checked="${settings.schoolLevel===id}"><span>${ico}</span><b>${name}</b><small>${sub}</small></button>`);
+    b.onclick = async ()=>{ settings.schoolLevel = id; await saveNow(); lv.querySelectorAll('button').forEach(x=> x.setAttribute('aria-checked', x===b)); };
+    lv.appendChild(b);
   });
-  c.appendChild(goalRow);
+  st.appendChild(lv);
+  st.appendChild(h(`<small class="st-hint">Usado pra sugerir assuntos e o Desafio do Dia. Você pode estudar qualquer assunto.</small>`));
+  c.appendChild(st);
 
-  c.appendChild(h(`<p style="color:var(--ink-soft); font-size:12.5px; margin:14px 0 8px;">Nível escolar</p>`));
-  const levelRow = h(`<div class="diff-row" style="flex-wrap:wrap;"></div>`);
-  [['fund1','Fundamental 1'],['fund2','Fundamental 2'],['medio','Ensino Médio']].forEach(([id,label])=>{
-    const chip = h(`<button type="button" class="diff-chip" style="flex:1 1 30%;">${label}</button>`);
-    if(settings.schoolLevel===id) chip.classList.add('active');
-    chip.onclick = async ()=>{
-      settings.schoolLevel = id;
-      await saveSettings();
-      levelRow.querySelectorAll('.diff-chip').forEach(ch=>ch.classList.remove('active'));
-      chip.classList.add('active');
-    };
-    levelRow.appendChild(chip);
-  });
-  c.appendChild(levelRow);
+  // ---------- Som e vibração ----------
+  const snd = stCard('🔊', 'Som e vibração');
+  const volWrap = h(`<div class="st-sub"></div>`);
+  const paintVol = ()=> volWrap.classList.toggle('off', !settings.sound);
+  const soundSw = stSwitch(settings.sound, 'Sons ao responder', async v=>{ settings.sound = v; await saveNow(); paintVol(); refreshSum(); if(v) playFeedbackSound(true); });
+  snd.appendChild(stRow('🎵', '#FFB800', 'Sons ao responder', 'Acerto, erro, combos e conquistas', soundSw));
+  volWrap.appendChild(h(`<div class="st-lbl">Volume</div>`));
+  volWrap.appendChild(stSeg([['baixo','🔈 Baixo'],['medio','🔉 Médio'],['alto','🔊 Alto']], settings.volume||'medio', async id=>{
+    settings.volume = id;
+    if(!settings.sound){ settings.sound = true; soundSw.setAttribute('aria-checked', true); paintVol(); refreshSum(); }
+    await saveNow(); playFeedbackSound(true);
+  }));
+  const test = h(`<button type="button" class="st-mini">▶ Testar som</button>`);
+  test.onclick = ()=> playFeedbackSound(true);
+  volWrap.appendChild(test);
+  snd.appendChild(volWrap); paintVol();
+  snd.appendChild(stRow('📳', '#F06595', 'Vibração ao responder', 'Funciona em celulares com vibração', stSwitch(settings.vibration, 'Vibração ao responder', async v=>{ settings.vibration = v; await saveNow(); if(v) playFeedbackVibration(true); })));
+  c.appendChild(snd);
 
-  // --- Som e vibração ---
-  c.appendChild(h(`<section class="block"><h3>Som e vibração</h3></section>`));
-  const soundToggle = h(`<button type="button" class="weak-toggle"><span class="check">✓</span><span>Sons ao responder</span></button>`);
-  if(settings.sound) soundToggle.classList.add('active');
-  soundToggle.onclick = async ()=>{
-    settings.sound = !settings.sound;
-    await saveSettings();
-    soundToggle.classList.toggle('active', settings.sound);
-    if(settings.sound) playFeedbackSound(true);
-  };
-  c.appendChild(soundToggle);
-  // volume dos sons (só faz diferença com os sons ligados)
-  const volRow = h(`<div class="diff-row vol-row"><span class="vol-l">🔈 Volume</span></div>`);
-  [['baixo','Baixo'],['medio','Médio'],['alto','Alto']].forEach(([id,label])=>{
-    const chip = h(`<button type="button" class="diff-chip">${label}</button>`);
-    if((settings.volume||'medio')===id) chip.classList.add('active');
-    chip.onclick = async ()=>{
-      settings.volume = id; if(!settings.sound){ settings.sound = true; soundToggle.classList.add('active'); }
-      await saveSettings();
-      volRow.querySelectorAll('.diff-chip').forEach(ch=>ch.classList.remove('active')); chip.classList.add('active');
-      playFeedbackSound(true);
-    };
-    volRow.appendChild(chip);
-  });
-  c.appendChild(volRow);
-
-  const vibToggle = h(`<button type="button" class="weak-toggle"><span class="check">✓</span><span>Vibração ao responder</span></button>`);
-  if(settings.vibration) vibToggle.classList.add('active');
-  vibToggle.onclick = async ()=>{
-    settings.vibration = !settings.vibration;
-    await saveSettings();
-    vibToggle.classList.toggle('active', settings.vibration);
-    if(settings.vibration) playFeedbackVibration(true);
-  };
-  c.appendChild(vibToggle);
-
-  // --- Aparência ---
-  c.appendChild(h(`<section class="block"><h3>Aparência</h3></section>`));
-  const themeRow = h(`<div class="diff-row"></div>`);
+  // ---------- Aparência ----------
+  const ap = stCard('🖌️', 'Aparência');
+  const th = h(`<div class="st-themes" role="radiogroup"></div>`);
   [['dark','🌙 Escuro'],['light','☀️ Claro']].forEach(([id,label])=>{
-    const chip = h(`<button type="button" class="diff-chip">${label}</button>`);
-    if(settings.theme===id) chip.classList.add('active');
-    chip.onclick = async ()=>{
-      settings.theme = id;
-      await saveSettings();
-      applyTheme(id);
-      themeRow.querySelectorAll('.diff-chip').forEach(ch=>ch.classList.remove('active'));
-      chip.classList.add('active');
-    };
-    themeRow.appendChild(chip);
+    const b = h(`<button type="button" role="radio" class="st-theme t-${id}" aria-checked="${settings.theme===id}">
+      <span class="st-mock"><i class="m-bar"></i><i class="m-card"></i><i class="m-row"></i><i class="m-row s"></i><i class="m-btn"></i></span><b>${label}</b></button>`);
+    b.onclick = async ()=>{ settings.theme = id; await saveNow(); applyTheme(id); th.querySelectorAll('button').forEach(x=> x.setAttribute('aria-checked', x===b)); refreshSum(); };
+    th.appendChild(b);
   });
-  c.appendChild(themeRow);
+  ap.appendChild(th);
+  c.appendChild(ap);
 
-  // --- Acessibilidade ---
-  c.appendChild(h(`<section class="block"><h3>Leitura e acessibilidade</h3></section>`));
-  c.appendChild(h(`<p style="color:var(--ink-soft); font-size:12.5px; margin:-6px 0 8px;">Tamanho do texto das questões e explicações</p>`));
-  const scaleRow = h(`<div class="diff-row"></div>`);
-  [['normal','A'],['grande','A+'],['enorme','A++']].forEach(([id,label],i)=>{
-    const chip = h(`<button type="button" class="diff-chip" style="font-size:${13+i*3}px" aria-label="Texto ${id}">${label}</button>`);
-    if((settings.textScale||'normal')===id) chip.classList.add('active');
-    chip.onclick = async ()=>{
-      settings.textScale = id; await saveSettings(); applyTextScale(id);
-      scaleRow.querySelectorAll('.diff-chip').forEach(ch=>ch.classList.remove('active')); chip.classList.add('active');
-    };
-    scaleRow.appendChild(chip);
-  });
-  c.appendChild(scaleRow);
+  // ---------- Leitura e acessibilidade ----------
+  const rd = stCard('👓', 'Leitura e acessibilidade');
+  rd.appendChild(h(`<div class="st-lbl">Tamanho do texto das questões e explicações</div>`));
+  const sample = h(`<div class="st-sample"><small>Exemplo</small><p>Quanto é <b>3/4 + 1/8</b>? Some as frações com o mesmo denominador.</p></div>`);
+  const paintSample = ()=>{ sample.querySelector('p').style.fontSize = `${15*(TEXT_SCALES[settings.textScale||'normal']||1)}px`; };
+  rd.appendChild(stSeg([['normal','A','style="font-size:14px"'],['grande','A+','style="font-size:17px"'],['enorme','A++','style="font-size:20px"']], settings.textScale||'normal', async id=>{
+    settings.textScale = id; await saveNow(); applyTextScale(id); paintSample();
+  }, 'big'));
+  rd.appendChild(sample); paintSample();
   if('speechSynthesis' in window){
-    const ttsToggle = h(`<button type="button" class="weak-toggle ${settings.tts!==false?'active':''}"><span class="check">✓</span><span>🔊 Botão de ouvir as questões em voz alta</span></button>`);
-    ttsToggle.onclick = async ()=>{
-      settings.tts = settings.tts===false; await saveSettings();
-      ttsToggle.classList.toggle('active', settings.tts);
-      if(settings.tts) speak('Pronto! Agora você pode ouvir as questões.');
-    };
-    c.appendChild(ttsToggle);
+    rd.appendChild(stRow('🗣️', '#33D2E3', 'Ouvir as questões', 'Mostra o botão 🔊 pra ler em voz alta', stSwitch(settings.tts!==false, 'Ouvir as questões em voz alta', async v=>{
+      settings.tts = v; await saveNow();
+      if(v) speak('Pronto! Agora você pode ouvir as questões.');
+    })));
   }
+  c.appendChild(rd);
 
-  // --- Dados ---
-  c.appendChild(h(`<section class="block"><h3>Dados</h3></section>`));
-  const exportBtn = h(`<button class="btn secondary" style="width:100%;margin-bottom:10px;">Exportar progresso</button>`);
+  // ---------- Dados ----------
+  const dt = stCard('💾', 'Seus dados', 'Tudo fica salvo só neste aparelho');
+  const bi = backupInfo();
+  const lastTxt = ()=>{ const l = backupInfo().last; return l ? `Última cópia: ${new Date(l).toLocaleDateString('pt-BR')}` : 'Você ainda não salvou nenhuma cópia'; };
+  const bkInfo = h(`<div class="st-backup ${bi.last && Date.now()-bi.last < 14*864e5 ? 'ok' : 'warn'}"><span>${bi.last ? '✅' : '⚠️'}</span><small>${lastTxt()}. Se limpar o navegador ou trocar de celular, só a cópia traz o progresso de volta.</small></div>`);
+  dt.appendChild(bkInfo);
+  const exportBtn = h(`<button type="button" class="st-act"><span>📤</span><b>Salvar uma cópia</b><small>Baixa um arquivo com todo o seu progresso</small></button>`);
   exportBtn.onclick = async ()=>{
     const ok = await exportProgressData();
-    exportBtn.textContent = ok ? 'Exportado! ✓' : 'Não foi possível exportar';
-    setTimeout(()=>{ exportBtn.textContent = 'Exportar progresso'; }, 2500);
+    exportBtn.querySelector('b').textContent = ok ? 'Cópia salva! ✓' : 'Não foi possível salvar';
+    if(ok){ bkInfo.className = 'st-backup ok'; bkInfo.querySelector('span').textContent = '✅'; bkInfo.querySelector('small').textContent = `${lastTxt()}. Guarde o arquivo num lugar seguro.`; }
+    setTimeout(()=>{ exportBtn.querySelector('b').textContent = 'Salvar uma cópia'; }, 2500);
   };
-  c.appendChild(exportBtn);
-
-  const importInput = h(`<input type="file" accept="application/json,.json" style="display:none">`);
-  c.appendChild(importInput);
-  const importBtn = h(`<button class="btn secondary" style="width:100%;margin-bottom:10px;">Importar progresso</button>`);
+  const importInput = h(`<input type="file" accept="application/json,.json" hidden>`);
+  const importBtn = h(`<button type="button" class="st-act"><span>📥</span><b>Restaurar uma cópia</b><small>Abre um arquivo salvo antes</small></button>`);
   const importMsgBox = h(`<div class="authErrorBox"></div>`);
   importBtn.onclick = ()=> importInput.click();
   importInput.onchange = async ()=>{
     const file = importInput.files[0];
     importInput.value = '';
     if(!file) return;
-    const ok = await showConfirm({icon:'📥', title:'Importar progresso?', message:'Isso vai substituir seu progresso, histórico e configurações atuais pelos dados desse arquivo.', ok:'Importar', cancel:'Cancelar', danger:true});
+    const ok = await showConfirm({icon:'📥', title:'Restaurar a cópia?', message:'Isso vai substituir seu progresso, histórico e configurações atuais pelos dados desse arquivo.', ok:'Restaurar', cancel:'Cancelar', danger:true});
     if(!ok) return;
     const res = await importProgressData(file);
-    if(!res.ok){
-      importMsgBox.innerHTML = `<div class="auth-error">${res.error}</div>`;
-    } else {
-      importMsgBox.innerHTML = `<div class="auth-error" style="color:var(--pine);border-color:rgba(51,210,227,.3);background:rgba(51,210,227,.08);">Progresso importado! Atualizando…</div>`;
+    if(!res.ok){ stMsg(importMsgBox, false, res.error); }
+    else {
+      stMsg(importMsgBox, true, 'Progresso restaurado! Atualizando…');
       setTimeout(()=>{ if(state.screen==='settings') go('profile'); }, 900); // só se a pessoa ainda estiver aqui
     }
   };
-  c.appendChild(importBtn);
-  c.appendChild(importMsgBox);
+  const acts = h(`<div class="st-acts"></div>`);
+  acts.appendChild(exportBtn); acts.appendChild(importBtn);
+  dt.appendChild(acts); dt.appendChild(importInput); dt.appendChild(importMsgBox);
+  c.appendChild(dt);
 
-  const resetBtn = h(`<button class="btn secondary" style="width:100%; border-color:rgba(255,92,122,.3); color:var(--coral-deep, #FF5C7A);">Resetar progresso</button>`);
-  let confirmingReset = false;
+  // ---------- Zona de perigo ----------
+  const dz = h(`<section class="st-card st-danger"><div class="st-card-h"><span class="st-card-ico">🧨</span><div><b>Começar do zero</b><small>Apaga questões, histórico, XP, conquistas e trilha desta conta. Seu nome, senha, avatar e configurações continuam.</small></div></div></section>`);
+  const resetBtn = h(`<button type="button" class="st-reset">Apagar meu progresso</button>`);
   resetBtn.onclick = async ()=>{
-    if(!confirmingReset){
-      confirmingReset = true;
-      resetBtn.textContent = 'Tem certeza? Toque de novo pra confirmar';
-      return;
-    }
+    const ok = await showConfirm({icon:'🧨', title:'Apagar todo o progresso?', message:'Isso não dá pra desfazer. Se quiser guardar, salve uma cópia antes.', ok:'Apagar tudo', cancel:'Cancelar', danger:true});
+    if(!ok) return;
     await resetCurrentUserProgress();
-    resetBtn.textContent = 'Progresso resetado ✓';
+    resetBtn.textContent = 'Progresso apagado ✓';
     resetBtn.disabled = true;
   };
-  c.appendChild(resetBtn);
+  dz.appendChild(resetBtn);
+  c.appendChild(dz);
+  c.appendChild(h(`<p class="pf-foot">🎬 Matemática Show · as mudanças são salvas na hora</p>`));
 
   wrap.appendChild(c);
   return wrap;

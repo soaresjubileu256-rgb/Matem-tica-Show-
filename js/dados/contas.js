@@ -263,10 +263,12 @@ async function importProgressData(file){
 /* apaga progresso/histórico/erros da conta logada — a conta em si (nome/senha) continua existindo */
 async function resetCurrentUserProgress(){
   const uid = currentUserId();
+  const keepAvatar = (()=>{ try{ return loadGame().avatar || null; }catch(e){ return null; } })(); // o avatar não é progresso: continua
   [PROGRESS_KEY_BASE, HISTORY_KEY_BASE, ERRORS_KEY_BASE, GAME_KEY_BASE].forEach(base=>{
     try{ localStorage.removeItem(`${base}:${uid}`); }catch(e){}
   });
   gameCache = null;
+  if(keepAvatar){ const g = loadGame(); g.avatar = keepAvatar; saveGame(); }
   progressCache = {}; progressCacheUid = uid;
   historyCache = []; historyCacheUid = uid;
   errorsCache = []; errorsCacheUid = uid;

@@ -10,6 +10,9 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
+  {v:13, date:'2026-10-05', title:'Configurações de cara nova', items:[
+    {ico:'⚙️', t:'Configurações', d:'Cartões com chaves de liga/desliga, prévia do tema e do tamanho do texto, nível escolar em cartões e a data da sua última cópia de segurança.', go:'settings'},
+  ]},
   {v:12, date:'2026-10-05', title:'Perfil de cara nova e avatar', items:[
     {ico:'📷', t:'Sua foto ou um avatar', d:'No Perfil, toque na sua foto: tire uma foto, escolha uma da galeria ou use um bichinho ou símbolo com a cor que quiser. Aparece também no Início e na tela de entrada.', go:'profile'},
     {ico:'👤', t:'Perfil', d:'Nível e XP, seus números, atalhos pra conquistas e certificados e as medalhas recentes.', go:'profile'},
