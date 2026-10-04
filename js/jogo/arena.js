@@ -50,62 +50,159 @@ function withSeed(seed, fn){
 /* =========================================================
    TELA DA ARENA
    ========================================================= */
+/* patente da Arena conforme a fração de estrelas conquistadas */
+const ARENA_RANKS = [
+  {f:0,   ico:'🌱', name:'Estreante'},
+  {f:.05, ico:'🥉', name:'Desafiante'},
+  {f:.2,  ico:'🥈', name:'Competidor'},
+  {f:.4,  ico:'🥇', name:'Craque'},
+  {f:.65, ico:'🏆', name:'Campeão'},
+  {f:.9,  ico:'👑', name:'Lenda da Arena'},
+];
+function arenaRank(stars, total){
+  const need = r=> Math.ceil(r.f * total);
+  let i = 0; ARENA_RANKS.forEach((r,k)=>{ if(stars >= need(r)) i = k; });
+  const next = ARENA_RANKS[i+1];
+  return {i, cur:ARENA_RANKS[i], next, toNext: next ? need(next) - stars : 0};
+}
+/* próxima fase sugerida: continua um assunto começado; senão o primeiro do nível da pessoa */
+function arenaNextPhase(){
+  const lvl = dailyDefaultTrack()==='em' ? 'em' : 'fund';
+  const order = [...levelIds(lvl), ...levelIds(lvl==='em'?'fund':'em')].filter(id=> SUBJECTS.some(s=>s.id===id));
+  const nextD = id=> ARENA_DIFFS.find(d=> arenaUnlocked(id,d) && !arenaStars(id,d));
+  const got = id=> ARENA_DIFFS.reduce((x,d)=> x + arenaStars(id,d), 0);
+  let id = order.find(x=> got(x) > 0 && nextD(x)) || order.find(x=> nextD(x));
+  if(!id){ // tudo jogado: melhora a fase com menos estrelas
+    let best = null;
+    order.forEach(x=> ARENA_DIFFS.forEach(d=>{ const st = arenaStars(x,d); if(st<3 && (!best || st<best.st)) best = {id:x, d, st}; }));
+    return best ? {s:SUBJECTS.find(q=>q.id===best.id), d:best.d, improve:true} : null;
+  }
+  return {s:SUBJECTS.find(q=>q.id===id), d:nextD(id), improve:false};
+}
+
 function arenaScreen(){
   const wrap = document.createElement('div');
   wrap.appendChild(topbar('⚔️ Arena', true, ()=>go('home')));
-  const c = h(`<div class="content"></div>`);
+  const c = h(`<div class="content ar-screen"></div>`);
   wrap.appendChild(c);
   const g = loadGame(), a = arenaData();
   const total = SUBJECTS.length * 9, stars = arenaTotalStars();
   const quizBest = Math.max(0, ...Object.values(g.quizBest||{}));
+  const fullSubj = SUBJECTS.filter(s=> ARENA_DIFFS.every(d=> arenaStars(s.id,d)===3)).length;
+  const rk = arenaRank(stars, total), pct = total ? stars/total : 0;
+  const R = 34, C = 2*Math.PI*R;
+
+  // topo: anel de estrelas + patente
   c.appendChild(h(`<div class="ar-hero">
-    <div class="ar-hero-t"><h2>Arena</h2><p>Jogue contra o relógio, ganhe estrelas e dispute com os amigos. Tudo aqui soma no seu XP, na ofensiva e no progresso.</p></div>
+    <div class="ar-hero-top">
+      <div class="ar-sring" aria-label="${stars} de ${total} estrelas">
+        <svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="${R}" class="bg"/><circle cx="40" cy="40" r="${R}" class="fg" ${stars?'':'style="opacity:0"'} stroke-dasharray="${C}" stroke-dashoffset="${C*(1-pct)}"/></svg>
+        <div class="ar-sring-in"><b>${stars}</b><small>⭐</small></div>
+      </div>
+      <div class="ar-hero-t">
+        <small class="ar-kicker">ARENA DO SHOW</small>
+        <h2>${rk.cur.ico} ${rk.cur.name}</h2>
+        <p>${rk.next ? `Faltam <b>${rk.toNext} estrela${rk.toNext===1?'':'s'}</b> para ${rk.next.ico} ${rk.next.name}` : 'Você chegou ao topo da Arena! 🎉'}</p>
+        <div class="ar-ranks">${ARENA_RANKS.map((r,i)=>`<i class="${i<=rk.i?'on':''} ${i===rk.i?'cur':''}" title="${r.name}">${r.ico}</i>`).join('')}</div>
+      </div>
+    </div>
     <div class="ar-hero-stats">
-      <div><b>⭐ ${stars}</b><span>de ${total} estrelas</span></div>
-      <div><b>⚡ ${g.boltBest||0}</b><span>recorde relâmpago</span></div>
-      <div><b>🎤 ${quizBest.toLocaleString('pt-BR')}</b><span>recorde do quiz</span></div>
+      <div><b>⭐ ${stars}<em>/${total}</em></b><span>estrelas</span></div>
+      <div><b>🏅 ${fullSubj}</b><span>assunto${fullSubj===1?'':'s'} completo${fullSubj===1?'':'s'}</span></div>
+      <div><b>🔥 ${dailyStreak()}</b><span>dias de desafio</span></div>
     </div></div>`));
 
   // desafio do dia
-  const k = isoDay(), done = a.daily[k];
-  const daily = h(`<button type="button" class="alert-banner ${done?'':'purple'} ar-daily">
-    <span class="sym">📅</span>
-    <span class="txt"><span class="title">Desafio do Dia #${dailyNumber(k)}</span><span class="sub">${done ? `${done.marks} · ${done.ok}/${done.n} em ${mmssA(done.secs)}` : `${DAILY_N} perguntas do seu nível · +${DAILY_BONUS_XP} XP${dailyStreak() ? ` · 🔥 ${dailyStreak()} dias` : ''}`}</span></span>
-    <span class="chev">${done ? '✓' : '›'}</span></button>`);
-  daily.onclick = ()=> startDaily();
+  const k = isoDay(), done = a.daily[k], streak = dailyStreak();
+  const daily = h(`<div class="ar-daily ${done?'done':''}">
+    <div class="ar-daily-h">
+      <span class="ar-daily-cal"><small>${['DOM','SEG','TER','QUA','QUI','SEX','SÁB'][new Date().getDay()]}</small><b>${new Date().getDate()}</b></span>
+      <div class="ar-daily-t"><small>DESAFIO DO DIA #${dailyNumber(k)}</small><b>${done ? `Feito! ${done.ok}/${done.n} em ${mmssA(done.secs)}` : `${DAILY_N} perguntas, as mesmas pra todo mundo`}</b>
+        <span>${done ? escHTML(done.marks||'') : `+${DAILY_BONUS_XP} XP${streak ? ` · 🔥 ${streak} dia${streak===1?'':'s'} seguido${streak===1?'':'s'}` : ' · comece uma sequência!'}`}</span></div>
+    </div>
+    <div class="ar-daily-f"></div>
+  </div>`);
+  daily.querySelector('.ar-daily-h').after(dailyWeekStrip());
+  const df = daily.querySelector('.ar-daily-f');
+  if(done){
+    df.appendChild(dailyCountdown('Próximo desafio em '));
+    const b = h(`<button type="button" class="ar-daily-btn ghost">Ver resultado ›</button>`); b.onclick = ()=> startDaily(); df.appendChild(b);
+  } else {
+    df.appendChild(dailyCountdown('Termina em '));
+    const b = h(`<button type="button" class="ar-daily-btn">Jogar agora ▶</button>`); b.onclick = ()=> startDaily(); df.appendChild(b);
+  }
   c.appendChild(daily);
 
-  // modos
+  // continuar: próxima fase sugerida
+  const nx = arenaNextPhase();
+  if(nx){
+    const st = arenaStars(nx.s.id, nx.d);
+    const cont = h(`<button type="button" class="ar-next">
+      <span class="ar-sym">${nx.s.sym}</span>
+      <span class="ar-next-t"><small>${nx.improve ? 'BUSQUE AS 3 ESTRELAS' : 'PRÓXIMA FASE'}</small><b>${nx.s.name}</b><span class="ch-diff d-${nx.d}">${ARENA_DIFF_NAME[nx.d]}</span>${nx.improve ? ` <span class="ar-st">${[0,1,2].map(i=>`<i class="${i<st?'on':''}">★</i>`).join('')}</span>` : ''}</span>
+      <span class="ar-next-go">▶</span></button>`);
+    cont.onclick = ()=> startArenaPhase(nx.s.id, nx.d);
+    c.appendChild(cont);
+  }
+
+  // modos com recordes
   c.appendChild(h(`<h3 class="ar-label">Modos de jogo</h3>`));
-  const grid = h(`<div class="quick-grid ar-modes" style="padding:0"></div>`);
+  const lastExam = a.exams.length ? a.exams[a.exams.length-1] : null;
+  const grid = h(`<div class="ar-modes"></div>`);
   [
-    {sym:'⚡', cls:'ar-bolt', label:'Relâmpago', sub:'60 segundos', go:()=>go('lightning')},
-    {sym:'🎤', cls:'ar-quiz', label:'Quiz do Show', sub:'10 perguntas', go:()=>go('quizSetup')},
-    {sym:'📝', cls:'ar-exam', label:'Simulado', sub:'nota de 0 a 10', go:()=>go('examSetup')},
-    {sym:'⚔️', cls:'ar-duel', label:'Duelo a dois', sub:'no mesmo celular', go:()=>go('duel')},
+    {sym:'⚡', cls:'ar-bolt', label:'Relâmpago', sub:'Quantas contas em 60s?', rec: g.boltBest ? `🏆 ${g.boltBest} acertos` : 'sem recorde ainda', go:()=>go('lightning')},
+    {sym:'🎤', cls:'ar-quiz', label:'Quiz do Show', sub:'10 perguntas com ajudas', rec: quizBest ? `🏆 ${quizBest.toLocaleString('pt-BR')} pts` : 'sem recorde ainda', go:()=>go('quizSetup')},
+    {sym:'📝', cls:'ar-exam', label:'Simulado', sub:'Prova com nota de 0 a 10', rec: lastExam ? `última nota ${fmt(lastExam.grade)}` : 'nenhum feito ainda', go:()=>go('examSetup')},
+    {sym:'⚔️', cls:'ar-duel', label:'Duelo a dois', sub:'No mesmo celular', rec: g.duels ? `${g.duels} duelo${g.duels===1?'':'s'}` : 'chame um amigo', go:()=>go('duel')},
   ].forEach(m=>{
-    const t = h(`<button type="button" class="quick-tile ${m.cls}"><span class="sym">${m.sym}</span><span class="label">${m.label}</span><small class="ar-sub">${m.sub}</small></button>`);
+    const t = h(`<button type="button" class="ar-mode ${m.cls}"><span class="ar-mode-sym">${m.sym}</span><b>${m.label}</b><small>${m.sub}</small><span class="ar-mode-rec">${m.rec}</span></button>`);
     t.onclick = m.go; grid.appendChild(t);
   });
   c.appendChild(grid);
 
   // fases com estrelas
   c.appendChild(h(`<h3 class="ar-label">Fases da Arena</h3>`));
-  c.appendChild(h(`<p class="ar-muted" style="margin:-4px 0 10px">${ARENA_PHASE_Q} perguntas por fase · ${ARENA_LIVES} vidas · ${QUIZ_SECONDS}s por pergunta · acerte 5, 7 ou 9 para ganhar 1, 2 ou 3 estrelas</p>`));
+  c.appendChild(h(`<div class="ar-rules"><span>❓ ${ARENA_PHASE_Q} perguntas</span><span>❤️ ${ARENA_LIVES} vidas</span><span>⏱️ ${QUIZ_SECONDS}s cada</span><span>⭐ 5 · ⭐⭐ 7 · ⭐⭐⭐ 9 acertos</span></div>`));
+  const got = id=> ARENA_DIFFS.reduce((x,d)=> x + arenaStars(id,d), 0);
+  const FILTERS = [
+    {id:'all', name:'Todas', ids:()=> null},
+    {id:'fund', name:'📘 Fundamental', ids:()=> levelIds('fund')},
+    {id:'em', name:'🎓 Médio', ids:()=> levelIds('em')},
+    {id:'going', name:'Em andamento', ids:()=> SUBJECTS.filter(s=>{ const n = got(s.id); return n>0 && n<9; }).map(s=>s.id)},
+    {id:'full', name:'Completas', ids:()=> SUBJECTS.filter(s=> got(s.id)===9).map(s=>s.id)},
+  ];
+  const chips = h(`<div class="ex-chips small ar-filter" role="tablist"></div>`);
   const list = h(`<div class="ar-phases"></div>`);
-  subjectListGrouped(list, s=>{
-    const nextD = ARENA_DIFFS.find(d=> arenaUnlocked(s.id,d) && !arenaStars(s.id,d));
-    const got = ARENA_DIFFS.reduce((x,d)=> x + arenaStars(s.id,d), 0);
-    const row = h(`<div class="ar-subj ${got===9?'full':''}"><div class="ar-subj-h"><span class="ar-sym">${s.sym}</span><b>${s.name}</b><small>⭐ ${got}/9</small></div>
-      <div class="ar-diffs">${ARENA_DIFFS.map(d=>{
-        const un = arenaUnlocked(s.id,d), st = arenaStars(s.id,d);
-        return `<button type="button" class="ar-diff ${un?'':'locked'} ${d===nextD?'next':''}" data-d="${d}" ${un?'':'disabled aria-disabled="true"'} aria-label="${s.name} ${ARENA_DIFF_NAME[d]}${un?`, ${st} de 3 estrelas`:', bloqueada'}">
-          <span>${un?'':'🔒 '}${ARENA_DIFF_NAME[d]}</span><span class="ar-st">${[0,1,2].map(i=>`<i class="${i<st?'on':''}">★</i>`).join('')}</span></button>`;
-      }).join('')}</div></div>`);
-    row.querySelectorAll('.ar-diff').forEach(b=> b.onclick = ()=>{ if(arenaUnlocked(s.id, b.dataset.d)) startArenaPhase(s.id, b.dataset.d); });
-    return row;
+  const paint = ()=>{
+    const f = FILTERS.find(x=>x.id===(state.arenaFilter || dailyDefaultTrack())) || FILTERS[0];
+    chips.querySelectorAll('.ex-chip').forEach(b=> b.classList.toggle('on', b.dataset.f===f.id));
+    list.innerHTML = '';
+    const only = f.ids();
+    if(only && !only.some(id=> SUBJECTS.some(s=>s.id===id))){
+      list.appendChild(h(`<div class="ar-empty">${f.id==='full' ? '🏅 Nenhum assunto com as 9 estrelas ainda. Você consegue!' : '🎯 Nenhuma fase começada ainda. Escolha um assunto e jogue a primeira!'}</div>`));
+      return;
+    }
+    subjectListGrouped(list, s=>{
+      const nextD = ARENA_DIFFS.find(d=> arenaUnlocked(s.id,d) && !arenaStars(s.id,d));
+      const n = got(s.id);
+      const row = h(`<div class="ar-subj ${n===9?'full':''}"><div class="ar-subj-h"><span class="ar-sym">${s.sym}</span><div class="ar-subj-n"><b>${s.name}</b><span class="ar-bar"><i style="width:${n/9*100}%"></i></span></div><small>${n===9?'🏅 ':'⭐ '}${n}/9</small></div>
+        <div class="ar-diffs">${ARENA_DIFFS.map(d=>{
+          const un = arenaUnlocked(s.id,d), st = arenaStars(s.id,d);
+          return `<button type="button" class="ar-diff d-${d} ${un?'':'locked'} ${d===nextD?'next':''} ${st===3?'max':''}" data-d="${d}" ${un?'':'disabled aria-disabled="true"'} aria-label="${s.name} ${ARENA_DIFF_NAME[d]}${un?`, ${st} de 3 estrelas`:', bloqueada'}">
+            <span class="ar-dn">${un?'':'🔒 '}${ARENA_DIFF_NAME[d]}</span><span class="ar-st">${[0,1,2].map(i=>`<i class="${i<st?'on':''}">★</i>`).join('')}</span>${d===nextD?'<span class="ar-play">JOGAR</span>':''}</button>`;
+        }).join('')}</div></div>`);
+      row.querySelectorAll('.ar-diff').forEach(b=> b.onclick = ()=>{ if(arenaUnlocked(s.id, b.dataset.d)) startArenaPhase(s.id, b.dataset.d); });
+      return row;
+    }, only || undefined);
+  };
+  FILTERS.forEach(f=>{
+    const b = h(`<button type="button" class="ex-chip" data-f="${f.id}">${f.name}</button>`);
+    b.onclick = ()=>{ state.arenaFilter = f.id; paint(); };
+    chips.appendChild(b);
   });
+  c.appendChild(chips);
   c.appendChild(list);
+  paint();
   return wrap;
 }
 
