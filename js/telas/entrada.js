@@ -6,9 +6,24 @@
    ========================================================= */
 const LOGIN_MAX_TRIES = 5, LOGIN_WAIT_MS = 30000;
 const _loginFails = {}; // {userId: {n, until}}
-function avatarHTML(u, cls){
+/* cada conta ganha uma cor pela posição na lista do aparelho (até 8 contas, todas diferentes),
+   pra ficar fácil de achar a sua; sem posição, a cor sai do nome */
+const AV_GRADS = [
+  ['#4C7DFF','#B23FE0'], ['#FF6B6B','#FFB800'], ['#12B886','#33D2E3'], ['#F06595','#A77BFF'],
+  ['#FF922B','#F03E3E'], ['#3BC9DB','#4C6EF5'], ['#94D82D','#12B886'], ['#CC5DE8','#F783AC'],
+];
+function avatarColor(u, idx){
+  let n = idx;
+  if(!(n >= 0)){
+    const id = (u && (u.id||u.name)) || '';
+    n = 2166136261; for(const ch of id){ n ^= ch.codePointAt(0); n = Math.imul(n, 16777619) >>> 0; }
+  }
+  const [a,b] = AV_GRADS[n % AV_GRADS.length];
+  return `linear-gradient(135deg, ${a}, ${b})`;
+}
+function avatarHTML(u, cls, idx){
   const ini = u && u.name ? escHTML(u.name.trim().charAt(0).toUpperCase()) : '?';
-  return `<span class="${cls||'av'}">${ini}</span>`;
+  return `<span class="${cls||'av'}" style="background:${avatarColor(u, idx)}">${ini}</span>`;
 }
 /* lê o XP/ofensiva de uma conta sem precisar estar logado nela */
 function peekGame(uid){
@@ -35,8 +50,8 @@ function authScreen(mode, users){
   wrap.appendChild(card);
 
   function header(bubble, mood){
-    return `<div class="auth-hero">${mascotSVG(mood||'happy', 86)}<div class="auth-bubble">${bubble}</div></div>
-      <div class="auth-brandline"><img src="${LOGO_URI}" alt=""><span>Matemática Show</span></div>`;
+    return `<div class="auth-brand"><img src="${LOGO_URI}" alt=""><div><b>Matemática Show</b><small>Seu professor de matemática digital</small></div></div>
+      <div class="auth-hero">${mascotSVG(mood||'happy', 64)}<div class="auth-bubble">${bubble}</div></div>`;
   }
   function showError(msg){
     const box = card.querySelector('.authErrorBox');
@@ -56,18 +71,26 @@ function authScreen(mode, users){
   function wireEnter(fn){
     card.querySelectorAll('input').forEach(inp=> inp.addEventListener('keydown', e=>{ if(e.key==='Enter') fn(); }));
   }
-  const passField = (cls, label, ac)=> `<div class="auth-field"><label>${label}</label><div class="pass-wrap"><input type="password" class="${cls}" placeholder="••••••" autocomplete="${ac}"><button type="button" class="pass-toggle" aria-label="Mostrar senha">👁</button></div></div>`;
+  const passField = (cls, label, ac, ph)=> `<div class="auth-field"><label>${label}</label><div class="pass-wrap"><input type="password" class="${cls}" placeholder="${ph}" autocomplete="${ac}"><button type="button" class="pass-toggle" aria-label="Mostrar senha">👁</button></div><div class="caps-note" hidden>⇪ O Caps Lock está ligado</div></div>`;
+  /* avisa quando o Caps Lock está ligado (causa comum de "senha incorreta") */
+  function wireCaps(){
+    card.querySelectorAll('.pass-wrap input').forEach(inp=>{
+      const note = inp.closest('.auth-field').querySelector('.caps-note');
+      const check = e=>{ if(e.getModifierState) note.hidden = !e.getModifierState('CapsLock'); };
+      inp.addEventListener('keydown', check); inp.addEventListener('keyup', check);
+      inp.addEventListener('blur', ()=>{ note.hidden = true; });
+    });
+  }
 
   /* ---- escolher conta ---- */
   function paintPicker(){
-    card.innerHTML = header('Oi! Quem vai jogar hoje? 🎬') + `<h2 class="auth-title">Escolha sua conta</h2><div class="acc-grid"></div>
-      <button type="button" class="auth-link other-acc">Minha conta não está aqui</button>
-      <div class="auth-divider"><span>ou</span></div>
-      <button type="button" class="show-btn ghost new-acc">＋ Criar nova conta</button>`;
-    const grid = card.querySelector('.acc-grid');
-    users.forEach(u=>{
+    card.innerHTML = header('Oi! Quem vai jogar hoje? 🎬') + `<div class="auth-label">Toque na sua conta</div><div class="acc-list"></div>
+      <button type="button" class="show-btn ghost new-acc">＋ Criar nova conta</button>
+      <div class="auth-row center"><button type="button" class="auth-link other-acc">Minha conta não está aqui</button></div>`;
+    const grid = card.querySelector('.acc-list');
+    users.forEach((u,i)=>{
       const info = peekGame(u.id);
-      const b = h(`<button type="button" class="acc-card">${avatarHTML(u,'acc-av')}<span class="acc-name"></span><span class="acc-meta">Nível ${info.level}${info.streak?` · 🔥 ${info.streak}`:''}</span></button>`);
+      const b = h(`<button type="button" class="acc-card">${avatarHTML(u,'acc-av',i)}<span class="acc-txt"><span class="acc-name"></span><span class="acc-meta">⭐ Nível ${info.level}${info.streak?` · 🔥 ${info.streak} dia${info.streak===1?'':'s'}`:''}</span></span><span class="acc-chev" aria-hidden="true">›</span></button>`);
       b.querySelector('.acc-name').textContent = u.name;
       b.onclick = ()=>{ selected = u; typedName = false; paintLogin(); };
       grid.appendChild(b);
@@ -80,13 +103,13 @@ function authScreen(mode, users){
   function paintLogin(){
     const who = selected;
     card.innerHTML = header(who ? `Que bom te ver de novo, <b>${escHTML(who.name.split(' ')[0])}</b>! 👋` : 'Digite seu nome e sua senha pra entrar.') + `
-      ${who ? `<div class="login-who">${avatarHTML(who,'who-av')}<div class="who-name"></div></div>` : `<div class="auth-field"><label>Nome</label><input type="text" class="authName" placeholder="Seu nome" autocomplete="username"></div>`}
+      ${who ? `<div class="login-who">${avatarHTML(who,'who-av',users.findIndex(x=>x.id===who.id))}<div class="who-txt"><div class="who-name"></div><div class="who-meta">⭐ Nível ${peekGame(who.id).level}</div></div><button type="button" class="who-switch back">Trocar</button></div>` : `<div class="auth-field"><label>Nome</label><input type="text" class="authName" placeholder="Seu nome" autocomplete="username"></div>`}
       <div class="authErrorBox"></div>
-      ${passField('authPass','Senha','current-password')}
+      ${passField('authPass','Senha','current-password','Digite sua senha')}
       <button type="button" class="show-btn auth-go">Entrar ▶</button>
-      <div class="auth-row"><button type="button" class="auth-link forgot">Esqueci minha senha</button>${users.length ? `<button type="button" class="auth-link back">‹ Trocar de conta</button>` : `<button type="button" class="auth-link new-acc">Criar conta</button>`}</div>`;
+      <div class="auth-row${who ? ' center' : ''}"><button type="button" class="auth-link forgot">Esqueci minha senha</button>${who ? '' : users.length ? `<button type="button" class="auth-link back">‹ Voltar</button>` : `<button type="button" class="auth-link new-acc">Criar conta</button>`}</div>`;
     if(who) card.querySelector('.who-name').textContent = who.name;
-    wirePassToggles();
+    wirePassToggles(); wireCaps();
     const back = card.querySelector('.back'); if(back) back.onclick = paintPicker;
     const na = card.querySelector('.new-acc'); if(na) na.onclick = paintRegister;
     card.querySelector('.forgot').onclick = forgot;
@@ -149,12 +172,11 @@ function authScreen(mode, users){
 
   /* ---- criar conta ---- */
   function paintRegister(){
-    card.innerHTML = header(users.length ? 'Uma conta nova? Bora! 😄' : 'Bem-vindo ao <b>Matemática Show</b>! Vamos criar sua conta? 🎤', 'joy') + `
-      <h2 class="auth-title">Criar conta</h2>
+    card.innerHTML = header(users.length ? 'Uma conta nova? Bora! 😄 Leva 1 minutinho.' : 'Bem-vindo! Vamos criar sua conta? Leva 1 minutinho. 🎤', 'joy') + `
       <div class="authErrorBox"></div>
       <div class="auth-field"><label>Seu nome</label><input type="text" class="authName" placeholder="Como quer ser chamado?" autocomplete="username" maxlength="30"></div>
-      ${passField('authPass','Crie uma senha','new-password')}
-      ${passField('authPass2','Repita a senha','new-password')}
+      ${passField('authPass','Crie uma senha','new-password','Pelo menos 6 letras e números')}
+      ${passField('authPass2','Repita a senha','new-password','Digite a senha de novo')}
       <button type="button" class="auth-link hint-toggle">＋ Adicionar uma dica de senha (opcional)</button>
       <div class="auth-field hint-field" style="display:none"><label>Dica da senha <small>(ajuda se você esquecer)</small></label><input type="text" class="authHint" placeholder="Ex.: meu bicho favorito + número da camisa" maxlength="60"></div>
       <button type="button" class="show-btn auth-go">Criar conta e começar ▶</button>
@@ -163,7 +185,19 @@ function authScreen(mode, users){
     const passInput = card.querySelector('.authPass');
     passInput.closest('.auth-field').appendChild(attachStrengthMeter(passInput, ()=> card.querySelector('.authName').value));
     card.querySelector('.authName').addEventListener('input', ()=>{ const m = card.querySelector('.pw-meter'); if(m && m.refresh) m.refresh(); });
-    wirePassToggles();
+    wirePassToggles(); wireCaps();
+    // mostra na hora se a senha repetida bate com a primeira
+    const pass2 = card.querySelector('.authPass2');
+    const match = h(`<div class="pw-match" hidden></div>`);
+    pass2.closest('.auth-field').appendChild(match);
+    const checkMatch = ()=>{
+      const a = passInput.value, b = pass2.value;
+      match.hidden = !b;
+      const ok = a === b;
+      match.className = 'pw-match ' + (ok ? 'ok' : 'no');
+      match.textContent = ok ? '✓ As senhas são iguais' : (a.startsWith(b) ? 'Continue digitando…' : '✗ As senhas ainda não são iguais');
+    };
+    pass2.addEventListener('input', checkMatch); passInput.addEventListener('input', ()=>{ if(pass2.value) checkMatch(); });
     // a dica é opcional: fica escondida atrás de um link pra deixar o formulário mais curto
     card.querySelector('.hint-toggle').onclick = e=>{ e.currentTarget.remove(); const f = card.querySelector('.hint-field'); f.style.display = ''; f.querySelector('input').focus(); };
     const back = card.querySelector('.back'); if(back) back.onclick = paintPicker;
