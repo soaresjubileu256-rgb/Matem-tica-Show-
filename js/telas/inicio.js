@@ -2,12 +2,36 @@
    TELA INÍCIO
    Cartão do jogador, avisos do dia (Desafio do Dia, revisão, plano), jogos e atalhos.
    ========================================================= */
+/* dicas e curiosidades do Pi (uma por dia, em rodízio) */
+const PI_TIPS = [
+  ['Truque do 9 na tabuada', 'Em 9 × 7, abaixe o 7º dedo: ficam 6 dedos de um lado e 3 do outro. Resposta: 63!'],
+  ['Divisível por 3?', 'Some os algarismos: se a soma for múltiplo de 3, o número também é. Ex.: 471 → 4+7+1 = 12 ✓'],
+  ['Porcentagem de cabeça', '10% é só andar uma casa com a vírgula. 10% de 250 = 25, e 5% é a metade disso: 12,5.'],
+  ['Multiplicar por 5', 'Multiplique por 10 e divida por 2. Ex.: 48 × 5 = 480 ÷ 2 = 240.'],
+  ['O número π', 'π ≈ 3,14159… é a razão entre o comprimento e o diâmetro de qualquer círculo. Ele nunca termina!'],
+  ['Frações equivalentes', '1/2, 2/4 e 50/100 valem a mesma coisa: multiplique ou divida em cima e embaixo pelo mesmo número.'],
+  ['Quadrados terminados em 5', '35² = 3 × 4 = 12, e põe 25 no final: 1225. Funciona com 15, 25, 45…'],
+  ['Ordem das operações', 'Primeiro parênteses, depois potências, depois × e ÷, e por último + e −.'],
+  ['Ângulos do triângulo', 'Em qualquer triângulo, os três ângulos somam sempre 180°.'],
+  ['Números primos', 'Primo só se divide por 1 e por ele mesmo: 2, 3, 5, 7, 11, 13… O 2 é o único primo par!'],
+  ['Multiplicar por 11', 'Com 2 algarismos, some os dois e ponha no meio: 53 × 11 → 5 (5+3) 3 = 583.'],
+  ['Regra de sinais', 'Sinais iguais dão +, sinais diferentes dão −. (−3) × (−4) = +12.'],
+  ['Média', 'Some tudo e divida pela quantidade. A média de 6, 8 e 10 é 24 ÷ 3 = 8.'],
+  ['Área do retângulo', 'Base × altura. Um quarto de 4 m por 3 m tem 12 m² de área.'],
+  ['Equação é balança', 'O que você faz de um lado do = faz do outro também, e ela continua equilibrada.'],
+  ['Revise os erros', 'Rever uma questão errada uns dias depois ajuda a guardar de vez. Use o Caderno de erros!'],
+  ['Zero no denominador', 'Não existe divisão por zero: nenhum número vezes 0 dá 5, por exemplo.'],
+  ['Potência de 10', '10³ = 1000: o expoente diz quantos zeros vêm depois do 1.'],
+  ['Estimar antes', 'Arredonde antes de calcular: 49 × 21 é perto de 50 × 20 = 1000. Ajuda a conferir a resposta.'],
+  ['Pouquinho todo dia', '10 minutos por dia ensinam mais que 2 horas de uma vez só. Por isso a ofensiva 🔥 conta!'],
+];
 /* ---------------- HOME ---------------- */
 function homeScreen(){
   const wrap = document.createElement('div');
   const bar = topbar();
-  const initial = (currentUser && currentUser.name) ? currentUser.name.trim().charAt(0).toUpperCase() : '?';
-  const profileBtn = h(`<button class="auth-logout profile-btn-avatar" title="Perfil" aria-label="Abrir meu perfil">${escHTML(initial)}</button>`);
+  const myAv = avatarOf(currentUser);
+  const profileBtn = h(`<button class="auth-logout profile-btn-avatar ${myAv ? 'av-custom' : ''} ${avatarImg(myAv) ? 'is-img' : myAv && myAv.emo ? 'is-emo' : ''}" title="Perfil" aria-label="Abrir meu perfil">${avatarFace(currentUser)}</button>`);
+  if(myAv) profileBtn.style.setProperty('--avbg', avatarColor(currentUser));
   profileBtn.onclick = ()=> go('profile');
   const helpBtn = h(`<button class="auth-logout tut-help-btn" title="Como usar" aria-label="Como usar o app">?</button>`);
   helpBtn.onclick = ()=> go('help');
@@ -17,24 +41,29 @@ function homeScreen(){
   wrap.appendChild(bar);
   const firstName = currentUser ? currentUser.name.split(' ')[0] : '';
   const streakNow = gameStreakNow();
+  const hr = new Date().getHours();
+  const saud = hr<5 ? 'Boa noite' : hr<12 ? 'Bom dia' : hr<18 ? 'Boa tarde' : 'Boa noite';
+  const who = firstName ? `, ${escHTML(firstName)}` : '';
   const hello = streakNow>0 && loadGame().lastDay!==dayKey()
-    ? `Olá${firstName? ', '+escHTML(firstName) : ''}! Jogue uma fase hoje pra não perder sua ofensiva de ${streakNow} dia${streakNow===1?'':'s'}! 🔥`
-    : pick([`Olá${firstName? ', '+escHTML(firstName) : ''}! Bora subir de nível hoje? 🚀`, `E aí${firstName? ', '+escHTML(firstName) : ''}! O palco é seu hoje! 🎤`, `Oi${firstName? ', '+escHTML(firstName) : ''}! Luzes, câmera... show! 🎬`]);
+    ? `${saud}${who}! Jogue uma fase hoje pra não perder sua ofensiva de ${streakNow} dia${streakNow===1?'':'s'}! 🔥`
+    : `${saud}${who}! ` + pick(['Bora subir de nível hoje? 🚀', 'O palco é seu hoje! 🎤', 'Luzes, câmera... show! 🎬', 'Que tal uma fase da Trilha? ⭐']);
   wrap.appendChild(mascotBubble(hello, 'happy'));
   showStreakNote();
   wrap.appendChild(playerCard());
   wrap.appendChild(pathHero());
 
-  // meta diária de questões — editável direto aqui, sem precisar ir em Configurações
+  // meta diária de questões — anel com o progresso de hoje e os números do dia; editável aqui mesmo
+  const GR = 30, GC = 2*Math.PI*GR;
   const goalRow = h(`
-    <div class="mastery-row" style="display:none; margin:0 20px 16px;">
-      <div class="top">
-        <span class="name">🎯 Meta de hoje</span>
-        <span class="pct goal-num">0/0</span>
+    <div class="hd-goal" style="display:none">
+      <div class="hd-ring"><svg viewBox="0 0 72 72"><circle cx="36" cy="36" r="${GR}" class="bg"/><circle cx="36" cy="36" r="${GR}" class="fg" stroke-dasharray="${GC}" stroke-dashoffset="${GC}"/></svg><div class="hd-ring-in"><b class="goal-num">0</b><small class="goal-of">de 0</small></div></div>
+      <div class="hd-goal-t">
+        <div class="name">🎯 Meta de hoje</div>
+        <small class="hd-left"></small>
+        <div class="hd-chips"><span class="c-ok">✅ 0 certas</span><span class="c-acc">🎯 –</span><span class="c-combo">🔥 0</span></div>
       </div>
-      <div class="bar-track"><div class="bar-fill goal-bar" style="width:0%"></div></div>
     </div>`);
-  const goalEditBtn = h(`<button type="button" class="link-btn" style="margin-top:8px; font-size:11.5px;">Mudar meta</button>`);
+  const goalEditBtn = h(`<button type="button" class="link-btn hd-edit">Mudar meta</button>`);
   const goalEditRow = h(`<div class="diff-row" style="display:none; margin-top:8px; flex-wrap:wrap;"></div>`);
   [5,10,15,20,30].forEach(n=>{
     const chip = h(`<button type="button" class="diff-chip" style="flex:1 1 auto; padding:8px 14px; font-size:12.5px;">${n}</button>`);
@@ -52,20 +81,31 @@ function homeScreen(){
     goalEditRow.style.display = open ? 'flex' : 'none';
     goalEditBtn.textContent = open ? 'Fechar' : 'Mudar meta';
   };
-  goalRow.appendChild(goalEditBtn);
-  goalRow.appendChild(goalEditRow);
-  wrap.appendChild(goalRow);
+  goalRow.querySelector('.hd-goal-t').appendChild(goalEditBtn);
+  const goalWrap = h(`<div class="hd-goal-wrap"></div>`);
+  goalWrap.appendChild(goalRow); goalWrap.appendChild(goalEditRow);
+  wrap.appendChild(goalWrap);
   wrap.appendChild(missionsCard());
   function refreshGoal(){
     Promise.all([loadHistory(), loadSettings()]).then(([hist, settings])=>{
       const todayStr = new Date().toDateString();
-      const doneToday = hist.filter(e=> new Date(e.ts).toDateString()===todayStr).length;
+      const today = hist.filter(e=> new Date(e.ts).toDateString()===todayStr);
+      const doneToday = today.length, okToday = today.filter(e=>e.correct).length;
       const goal = settings.dailyGoal || 10;
       const pct = Math.max(0, Math.min(100, Math.round(doneToday/goal*100)));
+      const done = doneToday>=goal;
       goalRow.style.display = '';
-      goalRow.querySelector('.goal-num').textContent = `${doneToday}/${goal}`;
-      goalRow.querySelector('.goal-bar').style.width = pct+'%';
-      goalRow.querySelector('.name').textContent = doneToday>=goal ? '🎉 Meta de hoje concluída!' : '🎯 Meta de hoje';
+      goalRow.classList.toggle('done', done);
+      goalRow.querySelector('.goal-num').textContent = doneToday;
+      goalRow.querySelector('.goal-of').textContent = `de ${goal}`;
+      goalRow.querySelector('.fg').setAttribute('stroke-dashoffset', GC*(1-pct/100));
+      goalRow.querySelector('.fg').style.opacity = doneToday ? 1 : 0;
+      goalRow.querySelector('.name').textContent = done ? '🎉 Meta de hoje concluída!' : '🎯 Meta de hoje';
+      const left = goal - doneToday;
+      goalRow.querySelector('.hd-left').textContent = done ? `Você respondeu ${doneToday} questões hoje. Mandou bem!` : doneToday ? `Faltam ${left} ${left===1?'questão':'questões'} pra bater a meta` : `Responda ${goal} questões hoje`;
+      goalRow.querySelector('.c-ok').textContent = `✅ ${okToday} cert${okToday===1?'a':'as'}`;
+      goalRow.querySelector('.c-acc').textContent = doneToday ? `🎯 ${Math.round(okToday/doneToday*100)}%` : '🎯 –';
+      goalRow.querySelector('.c-combo').textContent = `🔥 combo ${(loadGame().today||{}).bestCombo||0}`;
       goalEditRow.querySelectorAll('.diff-chip').forEach(ch=>{
         ch.classList.toggle('active', parseInt(ch.textContent)===goal);
       });
@@ -151,7 +191,7 @@ function homeScreen(){
   const tileGrid = items=>{
     const grid = h(`<div class="quick-grid six"></div>`);
     items.forEach(item=>{
-      const tile = h(`<button type="button" class="quick-tile ${item.cls}"><span class="sym">${item.sym}</span><span class="label">${item.label}</span></button>`);
+      const tile = h(`<button type="button" class="quick-tile ${item.cls}"><span class="sym">${item.sym}</span><span class="label">${item.label}</span>${item.sub?`<small class="qt-sub">${item.sub}</small>`:''}</button>`);
       tile.onclick = ()=> item.screen==='placement' ? startPlacement() : go(item.screen, item.screen==='geoLab' ? {geoBack:'home'} : {});
       grid.appendChild(tile);
     });
@@ -165,11 +205,19 @@ function homeScreen(){
   if(planBanner) wrap.appendChild(planBanner);
   wrap.appendChild(reviewBanner);
   wrap.appendChild(spacedBanner);
+  // nada pendente (desafio feito, sem revisão vencida): um aviso de "tudo em dia" no lugar
+  if(dailyDone && !planBanner && !placementCard && !importCard){
+    const allSet = h(`<div class="hd-allset" style="display:none"><span>✅</span><div><b>Tudo em dia por hoje!</b><small>Desafio feito e nenhuma revisão pendente. Que tal uma fase da Trilha?</small></div></div>`);
+    spacedBanner.after(allSet);
+    Promise.all([loadErrors(), loadProgress()]).then(([errs, progress])=>{
+      if(!errs.some(e=>errorIsDue(e)) && !dueReviewSubjects(progress).length) allSet.style.display = '';
+    });
+  }
   // meta do dia + missões num cartão só; as missões ficam recolhidas (abrem sozinhas quando tem prêmio pra pegar)
   const missions = wrap.querySelector('.missions');
   const ms = missionState(), msDone = ms.filter(x=>x.claimed).length, msReady = ms.some(x=>x.done && !x.claimed);
-  goalRow.classList.add('in-missions');
-  missions.prepend(goalRow);
+  goalWrap.classList.add('in-missions');
+  missions.prepend(goalWrap);
   const mTitle = missions.querySelector('h3');
   const mToggle = h(`<button type="button" class="m-toggle" aria-expanded="false"><span>📜 Missões do dia</span><b>${msDone}/${ms.length}${msReady ? ' · 🎁 prêmio!' : ''}</b><i>▾</i></button>`);
   mTitle.replaceWith(mToggle);
@@ -179,10 +227,13 @@ function homeScreen(){
   wrap.appendChild(missions);
   wrap.appendChild(secTitle('Ferramentas'));
   wrap.appendChild(tileGrid([
-    {sym:'?', cls:'solve', label:'Resolver questão', screen:'solve'},
-    {sym:'#', cls:'tile-calc', label:'Calculadora', screen:'calculator'},
-    {sym:'✏️', cls:'tile-report', label:'Caderno', screen:'notebook'},
+    {sym:'?', cls:'solve', label:'Resolver questão', sub:'passo a passo', screen:'solve'},
+    {sym:'#', cls:'tile-calc', label:'Calculadora', sub:'com histórico', screen:'calculator'},
+    {sym:'✏️', cls:'tile-report', label:'Caderno', sub:'suas anotações', screen:'notebook'},
   ]));
+  // dica do Pi: uma curiosidade por dia (muda à meia-noite)
+  const tip = PI_TIPS[Math.floor(new Date(isoDay()+'T12:00').getTime()/864e5) % PI_TIPS.length];
+  wrap.appendChild(h(`<div class="hd-tip"><div class="hd-tip-m">${mascotSVG('joy', 54)}</div><div><small>💡 DICA DO PI · HOJE</small><b>${tip[0]}</b><p>${tip[1]}</p></div></div>`));
 
   wrap.appendChild(h(`<div class="footer-note">Seu professor de matemática digital 📐</div>`));
   // primeiro acesso: tour guiado pelo Pi

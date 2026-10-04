@@ -517,3 +517,71 @@ A Tabuada agora tem três partes (antes era só a lista de 1 a 10):
   - Se a folha vier em pé, ele só fica menor, nunca cortado.
   - As cores de fundo são mantidas na impressão.
 - Testado gerando o PDF em A4 (pelo próprio app, deitada, em pé e com margens de 10–12 mm) e em Carta, com tela de celular e de computador: sempre 1 página, com o certificado inteiro.
+
+## 39. Certificados novos
+
+- **Sua coleção (topo):** anel com quantos certificados foram conquistados e uma barra por nível (Fundamental e Médio).
+- **Quase lá:** o assunto começado mais perto do certificado (ou o primeiro, se nada foi começado), com barra de etapas e os botões **Ver prévia** e **Ir para a Trilha**.
+- **Meus certificados:** galeria com a miniatura de cada certificado conquistado, o nome e a data. Sem nenhum ainda, aparece a prévia "Veja como vai ficar".
+- **Todos os assuntos:** filtro Todos / Em andamento / Conquistados / Não começados. Cada assunto mostra a barra de etapas da Trilha ou "Conquistado em dd/mm/aaaa".
+- **Data de conquista:** o certificado passa a guardar a data em que foi liberado (`g.certDates`), em vez de mostrar sempre a data de hoje. Os certificados que já existiam ficam com a data em que forem vistos de novo.
+- **Tela do certificado:**
+  - Faixa "Parabéns! Certificado conquistado" com a data, ou, na prévia, a barra de etapas que faltam.
+  - Versões em cartões.
+  - Botões **Imprimir ou salvar em PDF** e **Compartilhar a conquista** (no computador, copia o texto), com uma dica de impressão.
+  - Botões pra passar ao certificado anterior ou ao próximo.
+- Entrou nas **Novidades**.
+
+## 40. Perfil novo e avatar
+
+- **Avatar personalizável:**
+  - Toque na foto do Perfil (ou em "Trocar avatar") para escolher um dos 24 bichinhos ou símbolos, ou a inicial do nome, e uma das 8 cores.
+  - Fica salvo no jogo da conta (`g.avatar = {emo, c}`).
+  - Aparece no Perfil, no botão do Início e na lista de contas da tela de entrada (`avatarOf`, `avatarFace` e `avatarColor` em `entrada.js`).
+- **Cartão do jogador:** avatar grande com o botão ✏️, nome, título do nível, selo do nível com a barra de XP, e etiquetas de ofensiva, moedas e XP total.
+- **Seus números:** questões, % de acerto, assuntos proficientes ou dominados e maior combo, em cartões com cor.
+- **Atalhos:** Conquistas, Certificados, Dias de estudo e Maior ofensiva.
+- **Medalhas recentes:** as 4 últimas, com link pra todas.
+- **Menu:** novo grupo "Personalizar" e ícones com cor própria em cada item.
+- Entrou nas **Novidades**.
+
+## 41. Foto no avatar
+
+- Na janela do avatar (Perfil → toque na foto ou "Trocar avatar") há agora os botões **📷 Tirar foto** (abre a câmera frontal no celular) e **🖼️ Escolher da galeria**.
+- A foto é recortada no centro em formato quadrado, reduzida para 192×192 e salva como JPEG embutido no jogo da conta (`g.avatar.img`, ~5–20 KB). Ela não é enviada para lugar nenhum e fica só no aparelho.
+- **🗑️ Remover a foto** volta para o emoji ou para a inicial. Escolher um emoji também tira a foto.
+- A foto aparece no Perfil, no botão do Início e na lista de contas da tela de entrada. `avatarImg()` só aceita imagem embutida (`data:image/...;base64`).
+
+## 42. Configurações novas
+
+- **Topo:** avatar, nome e um resumo das escolhas (tema, som e meta), que muda na hora.
+- **Conta:** linhas Nome, Senha e Avatar. Nome e Senha abrem um painel dentro do cartão (com o medidor de força da senha), e Avatar abre a janela do avatar.
+- **Estudo:**
+  - Meta diária em botões segmentados, com o tempo aproximado por dia.
+  - Nível escolar em 3 cartões (Fundamental 1, Fundamental 2, Ensino Médio).
+- **Som e vibração:**
+  - Chaves liga/desliga de verdade (`role="switch"`).
+  - Volume com o botão "Testar som". O volume fica apagado com o som desligado, e escolher um volume liga o som.
+- **Aparência:** tema escuro ou claro em cartões com uma miniatura de cada tema.
+- **Leitura:** tamanho do texto com um exemplo que muda de tamanho na hora, e uma chave pra "Ouvir as questões".
+- **Seus dados:**
+  - Aviso com a data da última cópia de segurança (verde se tem menos de 14 dias, amarelo se não).
+  - Botões "Salvar uma cópia" e "Restaurar uma cópia".
+- **Começar do zero:**
+  - O reset agora usa a janela de confirmação, em vez de tocar duas vezes.
+  - O texto explica o que é apagado.
+  - O **avatar continua** depois do reset (ajuste em `resetCurrentUserProgress`).
+- Entrou nas **Novidades**.
+
+## 43. Início novo
+
+- **Saudação do Pi** conforme o horário (Bom dia / Boa tarde / Boa noite) com o primeiro nome. O aviso da ofensiva continua com prioridade.
+- **Cartão da Trilha:** barrinhas com as fases do episódio (feitas, atual e que faltam).
+- **Meta de hoje em anel** (dentro do cartão das missões):
+  - Quantas questões faltam e etiquetas de certas, % de acerto e melhor combo do dia.
+  - "Mudar meta" continua no mesmo lugar, e o anel fica verde quando a meta é batida.
+- **Tudo em dia por hoje:** aparece quando o Desafio do Dia já foi feito e não há erros nem assuntos pra revisar.
+- **Ferramentas** com uma descrição curta embaixo de cada nome.
+- **Dica do Pi:** uma curiosidade ou truque de matemática por dia, em rodízio de 20 (`PI_TIPS`).
+- O tour de primeiro acesso continua funcionando: as classes `.player-card`, `.path-hero`, `.missions` e `.quick-grid` não mudaram.
+- Entrou nas **Novidades**.

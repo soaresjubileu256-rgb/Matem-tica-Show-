@@ -10,6 +10,19 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
+  {v:14, date:'2026-10-05', title:'Início de cara nova', items:[
+    {ico:'🏠', t:'Início', d:'Bom dia/boa tarde do Pi, a meta de hoje num anel com certas, acerto e combo, as fases do episódio na Trilha, "Tudo em dia" quando não sobra nada e uma Dica do Pi nova todo dia.', go:'home'},
+  ]},
+  {v:13, date:'2026-10-05', title:'Configurações de cara nova', items:[
+    {ico:'⚙️', t:'Configurações', d:'Cartões com chaves de liga/desliga, prévia do tema e do tamanho do texto, nível escolar em cartões e a data da sua última cópia de segurança.', go:'settings'},
+  ]},
+  {v:12, date:'2026-10-05', title:'Perfil de cara nova e avatar', items:[
+    {ico:'📷', t:'Sua foto ou um avatar', d:'No Perfil, toque na sua foto: tire uma foto, escolha uma da galeria ou use um bichinho ou símbolo com a cor que quiser. Aparece também no Início e na tela de entrada.', go:'profile'},
+    {ico:'👤', t:'Perfil', d:'Nível e XP, seus números, atalhos pra conquistas e certificados e as medalhas recentes.', go:'profile'},
+  ]},
+  {v:11, date:'2026-10-05', title:'Certificados de cara nova', items:[
+    {ico:'📜', t:'Certificados', d:'Sua coleção com galeria, o próximo certificado, a data em que cada um foi conquistado, filtros e botão de compartilhar. A impressão sai inteira numa folha só.', go:'certificates'},
+  ]},
   {v:10, date:'2026-10-05', title:'Conquistas de cara nova', items:[
     {ico:'🏅', t:'Conquistas', d:'Sala de troféus com a próxima conquista, as recentes, medalhas por categoria com barra de progresso e a escada de títulos.', go:'achievements'},
   ]},
