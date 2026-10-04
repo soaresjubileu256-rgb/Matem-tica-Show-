@@ -393,3 +393,21 @@ A Tabuada agora tem três partes (antes era só a lista de 1 a 10):
   - **Revisão de cada questão**, com a resposta certa e o que a pessoa digitou, e o botão **Treinar** nas que errou.
   - Botões **Novo desafio** e **Mudar dificuldade**.
 - Os Desafios entraram nas **Novidades**.
+
+## 30. Treino personalizado novo
+
+- **Cartão verde no topo:** quantos assuntos você já praticou, o acerto geral e quantos pontos fracos tem.
+- **Atalhos:**
+  - **Pontos fracos**: assuntos abaixo de 70%, já com prioridade nos fracos.
+  - **Meu nível**: a série escolhida nas Configurações.
+  - **Surpresa**: 5 assuntos sorteados, com dificuldade misturada.
+  - **Tudo**: todos os assuntos.
+- **Assuntos:**
+  - Ficam atrás de um botão ("41 de 41 assuntos escolhidos") e mostram uma prévia dos escolhidos.
+  - Abertos, aparecem agrupados por série/área, com "Todos / Tirar todos" e o % de acerto de cada um.
+- **Dificuldade em cartões,** com descrição. A Adaptativa é marcada como **Recomendado**.
+- **Quantidade** em botões e "Priorizar meus pontos fracos" em chave liga/desliga.
+- **Resumo** antes de começar: assuntos, questões, dificuldade e duração.
+- **Durante:** número da questão, assunto e dificuldade coloridos (com "⬆ subiu / ⬇ mais leve" na Adaptativa).
+- **Final:** desempenho por assunto, como antes, mais a **revisão de cada resposta**, com a certa e o que foi digitado.
+- O Treino entrou nas **Novidades**.
