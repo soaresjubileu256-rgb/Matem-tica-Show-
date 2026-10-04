@@ -203,3 +203,144 @@ As duas versões ganharam cores próprias: **Verde** (esmeralda com dourado) e *
 ## 18. Login mais bonito e mais fácil
 
 A tela de entrada ganhou a marca do app no topo ("Matemática Show · Seu professor de matemática digital") e o mascote menor logo abaixo. As contas aparecem numa lista, cada uma com uma cor própria, o nível, a ofensiva e uma setinha. Ao escolher a conta, ela aparece num cartão com o botão "Trocar". O campo de senha agora diz "Digite sua senha" (antes parecia já preenchido) e avisa quando o Caps Lock está ligado. No cadastro, o "Repita a senha" mostra na hora se as senhas são iguais.
+
+## 19. Caderno mais bonito
+
+- **Lista de páginas:** as miniaturas agora são nítidas e mostram o topo da página, com o assunto numa etiqueta. Cada cartão diz quando a página foi editada ("Hoje, 14:30", "Ontem…") e qual é o papel. Os filtros por assunto ficam numa faixa que rola para o lado. As páginas antigas ganham a miniatura nova sozinhas.
+- **Caderno vazio:** aparece uma ilustração e atalhos para começar direto num papel (Quadriculado, Pautado, Pontilhado ou Plano cartesiano).
+- **Escolha do papel:** as prévias agora mostram as linhas, os pontos e o plano cartesiano (antes pareciam em branco).
+- **Página:** fica como uma folha sobre a mesa, com margem e sombra. No computador a folha não passa de uns 880px de largura. O topo mostra "Salvando…" e depois "✓ Salvo".
+- **Ferramentas:** os ícones agora são desenhados, todos no mesmo estilo, e a ferramenta escolhida fica destacada em degradê. Os botões de espessura mostram a cor atual. Isso vale também para o Rascunho das questões.
+
+## 20. Calculadora nova
+
+- **Conta inteira no visor**, com **parênteses** e a **ordem certa das operações**: primeiro potência, depois × e ÷, depois + e −. Antes, 2 + 3 × 4 dava 20; agora dá 14.
+- O **resultado aparece enquanto você digita** ("= 12.500"). O "=" confirma, e a conta sobe para a linha de cima.
+- **Resultados precisos:** até 12 algarismos, sem erro de 0,1 + 0,2. Antes só mostrava 2 casas (1 ÷ 3 = 0,33).
+- Números grandes com separador de milhar (1.250).
+- **Mensagens claras** quando a conta não dá: "Não dá pra dividir por zero", "Raiz de número negativo não existe nos reais", "Conta incompleta"…
+- **Histórico** das últimas 30 contas, salvo na conta de cada pessoa. Tocar numa conta usa o resultado.
+- Tocar no resultado copia.
+- **Científica** em 3 linhas: DEG/RAD, sen, cos, tan, π, x², xʸ, √, ln, log, 1/x, n! (fatorial), parênteses e e.
+- **Teclado do computador** funciona: números, + − * /, ^, parênteses, %, Enter, Backspace e Esc.
+- Visual novo: teclas com relevo e cores por tipo, "=" em degradê e resultado colorido.
+
+## 21. Resolver questão melhor e mais bonito
+
+- **Resolve mais tipos de questão:**
+  - equações com parênteses e frações ("3(x + 2) = 18", "x/2 + 3 = 7", "x(x − 3) = 0");
+  - "2/3 de 120";
+  - MMC e MDC pela fatoração em primos ("mmc de 12 e 18", "mdc 24 36");
+  - média ("média de 7, 8 e 9");
+  - fatorial ("5!", que antes dava 5 por engano);
+  - divisão por zero, agora explicada em vez de "não entendi".
+- **Resposta em destaque logo no topo:** cartão colorido com o tipo da questão ("Equação do 1º grau", "MMC e MDC"…) e a resposta grande.
+- **Passo a passo em linha do tempo:** passos numerados e ligados, com o desenho da resolução (conta armada, cadeia de reduções, Bhaskara…) e uma **Dica** separada. Antes, "Como resolver" e "Explicação simples" repetiam a mesma ideia.
+- **Teclas de símbolos** embaixo do campo (x, ², √, parênteses, ×, ÷, =, %, /), para não precisar procurar no teclado do celular. Enter resolve, Shift+Enter pula linha.
+- **Recentes:** as últimas 6 questões ficam salvas na conta.
+- **Exemplos:** 15 exemplos por tipo numa faixa que rola para o lado; tocar já resolve.
+- **Quando não entende:** mostra os tipos que sabe resolver, e tocar num tipo resolve um exemplo dele.
+- O "Praticar parecidas" agora usa o assunto certo também nos tipos novos (MMC → MMC e MDC, média → Estatística, fatorial → Combinatória).
+
+## 22. Tabuada nova
+
+A Tabuada agora tem três partes (antes era só a lista de 1 a 10):
+
+- **📖 Estudar:**
+  - Cada número de 1 a 10 tem uma cor.
+  - Cada tabuada tem uma **dica** para lembrar (vezes 4 é o dobro do dobro, vezes 9 é vezes 10 menos o número…).
+  - Tocar numa conta mostra ela em **bolinhas** ("7 grupos de 3").
+  - Dá para **esconder os resultados** e ir revelando, para se testar.
+  - As contas que a pessoa já domina ganham ✓, e as que vale treinar ganham !.
+- **🔢 Quadro:**
+  - A tábua de Pitágoras inteira (1 a 10). Tocar numa casa destaca a linha e a coluna e mostra a conta e quantas vezes você acertou.
+  - Verde = já domina, vermelho = vale treinar, contorno dourado = quadrados.
+  - Barra "Você domina X de 55 contas" (3 × 7 e 7 × 3 contam como uma só).
+- **⚡ Treinar:**
+  - Escolha uma ou várias tabuadas (atalhos "Todas", "1, 2, 5 e 10" e "6, 7, 8 e 9").
+  - São 10 perguntas com **teclado numérico grande**, que também funciona com o teclado do computador, e cronômetro.
+  - As contas que você erra aparecem mais vezes.
+  - No fim aparecem estrelas, tempo, XP (2 por acerto), **recorde** (só com 10/10) e os erros para revisar, com o botão **Treinar os erros**.
+- O que a pessoa acerta e erra fica salvo na conta dela.
+
+## 23. Duelo novo
+
+- **Tela inicial:**
+  - Cartão com os dois jogadores frente a frente: inicial colorida (azul embaixo, roxo em cima), nome e "VS". O botão ⇅ troca os dois de lugar.
+  - **Placar histórico** entre os dois ("Ana 3 × 2 João"), guardado mesmo se trocarem de lado.
+  - **Tipo de conta:** Misturadas, Tabuada, + e −, × e ÷.
+  - **Nível** e **número de rodadas** (5, 10 ou 15).
+  - As regras aparecem em 4 cartõezinhos.
+  - O app lembra as escolhas para o próximo duelo.
+- **Partida:**
+  - Começa com uma contagem **3, 2, 1**.
+  - Cada metade tem a sua cor e uma barrinha com os pontos.
+  - No meio ficam o placar dos dois, a rodada e a **barra de tempo** (10, 9 ou 8 segundos, conforme o nível). Se o tempo acaba, ninguém pontua e aparece a resposta.
+  - Quem acerta primeiro ganha um "+1" grande e a metade fica verde. O outro lado vê de quem foi o ponto e a resposta certa.
+  - 3 acertos seguidos mostram "🔥 3 seguidas!".
+  - **Quem erra fica travado de verdade até a próxima conta.** Antes destravava depois de 1 segundo. Se os dois erram, a resposta aparece e passa para a próxima.
+  - A mesma conta não se repete na partida.
+  - O toque responde na hora (os dois podem tocar ao mesmo tempo).
+  - Para sair é preciso tocar duas vezes no ✕ ("Sair?"), para ninguém sair sem querer.
+- **Final:** troféu, aperto de mão ou "Quase!", placar, quantas certas e erradas cada um teve, a resposta mais rápida, e os botões **Revanche** e **Sair**.
+
+## 24. Relâmpago novo
+
+- **Tela inicial:**
+  - Cartão laranja com o recorde.
+  - **Tipo de conta:** Misturadas, Tabuada, + e −, × e ÷. Cada tipo tem o **seu próprio recorde**; o recorde antigo virou o de Misturadas.
+  - Regras em cartõezinhos.
+  - O app lembra o tipo escolhido.
+- **Partida:**
+  - O tempo fica num **anel** que vai esvaziando e fica vermelho nos últimos 10 segundos. Aparece "+1s" ou "−3s" a cada resposta.
+  - **Combo:** com 5 acertos seguidos aparece "🔥 COMBO ×2", e cada acerto passa a valer 2 pontos.
+  - **Quando erra, mostra a resposta certa** (contorno verde e "Era 24") antes da próxima conta. Antes passava direto, sem mostrar.
+  - A mesma conta não aparece duas vezes seguidas.
+  - No computador dá para responder com as teclas 1, 2, 3 e 4.
+  - O toque responde na hora.
+- **Final:**
+  - Pontos grandes e recorde do tipo jogado.
+  - XP, acertos, **precisão**, **maior sequência** e **contas por minuto**.
+  - Lista das contas erradas para revisar, com o que a pessoa marcou.
+  - Botões **Jogar de novo** e **Trocar tipo**.
+
+## 25. Quiz do Show novo
+
+- **Tela inicial:**
+  - Cartão com o **seu recorde** (o maior de todos).
+  - **Assuntos:** Todos, Fundamental ou Ensino Médio. O app lembra a escolha.
+  - Dificuldade em cartões com descrição, recorde e botão ▶ na cor do nível. Cada combinação (assuntos + dificuldade) tem o seu recorde; os recordes antigos continuam valendo em "Todos".
+  - "Como funciona" em 4 cartõezinhos.
+- **Ajudas do Show** (uma vez cada por partida):
+  - **50:50** risca duas alternativas erradas.
+  - **+10s** dá mais 10 segundos.
+  - **Pular** troca a pergunta por outra, sem contar como pergunta.
+  - As ajudas não aparecem no Desafio do Dia nem nas fases da Arena, que continuam iguais.
+- As perguntas não repetem o mesmo assunto duas vezes seguidas.
+- **Final:**
+  - Recorde do nível com os assuntos escolhidos e **maior sequência** de acertos.
+  - **Revisão de todas as respostas**: assunto, pergunta, resposta certa, o que a pessoa marcou (ou "acabou o tempo"), o tempo que levou e os pontos de cada uma.
+
+## 26. Simulado novo
+
+- **Montar a prova:**
+  - Cartão azul com quantos simulados você fez, a melhor nota e a média recente.
+  - **Modelos prontos:** Rápido (10 questões, 10 min), Prova (20, 30 min) e Maratona (30, 45 min).
+  - Os 41 assuntos ficam escondidos atrás de um botão ("41 de 41 assuntos escolhidos"). Abertos, aparecem **agrupados por série/área**, com "Todos / Tirar todos" em cada grupo.
+  - Resumo da prova antes de começar: questões, tempo (e segundos por questão), assuntos e dificuldade.
+  - **Gráfico de barras** com as notas dos últimos 10 simulados.
+- **Durante a prova:**
+  - "X de N respondidas" com barra de progresso e uma **barra de tempo**.
+  - Avisos quando faltam 5 minutos e 1 minuto.
+  - Cada questão mostra número, assunto e dificuldade colorida.
+  - **"Apagar resposta"** para deixar em branco de novo.
+  - O botão de entregar mostra quantas estão em branco e fica verde quando tudo foi respondido.
+  - A confirmação lista **quais** questões estão em branco e quais foram marcadas para revisar.
+  - **Atalhos no computador:** A–D (ou 1–4) respondem, ← → trocam de questão e R marca para revisar.
+  - O relógio aparece na hora (antes levava 1 segundo para surgir a cada troca de questão).
+- **Resultado:**
+  - Nota no anel com a cor do resultado e **comparação com o último simulado** (▲ +1,5).
+  - Certas, erradas, em branco e tempo.
+  - **"Refazer as erradas":** uma revisão sem tempo só com as questões que você errou. Ela não entra no histórico de notas.
+  - Botão **Treinar** nos assuntos com menos de 80% de acerto.
+  - Correção com filtro **Todas / Erradas / Certas**. Cada questão mostra as 4 alternativas, com a correta em verde e a sua em vermelho quando errou.

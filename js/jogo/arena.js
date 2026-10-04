@@ -500,42 +500,91 @@ function examCfgNow(){
   cfg.subjects = cfg.subjects.filter(id=> SUBJECTS.some(s=>s.id===id));
   return cfg;
 }
+const EXAM_PRESETS = [
+  {id:'quick', ico:'⚡', name:'Rápido', n:10, mins:10, diff:'misturada'},
+  {id:'test',  ico:'📝', name:'Prova', n:20, mins:30, diff:'misturada'},
+  {id:'mara',  ico:'🏃', name:'Maratona', n:30, mins:45, diff:'misturada'},
+];
+const gradeCls = g=> g>=7 ? 'good' : g>=5 ? 'mid' : 'low';
 function examSetupScreen(){
   const wrap = document.createElement('div');
   wrap.appendChild(topbar('📝 Simulado', true, ()=>go('arena')));
-  const c = h(`<div class="content"></div>`);
+  const c = h(`<div class="content exam-setup"></div>`);
   wrap.appendChild(c);
   const cfg = examCfgNow();
-  c.appendChild(h(`<div class="greeting" style="margin-bottom:6px"><h2>Monte sua prova</h2><p>As questões são sorteadas dos assuntos escolhidos. No fim você recebe a nota de 0 a 10 e a correção comentada de cada questão.</p></div>`));
-  const sec = t=> h(`<h3 class="ar-label">${t}</h3>`);
-  const chipRow = (items, isOn, onPick)=>{
-    const row = h(`<div class="diff-row ar-wrap"></div>`);
-    items.forEach(([v,l])=>{ const b = h(`<button type="button" class="diff-chip ${isOn(v)?'active':''}" aria-pressed="${isOn(v)}"></button>`); b.textContent = l; b.onclick = ()=>{ onPick(v); paint(); }; row.appendChild(b); });
+  const ex = arenaData().exams;
+  const best = ex.length ? Math.max(...ex.map(e=>e.grade)) : null;
+  const avg = ex.length ? Math.round(ex.slice(-5).reduce((x,e)=>x+e.grade,0)/Math.min(5,ex.length)*10)/10 : null;
+  c.appendChild(h(`<div class="ex-hero">
+      <div class="exh-top"><div class="exh-ico">📝</div><div><h2>Simulado</h2><p>Monte sua prova, responda no seu ritmo e receba a nota de 0 a 10 com a correção comentada.</p></div></div>
+      <div class="exh-stats">
+        <div><b>${ex.length}</b><span>feitos</span></div>
+        <div><b>${best===null?'—':fmt(best)}</b><span>melhor nota</span></div>
+        <div><b>${avg===null?'—':fmt(avg)}</b><span>média recente</span></div>
+      </div></div>`));
+  const sec = (t, extra)=> h(`<div class="ex-lbl"><span>${t}</span>${extra||''}</div>`);
+  const chipRow = (items, isOn, onPick, cls)=>{
+    const row = h(`<div class="ex-chips ${cls||''}"></div>`);
+    items.forEach(([v,l])=>{ const b = h(`<button type="button" class="ex-chip ${isOn(v)?'on':''}" aria-pressed="${isOn(v)}"></button>`); b.innerHTML = l; b.onclick = ()=>{ onPick(v); paint(); }; row.appendChild(b); });
     return row;
   };
   const body = h(`<div></div>`); c.appendChild(body);
+  let subjOpen = false;
   function paint(){
     body.innerHTML = '';
+    body.appendChild(sec('Modelos prontos'));
+    const pre = h(`<div class="ex-presets"></div>`);
+    EXAM_PRESETS.forEach(pr=>{
+      const on = cfg.n===pr.n && cfg.mins===pr.mins && cfg.diff===pr.diff;
+      const b = h(`<button type="button" class="ex-preset ${on?'on':''}"><span class="i">${pr.ico}</span><b>${pr.name}</b><small>${pr.n} questões · ${pr.mins} min</small></button>`);
+      b.onclick = ()=>{ cfg.n = pr.n; cfg.mins = pr.mins; cfg.diff = pr.diff; paint(); };
+      pre.appendChild(b);
+    });
+    body.appendChild(pre);
     body.appendChild(sec('Nível'));
     body.appendChild(chipRow(EXAM_GROUPS.map(g=>[g.id,g.name]), v=>cfg.group===v, v=>{ cfg.group = v; cfg.subjects = examGroupIds(EXAM_GROUPS.find(g=>g.id===v)); }));
-    body.appendChild(sec('Assuntos'));
-    body.appendChild(chipRow(SUBJECTS.map(s=>[s.id,s.name]), v=>cfg.subjects.includes(v), v=>{ cfg.group = null; cfg.subjects = cfg.subjects.includes(v) ? cfg.subjects.filter(x=>x!==v) : [...cfg.subjects, v]; }));
-    body.appendChild(sec('Número de questões'));
-    body.appendChild(chipRow([[10,'10'],[20,'20'],[30,'30']], v=>cfg.n===v, v=>{ cfg.n = v; }));
+    // assuntos: escondidos atrás de um botão, agrupados como no resto do app
+    const subjBtn = h(`<button type="button" class="ex-subj-btn ${subjOpen?'open':''}"><span>📚 <b>${cfg.subjects.length}</b> de ${SUBJECTS.length} assuntos escolhidos</span><i>${subjOpen?'Fechar ▲':'Escolher ▼'}</i></button>`);
+    subjBtn.onclick = ()=>{ subjOpen = !subjOpen; paint(); };
+    body.appendChild(subjBtn);
+    if(subjOpen){
+      const box = h(`<div class="ex-subjs"></div>`);
+      SUBJECT_GROUPS.forEach(g=>{
+        const ids = g.ids.filter(id=> SUBJECTS.some(s=>s.id===id));
+        if(!ids.length) return;
+        const all = ids.every(id=> cfg.subjects.includes(id));
+        const gh = h(`<div class="ex-sg"><div class="ex-sg-h"><b>${g.name}</b><button type="button">${all?'Tirar todos':'Todos'}</button></div></div>`);
+        gh.querySelector('button').onclick = ()=>{ cfg.group = null; cfg.subjects = all ? cfg.subjects.filter(x=>!ids.includes(x)) : [...new Set([...cfg.subjects, ...ids])]; paint(); };
+        gh.appendChild(chipRow(ids.map(id=>{ const s0 = SUBJECTS.find(s=>s.id===id); return [id, `${s0.sym} ${escHTML(s0.name)}`]; }), v=>cfg.subjects.includes(v), v=>{ cfg.group = null; cfg.subjects = cfg.subjects.includes(v) ? cfg.subjects.filter(x=>x!==v) : [...cfg.subjects, v]; }, 'small'));
+        box.appendChild(gh);
+      });
+      body.appendChild(box);
+    }
+    const grid2 = h(`<div class="ex-2col"></div>`);
+    const col = (t, row)=>{ const d = h(`<div></div>`); d.appendChild(sec(t)); d.appendChild(row); return d; };
+    grid2.appendChild(col('Questões', chipRow([[10,'10'],[20,'20'],[30,'30']], v=>cfg.n===v, v=>{ cfg.n = v; })));
+    grid2.appendChild(col('Dificuldade', chipRow(['facil','medio','dificil','misturada'].map(d=>[d, ARENA_DIFF_NAME[d]]), v=>cfg.diff===v, v=>{ cfg.diff = v; })));
+    body.appendChild(grid2);
     body.appendChild(sec('Tempo'));
     body.appendChild(chipRow([[10,'10 min'],[15,'15 min'],[30,'30 min'],[45,'45 min'],[0,'Sem tempo']], v=>cfg.mins===v, v=>{ cfg.mins = v; }));
-    body.appendChild(sec('Dificuldade'));
-    body.appendChild(chipRow(['facil','medio','dificil','misturada'].map(d=>[d, ARENA_DIFF_NAME[d]]), v=>cfg.diff===v, v=>{ cfg.diff = v; }));
-    const st = h(`<button type="button" class="btn primary ar-start"></button>`);
+    const per = cfg.mins ? Math.round(cfg.mins*60/cfg.n) : 0;
+    body.appendChild(h(`<div class="ex-summary">
+        <div><b>${cfg.n}</b><span>questões</span></div>
+        <div><b>${cfg.mins ? cfg.mins+' min' : '∞'}</b><span>${cfg.mins ? `~${per}s por questão` : 'sem tempo'}</span></div>
+        <div><b>${cfg.subjects.length}</b><span>assunto${cfg.subjects.length===1?'':'s'}</span></div>
+        <div><b>${ARENA_DIFF_NAME[cfg.diff]}</b><span>dificuldade</span></div>
+      </div>`));
+    const st = h(`<button type="button" class="btn primary ar-start ex-go"></button>`);
     st.disabled = !cfg.subjects.length;
-    st.textContent = cfg.subjects.length ? `Começar simulado · ${cfg.n} questões` : 'Escolha pelo menos um assunto';
+    st.textContent = cfg.subjects.length ? `Começar simulado ▶` : 'Escolha pelo menos um assunto';
     st.onclick = ()=>{ saveGame(); startExam(cfg); };
     body.appendChild(st);
-    const ex = arenaData().exams;
     if(ex.length){
       body.appendChild(sec('Seus últimos simulados'));
+      const last = ex.slice(-10);
+      body.appendChild(h(`<div class="ex-chart" aria-label="Notas dos últimos simulados">${last.map(e=>`<div class="exc-col" title="${fmt(e.grade)}"><span>${fmt(e.grade)}</span><i class="${gradeCls(e.grade)}" style="height:${Math.max(4, e.grade*10)}%"></i></div>`).join('')}</div>`));
       const l = h(`<div class="ar-dlist"></div>`);
-      ex.slice().reverse().slice(0,8).forEach(e=> l.appendChild(h(`<div class="ar-drow"><span>${new Date(e.ts).toLocaleDateString('pt-BR')} · ${e.ok}/${e.n} certas · ${mmssA(e.secs)}</span><b class="ar-grade ${e.grade>=7?'good':e.grade>=5?'mid':'low'}">${fmt(e.grade)}</b></div>`)));
+      ex.slice().reverse().slice(0,6).forEach(e=> l.appendChild(h(`<div class="ar-drow"><span>${new Date(e.ts).toLocaleDateString('pt-BR')} · ${e.ok}/${e.n} certas · ⏱ ${mmssA(e.secs)}</span><b class="ar-grade ${gradeCls(e.grade)}">${fmt(e.grade)}</b></div>`)));
       body.appendChild(l);
     }
   }
@@ -557,22 +606,43 @@ function startExam(cfg){
   state.session = {kind:'exam', id:`${Date.now().toString(36)}${Math.random().toString(36).slice(2,6)}`, Q, cur:0, T0:Date.now(), limit:cfg.mins*60, subjects:[...cfg.subjects]};
   go('examRun');
 }
+/* refazer só as questões erradas, sem tempo (não entra no histórico de notas) */
+function startExamRedo(wrongQ){
+  const Q = shuffle(wrongQ.map(q=>({subjectId:q.subjectId, diff:q.diff, ex:q.ex, opts:buildOptions(q.ex), pick:-1, flag:false})));
+  state.session = {kind:'exam', redo:true, id:`r${Date.now().toString(36)}`, Q, cur:0, T0:Date.now(), limit:0, subjects:[...new Set(Q.map(q=>q.subjectId))]};
+  go('examRun');
+}
+let _examKeys = null;
 function examRunScreen(){
   const sess = state.session;
   const wrap = document.createElement('div');
   if(!sess || sess.kind!=='exam' || sess.submitted){ setTimeout(()=>go('arena'), 0); return wrap; }
   const leave = ()=> showConfirm({icon:'📝', title:'Abandonar o simulado?', message:'As respostas desta prova serão perdidas.', ok:'Abandonar', cancel:'Continuar a prova', danger:true}).then(ok=>{ if(ok){ sess.submitted = true; replaceHistoryState(); go('arena'); } });
-  const bar = topbar('Simulado', true, leave);
+  const bar = topbar(sess.redo ? 'Refazendo as erradas' : 'Simulado', true, leave);
   const clock = h(`<span class="ar-clock" role="timer" aria-live="off"></span>`);
   bar.appendChild(clock);
   wrap.appendChild(bar);
-  const c = h(`<div class="content"></div>`);
+  const c = h(`<div class="content exam-run"></div>`);
   wrap.appendChild(c);
+  const answered = sess.Q.filter(q=>q.pick>=0).length, N = sess.Q.length;
   const elapsed = ()=> (Date.now()-sess.T0)/1000;
+  const head = h(`<div class="exr-head"><div class="exr-row"><span><b>${answered}</b> de ${N} respondidas</span><span class="exr-flags">${sess.Q.some(q=>q.flag) ? `★ ${sess.Q.filter(q=>q.flag).length} pra revisar` : ''}</span></div>
+      <div class="exr-bar"><i style="width:${answered/N*100}%"></i></div>${sess.limit ? '<div class="exr-time"><i></i></div>' : ''}</div>`);
+  c.appendChild(head);
+  sess.warned = sess.warned || {};
+  let first = true; // na primeira chamada a tela ainda não está na página: só desenha o relógio
   const tick = ()=>{
-    if(!wrap.isConnected || state.session!==sess || sess.submitted) return false;
-    if(sess.limit){ const left = sess.limit - elapsed(); clock.textContent = '⏱ ' + mmssA(left); clock.classList.toggle('low', left < 60); if(left <= 0){ examSubmit(sess, true); return false; } }
-    else clock.textContent = '⏱ ' + mmssA(elapsed());
+    if(!first && (!wrap.isConnected || state.session!==sess || sess.submitted)) return false;
+    const isFirst = first; first = false;
+    if(sess.limit){
+      const left = sess.limit - elapsed();
+      clock.textContent = '⏱ ' + mmssA(left); clock.classList.toggle('low', left < 60);
+      if(isFirst){ const tb = head.querySelector('.exr-time i'); if(tb) tb.style.width = Math.max(0, left/sess.limit*100)+'%'; return true; }
+      const tb = head.querySelector('.exr-time i'); if(tb){ tb.style.width = Math.max(0, left/sess.limit*100)+'%'; tb.classList.toggle('low', left < 60); }
+      if(left <= 300 && left > 60 && !sess.warned.five && sess.limit > 300){ sess.warned.five = true; queueToast('⏱', 'Faltam 5 minutos', 'Confira as questões em branco'); }
+      if(left <= 60 && !sess.warned.one){ sess.warned.one = true; queueToast('⏰', 'Falta 1 minuto!', 'Ao acabar o tempo a prova é entregue'); }
+      if(left <= 0){ examSubmit(sess, true); return false; }
+    } else clock.textContent = '⏱ ' + mmssA(elapsed());
     return true;
   };
   tick();
@@ -587,37 +657,59 @@ function examRunScreen(){
   c.appendChild(grid);
   const q = sess.Q[sess.cur], ex = q.ex, s = SUBJECTS.find(x=>x.id===q.subjectId);
   const qv = questionHTML(ex);
-  const qcard = h(`<div class="question-card"><div class="qlabel">QUESTÃO ${sess.cur+1} DE ${sess.Q.length} · ${s.name.toUpperCase()}</div><div class="qtext mono ${qv.stacked?'stacked':''}">${qv.html}</div></div>`);
+  const qcard = h(`<div class="question-card exr-card"><div class="exr-qh"><span class="exr-n">${sess.cur+1}</span><span class="exr-s">${s.sym} ${escHTML(s.name)}</span><span class="exr-d d-${q.diff}">${ARENA_DIFF_NAME[q.diff]}</span></div><div class="qtext mono ${qv.stacked?'stacked':''}">${qv.html}</div></div>`);
   addSpeakButton(qcard, ex); addScratchButton(qcard, ex);
   c.appendChild(qcard);
   const opts = h(`<div class="mc-opts"></div>`);
+  const pickOpt = i=>{
+    q.pick = i; playTones([520], 0.03, 'sine', 0.05);
+    const at = sess.cur;
+    render();
+    if(at < sess.Q.length-1) setTimeout(()=>{ if(state.session===sess && !sess.submitted && sess.cur===at && state.screen==='examRun'){ sess.cur++; render(); } }, 420);
+  };
   q.opts.forEach((o,i)=>{
     const b = h(`<button type="button" class="mc-opt ${q.pick===i?'sel':''}" aria-pressed="${q.pick===i}"><span class="key">${'ABCD'[i]}</span><span class="lbl mono"></span></button>`);
     b.querySelector('.lbl').textContent = o.label;
-    b.onclick = ()=>{
-      q.pick = i; playTones([520], 0.03, 'sine', 0.05);
-      const at = sess.cur;
-      render();
-      if(at < sess.Q.length-1) setTimeout(()=>{ if(state.session===sess && !sess.submitted && sess.cur===at && state.screen==='examRun'){ sess.cur++; render(); } }, 420);
-    };
+    b.onclick = ()=> pickOpt(i);
     opts.appendChild(b);
   });
   c.appendChild(opts);
+  if(q.pick>=0){
+    const cl = h(`<button type="button" class="exr-clear">Apagar resposta</button>`);
+    cl.onclick = ()=>{ q.pick = -1; render(); };
+    c.appendChild(cl);
+  }
   const nav = h(`<div class="cta-row ar-exam-nav">
     <button type="button" class="btn secondary" data-a="prev" ${sess.cur===0?'disabled':''}>← Anterior</button>
-    <button type="button" class="btn secondary" data-a="flag" aria-pressed="${q.flag}">${q.flag?'★ Marcada':'☆ Revisar depois'}</button>
+    <button type="button" class="btn secondary ${q.flag?'flagged':''}" data-a="flag" aria-pressed="${q.flag}">${q.flag?'★ Marcada':'☆ Revisar depois'}</button>
     <button type="button" class="btn secondary" data-a="next" ${sess.cur===sess.Q.length-1?'disabled':''}>Próxima →</button></div>`);
-  nav.querySelector('[data-a=prev]').onclick = ()=>{ if(sess.cur>0){ sess.cur--; render(); } };
-  nav.querySelector('[data-a=next]').onclick = ()=>{ if(sess.cur<sess.Q.length-1){ sess.cur++; render(); } };
+  const prev = ()=>{ if(sess.cur>0){ sess.cur--; render(); } }, next = ()=>{ if(sess.cur<sess.Q.length-1){ sess.cur++; render(); } };
+  nav.querySelector('[data-a=prev]').onclick = prev;
+  nav.querySelector('[data-a=next]').onclick = next;
   nav.querySelector('[data-a=flag]').onclick = ()=>{ q.flag = !q.flag; render(); };
   c.appendChild(nav);
-  const sub = h(`<button type="button" class="btn primary ar-start">Entregar prova</button>`);
+  const blank = sess.Q.filter(x=>x.pick<0).length;
+  const sub = h(`<button type="button" class="btn primary ar-start ex-go ${blank?'':'ready'}">${blank ? `Entregar prova · ${blank} em branco` : '✓ Tudo respondido · Entregar prova'}</button>`);
   sub.onclick = ()=>{
-    const blank = sess.Q.filter(x=>x.pick<0).length;
-    showConfirm({icon:'📝', title:'Entregar a prova?', message: blank ? `Você ainda tem ${blank} questão(ões) em branco. Em branco conta como errada.` : 'Todas as questões estão respondidas.', ok:'Entregar', cancel:'Voltar à prova'})
+    const bl = sess.Q.map((x,i)=> x.pick<0 ? i+1 : 0).filter(Boolean), fl = sess.Q.map((x,i)=> x.flag ? i+1 : 0).filter(Boolean);
+    const msg = [bl.length ? `Em branco: questão ${bl.slice(0,12).join(', ')}${bl.length>12?'…':''} (conta como errada).` : 'Todas as questões estão respondidas.', fl.length ? `Marcadas pra revisar: ${fl.join(', ')}.` : ''].filter(Boolean).join(' ');
+    showConfirm({icon:'📝', title:'Entregar a prova?', message: msg, ok:'Entregar', cancel:'Voltar à prova'})
       .then(ok=>{ if(ok) examSubmit(sess, false); });
   };
   c.appendChild(sub);
+  if(window.matchMedia && matchMedia('(pointer:fine)').matches) c.appendChild(h(`<p class="exr-keys">Atalhos: A, B, C, D (ou 1–4) respondem · ← → trocam de questão · R marca pra revisar</p>`));
+  // teclado do computador
+  if(_examKeys) document.removeEventListener('keydown', _examKeys);
+  _examKeys = e=>{
+    if(state.screen!=='examRun' || state.session!==sess || sess.submitted || document.querySelector('.gm-modal-bg')){ return; }
+    if(/^(INPUT|TEXTAREA|SELECT)$/.test((e.target||{}).tagName||'') || e.ctrlKey || e.metaKey || e.altKey) return;
+    const k = e.key.toLowerCase(), idx = 'abcd'.indexOf(k) >= 0 ? 'abcd'.indexOf(k) : ['1','2','3','4'].indexOf(k);
+    if(idx>=0 && idx < sess.Q[sess.cur].opts.length){ e.preventDefault(); const qq = sess.Q[sess.cur]; qq.pick = idx; playTones([520], 0.03, 'sine', 0.05); const at = sess.cur; render(); if(at < sess.Q.length-1) setTimeout(()=>{ if(state.session===sess && !sess.submitted && sess.cur===at && state.screen==='examRun'){ sess.cur++; render(); } }, 420); }
+    else if(e.key==='ArrowLeft'){ e.preventDefault(); if(sess.cur>0){ sess.cur--; render(); } }
+    else if(e.key==='ArrowRight'){ e.preventDefault(); if(sess.cur<sess.Q.length-1){ sess.cur++; render(); } }
+    else if(k==='r'){ e.preventDefault(); sess.Q[sess.cur].flag = !sess.Q[sess.cur].flag; render(); }
+  };
+  document.addEventListener('keydown', _examKeys);
   return wrap;
 }
 async function examSubmit(sess, timeUp){
@@ -629,7 +721,8 @@ async function examSubmit(sess, timeUp){
   let ok = 0;
   sess.Q.forEach(q=>{ q.right = q.pick>=0 && q.opts[q.pick].ok; if(q.right) ok++; });
   const grade = Math.round(100*ok/sess.Q.length)/10;
-  if(!a.exams.some(e=>e.id===sess.id)){
+  const prevExam = a.exams.length ? a.exams[a.exams.length-1] : null;
+  if(!sess.redo && !a.exams.some(e=>e.id===sess.id)){
     // cada questão entra no progresso, histórico, caderno de erros e XP como qualquer resposta
     // sessão "muda" enquanto soma: sem combo de sequência numa prova e sem 30 avisos de +XP na tela
     const quiet = {kind:'quiz', combo:0};
@@ -642,24 +735,43 @@ async function examSubmit(sess, timeUp){
     saveGame();
   }
   const Q = sess.Q.map(q=>({subjectId:q.subjectId, diff:q.diff, ex:q.ex, opts:q.opts, pick:q.pick, right:q.right}));
-  state.session = {kind:'examResult', Q, ok, grade, secs, timeUp:!!timeUp};
+  if(sess.redo){ const quiet = {kind:'quiz', combo:0}; state.session = quiet; for(const q of sess.Q){ quiet.combo = 0; await recordAnswer(q.subjectId, q.right, {difficulty:q.diff, ex:q.ex}); } saveGame(); }
+  state.session = {kind:'examResult', Q, ok, grade, secs, timeUp:!!timeUp, redo:!!sess.redo, prevGrade: (!sess.redo && prevExam) ? prevExam.grade : null, filter:'all'};
   go('examResult');
 }
 function examResultScreen(){
   const r = state.session;
   const wrap = document.createElement('div');
   if(!r || r.kind!=='examResult'){ setTimeout(()=>go('arena'), 0); return wrap; }
-  wrap.appendChild(topbar('Resultado do simulado', true, ()=>go('arena')));
-  const c = h(`<div class="content"></div>`);
+  wrap.appendChild(topbar(r.redo ? 'Resultado da revisão' : 'Resultado do simulado', true, ()=>go('arena')));
+  const c = h(`<div class="content exam-result"></div>`);
   wrap.appendChild(c);
+  const N = r.Q.length, blank = r.Q.filter(q=>q.pick<0).length, wrongQ = r.Q.filter(q=>!q.right);
   const msg = r.grade >= 9 ? 'Excelente! Você domina esses assuntos.' : r.grade >= 7 ? 'Muito bom! Revise as que errou e vai longe.' : r.grade >= 5 ? 'Na média. Veja a correção e treine os pontos fracos.' : 'Vamos treinar mais. A correção abaixo mostra o caminho de cada questão.';
-  c.appendChild(h(`<div class="ar-grade-box"><div class="ar-ring ${r.grade>=7?'good':r.grade>=5?'mid':'low'}" style="--p:${r.grade*10}"><b>${fmt(r.grade)}</b><small>nota</small></div>
-    <h2 class="le-title">${r.timeUp ? 'Tempo esgotado' : 'Prova entregue'}</h2><p class="le-sub">${msg}</p></div>`));
-  c.appendChild(h(`<div class="le-stats">
-    <div class="le-stat green"><div class="k">ACERTOS</div><div class="v">🎯 ${r.ok}/${r.Q.length}</div></div>
-    <div class="le-stat blue"><div class="k">TEMPO</div><div class="v">⏱ ${mmssA(r.secs)}</div></div>
-    <div class="le-stat gold"><div class="k">EM BRANCO</div><div class="v">⬜ ${r.Q.filter(q=>q.pick<0).length}</div></div></div>`));
+  const diff = r.prevGrade===null || r.prevGrade===undefined ? null : Math.round((r.grade - r.prevGrade)*10)/10;
+  c.appendChild(h(`<div class="exres-hero ${gradeCls(r.grade)}">
+      <div class="ar-ring ${gradeCls(r.grade)}" style="--p:${r.grade*10}"><b>${fmt(r.grade)}</b><small>nota</small></div>
+      <h2>${r.redo ? 'Revisão concluída' : r.timeUp ? 'Tempo esgotado' : 'Prova entregue'}</h2>
+      <p>${msg}</p>
+      ${diff===null ? '' : `<span class="exres-diff ${diff>0?'up':diff<0?'down':''}">${diff>0?`▲ +${fmt(diff)}`:diff<0?`▼ ${fmt(diff)}`:'='} em relação ao último</span>`}
+    </div>`));
+  c.appendChild(h(`<div class="exres-stats">
+      <div class="g"><b>${r.ok}</b><span>certas</span></div>
+      <div class="b"><b>${N - r.ok - blank}</b><span>erradas</span></div>
+      <div class="w"><b>${blank}</b><span>em branco</span></div>
+      <div class="t"><b>${mmssA(r.secs)}</b><span>tempo</span></div>
+    </div>`));
   if(r.grade >= 7 && !r.celebrated){ r.celebrated = true; replaceHistoryState(); setTimeout(()=>launchConfetti(r.grade>=10?180:100), 250); }
+  const acts = h(`<div class="exres-acts"></div>`);
+  if(wrongQ.length){
+    const redo = h(`<button type="button" class="btn primary">🔁 Refazer as ${wrongQ.length} erradas</button>`);
+    redo.onclick = ()=> startExamRedo(wrongQ);
+    acts.appendChild(redo);
+  }
+  const nw = h(`<button type="button" class="btn ${wrongQ.length?'secondary':'primary'}">📝 Novo simulado</button>`);
+  nw.onclick = ()=> go('examSetup');
+  acts.appendChild(nw);
+  c.appendChild(acts);
   // por assunto
   const by = {};
   r.Q.forEach(q=>{ const b = by[q.subjectId] = by[q.subjectId] || {n:0, ok:0}; b.n++; if(q.right) b.ok++; });
@@ -667,30 +779,44 @@ function examResultScreen(){
   const bars = h(`<div class="card ar-bars"></div>`);
   Object.entries(by).sort((x,y)=> x[1].ok/x[1].n - y[1].ok/y[1].n).forEach(([id,b])=>{
     const s = SUBJECTS.find(x=>x.id===id), acc = b.ok/b.n;
-    bars.appendChild(h(`<div class="ar-bar ${acc>=.8?'good':acc>=.5?'mid':'low'}"><div class="ar-bar-l"><b>${s.name}</b><span>${b.ok}/${b.n}</span></div><div class="bar-track"><div class="bar-fill" style="width:${Math.max(4,Math.round(acc*100))}%"></div></div></div>`));
+    const row = h(`<div class="ar-bar ${acc>=.8?'good':acc>=.5?'mid':'low'}"><div class="ar-bar-l"><b>${s.sym} ${escHTML(s.name)}</b><span>${b.ok}/${b.n}${acc<.8 ? ' <button type="button" class="exr-train">Treinar</button>' : ''}</span></div><div class="bar-track"><div class="bar-fill" style="width:${Math.max(4,Math.round(acc*100))}%"></div></div></div>`);
+    const tb = row.querySelector('.exr-train'); if(tb) tb.onclick = ()=> startSession(id, 'medio');
+    bars.appendChild(row);
   });
   c.appendChild(bars);
   // correção
   c.appendChild(h(`<h3 class="ar-label">Correção comentada</h3>`));
+  const fil = h(`<div class="ex-chips exres-filter"></div>`);
+  [['all',`Todas (${N})`],['bad',`Erradas (${N-r.ok})`],['ok',`Certas (${r.ok})`]].forEach(([v,l])=>{
+    const b = h(`<button type="button" class="ex-chip ${r.filter===v?'on':''}">${l}</button>`);
+    b.onclick = ()=>{ r.filter = v; render(); };
+    fil.appendChild(b);
+  });
+  c.appendChild(fil);
   const grid = h(`<div class="ar-qgrid result" aria-label="Ir para a questão"></div>`);
-  r.Q.forEach((q,i)=>{ const b = h(`<button type="button" class="${q.right?'ok':'bad'}" aria-label="Questão ${i+1}: ${q.right?'certa':'errada'}">${i+1}</button>`); b.onclick = ()=>{ const el = document.getElementById('arrv'+i); if(el) el.scrollIntoView({behavior:'smooth', block:'start'}); }; grid.appendChild(b); });
+  r.Q.forEach((q,i)=>{ const b = h(`<button type="button" class="${q.right?'ok':'bad'}" aria-label="Questão ${i+1}: ${q.right?'certa':'errada'}">${i+1}</button>`); b.onclick = ()=>{ if(r.filter!=='all' && (r.filter==='ok') !== q.right){ r.filter = 'all'; render(); } setTimeout(()=>{ const el = document.getElementById('arrv'+i); if(el) el.scrollIntoView({behavior:'smooth', block:'start'}); }, 30); }; grid.appendChild(b); });
   c.appendChild(grid);
   r.Q.forEach((q,i)=>{
+    if(r.filter==='ok' && !q.right) return;
+    if(r.filter==='bad' && q.right) return;
     const s = SUBJECTS.find(x=>x.id===q.subjectId), qv = questionHTML(q.ex);
     const ci = q.opts.findIndex(o=>o.ok);
-    const it = h(`<div class="card ar-review" id="arrv${i}"><div class="ar-rv-h"><span>Questão ${i+1} · ${s.name}</span><b class="${q.right?'ok':'bad'}">${q.right?'✓ Certa':'✗ Errada'}</b></div>
+    const it = h(`<div class="card ar-review ${q.right?'ok':'bad'}" id="arrv${i}"><div class="ar-rv-h"><span><b class="rv-n">${i+1}</b> ${s.sym} ${escHTML(s.name)} · ${ARENA_DIFF_NAME[q.diff]}</span><b class="${q.right?'ok':'bad'}">${q.right?'✓ Certa':q.pick<0?'⬜ Em branco':'✗ Errada'}</b></div>
       <div class="qtext mono ${qv.stacked?'stacked':''}">${qv.html}</div>
-      <div class="ar-rv-a"></div>
+      <div class="ar-rv-opts"></div>
       <details class="ar-sol" ${q.right?'':'open'}><summary>Resolução passo a passo</summary><div class="fb-steps"></div></details></div>`);
-    const ans = it.querySelector('.ar-rv-a');
-    ans.textContent = `Sua resposta: ${q.pick>=0 ? `${'ABCD'[q.pick]}) ${q.opts[q.pick].label}` : 'em branco'}`;
-    if(!q.right){ const cr = document.createElement('div'); cr.className = 'ar-rv-c'; cr.textContent = `Correta: ${'ABCD'[ci]}) ${q.opts[ci].label}`; ans.appendChild(cr); }
+    const ob = it.querySelector('.ar-rv-opts');
+    q.opts.forEach((o,j)=>{
+      const cls = j===ci ? 'right' : j===q.pick ? 'wrong' : '';
+      const d = h(`<div class="rv-opt ${cls}"><span class="k">${'ABCD'[j]}</span><span class="l mono"></span>${j===q.pick ? '<small>sua resposta</small>' : j===ci && !q.right ? '<small>correta</small>' : ''}</div>`);
+      d.querySelector('.l').textContent = o.label;
+      ob.appendChild(d);
+    });
     it.querySelector('.fb-steps').innerHTML = solutionHTML(q.ex);
     c.appendChild(it);
   });
-  const foot = h(`<div class="cta-row" style="margin-top:16px"><button type="button" class="btn secondary" data-a="a">Arena</button><button type="button" class="btn primary" data-a="n">Novo simulado</button></div>`);
+  const foot = h(`<div class="cta-row" style="margin-top:16px"><button type="button" class="btn secondary" data-a="a">Voltar à Arena</button></div>`);
   foot.querySelector('[data-a=a]').onclick = ()=> go('arena');
-  foot.querySelector('[data-a=n]').onclick = ()=> go('examSetup');
   c.appendChild(foot);
   return wrap;
 }

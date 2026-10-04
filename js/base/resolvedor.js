@@ -4,7 +4,7 @@
 
 function normalizeExpr(raw){
   let s = raw.toLowerCase().trim();
-  s = s.replace(/[?!]+$/,'').trim();
+  s = s.replace(/\?+$/,'').replace(/(\D)!+$/,'$1').trim(); // "5!" é fatorial: só tira o "!" que vem depois de palavra
   // remove um "=" pendurado no final (ex: "11 + 16 = ?" já virou "11 + 16 =" acima) — isso é só
   // um jeito de perguntar "quanto dá", não uma equação de verdade, então não deve bloquear o
   // reconhecimento como conta simples.
@@ -425,7 +425,7 @@ function trySolveFunction(text){
 }
 
 function trySolveRoot(text){
-  let m = text.match(/raiz\s+c[uú]bica\s+de\s+(-?\d+(?:\.\d+)?)/);
+  let m = text.match(/^\s*raiz\s+c[uú]bica\s+de\s+(-?\d+(?:\.\d+)?)\s*$/);
   if(m){
     const n = parseFloat(m[1]);
     const r = Math.cbrt(n);
@@ -437,7 +437,7 @@ function trySolveRoot(text){
       visual: potStage(potRow([{root:true,n,e:3},'=',fmt(r)]))
     };
   }
-  m = text.match(/sqrt\s*\(?\s*(-?\d+(?:\.\d+)?)\)?/) || text.match(/raiz\s+(?:quadrada\s+)?de\s+(-?\d+(?:\.\d+)?)/);
+  m = text.match(/^\s*sqrt\s*\(?\s*(-?\d+(?:\.\d+)?)\s*\)?\s*$/) || text.match(/^\s*raiz\s+(?:quadrada\s+)?de\s+(-?\d+(?:\.\d+)?)\s*$/);
   if(m){
     const n = parseFloat(m[1]);
     if(n<0){
@@ -462,7 +462,7 @@ function trySolveRoot(text){
 
 function trySolveArithmetic(text){
   if(text.includes('=') || /[a-zA-Z]/.test(text)) return null;
-  if(!/[0-9]/.test(text)) return null;
+  if(!/[0-9]/.test(text) || /[^0-9.+\-*/^()\s]/.test(text)) return null;
   // caso especial: conta simples de dois números (A op B) — usa a conta armada / chave / vai um, igual aos exercícios
   const simple = text.match(/^\s*(\d+(?:\.\d+)?)\s*([\+\-\*\/])\s*(\d+(?:\.\d+)?)\s*$/);
   if(simple){
@@ -537,7 +537,7 @@ function trySolveArithmetic(text){
   }
   try{
     const {result, steps, stages} = evalArithmeticWithStages(text);
-    if(isNaN(result)) return null;
+    if(isNaN(result)) return text.includes('/') ? divZeroResult() : null; // ex.: 10 ÷ (5 − 5)
     return {
       howTo: 'Vamos resolver essa expressão numérica seguindo a ordem das operações: primeiro potências, depois multiplicação/divisão, e por último adição/subtração (respeitando parênteses).',
       steps: steps.length? steps : [`Resultado: ${fmt(result)}`],
@@ -578,12 +578,184 @@ function trySolveProportion(text){
   };
 }
 
+/* ---------- equação com x de qualquer jeito (parênteses, frações, x dos dois lados) ----------
+   Calcula cada lado em alguns valores de x pra descobrir os coeficientes: assim
+   "3(x + 2) = 18" vira 3x + 6 = 18 e "x/2 + 3 = 7" vira 0,5x + 3 = 7. */
+function polyText(a, b, c){
+  const parts = [];
+  const term = (k, v)=>{ if(Math.abs(k)<1e-9) return; const sign = k<0 ? '−' : '+'; const abs = Math.abs(k); const coef = (abs===1 && v) ? '' : fmt(abs); parts.push({sign, txt: coef+v}); };
+  term(a, 'x²'); term(b, 'x'); term(c, '');
+  if(!parts.length) return '0';
+  return parts.map((p,i)=> i===0 ? (p.sign==='−' ? '−'+p.txt : p.txt) : ` ${p.sign} ${p.txt}`).join('');
+}
+function polyFit(sideStr){
+  if(/[a-wyz!%]/.test(sideStr)) return null; // só x, números e + − × ÷ ^ ( )
+  const val = v=>{ const r = evalArithmeticWithSteps(sideStr.replace(/x/g, `(${v})`)).result; if(!isFinite(r)) throw new Error('nan'); return r; };
+  const f0 = val(0), f1 = val(1), f2 = val(2), f3 = val(3);
+  const a = (f2 - 2*f1 + f0)/2, b = f1 - f0 - a, c = f0;
+  if(Math.abs(a*9 + b*3 + c - f3) > 1e-7 || Math.abs(val(-2) - (a*4 - b*2 + c)) > 1e-7) return null; // não é de grau ≤ 2
+  const r = n=> Math.abs(n) < 1e-10 ? 0 : Math.round(n*1e9)/1e9;
+  return {a:r(a), b:r(b), c:r(c)};
+}
+function trySolvePolyEq(text){
+  if(!/x/.test(text) || (text.match(/=/g)||[]).length !== 1) return null;
+  const [lhs, rhs] = text.split('=');
+  if(!lhs.trim() || !rhs.trim()) return null;
+  let L, R;
+  try{ L = polyFit(lhs); R = polyFit(rhs); }catch(e){ return null; }
+  if(!L || !R) return null;
+  const a = L.a-R.a, b = L.b-R.b, c = L.c-R.c;
+  const pretty = t=> t.replace(/\*/g,'×').replace(/\^2/g,'²').replace(/\//g,'÷').replace(/-/g,'−').replace(/\s+/g,' ').trim();
+  const orig = `${pretty(lhs)} = ${pretty(rhs)}`;
+  const simplified = `${polyText(L.a,L.b,L.c)} = ${polyText(R.a,R.b,R.c)}`;
+  if(Math.abs(a) > 1e-12){
+    const q = trySolveQuadratic(`${a}x^2 + ${b}x + ${c} = 0`.replace(/\+ -/g,'- '));
+    if(!q) return null;
+    q.steps.unshift(`Organize tudo de um lado: ${polyText(a,b,c)} = 0`);
+    if(simplified !== orig) q.steps.unshift(`Simplifique cada lado: ${simplified}`);
+    q.subjectId = 'eq2';
+    return q;
+  }
+  if(Math.abs(b) < 1e-12) return null;
+  const x = -c/b;
+  const chain = [orig];
+  if(simplified !== orig) chain.push(simplified);
+  chain.push(`${polyText(0,b,0)} = ${fmt(-c)}`, `x = ${fmt(x)}`);
+  return {
+    howTo: 'Esta é uma equação do 1º grau. Primeiro simplificamos cada lado (tirando parênteses e frações); depois passamos os termos com x para um lado e os números para o outro.',
+    steps: [
+      ...(simplified !== orig ? [`Simplifique cada lado: ${simplified}`] : []),
+      `Passe os x para a esquerda e os números para a direita: ${polyText(0,b,0)} = ${fmt(-c)}`,
+      `Divida os dois lados por ${fmt(b)}: x = ${fmt(-c)} ÷ ${fmt(b)}`,
+      `x = ${fmt(x)}`,
+    ],
+    simple: 'Tire os parênteses (multiplicando) e as frações, junte os "x" de um lado e os números do outro, e divida para achar x.',
+    final: `x = ${fmt(x)}`,
+    visual: stepChain(chain),
+    subjectId: 'eq1',
+  };
+}
+
+/* ---------- fração de uma quantidade: "2/3 de 120" ---------- */
+function trySolveFractionOf(text){
+  const m = text.match(/^\s*(\d+)\s*\/\s*(\d+)\s*(?:de|do|da|dos|das)\s+(\d+(?:\.\d+)?)\s*$/);
+  if(!m) return null;
+  const n = +m[1], d = +m[2], q = +m[3];
+  if(!d) return null;
+  const part = q/d, res = part*n;
+  return {
+    howTo: `Para achar ${n}/${d} de um número, dividimos o número em ${d} partes iguais e pegamos ${n} delas.`,
+    steps: [`Divida ${fmt(q)} em ${d} partes: ${fmt(q)} ÷ ${d} = ${fmt(part)}`, `Pegue ${n} parte${n===1?'':'s'}: ${fmt(part)} × ${n} = ${fmt(res)}`],
+    simple: 'Divida pelo número de baixo (denominador) e multiplique pelo de cima (numerador).',
+    final: fmt(res),
+    visual: fracRow([{n, d}, '×', q, '=', fmt(res)]),
+  };
+}
+
+/* ---------- MMC e MDC (pela fatoração em primos) ---------- */
+function primeFactors(n){
+  const f = {}; let k = 2;
+  while(n > 1 && k*k <= n){ while(n % k === 0){ f[k] = (f[k]||0) + 1; n /= k; } k++; }
+  if(n > 1) f[n] = (f[n]||0) + 1;
+  return f;
+}
+function factorsText(f){
+  const sup = e=> String(e).split('').map(d=>'⁰¹²³⁴⁵⁶⁷⁸⁹'[d]).join('');
+  const ks = Object.keys(f).map(Number).sort((a,b)=>a-b);
+  return ks.length ? ks.map(p=> f[p]>1 ? `${p}${sup(f[p])}` : `${p}`).join(' × ') : '1';
+}
+function trySolveMmcMdc(text){
+  const m = text.match(/^\s*(mmc|m\.m\.c\.?|mdc|m\.d\.c\.?)\s*(?:de|entre|dos\s+n[uú]meros)?\s*\(?\s*([\d\s,;e.]+?)\s*\)?\s*$/);
+  if(!m) return null;
+  const kind = m[1].replace(/\./g,'').slice(0,3);
+  const nums = m[2].split(/[\s,;]+|\be\b/).map(t=>t.trim()).filter(Boolean).map(Number);
+  if(nums.length < 2 || nums.some(n=> !Number.isInteger(n) || n<1 || n>1e7)) return null;
+  const fs = nums.map(primeFactors);
+  const primes = [...new Set(fs.flatMap(f=>Object.keys(f).map(Number)))].sort((a,b)=>a-b);
+  const res = {};
+  primes.forEach(p=>{
+    const exps = fs.map(f=>f[p]||0);
+    const e = kind==='mmc' ? Math.max(...exps) : Math.min(...exps);
+    if(e>0) res[p] = e;
+  });
+  const value = Object.entries(res).reduce((acc,[p,e])=> acc*Math.pow(+p,e), 1);
+  const name = kind==='mmc' ? 'MMC (mínimo múltiplo comum)' : 'MDC (máximo divisor comum)';
+  return {
+    howTo: `Vamos achar o ${name} decompondo cada número em fatores primos.`,
+    steps: [
+      ...nums.map((n,i)=> `${n} = ${factorsText(fs[i])}`),
+      kind==='mmc' ? 'Pegue todos os primos que aparecem, cada um com o MAIOR expoente' : 'Pegue só os primos que aparecem em TODOS, cada um com o MENOR expoente',
+      `${kind.toUpperCase()} = ${factorsText(res)} = ${value}`,
+    ],
+    simple: kind==='mmc'
+      ? 'O MMC é o menor número que é múltiplo de todos ao mesmo tempo. Ele serve, por exemplo, para somar frações com denominadores diferentes.'
+      : 'O MDC é o maior número que divide todos ao mesmo tempo. Ele serve, por exemplo, para simplificar frações.',
+    final: `${kind.toUpperCase()}(${nums.join(', ')}) = ${value}`,
+    subjectId: 'mmcmdc',
+  };
+}
+
+/* ---------- média aritmética ---------- */
+function trySolveMean(text){
+  const m = text.match(/^\s*(?:a\s+)?m[eé]dia\s*(?:aritm[eé]tica)?\s*(?:de|entre|dos\s+n[uú]meros|das\s+notas)?\s*:?\s*([\d\s,;e.]+?)\s*$/);
+  if(!m) return null;
+  const nums = m[1].split(/[\s,;]+|\be\b/).map(t=>t.trim()).filter(Boolean).map(Number);
+  if(nums.length < 2 || nums.some(n=>isNaN(n))) return null;
+  const sum = nums.reduce((a,b)=>a+b, 0), avg = sum/nums.length;
+  return {
+    howTo: 'A média aritmética é a soma de todos os valores dividida pela quantidade de valores.',
+    steps: [`Some todos: ${nums.map(fmt).join(' + ')} = ${fmt(sum)}`, `Conte os valores: ${nums.length}`, `Divida: ${fmt(sum)} ÷ ${nums.length} = ${fmt(avg)}`],
+    simple: 'Junte tudo e reparta igualmente: soma ÷ quantidade.',
+    final: fmt(avg),
+    visual: stepChain([`(${nums.map(fmt).join(' + ')}) ÷ ${nums.length}`, `${fmt(sum)} ÷ ${nums.length}`, fmt(avg)]),
+    subjectId: 'estatistica',
+  };
+}
+
+/* ---------- fatorial: "5!" ---------- */
+function trySolveFactorial(text){
+  const m = text.match(/^\s*(\d+)\s*!\s*$/) || text.match(/^\s*fatorial\s+de\s+(\d+)\s*$/);
+  if(!m) return null;
+  const n = +m[1];
+  if(n > 20) return {howTo:'O fatorial cresce muito rápido!', steps:[`${n}! tem mais de 19 algarismos.`], simple:'n! = n × (n−1) × … × 2 × 1.', final:'Número grande demais pra mostrar', subjectId:'combinatoria'};
+  let r = 1; const fac = []; for(let k=n; k>=1; k--){ r *= k; fac.push(k); }
+  return {
+    howTo: `O fatorial de ${n} (escreve-se ${n}!) é a multiplicação de ${n} por todos os números inteiros menores que ele, até 1.`,
+    steps: n<=1 ? [`Por definição, ${n}! = 1`] : [`${n}! = ${fac.join(' × ')}`, `${n}! = ${r}`],
+    simple: 'Multiplique o número por todos os anteriores até chegar no 1. O fatorial aparece muito em contagem (de quantos jeitos dá pra organizar coisas).',
+    final: `${n}! = ${r}`,
+    subjectId: 'combinatoria',
+  };
+}
+
+/* ---------- divisão por zero: explica em vez de "não entendi" ---------- */
+function trySolveDivZero(text){
+  if(/[a-z=]/.test(text) || !/\/\s*\(?\s*0+(?:\.0+)?\s*\)?(?![\d.])/.test(text)) return null;
+  return divZeroResult();
+}
+function divZeroResult(){
+  return {
+    kind: 'Divisão por zero',
+    howTo: 'Essa conta tem uma divisão por zero.',
+    steps: ['Dividir é perguntar "quantas vezes o zero cabe no número?"', 'Não existe número que, multiplicado por 0, dê um número diferente de 0', 'Por isso a divisão por zero não tem resultado'],
+    simple: 'Nenhuma calculadora consegue dividir por zero: essa operação não existe na matemática.',
+    final: 'Não existe (divisão por zero)',
+  };
+}
+
 function solveQuestion(raw){
   const text = normalizeExpr(raw);
-  const attempts = [trySolveFunction, trySolveSystem, trySolveQuadratic, trySolveLinear, trySolveProportion, trySolveRoot, trySolvePercentage, trySolveFractionPair, trySolveArithmetic];
-  for(const fn of attempts){
-    const r = fn(text);
-    if(r) return r;
+  for(const [fn, kind] of SOLVE_KINDS){
+    let r = null;
+    try{ r = fn(text); }catch(e){ r = null; }
+    if(r){ r.kind = r.kind || (fn===trySolvePolyEq ? (r.subjectId==='eq2' ? 'Equação do 2º grau' : 'Equação do 1º grau') : kind); return r; }
   }
   return null;
 }
+/* ordem em que o resolvedor tenta entender a questão, e o nome do tipo mostrado na tela */
+const SOLVE_KINDS = [
+  [trySolveFunction,'Função'], [trySolveSystem,'Sistema de equações'], [trySolveQuadratic,'Equação do 2º grau'], [trySolveLinear,'Equação do 1º grau'],
+  [trySolveProportion,'Proporção (regra de três)'], [trySolvePolyEq,'Equação'], [trySolveMmcMdc,'MMC e MDC'], [trySolveMean,'Média'],
+  [trySolveFactorial,'Fatorial'], [trySolveFractionOf,'Fração de uma quantidade'], [trySolveRoot,'Raiz'], [trySolvePercentage,'Porcentagem'],
+  [trySolveFractionPair,'Frações'], [trySolveDivZero,'Divisão por zero'], [trySolveArithmetic,'Conta'],
+];

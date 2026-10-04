@@ -379,6 +379,7 @@ function errorsScreen(){
 const SOLVER_SUBJECT = [['trySolveFunction','func1grau'],['trySolveSystem','sistemas'],['trySolveQuadratic','eq2'],['trySolveLinear','eq1'],['trySolveProportion','regra3'],
   ['trySolveRoot','potenciacao'],['trySolvePercentage','porcentagem'],['trySolveFractionPair','fracoes'],['trySolveArithmetic','expressoes']];
 function subjectForProblem(raw){
+  try{ const r = solveQuestion(raw); if(r && r.subjectId) return r.subjectId; }catch(e){}
   let t; try{ t = normalizeExpr(raw); }catch(e){ return null; }
   for(const [fn,id] of SOLVER_SUBJECT){ try{ if(typeof window[fn]==='function' && window[fn](t)) return id; }catch(e){} }
   return null;
@@ -386,7 +387,7 @@ function subjectForProblem(raw){
 function solvePracticeCard(raw){
   const sid = subjectForProblem(raw); if(!sid) return null;
   const s = subjById(sid); if(!s) return null;
-  const card = h(`<div class="result-section"><div class="sec-label"><span class="n">5</span>Agora é sua vez</div><div class="result-card"><p>Entender a resolução é o primeiro passo. Resolva sozinho questões parecidas de <b>${s.name}</b> para fixar.</p>
+  const card = h(`<div class="result-section"><div class="sec-label"><span class="ico">🎯</span>Agora é sua vez</div><div class="result-card"><p>Entender a resolução é o primeiro passo. Resolva sozinho questões parecidas de <b>${s.name}</b> para fixar.</p>
     <div class="cta-row"><button type="button" class="btn secondary" data-a="t">Ver explicação</button><button type="button" class="btn primary" data-a="p">Praticar parecidas</button></div></div></div>`);
   card.querySelector('[data-a=t]').onclick = ()=> go('subjectDetail', {subjectId:sid});
   card.querySelector('[data-a=p]').onclick = ()=> startSession(sid, 'medio');
