@@ -476,31 +476,128 @@ function missionsCard(){
 }
 
 /* ---------- tela de conquistas ---------- */
+/* categorias e progresso de cada conquista (só pra mostrar na tela; quem desbloqueia é o código do jogo) */
+const ACH_GROUPS = [
+  {id:'hits',   ico:'🎯', name:'Acertos e combos', ids:['first','ans10','ans100','hits50','hits200','hits500','combo5','combo10','hard10','perfect','explorer']},
+  {id:'streak', ico:'🔥', name:'Constância',       ids:['streak3','streak7','streak14','streak30','goal','missions','level5','level10']},
+  {id:'arena',  ico:'⚔️', name:'Arena e jogos',    ids:['arenaWin','arenaPerfect','arenaStars30','daily1','daily7','exam1','exam10','bolt15','bolt30','quiz5000','duelist']},
+  {id:'study',  ico:'📚', name:'Estudo',           ids:['fixer','notebook5','masterFrac','unit','chests','placement','plan','solver10']},
+];
+function achProgress(id, g){
+  const a = (typeof arenaData==='function') ? arenaData() : {daily:{}, exams:[]};
+  const st = Math.max(g.bestStreak||0, gameStreakNow());
+  const P = {
+    first:[g.hits,1], ans10:[totalAnswered(),10], ans100:[totalAnswered(),100],
+    hits50:[g.hits,50], hits200:[g.hits,200], hits500:[g.hits,500],
+    combo5:[g.bestCombo,5], combo10:[g.bestCombo,10], hard10:[g.hardHits,10],
+    explorer:[Object.keys(g.subjectsHit||{}).length,6],
+    streak3:[st,3], streak7:[st,7], streak14:[st,14], streak30:[st,30],
+    level5:[levelInfo(g.xp).level,5], level10:[levelInfo(g.xp).level,10],
+    arenaStars30:[(typeof arenaTotalStars==='function') ? arenaTotalStars() : 0,30],
+    daily7:[Object.keys(a.daily||{}).length,7], exam1:[(a.exams||[]).length,1],
+    bolt15:[g.boltBest||0,15], bolt30:[g.boltBest||0,30],
+    quiz5000:[Math.max(0, ...Object.values(g.quizBest||{})),10000],
+    fixer:[g.fixed||0,10], notebook5:[g.errLearned||0,5], chests:[g.chests||0,5], solver10:[g.solves||0,10],
+    duelist:[g.duels||0,1], daily1:[Object.keys(a.daily||{}).length,1],
+  };
+  const r = P[id];
+  return r ? [Math.min(r[0]||0, r[1]), r[1]] : null;
+}
+function fmtAchDate(ts){ const d = new Date(ts); return isNaN(d) ? '' : d.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', year:'2-digit'}); }
+
 function achievementsScreen(){
   const wrap = document.createElement('div');
   wrap.appendChild(topbar('🏅 Conquistas', true, ()=>go('progress')));
-  const c = h(`<div class="content"></div>`);
+  const c = h(`<div class="content ac-screen"></div>`);
   const g = loadGame();
   const lv = levelInfo(g.xp);
-  const grid = h(`<div class="stat-grid"></div>`);
-  grid.appendChild(h(`<div class="stat-card acc"><div class="num">${lv.level}</div><div class="lbl">Nível atual</div></div>`));
-  grid.appendChild(h(`<div class="stat-card"><div class="num">${g.xp}</div><div class="lbl">XP total</div></div>`));
-  grid.appendChild(h(`<div class="stat-card"><div class="num">${g.bestCombo}</div><div class="lbl">Maior combo</div></div>`));
-  grid.appendChild(h(`<div class="stat-card"><div class="num">${g.boltBest}</div><div class="lbl">Recorde Relâmpago</div></div>`));
-  grid.appendChild(h(`<div class="stat-card"><div class="num">🔥 ${gameStreakNow()}</div><div class="lbl">Ofensiva atual</div></div>`));
-  grid.appendChild(h(`<div class="stat-card"><div class="num">🏆 ${g.bestStreak||0}</div><div class="lbl">Maior ofensiva</div></div>`));
-  c.appendChild(grid);
-  c.appendChild(h(`<section class="block"><h3>Medalhas (${Object.keys(g.ach).length}/${ACHIEVEMENTS.length})</h3></section>`));
-  const ag = h(`<div class="ach-grid"></div>`);
-  ACHIEVEMENTS.forEach(a=>{
-    ag.appendChild(h(`<div class="ach ${g.ach[a.id]?'got':'locked'}"><div class="ico">${a.ico}</div><div class="nm">${a.name}</div><div class="ds">${a.desc}</div></div>`));
+  const has = id=> !!g.ach[id];
+  const got = ACHIEVEMENTS.filter(a=>has(a.id)).length, total = ACHIEVEMENTS.length;
+  const R = 36, C = 2*Math.PI*R;
+
+  // próxima conquista: a bloqueada com mais progresso
+  let next = null;
+  ACHIEVEMENTS.forEach(a=>{ if(has(a.id)) return; const pr = achProgress(a.id, g); if(!pr) return; const f = pr[0]/pr[1]; if(!next || f > next.f) next = {a, pr, f}; });
+  const recent = ACHIEVEMENTS.filter(a=>has(a.id) && typeof g.ach[a.id]==='number').sort((x,y)=> g.ach[y.id]-g.ach[x.id]).slice(0,3);
+
+  c.appendChild(h(`<div class="ac-hero">
+    <div class="ac-hero-top">
+      <div class="ac-ring" aria-label="${got} de ${total} conquistas">
+        <svg viewBox="0 0 84 84"><circle cx="42" cy="42" r="${R}" class="bg"/><circle cx="42" cy="42" r="${R}" class="fg" ${got?'':'style="opacity:0"'} stroke-dasharray="${C}" stroke-dashoffset="${C*(1-got/total)}"/></svg>
+        <div class="ac-ring-in">🏆<b>${got}<small>/${total}</small></b></div>
+      </div>
+      <div class="ac-hero-t">
+        <small class="ac-kicker">SALA DE TROFÉUS</small>
+        <h2>${got ? `${Math.round(got/total*100)}% das medalhas` : 'Sua estante está vazia'}</h2>
+        <p>${got===total ? 'Você conquistou todas! 🎉' : got ? `Faltam ${total-got} para completar a coleção.` : 'Acerte questões e jogue para ganhar a primeira!'}</p>
+      </div>
+    </div>
+    <div class="ac-stats">
+      <div><b>⭐ ${lv.level}</b><span>nível</span></div>
+      <div><b>${(g.xp||0).toLocaleString('pt-BR')}</b><span>XP total</span></div>
+      <div><b>⚡ ${g.bestCombo||0}</b><span>maior combo</span></div>
+      <div><b>🔥 ${gameStreakNow()}</b><span>ofensiva</span></div>
+      <div><b>🏆 ${g.bestStreak||0}</b><span>maior ofensiva</span></div>
+      <div><b>🌩️ ${g.boltBest||0}</b><span>relâmpago</span></div>
+    </div>
+  </div>`));
+
+  if(next){
+    c.appendChild(h(`<div class="ac-next">
+      <div class="ac-next-ico">${next.a.ico}</div>
+      <div class="ac-next-t"><small>QUASE LÁ · PRÓXIMA CONQUISTA</small><b>${next.a.name}</b><span>${next.a.desc}</span>
+        <div class="ac-pbar"><i style="width:${Math.round(next.f*100)}%"></i></div><em>${next.pr[0].toLocaleString('pt-BR')} / ${next.pr[1].toLocaleString('pt-BR')}</em></div>
+    </div>`));
+  }
+  if(recent.length){
+    c.appendChild(h(`<h3 class="ar-label">Conquistas recentes</h3>`));
+    c.appendChild(h(`<div class="ac-recent">${recent.map(a=>`<div class="ac-rc"><span>${a.ico}</span><b>${a.name}</b><small>${fmtAchDate(g.ach[a.id])}</small></div>`).join('')}</div>`));
+  }
+
+  // medalhas por categoria, com filtro
+  c.appendChild(h(`<h3 class="ar-label">Medalhas</h3>`));
+  const FILTERS = [{id:'all', name:'Todas', n:total}, {id:'got', name:'🏅 Conquistadas', n:got}, {id:'todo', name:'🔒 Faltam', n:total-got}];
+  const chips = h(`<div class="ex-chips small ac-filter"></div>`);
+  const list = h(`<div class="ac-list"></div>`);
+  const known = new Set(ACH_GROUPS.flatMap(x=>x.ids));
+  const groups = ACH_GROUPS.concat([{id:'other', ico:'✨', name:'Outras', ids:ACHIEVEMENTS.map(a=>a.id).filter(id=>!known.has(id))}]);
+  const paint = ()=>{
+    const f = state.achFilter || 'all';
+    chips.querySelectorAll('.ex-chip').forEach(b=> b.classList.toggle('on', b.dataset.f===f));
+    list.innerHTML = '';
+    groups.forEach(gr=>{
+      const items = gr.ids.map(id=>ACHIEVEMENTS.find(a=>a.id===id)).filter(Boolean).filter(a=> f==='all' || (f==='got') === has(a.id));
+      if(!items.length) return;
+      const gn = gr.ids.filter(id=>has(id) && ACHIEVEMENTS.some(a=>a.id===id)).length, gt = gr.ids.filter(id=>ACHIEVEMENTS.some(a=>a.id===id)).length;
+      list.appendChild(h(`<div class="ac-group"><span>${gr.ico} ${gr.name}</span><small>${gn}/${gt}</small></div>`));
+      const grid = h(`<div class="ac-grid"></div>`);
+      items.forEach(a=>{
+        const on = has(a.id), pr = on ? null : achProgress(a.id, g);
+        grid.appendChild(h(`<div class="ac-card ${on?'got':'locked'}">
+          <div class="ac-medal"><span>${a.ico}</span>${on?'':'<i class="ac-lock">🔒</i>'}</div>
+          <b>${a.name}</b><small>${a.desc}</small>
+          ${on ? `<span class="ac-date">✓ ${typeof g.ach[a.id]==='number' ? fmtAchDate(g.ach[a.id]) : 'conquistada'}</span>`
+               : pr && pr[1]>1 ? `<div class="ac-pbar sm"><i style="width:${Math.round(pr[0]/pr[1]*100)}%"></i></div><span class="ac-pn">${pr[0].toLocaleString('pt-BR')}/${pr[1].toLocaleString('pt-BR')}</span>` : ''}
+        </div>`));
+      });
+      list.appendChild(grid);
+    });
+    if(!list.children.length) list.appendChild(h(`<div class="ar-empty">${f==='got' ? '🌱 Nenhuma ainda. Acerte sua primeira questão!' : '🎉 Você conquistou todas!'}</div>`));
+  };
+  FILTERS.forEach(fl=>{ const b = h(`<button type="button" class="ex-chip" data-f="${fl.id}">${fl.name} <small>${fl.n}</small></button>`); b.onclick = ()=>{ state.achFilter = fl.id; paint(); }; chips.appendChild(b); });
+  c.appendChild(chips); c.appendChild(list); paint();
+
+  // títulos em escada
+  c.appendChild(h(`<h3 class="ar-label">Títulos</h3>`));
+  const lad = h(`<div class="ac-titles"></div>`);
+  let curIdx = 0; LEVEL_TITLES.forEach(([min],i)=>{ if(lv.level>=min) curIdx = i; });
+  LEVEL_TITLES.forEach(([min,t],i)=>{
+    const st = i<curIdx ? 'done' : i===curIdx ? 'cur' : 'lock';
+    const falta = min - lv.level;
+    lad.appendChild(h(`<div class="ac-title ${st}"><span class="ac-tdot">${st==='lock'?'🔒':st==='cur'?'★':'✓'}</span><div><b>${t}</b><small>${st==='cur' ? 'Seu título atual' : st==='done' ? `Nível ${min} · conquistado` : `Nível ${min} · faltam ${falta} ${falta===1?'nível':'níveis'}`}</small></div></div>`));
   });
-  c.appendChild(ag);
-  c.appendChild(h(`<section class="block" style="margin-top:20px"><h3>Títulos</h3></section>`));
-  LEVEL_TITLES.forEach(([min,t])=>{
-    const on = lv.level>=min;
-    c.appendChild(h(`<div class="mastery-row" style="opacity:${on?1:.5}"><div class="top"><span class="name">${on?'':'🔒 '}${t}</span><span class="pct">Nível ${min}</span></div></div>`));
-  });
+  c.appendChild(lad);
+
   wrap.appendChild(c);
   return wrap;
 }

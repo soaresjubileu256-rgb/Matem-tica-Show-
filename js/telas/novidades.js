@@ -10,6 +10,9 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
+  {v:10, date:'2026-10-05', title:'Conquistas de cara nova', items:[
+    {ico:'🏅', t:'Conquistas', d:'Sala de troféus com a próxima conquista, as recentes, medalhas por categoria com barra de progresso e a escada de títulos.', go:'achievements'},
+  ]},
   {v:9, date:'2026-10-05', title:'Progresso de cara nova', items:[
     {ico:'📈', t:'Meu progresso', d:'Seu nível e XP, certas e erradas, atividade dos últimos 14 dias, domínio dos assuntos e lista de assuntos com ordenação.', go:'progress'},
     {ico:'🕘', t:'Histórico', d:'Respostas separadas por dia, com filtro de certas e erradas.', go:'history'},
