@@ -12,8 +12,19 @@ const AV_GRADS = [
   ['#4C7DFF','#B23FE0'], ['#FF6B6B','#FFB800'], ['#12B886','#33D2E3'], ['#F06595','#A77BFF'],
   ['#FF922B','#F03E3E'], ['#3BC9DB','#4C6EF5'], ['#94D82D','#12B886'], ['#CC5DE8','#F783AC'],
 ];
+/* avatar escolhido no Perfil (emoji e cor), guardado no jogo da conta: {emo:'🦊', c:3} */
+const AV_EMOJIS = ['🦊','🐼','🐯','🦁','🐸','🐵','🦄','🐙','🐧','🦉','🐨','🐶','🐱','🐲','🦖','🐢','🚀','⭐','🧠','🤖','👾','🎩','⚽','🎮'];
+function avatarOf(u){
+  const uid = u && u.id; if(!uid) return null;
+  try{
+    if(currentUser && currentUser.id===uid) return loadGame().avatar || null;
+    const g = JSON.parse(localStorage.getItem(`${GAME_KEY_BASE}:${uid}`) || '{}');
+    return g.avatar || null;
+  }catch(e){ return null; }
+}
 function avatarColor(u, idx){
-  let n = idx;
+  const av = avatarOf(u);
+  let n = av && av.c >= 0 ? av.c : idx;
   if(!(n >= 0)){
     const id = (u && (u.id||u.name)) || '';
     n = 2166136261; for(const ch of id){ n ^= ch.codePointAt(0); n = Math.imul(n, 16777619) >>> 0; }
@@ -21,9 +32,15 @@ function avatarColor(u, idx){
   const [a,b] = AV_GRADS[n % AV_GRADS.length];
   return `linear-gradient(135deg, ${a}, ${b})`;
 }
+/* o que vai dentro da bolinha: o emoji escolhido ou a inicial do nome */
+function avatarFace(u){
+  const av = avatarOf(u);
+  if(av && av.emo) return av.emo;
+  return u && u.name ? escHTML(u.name.trim().charAt(0).toUpperCase()) : '?';
+}
 function avatarHTML(u, cls, idx){
-  const ini = u && u.name ? escHTML(u.name.trim().charAt(0).toUpperCase()) : '?';
-  return `<span class="${cls||'av'}" style="background:${avatarColor(u, idx)}">${ini}</span>`;
+  const av = avatarOf(u);
+  return `<span class="${cls||'av'} ${av && av.emo ? 'is-emo' : ''}" style="background:${avatarColor(u, idx)}">${avatarFace(u)}</span>`;
 }
 /* lê o XP/ofensiva de uma conta sem precisar estar logado nela */
 function peekGame(uid){

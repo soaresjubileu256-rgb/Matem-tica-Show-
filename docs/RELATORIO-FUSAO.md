@@ -531,3 +531,16 @@ A Tabuada agora tem três partes (antes era só a lista de 1 a 10):
   - Botões **Imprimir ou salvar em PDF** e **Compartilhar a conquista** (no computador, copia o texto), com uma dica de impressão.
   - Botões pra passar ao certificado anterior ou ao próximo.
 - Entrou nas **Novidades**.
+
+## 40. Perfil novo e avatar
+
+- **Avatar personalizável:**
+  - Toque na foto do Perfil (ou em "Trocar avatar") para escolher um dos 24 bichinhos ou símbolos, ou a inicial do nome, e uma das 8 cores.
+  - Fica salvo no jogo da conta (`g.avatar = {emo, c}`).
+  - Aparece no Perfil, no botão do Início e na lista de contas da tela de entrada (`avatarOf`, `avatarFace` e `avatarColor` em `entrada.js`).
+- **Cartão do jogador:** avatar grande com o botão ✏️, nome, título do nível, selo do nível com a barra de XP, e etiquetas de ofensiva, moedas e XP total.
+- **Seus números:** questões, % de acerto, assuntos proficientes ou dominados e maior combo, em cartões com cor.
+- **Atalhos:** Conquistas, Certificados, Dias de estudo e Maior ofensiva.
+- **Medalhas recentes:** as 4 últimas, com link pra todas.
+- **Menu:** novo grupo "Personalizar" e ícones com cor própria em cada item.
+- Entrou nas **Novidades**.

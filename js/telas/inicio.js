@@ -6,8 +6,9 @@
 function homeScreen(){
   const wrap = document.createElement('div');
   const bar = topbar();
-  const initial = (currentUser && currentUser.name) ? currentUser.name.trim().charAt(0).toUpperCase() : '?';
-  const profileBtn = h(`<button class="auth-logout profile-btn-avatar" title="Perfil" aria-label="Abrir meu perfil">${escHTML(initial)}</button>`);
+  const myAv = avatarOf(currentUser);
+  const profileBtn = h(`<button class="auth-logout profile-btn-avatar ${myAv ? 'av-custom' : ''} ${myAv && myAv.emo ? 'is-emo' : ''}" title="Perfil" aria-label="Abrir meu perfil">${avatarFace(currentUser)}</button>`);
+  if(myAv) profileBtn.style.setProperty('--avbg', avatarColor(currentUser));
   profileBtn.onclick = ()=> go('profile');
   const helpBtn = h(`<button class="auth-logout tut-help-btn" title="Como usar" aria-label="Como usar o app">?</button>`);
   helpBtn.onclick = ()=> go('help');
