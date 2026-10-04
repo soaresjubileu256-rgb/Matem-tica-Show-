@@ -18,7 +18,7 @@ function homeScreen(){
   const streakNow = gameStreakNow();
   const hello = streakNow>0 && loadGame().lastDay!==dayKey()
     ? `Olá${firstName? ', '+escHTML(firstName) : ''}! Jogue uma fase hoje pra não perder sua ofensiva de ${streakNow} dia${streakNow===1?'':'s'}! 🔥`
-    : pick([`Olá${firstName? ', '+escHTML(firstName) : ''}! Bora subir de nível hoje? 🚀`, `E aí${firstName? ', '+escHTML(firstName) : ''}! O palco é seu hoje! 🎤`, `Oi${firstName? ', '+escHTML(firstName) : ''}! Luzes, câmera... matemática! 🎬`]);
+    : pick([`Olá${firstName? ', '+escHTML(firstName) : ''}! Bora subir de nível hoje? 🚀`, `E aí${firstName? ', '+escHTML(firstName) : ''}! O palco é seu hoje! 🎤`, `Oi${firstName? ', '+escHTML(firstName) : ''}! Luzes, câmera... show! 🎬`]);
   wrap.appendChild(mascotBubble(hello, 'happy'));
   showStreakNote();
   wrap.appendChild(playerCard());
