@@ -376,3 +376,20 @@ A Tabuada agora tem três partes (antes era só a lista de 1 a 10):
 - **A barra do topo** (ofensiva, moedas e vidas) agora fica presa ao rolar. Antes ela sumia, por causa de um ajuste da página que impedia barras fixas.
 - A Trilha também entrou nas **Novidades**.
 - **Correção:** o balão "▶ JOGAR" (e o "🎁 ABRIR" do prêmio) não respondia ao toque; só o hexágono funcionava. Agora o balão e o nome da fase abrem a fase. O "▶ Continuar" do topo abre direto a fase atual.
+
+## 29. Desafios novos
+
+- **Tela inicial:**
+  - Cartão com quantos desafios você fez e o seu melhor acerto.
+  - **Assuntos:** Todos, Fundamental ou Ensino Médio.
+  - **Quantas questões:** 5, 10 ou 15.
+  - Dificuldade em cartões com o **recorde** de cada combinação.
+  - Regras em cartõezinhos.
+  - O app lembra as escolhas.
+- **Durante:** número da questão, assunto e dificuldade coloridos. A mesma matéria não se repete em seguida.
+- **Final:**
+  - Estrelas e XP, como antes.
+  - **Novo recorde**, certas, erradas, maior sequência e tempo.
+  - **Revisão de cada questão**, com a resposta certa e o que a pessoa digitou, e o botão **Treinar** nas que errou.
+  - Botões **Novo desafio** e **Mudar dificuldade**.
+- Os Desafios entraram nas **Novidades**.

@@ -444,34 +444,117 @@ function reviewErrorsSessionScreen(){
   return wrap;
 }
 
-/* ---------------- DESAFIOS (perguntas de todos os assuntos misturadas, por dificuldade) ---------------- */
+/* ---------------- DESAFIOS (perguntas de todos os assuntos misturadas, por dificuldade) ----------------
+   Escolhe os assuntos (Todos / Fundamental / Ensino Médio), a dificuldade e quantas questões.
+   Cada combinação guarda o recorde (mais acertos); no fim há a revisão de cada questão. */
+const CH_KEY_BASE = 'mathstudy-challenge-v1';
+const CH_POOLS = [['all','🌎','Todos'], ['fund','📘','Fundamental'], ['em','🎓','Ensino Médio']];
+const CH_DIFFS = [['facil','Fácil','🟢','Pra aquecer'], ['medio','Médio','🟡','O desafio certo'], ['dificil','Difícil','🔴','Pra quem é fera']];
+const CH_SIZES = [5,10,15];
+function chData(){ try{ const d = JSON.parse(localStorage.getItem(`${CH_KEY_BASE}:${currentUserId()}`)||'{}'); d.best = d.best||{}; d.cfg = d.cfg||{pool:'all', n:10}; d.plays = d.plays||0; return d; }catch(e){ return {best:{}, cfg:{pool:'all', n:10}, plays:0}; } }
+function saveChData(d){ try{ localStorage.setItem(`${CH_KEY_BASE}:${currentUserId()}`, JSON.stringify(d)); }catch(e){} }
+const chKey = (pool, diff, n)=> `${pool}:${diff}:${n}`;
+function chPickSubject(sess){
+  const ids = sess.pool && sess.pool!=='all' ? levelIds(sess.pool) : SUBJECTS.map(x=>x.id);
+  const list = SUBJECTS.filter(x=> ids.includes(x.id) && x.id!==sess.currentSubjectId);
+  return list.length ? pick(list) : pick(SUBJECTS);
+}
 function challengeDifficultyScreen(){
   const wrap = document.createElement('div');
   wrap.appendChild(topbar('Desafios', true, ()=>go('exercisesSubjects')));
-  const c = h(`<div class="content"></div>`);
-  c.appendChild(h(`<div class="greeting" style="margin-bottom:4px"><h2>🏆 Desafios</h2><p>10 questões sorteadas de todos os assuntos. Escolha a dificuldade.</p></div>`));
-  const row = h(`<div class="diff-row"></div>`);
-  [['facil','Fácil'],['medio','Médio'],['dificil','Difícil']].forEach(([id,label])=>{
-    const chip = h(`<button class="diff-chip" data-d="${id}">${label}</button>`);
-    chip.onclick = ()=> startChallenge(id);
-    row.appendChild(chip);
-  });
-  c.appendChild(row);
+  const c = h(`<div class="content ch-setup"></div>`);
+  const d = chData(), cfg = d.cfg;
+  const bestAll = Math.max(0, ...Object.values(d.best).map(x=>x.pct||0));
+  c.appendChild(h(`<div class="ch-hero">
+      <div class="chh-top"><div class="chh-ico">🏆</div><div><h2>Desafios</h2><p>Questões sorteadas de vários assuntos, uma de cada vez. Responda digitando e veja a resolução de cada uma.</p></div></div>
+      <div class="chh-stats"><div><b>${d.plays}</b><span>desafios feitos</span></div><div><b>${bestAll}%</b><span>melhor acerto</span></div></div>
+    </div>`));
+  const body = h(`<div></div>`); c.appendChild(body);
+  function paint(){
+    body.innerHTML = '';
+    const sec = t=> h(`<div class="ch-lbl">${t}</div>`);
+    body.appendChild(sec('Assuntos'));
+    const pools = h(`<div class="ch-pools"></div>`);
+    CH_POOLS.forEach(([id,ico,label])=>{
+      const b = h(`<button type="button" class="ch-pool ${cfg.pool===id?'on':''}"><span>${ico}</span>${label}</button>`);
+      b.onclick = ()=>{ cfg.pool = id; saveChData(d); paint(); };
+      pools.appendChild(b);
+    });
+    body.appendChild(pools);
+    body.appendChild(sec('Quantas questões'));
+    const sizes = h(`<div class="ch-sizes"></div>`);
+    CH_SIZES.forEach(n=>{
+      const b = h(`<button type="button" class="ch-size ${cfg.n===n?'on':''}">${n}</button>`);
+      b.onclick = ()=>{ cfg.n = n; saveChData(d); paint(); };
+      sizes.appendChild(b);
+    });
+    body.appendChild(sizes);
+    body.appendChild(sec('Escolha a dificuldade pra começar'));
+    CH_DIFFS.forEach(([id,label,dot,desc])=>{
+      const best = d.best[chKey(cfg.pool, id, cfg.n)];
+      const b = h(`<button type="button" class="ch-level ch-${id}"><span class="ch-dot">${dot}</span><span class="ch-t"><b>${label}</b><small>${desc}</small></span><span class="ch-best">${best ? `🏆 ${best.ok}/${cfg.n}` : 'Sem recorde'}</span><span class="ch-go">▶</span></button>`);
+      b.onclick = ()=> startChallenge(id, cfg.pool, cfg.n);
+      body.appendChild(b);
+    });
+    body.appendChild(h(`<div class="ch-rules">
+        <div><span>⌨️</span><p>Você <b>digita</b> a resposta, sem alternativas.</p></div>
+        <div><span>💡</span><p>Peça uma <b>dica</b> se travar.</p></div>
+        <div><span>⭐</span><p>Até <b>3 estrelas</b> e XP de bônus no fim.</p></div>
+        <div><span>📋</span><p>No fim, <b>reveja cada questão</b>.</p></div>
+      </div>`));
+  }
+  paint();
   wrap.appendChild(c);
   return wrap;
 }
-function startChallenge(difficulty){
-  const total = 10;
-  const first = pick(SUBJECTS);
+function startChallenge(difficulty, pool, total){
+  pool = pool || 'all'; total = total || 10;
+  const sess = {mixed:true, kind:'challenge', difficulty, pool, index:0, total, correct:0, wrong:0, results:[], log:[], checked:false, wasCorrect:null, streak:0, bestStreak:0, t0:Date.now()};
+  const first = chPickSubject(sess);
   const {ex, signature} = genQuestionAvoidingRepeat(first, difficulty, null);
-  state.session = {
-    mixed:true, difficulty, index:0, total,
-    correct:0, wrong:0, results:[], checked:false, wasCorrect:null,
-    currentSubjectId: first.id,
-    current: ex,
-    lastSignature: signature,
-  };
+  Object.assign(sess, {currentSubjectId:first.id, current:ex, lastSignature:signature});
+  state.session = sess;
   go('challengeSession');
+}
+function challengeEnd(c, sess){
+  const d = chData(), key = chKey(sess.pool||'all', sess.difficulty, sess.total);
+  const pct = Math.round((sess.correct/sess.total)*100);
+  if(!sess.saved){
+    sess.saved = true;
+    d.plays++;
+    const prev = d.best[key];
+    sess.record = !prev || sess.correct > prev.ok;
+    if(sess.record) d.best[key] = {ok:sess.correct, pct, ts:Date.now()};
+    sess.prevBest = prev ? prev.ok : null;
+    saveChData(d);
+  }
+  gameSessionEnd(c, sess.correct, sess.total, `Você acertou ${pct}% do desafio ${({facil:'fácil',medio:'médio',dificil:'difícil'})[sess.difficulty]}.`);
+  const secs = Math.round(((sess.tEnd = sess.tEnd || Date.now()) - sess.t0)/1000);
+  c.appendChild(h(`<div class="ch-endstats">
+      ${sess.record && sess.correct>0 ? '<div class="ch-rec">🏆 Novo recorde!</div>' : sess.prevBest!==null ? `<div class="ch-rec dim">Recorde: ${Math.max(sess.prevBest, sess.correct)}/${sess.total}</div>` : ''}
+      <div class="ch-es"><div><b>${sess.correct}</b><span>certas</span></div><div><b>${sess.wrong}</b><span>erradas</span></div><div><b>${sess.bestStreak||0}</b><span>maior sequência</span></div><div><b>${Math.floor(secs/60)}:${String(secs%60).padStart(2,'0')}</b><span>tempo</span></div></div>
+    </div>`));
+  const actions = h(`<div class="ch-actions"></div>`);
+  const wrongs = (sess.log||[]).filter(x=>!x.ok);
+  const again = h(`<button class="btn primary">🔁 Novo desafio</button>`);
+  again.onclick = ()=> startChallenge(sess.difficulty, sess.pool, sess.total);
+  const change = h(`<button class="btn secondary">Mudar dificuldade</button>`);
+  change.onclick = ()=> go('challengeDifficulty');
+  actions.appendChild(again); actions.appendChild(change);
+  c.appendChild(actions);
+  if(sess.log && sess.log.length){
+    const rev = h(`<div class="ch-review"><div class="chr-h"><b>Suas respostas</b><span>${sess.correct} de ${sess.total} certas</span></div></div>`);
+    sess.log.forEach((x,i)=>{
+      const row = h(`<div class="chr-row ${x.ok?'ok':'bad'}"><span class="chr-n">${x.ok?'✓':'✗'}</span><div class="chr-b"><div class="chr-s"></div><div class="chr-q"></div><div class="chr-a"></div></div></div>`);
+      row.querySelector('.chr-s').textContent = `${i+1}. ${x.subj}`;
+      row.querySelector('.chr-q').textContent = x.q || 'Conta armada / desenho';
+      row.querySelector('.chr-a').textContent = x.ok ? `Resposta: ${x.ans}` : `Certa: ${x.ans} · você respondeu ${x.typed || '(vazio)'}`;
+      if(!x.ok){ const t = h(`<button type="button" class="chr-train">Treinar</button>`); t.onclick = ()=> startSession(x.sid, sess.difficulty); row.appendChild(t); }
+      rev.appendChild(row);
+    });
+    c.appendChild(rev);
+  }
+  if(wrongs.length===0 && sess.total) c.appendChild(h(`<div class="ch-perfect">✨ Nenhum erro! Que tal subir a dificuldade?</div>`));
 }
 function challengeSessionScreen(){
   const sess = state.session;
@@ -480,15 +563,8 @@ function challengeSessionScreen(){
   const c = h(`<div class="content"></div>`);
 
   if(sess.index >= sess.total){
-    const pct = Math.round((sess.correct/sess.total)*100);
-    gameSessionEnd(c, sess.correct, sess.total, `Você acertou ${pct}% do desafio ${({facil:'fácil',medio:'médio',dificil:'difícil'})[sess.difficulty]}.`);
-    const actions = h(`<div class="cta-row" style="margin-top:14px"></div>`);
-    const again = h(`<button class="btn primary">Novo desafio</button>`);
-    again.onclick = ()=> startChallenge(sess.difficulty);
-    const home = h(`<button class="btn secondary">Início</button>`);
-    home.onclick = ()=> go('home');
-    actions.appendChild(again); actions.appendChild(home);
-    c.appendChild(actions);
+    c.classList.add('ch-end');
+    challengeEnd(c, sess);
     wrap.appendChild(c);
     return wrap;
   }
@@ -506,7 +582,9 @@ function challengeSessionScreen(){
   c.appendChild(sessionHud());
 
   const ex = sess.current;
-  const qcard = h(`<div class="question-card"><div class="qlabel">QUESTÃO ${sess.index+1} DE ${sess.total} · ${({facil:'FÁCIL',medio:'MÉDIO',dificil:'DIFÍCIL'})[sess.difficulty]} · ${s.sym} ${s.name}</div><div class="qtext mono"></div></div>`);
+  c.classList.add('ch-run');
+  c.appendChild(h(`<div class="ch-runhead"><span class="ch-qn">${sess.index+1}<small>/${sess.total}</small></span><span class="ch-subj">${s.sym} ${escHTML(s.name)}</span><span class="ch-diff d-${sess.difficulty}">${({facil:'Fácil',medio:'Médio',dificil:'Difícil'})[sess.difficulty]}</span></div>`));
+  const qcard = h(`<div class="question-card"><div class="qtext mono"></div></div>`);
   const qtextEl = qcard.querySelector('.qtext');
   addSpeakButton(qcard, ex); addScratchButton(qcard, ex);
   if(ex.columns){
@@ -550,6 +628,12 @@ function challengeSessionScreen(){
       giveAnswerFeedback(correct);
       sess.results.push(correct);
       if(correct) sess.correct++; else sess.wrong++;
+      if(sess.kind==='challenge'){
+        sess.streak = correct ? (sess.streak||0)+1 : 0; sess.bestStreak = Math.max(sess.bestStreak||0, sess.streak);
+        const typed = [...form.querySelectorAll('input')].map(i=>i.value.trim()).filter(Boolean).join(' · ');
+        const ansTxt = ex.displayAnswer ? ex.displayAnswer : (ex.type==='pair'? `x' = ${fmt(ex.answer[0])} e x'' = ${fmt(ex.answer[1])}` : ex.type==='xy'? `x = ${fmt(ex.answer.x)} e y = ${fmt(ex.answer.y)}` : fmt(ex.answer));
+        sess.log.push({ok:correct, sid:sess.currentSubjectId, subj:`${s.sym} ${s.name}`, q:String(ex.question||'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim().slice(0,90), ans:ansTxt, typed});
+      }
       await recordAnswer(sess.currentSubjectId, correct, {difficulty: sess.difficulty, ex});
       render();
     };
@@ -582,7 +666,7 @@ function challengeSessionScreen(){
       sess.index++;
       sess.checked=false; sess.wasCorrect=null;
       if(sess.index < sess.total){
-        const nextSubject = pick(SUBJECTS);
+        const nextSubject = chPickSubject(sess);
         const {ex, signature} = genQuestionAvoidingRepeat(nextSubject, sess.difficulty, sess.lastSignature);
         sess.currentSubjectId = nextSubject.id;
         sess.current = ex;
