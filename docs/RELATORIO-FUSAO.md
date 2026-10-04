@@ -517,3 +517,17 @@ A Tabuada agora tem três partes (antes era só a lista de 1 a 10):
   - Se a folha vier em pé, ele só fica menor, nunca cortado.
   - As cores de fundo são mantidas na impressão.
 - Testado gerando o PDF em A4 (pelo próprio app, deitada, em pé e com margens de 10–12 mm) e em Carta, com tela de celular e de computador: sempre 1 página, com o certificado inteiro.
+
+## 39. Certificados novos
+
+- **Sua coleção (topo):** anel com quantos certificados foram conquistados e uma barra por nível (Fundamental e Médio).
+- **Quase lá:** o assunto começado mais perto do certificado (ou o primeiro, se nada foi começado), com barra de etapas e os botões **Ver prévia** e **Ir para a Trilha**.
+- **Meus certificados:** galeria com a miniatura de cada certificado conquistado, o nome e a data. Sem nenhum ainda, aparece a prévia "Veja como vai ficar".
+- **Todos os assuntos:** filtro Todos / Em andamento / Conquistados / Não começados. Cada assunto mostra a barra de etapas da Trilha ou "Conquistado em dd/mm/aaaa".
+- **Data de conquista:** o certificado passa a guardar a data em que foi liberado (`g.certDates`), em vez de mostrar sempre a data de hoje. Os certificados que já existiam ficam com a data em que forem vistos de novo.
+- **Tela do certificado:**
+  - Faixa "Parabéns! Certificado conquistado" com a data, ou, na prévia, a barra de etapas que faltam.
+  - Versões em cartões.
+  - Botões **Imprimir ou salvar em PDF** e **Compartilhar a conquista** (no computador, copia o texto), com uma dica de impressão.
+  - Botões pra passar ao certificado anterior ou ao próximo.
+- Entrou nas **Novidades**.

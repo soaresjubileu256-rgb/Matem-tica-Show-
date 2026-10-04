@@ -10,6 +10,9 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
+  {v:11, date:'2026-10-05', title:'Certificados de cara nova', items:[
+    {ico:'📜', t:'Certificados', d:'Sua coleção com galeria, o próximo certificado, a data em que cada um foi conquistado, filtros e botão de compartilhar. A impressão sai inteira numa folha só.', go:'certificates'},
+  ]},
   {v:10, date:'2026-10-05', title:'Conquistas de cara nova', items:[
     {ico:'🏅', t:'Conquistas', d:'Sala de troféus com a próxima conquista, as recentes, medalhas por categoria com barra de progresso e a escada de títulos.', go:'achievements'},
   ]},
