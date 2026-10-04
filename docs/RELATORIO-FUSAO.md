@@ -426,3 +426,19 @@ A Tabuada agora tem três partes (antes era só a lista de 1 a 10):
 - Agora o botão "Imprimir / PDF" imprime **só o certificado, numa folha só**:
   - Se a impressora aceitar folha deitada, o certificado ocupa a folha inteira deitado.
   - Se a folha vier em pé, como no Android, o certificado é **girado** para ocupar a folha inteira, sem 2ª página.
+
+## 33. Relatório semanal novo
+
+- **Trocar de semana:** botões ‹ › para ver as semanas anteriores (enquanto houver histórico salvo).
+- **Cartão do topo** colorido, com nome, período, nível e o **selo da semana**: Semana campeã, Semana constante, Mira certeira, Semana de treino, Começando bem ou Semana parada.
+- **Números da semana:**
+  - Bolinhas dos 7 dias mostrando quais foram estudados.
+  - Questões.
+  - **Anel de acerto** colorido (verde, amarelo ou vermelho).
+  - Ofensiva.
+- **Questões por dia:** barras com **certas (verde) e erradas (vermelho)**, o dia de hoje marcado, o ⭐ melhor dia e a legenda.
+- **Por assunto:** botão **Treinar** nos assuntos abaixo de 80%.
+- **Conquistas da semana:** as medalhas ganhas no período.
+- **Destaques** em dois cartões (pontos fortes e precisa de atenção) e o botão **"Treinar os pontos de atenção"**, que monta um Treino personalizado com eles.
+- A **impressão / PDF** continua limpa, em fundo branco e sem os botões.
+- O Relatório entrou nas **Novidades**.

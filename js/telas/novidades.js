@@ -10,6 +10,9 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
+  {v:7, date:'2026-10-05', title:'Relatório semanal de cara nova', items:[
+    {ico:'📊', t:'Relatório semanal', d:'Veja semanas anteriores, o selo da semana, certas e erradas por dia, conquistas e botões pra treinar o que precisa.', go:'report'},
+  ]},
   {v:6, date:'2026-10-05', title:'Fale com a gente', items:[
     {ico:'💬', t:'Sua opinião', d:'Dê uma nota pro app e mande sugestões ou avise de um erro. Fica no Perfil, em "Fale com a gente".', go:'profile'},
   ]},
