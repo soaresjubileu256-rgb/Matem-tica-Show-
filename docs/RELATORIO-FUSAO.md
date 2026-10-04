@@ -456,3 +456,22 @@ A Tabuada agora tem três partes (antes era só a lista de 1 a 10):
 - **Revisão:**
   - Cabeçalho com o número, o assunto, a dificuldade e a etapa da questão.
   - No fim aparece quantas foram **aprendidas**, quantas **subiram de etapa** e quantas **voltam amanhã**, com o botão **Voltar ao caderno**.
+
+## 35. Arena nova
+
+- **Topo:**
+  - Anel com as estrelas conquistadas.
+  - A **patente** de quem joga: Estreante, Desafiante, Competidor, Craque, Campeão ou Lenda da Arena, conforme a fração de estrelas.
+  - Quantas estrelas faltam para a próxima patente, com a fileira de patentes.
+  - Estrelas, assuntos completos (9⭐) e dias seguidos de desafio.
+- **Desafio do Dia em cartão:**
+  - Calendário com a data, as bolinhas dos últimos 7 dias e o relógio ("Termina em" / "Próximo desafio em").
+  - Botão **Jogar agora** ou **Ver resultado**, que fica verde quando o desafio do dia já foi feito.
+- **Próxima fase:** atalho para a próxima fase a jogar. Continua um assunto começado ou, se tudo já foi jogado, sugere a fase com menos estrelas.
+- **Modos de jogo em cartões:** cada um mostra o recorde ou a situação (acertos do Relâmpago, pontos do Quiz, última nota do Simulado, duelos jogados).
+- **Fases da Arena:**
+  - Regras em etiquetas e filtros: Todas, Fundamental, Médio, Em andamento e Completas. O filtro começa no nível da pessoa.
+  - Cada assunto tem uma barra de progresso.
+  - As dificuldades têm cor e a próxima fase está marcada com **JOGAR**.
+- **Correção:** as estrelas conquistadas apareciam apagadas no tema escuro.
+- A Arena entrou nas **Novidades**.
