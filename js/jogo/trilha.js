@@ -195,11 +195,22 @@ function startPathLesson(node, jump){
   state.session = sess;
   go('lesson');
 }
-function startQuiz(difficulty){
-  const sess = {kind:'quiz', diff:difficulty, needed:QUIZ_TOTAL, asked:0, cleared:0, correct:0, wrong:0, score:0, qStreak:0, combo:0, xp:0,
-    selected:null, checked:false, wasCorrect:null, startTs:Date.now(), lastSignature:null, lastPoints:0};
-  const subj = pick(SUBJECTS);
-  sess.subjectId = subj.id;
+/* Quiz do Show: de quais assuntos vêm as perguntas */
+const QUIZ_POOLS = [['all','🌎','Todos'], ['fund','📘','Fundamental'], ['em','🎓','Ensino Médio']];
+const QUIZ_HELPS = [['fifty','½','50:50','Tira 2 erradas'], ['time','⏱','+10s','Mais tempo'], ['skip','⏭','Pular','Troca a pergunta']];
+/* recorde por dificuldade; "Todos" usa a mesma chave de antes (não perde o recorde antigo) */
+const quizBestKey = (pool, diff)=> (!pool || pool==='all') ? diff : `${pool}:${diff}`;
+function quizPickSubject(sess){
+  const ids = sess.pool && sess.pool!=='all' ? levelIds(sess.pool) : SUBJECTS.map(s=>s.id);
+  const list = SUBJECTS.filter(s=> ids.includes(s.id) && s.id!==sess.subjectId);
+  return (list.length ? pick(list) : pick(SUBJECTS)).id;
+}
+function startQuiz(difficulty, pool){
+  pool = pool || 'all';
+  const sess = {kind:'quiz', diff:difficulty, pool, needed:QUIZ_TOTAL, asked:0, cleared:0, correct:0, wrong:0, score:0, qStreak:0, bestStreak:0, combo:0, xp:0,
+    selected:null, checked:false, wasCorrect:null, startTs:Date.now(), lastSignature:null, lastPoints:0,
+    helps:{fifty:true, time:true, skip:true}, log:[]};
+  sess.subjectId = quizPickSubject(sess);
   sess.q = newLessonQuestion(sess); sess.asked++; sess.qStart = Date.now();
   state.session = sess;
   go('lesson');
@@ -209,7 +220,7 @@ function lessonAdvance(sess){
   if(sess.kind==='quiz'){
     if(sess.asked >= sess.needed || sess.outOfLives){ sess.finished = true; return; }
     if(sess.mode){ arenaNextQuestion(sess); return; } // Arena: fase de um assunto ou Desafio do Dia
-    sess.subjectId = pick(SUBJECTS).id;
+    sess.subjectId = quizPickSubject(sess);
     sess.q = newLessonQuestion(sess); sess.asked++; sess.qStart = Date.now();
     return;
   }
@@ -267,6 +278,17 @@ function lessonScreen(){
         if(paint()<=0){ clearInterval(timer); lessonCheck(sess, null); }
       }, 100);
     }
+    if(sess.helps && !sess.mode){
+      const hb = h(`<div class="quiz-helps"></div>`);
+      QUIZ_HELPS.forEach(([id,ico,label,tip])=>{
+        const used = !sess.helps[id];
+        const b = h(`<button type="button" class="qh ${used?'used':''}" title="${tip}" aria-label="${label}: ${tip}"><span class="qh-i">${ico}</span><span class="qh-l">${label}</span></button>`);
+        b.disabled = used || sess.checked;
+        b.onclick = ()=>{ if(sess.checked || !sess.helps[id]) return; sess.helps[id] = false; quizUseHelp(sess, id); };
+        hb.appendChild(b);
+      });
+      c.appendChild(hb);
+    }
   } else {
     c.appendChild(h(`<div class="lesson-kicker">${q.retry ? '🔁 ERRO ANTERIOR' : sess.jumpUnit!==null ? '⏩ TESTE DE NIVELAMENTO' : `${subj.sym} ${subj.name.toUpperCase()}`}</div>`));
     c.appendChild(h(`<h2 class="lesson-title">Escolha a resposta certa</h2>`));
@@ -286,7 +308,7 @@ function lessonScreen(){
   q.opts.forEach((o,i)=>{
     let cls = isQuiz ? 'quiz-opt' : 'mc-opt';
     if(sess.selected===i) cls += ' sel';
-    const isOut = !isQuiz && (q.out||[]).includes(i);
+    const isOut = isQuiz ? (q.cut||[]).includes(i) : (q.out||[]).includes(i);
     if(isOut) cls += ' out';
     if(sess.checked){ if(o.ok) cls += ' right'; else if(sess.selected===i) cls += ' wrongpick'; else if(!isOut) cls += ' dim'; }
     const b = h(`<button type="button" class="${cls}">${isQuiz ? `<span class="shape">${shapes[i]}</span>` : `<span class="key">${shapes[i]}</span>`}<span class="lbl mono"></span></button>`);
@@ -335,7 +357,7 @@ function lessonScreen(){
   } else {
     const ok = sess.wasCorrect;
     const praise = isQuiz
-      ? (ok ? `+${sess.lastPoints} pontos!${sess.qStreak>=2?` 🔥 ${sess.qStreak} seguidas`:''}` : (sess.selected===null ? '⏰ Tempo esgotado!' : 'Não foi dessa vez!'))
+      ? (ok ? `+${sess.lastPoints.toLocaleString('pt-BR')} pontos!${sess.qStreak>=2?` 🔥 ${sess.qStreak} seguidas`:''}` : (sess.selected===null ? '⏰ Tempo esgotado!' : 'Não foi dessa vez!'))
       : (ok ? (q.missed ? pick(['Isso aí, conseguiu! 💪','Acertou! Persistência é tudo! 🌟','Boa! Não desistiu! 👏']) : pick(['Aplausos! 👏','Na mosca! 🎯','Show de bola!','Brilhou! ✨','Que talento! 🌟'])) : 'Quase! A resposta era:');
     const sheet = h(`
       <div class="fb-sheet ${ok?'ok':'bad'}">
@@ -364,6 +386,20 @@ function lessonScreen(){
   }
   return wrap;
 }
+function quizUseHelp(sess, id){
+  const q = sess.q;
+  playTones([523,784], 0.06, 'triangle', 0.07);
+  if(id==='fifty'){
+    const wrong = q.opts.map((o,i)=> o.ok ? -1 : i).filter(i=>i>=0).sort(()=>Math.random()-.5);
+    q.cut = wrong.slice(0,2);
+  } else if(id==='time'){
+    q.secs = (q.secs || QUIZ_SECONDS) + 10;
+  } else if(id==='skip'){
+    sess.subjectId = quizPickSubject(sess);
+    sess.q = newLessonQuestion(sess); sess.qStart = Date.now();
+  }
+  render();
+}
 async function lessonCheck(sess, idx){
   if(sess.checked) return;
   const q = sess.q;
@@ -391,6 +427,13 @@ async function lessonCheck(sess, idx){
     sess.timeLeft = left;
     if(ok){ sess.qStreak++; sess.lastPoints = Math.round(500 + 500*left/QS) + Math.min(sess.qStreak-1,5)*100; sess.score += sess.lastPoints; sess.correct++; }
     else { sess.qStreak = 0; sess.lastPoints = 0; sess.wrong++; }
+    sess.bestStreak = Math.max(sess.bestStreak||0, sess.qStreak);
+    if(sess.log){
+      const s0 = SUBJECTS.find(s=>s.id===q.subjectId);
+      sess.log.push({ok, pts:sess.lastPoints, secs:Math.round((QS-left)*10)/10, subj: s0 ? `${s0.sym} ${s0.name}` : '',
+        q: String(q.ex.question || '').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim().slice(0,90),
+        ans: answerLabel(q.ex), picked: idx===null ? null : q.opts[idx].label});
+    }
     sess.cleared++;
     if(sess.mode) arenaAfterCheck(sess, ok);
   } else {
@@ -424,8 +467,9 @@ function lessonEnd(wrap, sess){
     gameEnsureToday();
     if(sess.kind==='quiz'){
       g.quizBest = g.quizBest || {};
-      sess.record = sess.score > (g.quizBest[sess.diff]||0);
-      if(sess.record) g.quizBest[sess.diff] = sess.score;
+      const bk = quizBestKey(sess.pool, sess.diff);
+      sess.record = sess.score > (g.quizBest[bk]||0);
+      if(sess.record) g.quizBest[bk] = sess.score;
       if(sess.score>=10000) gameUnlock('quiz5000');
       gems = Math.floor(sess.correct/2);
     } else {
@@ -460,14 +504,28 @@ function lessonEnd(wrap, sess){
       <div class="le-stat blue"><div class="k">TEMPO</div><div class="v">⏱ ${Math.floor(secs/60)}:${String(secs%60).padStart(2,'0')}</div></div>
     </div>`));
   if(gems) c.appendChild(h(`<div class="le-gems">+${gems} 🪙 moedas</div>`));
-  if(isQuiz) c.appendChild(h(`<p class="le-sub">Recorde no ${({facil:'fácil',medio:'médio',dificil:'difícil'})[sess.diff]}: ${(g.quizBest[sess.diff]||0).toLocaleString('pt-BR')} pontos</p>`));
+  if(isQuiz){
+    const poolName = (QUIZ_POOLS.find(x=>x[0]===(sess.pool||'all'))||[])[2] || 'Todos';
+    c.appendChild(h(`<p class="le-sub">🏆 Recorde no ${({facil:'fácil',medio:'médio',dificil:'difícil'})[sess.diff]} · ${poolName}: <b>${(g.quizBest[quizBestKey(sess.pool, sess.diff)]||0).toLocaleString('pt-BR')}</b> pontos${sess.bestStreak>=2 ? ` · 🔥 maior sequência: ${sess.bestStreak}` : ''}</p>`));
+    if(sess.log && sess.log.length){
+      const rev = h(`<div class="quiz-review"><div class="qr-head"><b>Suas respostas</b><span>${sess.log.filter(x=>x.ok).length} de ${sess.log.length} certas</span></div></div>`);
+      sess.log.forEach((x,i)=>{
+        const row = h(`<div class="qr-row ${x.ok?'ok':'bad'}"><span class="qr-n">${x.ok?'✓':'✗'}</span><div class="qr-b"><div class="qr-s"></div><div class="qr-q"></div><div class="qr-a"></div></div><span class="qr-p">${x.ok ? '+'+x.pts.toLocaleString('pt-BR') : (x.picked===null ? '⏰' : '0')}</span></div>`);
+        row.querySelector('.qr-s').textContent = `${i+1}. ${x.subj}`;
+        row.querySelector('.qr-q').textContent = x.q || 'Conta armada / desenho';
+        row.querySelector('.qr-a').textContent = x.ok ? `Resposta: ${x.ans} · ${String(x.secs).replace('.',',')}s` : `Certa: ${x.ans}${x.picked!==null ? ` · você marcou ${x.picked}` : ' · acabou o tempo'}`;
+        rev.appendChild(row);
+      });
+      c.appendChild(rev);
+    }
+  }
   const foot = h(`<div class="lesson-footer static"></div>`);
   const cont = h(`<button class="show-btn">CONTINUAR</button>`);
   cont.onclick = ()=> go(isQuiz ? 'quizSetup' : 'path');
   foot.appendChild(cont);
   if(isQuiz){
     const again = h(`<button class="show-btn ghost">JOGAR DE NOVO</button>`);
-    again.onclick = ()=> startQuiz(sess.diff);
+    again.onclick = ()=> startQuiz(sess.diff, sess.pool);
     foot.appendChild(again);
   }
   c.appendChild(foot);
@@ -647,14 +705,40 @@ function openChest(n, isDone){
 function quizSetupScreen(){
   const wrap = document.createElement('div');
   wrap.appendChild(topbar('🎤 Quiz do Show', true, ()=>go('arena')));
-  const c = h(`<div class="content"></div>`);
+  const c = h(`<div class="content quiz-setup"></div>`);
   const g = loadGame(); const best = g.quizBest || {};
-  c.appendChild(h(`<div class="quiz-hero"><span class="beam l"></span><span class="beam r"></span><div class="mic">🎤</div><h2>Quiz do Show</h2><p>${QUIZ_TOTAL} perguntas de todos os assuntos. Você tem <b>${QUIZ_SECONDS}s</b> por pergunta — quanto mais rápido, mais pontos! Acertos seguidos dão bônus. 🔥</p></div>`));
-  [['facil','Fácil','🟢'],['medio','Médio','🟡'],['dificil','Difícil','🔴']].forEach(([id,label,dot])=>{
-    const b = h(`<button type="button" class="quiz-level"><span class="ql-dot">${dot}</span><span class="ql-t">${label}</span><span class="ql-b">🏆 ${(best[id]||0).toLocaleString('pt-BR')}</span></button>`);
-    b.onclick = ()=> startQuiz(id);
-    c.appendChild(b);
+  let pool = 'all';
+  try{ pool = localStorage.getItem('mathstudy-quiz-pool') || 'all'; }catch(e){}
+  if(!QUIZ_POOLS.some(x=>x[0]===pool)) pool = 'all';
+  const top = Math.max(0, ...Object.values(best).map(Number).filter(n=>!isNaN(n)));
+  c.appendChild(h(`<div class="quiz-hero"><span class="beam l"></span><span class="beam r"></span>
+      <div class="qh-row"><div class="mic">🎤</div><div class="qh-best"><small>Seu recorde</small><b>${top.toLocaleString('pt-BR')}</b></div></div>
+      <h2>Quiz do Show</h2>
+      <p>${QUIZ_TOTAL} perguntas, <b>${QUIZ_SECONDS}s</b> cada. Quanto mais rápido acertar, mais pontos! 🏅</p></div>`));
+  const poolSec = h(`<div class="qs-sec"><div class="qs-lbl">Assuntos</div><div class="qs-pools"></div></div>`);
+  const levels = h(`<div class="qs-sec"><div class="qs-lbl">Escolha a dificuldade pra começar</div><div class="qs-levels"></div></div>`);
+  function paintLevels(){
+    const box = levels.querySelector('.qs-levels'); box.innerHTML = '';
+    [['facil','Fácil','🟢','Contas pra aquecer'],['medio','Médio','🟡','O desafio certo'],['dificil','Difícil','🔴','Pra quem é fera']].forEach(([id,label,dot,desc])=>{
+      const b = h(`<button type="button" class="quiz-level ql-${id}"><span class="ql-dot">${dot}</span><span class="ql-t"><b>${label}</b><small>${desc}</small></span><span class="ql-b">🏆 ${(best[quizBestKey(pool,id)]||0).toLocaleString('pt-BR')}</span><span class="ql-go">▶</span></button>`);
+      b.onclick = ()=> startQuiz(id, pool);
+      box.appendChild(b);
+    });
+  }
+  QUIZ_POOLS.forEach(([id,ico,label])=>{
+    const b = h(`<button type="button" class="qs-pool ${id===pool?'on':''}"><span>${ico}</span>${label}</button>`);
+    b.onclick = ()=>{ pool = id; try{ localStorage.setItem('mathstudy-quiz-pool', id); }catch(e){} poolSec.querySelectorAll('.qs-pool').forEach(x=>x.classList.toggle('on', x===b)); paintLevels(); };
+    poolSec.querySelector('.qs-pools').appendChild(b);
   });
+  c.appendChild(poolSec);
+  paintLevels();
+  c.appendChild(levels);
+  c.appendChild(h(`<div class="qs-sec"><div class="qs-lbl">Como funciona</div><div class="qs-rules">
+      <div><span>⚡</span><p><b>Até 1.000 pontos</b> por acerto: quanto mais rápido, mais.</p></div>
+      <div><span>🔥</span><p><b>Acertos seguidos</b> dão até +500 de bônus.</p></div>
+      <div><span>🆘</span><p><b>3 ajudas</b> por partida: ${QUIZ_HELPS.map(x=>`${x[1]} ${x[2]}`).join(', ')}.</p></div>
+      <div><span>📋</span><p>No fim você <b>revê todas as respostas</b>.</p></div>
+    </div></div>`));
   wrap.appendChild(c);
   return wrap;
 }
