@@ -11,7 +11,7 @@
    ========================================================= */
 const NEWS = [
   {v:12, date:'2026-10-05', title:'Perfil de cara nova e avatar', items:[
-    {ico:'🦊', t:'Escolha seu avatar', d:'No Perfil, toque na sua foto e escolha um bichinho ou símbolo e a cor. Ele aparece também no Início e na tela de entrada.', go:'profile'},
+    {ico:'📷', t:'Sua foto ou um avatar', d:'No Perfil, toque na sua foto: tire uma foto, escolha uma da galeria ou use um bichinho ou símbolo com a cor que quiser. Aparece também no Início e na tela de entrada.', go:'profile'},
     {ico:'👤', t:'Perfil', d:'Nível e XP, seus números, atalhos pra conquistas e certificados e as medalhas recentes.', go:'profile'},
   ]},
   {v:11, date:'2026-10-05', title:'Certificados de cara nova', items:[

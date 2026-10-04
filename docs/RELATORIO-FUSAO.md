@@ -544,3 +544,10 @@ A Tabuada agora tem três partes (antes era só a lista de 1 a 10):
 - **Medalhas recentes:** as 4 últimas, com link pra todas.
 - **Menu:** novo grupo "Personalizar" e ícones com cor própria em cada item.
 - Entrou nas **Novidades**.
+
+## 41. Foto no avatar
+
+- Na janela do avatar (Perfil → toque na foto ou "Trocar avatar") há agora os botões **📷 Tirar foto** (abre a câmera frontal no celular) e **🖼️ Escolher da galeria**.
+- A foto é recortada no centro em formato quadrado, reduzida para 192×192 e salva como JPEG embutido no jogo da conta (`g.avatar.img`, ~5–20 KB). Ela não é enviada para lugar nenhum e fica só no aparelho.
+- **🗑️ Remover a foto** volta para o emoji ou para a inicial. Escolher um emoji também tira a foto.
+- A foto aparece no Perfil, no botão do Início e na lista de contas da tela de entrada. `avatarImg()` só aceita imagem embutida (`data:image/...;base64`).

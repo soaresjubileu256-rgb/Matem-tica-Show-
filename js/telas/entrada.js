@@ -32,15 +32,19 @@ function avatarColor(u, idx){
   const [a,b] = AV_GRADS[n % AV_GRADS.length];
   return `linear-gradient(135deg, ${a}, ${b})`;
 }
-/* o que vai dentro da bolinha: o emoji escolhido ou a inicial do nome */
+/* foto do avatar: só aceita imagem embutida (data:image/...;base64), que é como o Perfil salva */
+function avatarImg(av){ return av && typeof av.img==='string' && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(av.img) ? av.img : ''; }
+/* o que vai dentro da bolinha: a foto, o emoji escolhido ou a inicial do nome */
 function avatarFace(u){
   const av = avatarOf(u);
+  if(avatarImg(av)) return `<img class="av-img" src="${avatarImg(av)}" alt="">`;
   if(av && av.emo) return av.emo;
   return u && u.name ? escHTML(u.name.trim().charAt(0).toUpperCase()) : '?';
 }
 function avatarHTML(u, cls, idx){
   const av = avatarOf(u);
-  return `<span class="${cls||'av'} ${av && av.emo ? 'is-emo' : ''}" style="background:${avatarColor(u, idx)}">${avatarFace(u)}</span>`;
+  const k = avatarImg(av) ? 'is-img' : av && av.emo ? 'is-emo' : '';
+  return `<span class="${cls||'av'} ${k}" style="background:${avatarColor(u, idx)}">${avatarFace(u)}</span>`;
 }
 /* lê o XP/ofensiva de uma conta sem precisar estar logado nela */
 function peekGame(uid){
