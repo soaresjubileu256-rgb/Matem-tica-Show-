@@ -241,3 +241,24 @@ A tela de entrada ganhou a marca do app no topo ("Matemática Show · Seu profes
 - **Exemplos:** 15 exemplos por tipo numa faixa que rola para o lado; tocar já resolve.
 - **Quando não entende:** mostra os tipos que sabe resolver, e tocar num tipo resolve um exemplo dele.
 - O "Praticar parecidas" agora usa o assunto certo também nos tipos novos (MMC → MMC e MDC, média → Estatística, fatorial → Combinatória).
+
+## 22. Tabuada nova
+
+A Tabuada agora tem três partes (antes era só a lista de 1 a 10):
+
+- **📖 Estudar:**
+  - Cada número de 1 a 10 tem uma cor.
+  - Cada tabuada tem uma **dica** para lembrar (vezes 4 é o dobro do dobro, vezes 9 é vezes 10 menos o número…).
+  - Tocar numa conta mostra ela em **bolinhas** ("7 grupos de 3").
+  - Dá para **esconder os resultados** e ir revelando, para se testar.
+  - As contas que a pessoa já domina ganham ✓, e as que vale treinar ganham !.
+- **🔢 Quadro:**
+  - A tábua de Pitágoras inteira (1 a 10). Tocar numa casa destaca a linha e a coluna e mostra a conta e quantas vezes você acertou.
+  - Verde = já domina, vermelho = vale treinar, contorno dourado = quadrados.
+  - Barra "Você domina X de 55 contas" (3 × 7 e 7 × 3 contam como uma só).
+- **⚡ Treinar:**
+  - Escolha uma ou várias tabuadas (atalhos "Todas", "1, 2, 5 e 10" e "6, 7, 8 e 9").
+  - São 10 perguntas com **teclado numérico grande**, que também funciona com o teclado do computador, e cronômetro.
+  - As contas que você erra aparecem mais vezes.
+  - No fim aparecem estrelas, tempo, XP (2 por acerto), **recorde** (só com 10/10) e os erros para revisar, com o botão **Treinar os erros**.
+- O que a pessoa acerta e erra fica salvo na conta dela.
