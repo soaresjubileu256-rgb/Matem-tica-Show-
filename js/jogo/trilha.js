@@ -608,6 +608,9 @@ function pathHero(){
 }
 
 /* ---------- tela da trilha ---------- */
+/* Trilha: os episódios já concluídos ficam recolhidos (só o cartão), pra lista não ficar enorme.
+   Tocar no cartão abre/fecha as fases. */
+function pathOpenSet(){ state.pathOpen = state.pathOpen || {}; return state.pathOpen; }
 function pathScreen(){
   const wrap = document.createElement('div');
   const bar = topbar('Trilha', true, ()=>go('home'));
@@ -619,42 +622,70 @@ function pathScreen(){
   const done = pathDone();
   const all = allPathNodes();
   const cur = pathCurrentIndex();
+  const open = pathOpenSet();
+  const doneUnits = SUBJECTS.filter((s,u)=> all.filter(n=>n.unit===u).every(n=>done[n.key])).length;
+  const doneNodes = all.filter(n=>done[n.key]).length;
+  const curNode = all[cur];
+  const pct = Math.round(doneNodes/all.length*100);
+  // resumo no topo: progresso geral + botão pra ir até a fase atual
+  const sum = h(`<div class="path-sum">
+      <div class="ps-ring" style="--p:${pct}"><b>${pct}%</b></div>
+      <div class="ps-txt"><b>${doneUnits} de ${SUBJECTS.length} episódios</b><small>${curNode ? `Agora: Episódio ${curNode.unit+1} · ${escHTML(curNode.subject.name)}` : 'Trilha completa! 🌟'}</small></div>
+      ${curNode ? '<button type="button" class="ps-go">▶ Continuar</button>' : ''}
+    </div>`);
+  c.appendChild(sum);
   let currentEl = null;
   SUBJECTS.forEach((s,u)=>{
     const color = unitStyle(u);
     const unitNodes = all.filter(n=>n.unit===u);
     const unitLocked = all.indexOf(unitNodes[0]) > cur && !unitNodes.some(n=>done[n.key]);
     const unitDone = unitNodes.every(n=>done[n.key]);
-    const banner = h(`<div class="unit-banner" style="${color}">
-      <div><div class="u-k">EPISÓDIO ${u+1}${unitDone?' · ✓ CONCLUÍDO':''}</div><div class="u-n">${s.name}</div></div>
-      <button type="button" class="u-guide" title="Ver conteúdo" aria-label="Ver conteúdo de ${s.name}">📖</button></div>`);
-    banner.querySelector('.u-guide').onclick = ()=> go('subjectDetail', {subjectId:s.id});
-    if(unitLocked){
-      const jump = h(`<button type="button" class="u-jump">Pular pra cá ⏩</button>`);
-      jump.onclick = ()=>{
-        showConfirm({icon:'⏩', title:'Teste de nivelamento', message:`Acerte 6 questões de ${s.name} errando no máximo 2 para liberar este episódio. Vamos?`, ok:'Fazer o teste', cancel:'Agora não'})
-          .then(ok=>{ if(ok) startPathLesson(unitNodes[0], true); });
-      };
-      banner.appendChild(jump);
-    }
+    const isCurUnit = curNode && curNode.unit===u;
+    const nDone = unitNodes.filter(n=>done[n.key]).length;
+    const collapsed = unitDone && !open[s.id];
     const grp = subjectGroupOf(s.id);
     if(grp && grp.ids[0]===s.id){
       const lv = SUBJECT_LEVELS.find(l=>l.id===grp.level);
       c.appendChild(h(`<div class="path-group"><small>${lv.ico} ${lv.name}</small><b>${grp.name}</b></div>`));
     }
+    const dots = unitNodes.map(n=>`<i class="${done[n.key]?'on':''} ${n.type}"></i>`).join('');
+    const banner = h(`<div class="unit-banner ${unitLocked?'locked':''} ${unitDone?'done':''} ${isCurUnit?'cur':''} ${collapsed?'collapsed':''}" style="${color}">
+      <span class="u-num">${unitDone ? '✓' : u+1}</span>
+      <div class="u-body"><div class="u-k">EPISÓDIO ${u+1}${unitLocked?' · 🔒':''}${unitDone?' · CONCLUÍDO':''}${isCurUnit?' · VOCÊ ESTÁ AQUI':''}</div><div class="u-n">${s.sym} ${escHTML(s.name)}</div>
+        <div class="u-prog"><span class="u-dots">${dots}</span><small>${nDone}/${unitNodes.length} fases${BNCC_ANO[s.id] ? ` · ${BNCC_ANO[s.id]}` : ''}</small></div></div>
+      <button type="button" class="u-guide" title="Ver conteúdo" aria-label="Ver conteúdo de ${escHTML(s.name)}">📖</button></div>`);
+    banner.querySelector('.u-guide').onclick = e=>{ e.stopPropagation(); go('subjectDetail', {subjectId:s.id}); };
+    if(unitDone){
+      banner.classList.add('tap');
+      banner.appendChild(h(`<span class="u-toggle">${collapsed ? 'Rever fases ▾' : 'Recolher ▴'}</span>`));
+      banner.onclick = ()=>{ open[s.id] = !open[s.id]; render(); };
+    }
+    if(unitLocked){
+      const jump = h(`<button type="button" class="u-jump">Já sei esse assunto · Pular pra cá ⏩</button>`);
+      jump.onclick = e=>{
+        e.stopPropagation();
+        showConfirm({icon:'⏩', title:'Teste de nivelamento', message:`Acerte 6 questões de ${s.name} errando no máximo 2 para liberar este episódio. Vamos?`, ok:'Fazer o teste', cancel:'Agora não'})
+          .then(ok=>{ if(ok) startPathLesson(unitNodes[0], true); });
+      };
+      banner.appendChild(jump);
+    }
     c.appendChild(banner);
-    const col = h(`<div class="path-col"></div>`);
+    if(collapsed) return;
+    const col = h(`<div class="path-col ${unitLocked?'locked':''}" style="${color}"></div>`);
+    const firstUndone = unitNodes.findIndex(n=>!done[n.key]);
+    col.style.setProperty('--fill', `${(firstUndone<0 ? 1 : firstUndone/(unitNodes.length-1))*100}%`);
     unitNodes.forEach(n=>{
       const gi = all.indexOf(n);
       const isDone = !!done[n.key], isCur = gi===cur, locked = gi>cur && !isDone;
       const ico = locked ? '🔒' : n.type==='chest' ? (isDone?'✨':'🎁') : n.type==='trophy' ? '🎤' : (isDone?'✓':'★');
-      const wrapN = h(`<div class="pnode-wrap ${isCur?'is-cur':''}" style="transform:translateX(${PATH_OFFSETS[gi % PATH_OFFSETS.length]}px)"></div>`);
-      const btn = h(`<button type="button" class="pnode ${n.type} ${isDone?'done':''} ${isCur?'cur':''} ${locked?'locked':''}" style="${color}" aria-label="${n.label}">${ico}</button>`);
-      if(isCur) wrapN.appendChild(h(`<div class="pnode-tip">${n.type==='chest'?'🎁 ABRIR':'▶ JOGAR'}</div>`));
+      const off = PATH_OFFSETS[gi % PATH_OFFSETS.length];
+      const side = off > 0 ? 'left' : 'right';
+      const wrapN = h(`<div class="pnode-wrap ${isCur?'is-cur':''}" style="transform:translateX(${off}px)"></div>`);
+      const btn = h(`<button type="button" class="pnode ${n.type} ${isDone?'done':''} ${isCur?'cur':''} ${locked?'locked':''}" style="${color}" aria-label="${n.label}${isDone?', concluída':locked?', bloqueada':''}">${ico}</button>`);
       wrapN.appendChild(btn);
-      if(n.idx===2 && u%2===0){
-        const off = PATH_OFFSETS[gi % PATH_OFFSETS.length];
-        wrapN.appendChild(h(`<div class="path-mascot" style="${off>0?'right:auto;left:-104px':''}">${mascotSVG(isDone?'joy':'happy',70)}</div>`));
+      wrapN.appendChild(h(`<div class="pnode-lbl ${side} ${isCur?'cur':''} ${locked?'locked':''}">${isCur ? `<b>${n.type==='chest'?'🎁 ABRIR':'▶ JOGAR'}</b>` : ''}<span>${escHTML(n.label)}</span></div>`));
+      if(n.idx===2 && u%2===0 && !isCur){
+        wrapN.appendChild(h(`<div class="path-mascot ${off>0?'right':'left'}">${mascotSVG(isDone?'joy':'happy',62)}</div>`));
       }
       btn.onclick = ()=>{
         if(locked){ showFloat('🔒 Complete as fases anteriores', true); return; }
@@ -667,21 +698,41 @@ function pathScreen(){
     c.appendChild(col);
   });
   if(cur>=all.length) c.appendChild(mascotBubble('Você completou todos os episódios! Você é a estrela do show! 🌟', 'joy'));
-  if(currentEl) setTimeout(()=>{ try{ currentEl.scrollIntoView({block:'center', behavior:'smooth'}); }catch(e){} }, 120);
+  // botão flutuante pra voltar à fase atual quando ela sai da tela
+  if(currentEl){
+    const fab = h(`<button type="button" class="path-fab" hidden>📍 Fase atual</button>`);
+    const goCur = ()=>{ try{ currentEl.scrollIntoView({block:'center', behavior:'smooth'}); }catch(e){} };
+    fab.onclick = goCur;
+    const sgo = sum.querySelector('.ps-go'); if(sgo) sgo.onclick = goCur;
+    wrap.appendChild(fab);
+    if('IntersectionObserver' in window){
+      const io = new IntersectionObserver(es=>{ es.forEach(e=>{ fab.hidden = e.isIntersecting; }); });
+      io.observe(currentEl);
+    }
+    setTimeout(goCur, 120);
+  }
   return wrap;
 }
 function nodeSheet(n, color, isDone){
   const bg = document.createElement('div');
   bg.className = 'gm-modal-bg sheet';
   const q = n.type==='trophy' ? 8 : n.n;
+  const diffName = n.type==='trophy' ? 'Misturada' : ({facil:'Fácil', medio:'Médio', dificil:'Difícil'})[n.diff];
+  const unitNodes = allPathNodes().filter(x=>x.unit===n.unit), done = pathDone();
   bg.innerHTML = `<div class="node-sheet" style="${color}">
-    <div class="ns-k">${n.subject.sym} ${n.subject.name}</div>
-    <h3>${n.label}</h3>
-    <p>${isDone ? 'Você já completou — praticar de novo dá mais XP!' : `${q} perguntas de múltipla escolha. Errou? Tente de novo até acertar — e peça uma dica se precisar. 💡`}</p>
-    <button class="show-btn light">${isDone?'PRATICAR DE NOVO':'COMEÇAR'} +XP</button>
+    <div class="ns-k">Episódio ${n.unit+1} · ${n.subject.sym} ${escHTML(n.subject.name)}</div>
+    <h3>${n.type==='trophy' ? '🎤 ' : ''}${n.label}</h3>
+    <div class="ns-steps">${unitNodes.map(x=>`<i class="${done[x.key]?'on':''} ${x.key===n.key?'me':''}"></i>`).join('')}</div>
+    <div class="ns-facts">
+      <span>❓ ${q} perguntas</span><span>📊 ${diffName}</span><span>⭐ +XP</span><span>🪙 ${n.type==='trophy' ? 'certificado' : 'moedas'}</span>
+    </div>
+    <p>${isDone ? 'Você já completou esta fase. Praticar de novo dá mais XP!' : n.type==='trophy' ? 'A Grande final mistura tudo do episódio. Vencendo, você libera o certificado! 📜' : 'Errou? Tente de novo até acertar, e peça uma dica se precisar. 💡'}</p>
+    <button class="show-btn light ns-go">${isDone?'PRATICAR DE NOVO':'COMEÇAR'} ▶</button>
+    <button type="button" class="ns-learn">📖 Rever a explicação de ${escHTML(n.subject.name)}</button>
   </div>`;
   bg.addEventListener('click', e=>{ if(e.target===bg) bg.remove(); });
-  bg.querySelector('button').onclick = ()=>{ bg.remove(); startPathLesson(n, false); };
+  bg.querySelector('.ns-go').onclick = ()=>{ bg.remove(); startPathLesson(n, false); };
+  bg.querySelector('.ns-learn').onclick = ()=>{ bg.remove(); go('subjectDetail', {subjectId:n.subject.id}); };
   document.body.appendChild(bg);
 }
 function openChest(n, isDone){
