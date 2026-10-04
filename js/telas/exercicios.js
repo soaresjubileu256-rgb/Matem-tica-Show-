@@ -813,11 +813,11 @@ function genQuestionAvoidingRepeat(subject, difficulty, lastSignature){
   return {ex, signature: sig};
 }
 
+const PT_DIFF_INFO = {adaptativa:['🧠','Ajusta sozinha'], facil:['🟢','Pra aquecer'], medio:['🟡','O desafio certo'], dificil:['🔴','Pra quem é fera'], misturada:['🎲','Sorteia as três']};
 async function personalizedSetupScreen(){
   const wrap = document.createElement('div');
   wrap.appendChild(topbar('Treino personalizado', true, ()=>go('exercisesSubjects')));
-  const c = h(`<div class="content"></div>`);
-  c.appendChild(h(`<p style="color:var(--ink-soft); font-size:14px; margin:2px 0 18px;">Monte um treino sob medida: escolha os assuntos, a dificuldade e quantas questões quer praticar.</p>`));
+  const c = h(`<div class="content pt-setup"></div>`);
 
   const progress = await loadProgress();
   const settings = await loadSettings();
@@ -830,112 +830,104 @@ async function personalizedSetupScreen(){
   let qty = last && PERSONALIZED_QTY_OPTIONS.includes(last.qty) ? last.qty : 10;
   let focusWeak = !!(last && last.focusWeak);
   const weakIds = weakSubjectIds(progress);
+  const practiced = SUBJECTS.filter(s=> accuracyFor(progress, s.id)!==null);
+  const tot = practiced.reduce((a,s)=>({ok:a.ok+progress[s.id].correct, n:a.n+progress[s.id].attempted}), {ok:0,n:0});
+  let subjOpen = false;
 
-  if(lastIds.length){
-    c.appendChild(h(`<p class="pt-note" style="color:var(--pine);">Suas escolhas do último treino já estão marcadas — ajuste à vontade.</p>`));
-  } else if(levelIds){
-    const levelLabel = {fund1:'Fundamental 1', fund2:'Fundamental 2', medio:'Ensino Médio'}[settings.schoolLevel];
-    c.appendChild(h(`<p class="pt-note" style="color:var(--pine);">Pré-selecionado pro seu nível (${levelLabel}) — ajuste à vontade abaixo.</p>`));
+  c.appendChild(h(`<div class="pt-hero">
+      <div class="pth-top"><div class="pth-ico">🎯</div><div><h2>Treino personalizado</h2><p>Monte um treino sob medida: assuntos, dificuldade e quantas questões.${lastIds.length ? ' As escolhas do último treino já estão marcadas.' : ''}</p></div></div>
+      <div class="pth-stats"><div><b>${practiced.length}</b><span>assuntos praticados</span></div><div><b>${tot.n ? Math.round(tot.ok/tot.n*100)+'%' : '—'}</b><span>acerto geral</span></div><div><b>${weakIds.length}</b><span>pontos fracos</span></div></div>
+    </div>`));
+
+  const body = h(`<div></div>`); c.appendChild(body);
+  const sec = t=> h(`<div class="ch-lbl">${t}</div>`);
+  function quick(){
+    const box = h(`<div class="pt-quick"></div>`);
+    const items = [];
+    if(weakIds.length) items.push(['💪','Pontos fracos',`${weakIds.length} assunto${weakIds.length===1?'':'s'} abaixo de 70%`, ()=>{ selected.clear(); weakIds.forEach(id=>selected.add(id)); focusWeak = weakIds.length>1; difficultyMode = 'adaptativa'; }]);
+    if(levelIds) items.push(['🎒','Meu nível', ({fund1:'Fundamental 1', fund2:'Fundamental 2', medio:'Ensino Médio'})[settings.schoolLevel], ()=>{ selected.clear(); levelIds.forEach(id=>selected.add(id)); }]);
+    items.push(['🎲','Surpresa','5 assuntos sorteados', ()=>{ selected.clear(); shuffle(SUBJECTS.map(x=>x.id)).slice(0,5).forEach(id=>selected.add(id)); difficultyMode = 'misturada'; }]);
+    items.push(['🌎','Tudo','todos os assuntos', ()=>{ SUBJECTS.forEach(x=>selected.add(x.id)); }]);
+    items.forEach(([ico,t,d,fn])=>{
+      const b = h(`<button type="button" class="pt-q"><span class="i">${ico}</span><b>${t}</b><small>${d}</small></button>`);
+      b.onclick = ()=>{ fn(); paint(); };
+      box.appendChild(b);
+    });
+    return box;
   }
-
-  c.appendChild(h(`<h3 style="font-size:12.5px;text-transform:uppercase;color:var(--ink-soft);font-weight:600;margin-bottom:8px;letter-spacing:.08em;">Assuntos</h3>`));
-  const selLinks = h(`<div style="margin-bottom:10px;"><button type="button" class="link-btn">Todos</button> <span style="color:var(--border);">·</span> <button type="button" class="link-btn">Nenhum</button>${weakIds.length?` <span style="color:var(--border);">·</span> <button type="button" class="link-btn">Só pontos fracos (${weakIds.length})</button>`:''}</div>`);
-  c.appendChild(selLinks);
-  const subjGrid = h(`<div class="subj-chip-grid"></div>`);
-  const chips = {};
-  SUBJECT_GROUPS.forEach(g=> g.ids.forEach((id,k)=>{
-    const s = SUBJECTS.find(x=>x.id===id); if(!s) return;
-    if(k===0) subjGrid.appendChild(h(`<div class="subj-chip-group">${g.level==='em'?'🎓 ':'📘 '}${g.name}</div>`));
-    const chip = h(`<button type="button" class="subj-chip ${selected.has(s.id)?'active':''}"><span class="sym">${s.sym}</span>${s.name}${accBadgeHTML(accuracyFor(progress, s.id))}</button>`);
-    chip.onclick = ()=>{
-      if(selected.has(s.id)) selected.delete(s.id); else selected.add(s.id);
-      paintChips();
-    };
-    chips[s.id] = chip;
-    subjGrid.appendChild(chip);
-  }));
-  c.appendChild(subjGrid);
-  c.appendChild(h(`<p style="color:var(--ink-soft); font-size:12px; margin:-12px 0 18px;">O selo mostra seu % de acerto em cada assunto.</p>`));
-  const [selAllBtn, selNoneBtn, selWeakBtn] = selLinks.querySelectorAll('button');
-  selAllBtn.onclick = ()=>{ SUBJECTS.forEach(s=>selected.add(s.id)); paintChips(); };
-  selNoneBtn.onclick = ()=>{ selected.clear(); paintChips(); };
-  if(selWeakBtn) selWeakBtn.onclick = ()=>{ selected.clear(); weakIds.forEach(id=>selected.add(id)); paintChips(); };
-
-  c.appendChild(h(`<h3 style="font-size:12.5px;text-transform:uppercase;color:var(--ink-soft);font-weight:600;margin-bottom:8px;letter-spacing:.08em;">Dificuldade</h3>`));
-  const diffRow = h(`<div class="diff-row" style="flex-wrap:wrap;"></div>`);
-  PT_DIFF_MODES.forEach(([id,label])=>{
-    const dAttr = PT_DIFFS.includes(id) ? id : '';
-    const chip = h(`<button type="button" class="diff-chip" data-d="${dAttr}" style="flex:1 1 28%;">${label}</button>`);
-    if(id===difficultyMode) chip.classList.add('active');
-    chip.onclick = ()=>{
-      difficultyMode = id;
-      diffRow.querySelectorAll('.diff-chip').forEach(ch=>ch.classList.remove('active'));
-      chip.classList.add('active');
-      paintSummary();
-    };
-    diffRow.appendChild(chip);
-  });
-  c.appendChild(diffRow);
-  c.appendChild(h(`<p style="color:var(--ink-soft); font-size:12.5px; margin:-10px 0 18px;">"Adaptativa" começa pelo seu desempenho em cada assunto e se ajusta durante o treino: 2 acertos seguidos sobem o nível, um erro desce. "Misturada" sorteia entre as três.</p>`));
-
-  c.appendChild(h(`<h3 style="font-size:12.5px;text-transform:uppercase;color:var(--ink-soft);font-weight:600;margin-bottom:8px;letter-spacing:.08em;">Quantidade de questões</h3>`));
-  const qtyRow = h(`<div class="diff-row"></div>`);
-  PERSONALIZED_QTY_OPTIONS.forEach(n=>{
-    const chip = h(`<button type="button" class="diff-chip">${n}</button>`);
-    if(n===qty) chip.classList.add('active');
-    chip.onclick = ()=>{
-      qty = n;
-      qtyRow.querySelectorAll('.diff-chip').forEach(ch=>ch.classList.remove('active'));
-      chip.classList.add('active');
-      paintSummary();
-    };
-    qtyRow.appendChild(chip);
-  });
-  c.appendChild(qtyRow);
-
-  const weakToggle = h(`<button type="button" class="weak-toggle ${focusWeak?'active':''}"><span class="check">✓</span><span>Priorizar meus pontos fracos (mais questões nos assuntos onde eu mais erro)</span></button>`);
-  weakToggle.onclick = ()=>{
-    focusWeak = !focusWeak;
-    weakToggle.classList.toggle('active', focusWeak);
-  };
-  c.appendChild(weakToggle);
-
-  const summary = h(`<div class="pt-summary"></div>`);
-  c.appendChild(summary);
   const errorBox = h(`<div class="authErrorBox"></div>`);
-  c.appendChild(errorBox);
-
-  const genBtn = h(`<button class="btn primary" style="width:100%;"></button>`);
-  function paintSummary(){
+  const genBtn = h(`<button class="btn primary pt-go"></button>`);
+  function paint(){
+    body.innerHTML = '';
+    body.appendChild(sec('Atalhos'));
+    body.appendChild(quick());
+    body.appendChild(sec('Assuntos'));
+    const sb = h(`<button type="button" class="ex-subj-btn pt-subj-btn ${subjOpen?'open':''}"><span>📚 <b>${selected.size}</b> de ${SUBJECTS.length} assuntos escolhidos</span><i>${subjOpen?'Fechar ▲':'Escolher ▼'}</i></button>`);
+    sb.onclick = ()=>{ subjOpen = !subjOpen; paint(); };
+    body.appendChild(sb);
+    if(selected.size && !subjOpen){
+      const names = SUBJECTS.filter(x=>selected.has(x.id)).map(x=>`${x.sym} ${escHTML(x.name)}`);
+      body.appendChild(h(`<div class="pt-picked">${names.slice(0,6).map(n=>`<span>${n}</span>`).join('')}${names.length>6?`<span class="more">+${names.length-6}</span>`:''}</div>`));
+    }
+    if(subjOpen){
+      const box = h(`<div class="ex-subjs"></div>`);
+      SUBJECT_GROUPS.forEach(g=>{
+        const ids = g.ids.filter(id=> validIds.has(id));
+        if(!ids.length) return;
+        const all = ids.every(id=> selected.has(id));
+        const gh = h(`<div class="ex-sg"><div class="ex-sg-h"><b>${g.level==='em'?'🎓':'📘'} ${g.name}</b><button type="button">${all?'Tirar todos':'Todos'}</button></div><div class="ex-chips small"></div></div>`);
+        gh.querySelector('button').onclick = ()=>{ ids.forEach(id=> all ? selected.delete(id) : selected.add(id)); paint(); };
+        const row = gh.querySelector('.ex-chips');
+        ids.forEach(id=>{
+          const s0 = SUBJECTS.find(x=>x.id===id);
+          const b = h(`<button type="button" class="ex-chip ${selected.has(id)?'on':''}">${s0.sym} ${escHTML(s0.name)} ${accBadgeHTML(accuracyFor(progress, id))}</button>`);
+          b.onclick = ()=>{ if(selected.has(id)) selected.delete(id); else selected.add(id); paint(); };
+          row.appendChild(b);
+        });
+        box.appendChild(gh);
+      });
+      box.appendChild(h(`<p class="pt-tip">O selo mostra seu % de acerto em cada assunto.</p>`));
+      body.appendChild(box);
+    }
+    body.appendChild(sec('Dificuldade'));
+    const dg = h(`<div class="pt-diffs"></div>`);
+    PT_DIFF_MODES.forEach(([id,label])=>{
+      const [ico, desc] = PT_DIFF_INFO[id];
+      const b = h(`<button type="button" class="pt-diff ${id===difficultyMode?'on':''} ${id==='adaptativa'?'wide':''}"><span class="i">${ico}</span><span class="t"><b>${label}</b><small>${desc}</small></span>${id==='adaptativa'?'<span class="rec">Recomendado</span>':''}</button>`);
+      b.onclick = ()=>{ difficultyMode = id; paint(); };
+      dg.appendChild(b);
+    });
+    body.appendChild(dg);
+    if(difficultyMode==='adaptativa') body.appendChild(h(`<p class="pt-tip">Começa pelo seu desempenho em cada assunto. 2 acertos seguidos sobem o nível; um erro desce.</p>`));
+    body.appendChild(sec('Quantidade de questões'));
+    const qr = h(`<div class="pt-qty"></div>`);
+    PERSONALIZED_QTY_OPTIONS.forEach(n=>{
+      const b = h(`<button type="button" class="ch-size ${n===qty?'on':''}">${n}</button>`);
+      b.onclick = ()=>{ qty = n; paint(); };
+      qr.appendChild(b);
+    });
+    body.appendChild(qr);
+    const wt = h(`<button type="button" class="pt-switch ${focusWeak?'on':''}"><span class="sw"></span><span class="t"><b>Priorizar meus pontos fracos</b><small>Mais questões nos assuntos onde você mais erra</small></span></button>`);
+    wt.onclick = ()=>{ focusWeak = !focusWeak; paint(); };
+    body.appendChild(wt);
     const n = selected.size;
     const modeLabel = PT_DIFF_MODES.find(([id])=>id===difficultyMode)[1];
-    summary.innerHTML = n
-      ? `📋 <b>${n}</b> assunto${n===1?'':'s'} · <b>${modeLabel}</b> · <b>${qty}</b> questões · ~${Math.max(1, Math.round(qty*0.6))} min`
-      : 'Escolha pelo menos um assunto pra montar o treino.';
-    genBtn.textContent = `Gerar treino (${qty} questões)`;
+    body.appendChild(h(`<div class="ex-summary pt-sum">
+        <div><b>${n}</b><span>assunto${n===1?'':'s'}</span></div>
+        <div><b>${qty}</b><span>questões</span></div>
+        <div><b>${modeLabel}</b><span>dificuldade</span></div>
+        <div><b>~${Math.max(1, Math.round(qty*0.6))} min</b><span>duração</span></div>
+      </div>`));
+    body.appendChild(errorBox);
+    genBtn.textContent = n ? `Começar treino ▶` : 'Escolha pelo menos um assunto';
     genBtn.disabled = n===0;
-    genBtn.style.opacity = n ? '' : '.5';
-    if(n) errorBox.innerHTML = '';
+    body.appendChild(genBtn);
   }
-  function paintChips(){
-    SUBJECTS.forEach(s=>chips[s.id].classList.toggle('active', selected.has(s.id)));
-    paintSummary();
-  }
-  paintSummary();
-
   genBtn.onclick = ()=>{
-    if(selected.size===0){
-      errorBox.innerHTML = `<div class="auth-error">Escolha pelo menos um assunto.</div>`;
-      return;
-    }
-    // mantém a ordem da lista de assuntos
-    startPersonalizedSession({
-      subjectIds: SUBJECTS.map(s=>s.id).filter(id=>selected.has(id)),
-      difficultyMode, qty, focusWeak, progress,
-    });
+    if(selected.size===0){ errorBox.innerHTML = `<div class="auth-error">Escolha pelo menos um assunto.</div>`; return; }
+    startPersonalizedSession({subjectIds: SUBJECTS.map(s=>s.id).filter(id=>selected.has(id)), difficultyMode, qty, focusWeak, progress});
   };
-  c.appendChild(genBtn);
-
+  paint();
   wrap.appendChild(c);
   return wrap;
 }
@@ -1000,14 +992,28 @@ function personalizedSessionScreen(){
     const home = h(`<button class="btn secondary">Início</button>`);
     home.onclick = ()=> go('home');
     actions.appendChild(again); actions.appendChild(setup); actions.appendChild(home);
+    actions.className = 'pt-actions';
+    c.classList.add('pt-end');
     c.appendChild(actions);
     c.appendChild(box);
+    const lg = (sess.log||[]).filter(x=>x.ans!==undefined);
+    if(lg.length){
+      const rev = h(`<div class="ch-review"><div class="chr-h"><b>Suas respostas</b><span>${sess.correct} de ${sess.total} certas</span></div></div>`);
+      lg.forEach((x,i)=>{
+        const s0 = SUBJECTS.find(y=>y.id===x.sid);
+        const row = h(`<div class="chr-row ${x.ok?'ok':'bad'}"><span class="chr-n">${x.ok?'✓':'✗'}</span><div class="chr-b"><div class="chr-s"></div><div class="chr-q"></div><div class="chr-a"></div></div></div>`);
+        row.querySelector('.chr-s').textContent = `${i+1}. ${s0 ? s0.sym+' '+s0.name : ''} · ${({facil:'Fácil',medio:'Médio',dificil:'Difícil'})[x.diff]||''}`;
+        row.querySelector('.chr-q').textContent = x.q || 'Conta armada / desenho';
+        row.querySelector('.chr-a').textContent = x.ok ? `Resposta: ${x.ans}` : `Certa: ${x.ans} · você respondeu ${x.typed || '(vazio)'}`;
+        rev.appendChild(row);
+      });
+      c.appendChild(rev);
+    }
     wrap.appendChild(c);
     return wrap;
   }
 
   const s = SUBJECTS.find(x=>x.id===sess.currentSubjectId);
-  const diffLabel = ({facil:'FÁCIL',medio:'MÉDIO',dificil:'DIFÍCIL'})[sess.difficulty] || '';
 
   const dots = h(`<div class="progress-dots"></div>`);
   for(let i=0;i<sess.total;i++){
@@ -1020,7 +1026,9 @@ function personalizedSessionScreen(){
   c.appendChild(sessionHud());
 
   const ex = sess.current;
-  const qcard = h(`<div class="question-card"><div class="qlabel">QUESTÃO ${sess.index+1} DE ${sess.total} · ${diffLabel}${sess.lvlMsg?`<span class="pt-lvl">${sess.lvlMsg}</span>`:''} · ${s.sym} ${s.name}</div><div class="qtext mono"></div></div>`);
+  c.classList.add('pt-run');
+  c.appendChild(h(`<div class="ch-runhead"><span class="ch-qn">${sess.index+1}<small>/${sess.total}</small></span><span class="ch-subj">${s.sym} ${escHTML(s.name)}</span><span class="ch-diff d-${sess.difficulty}">${({facil:'Fácil',medio:'Médio',dificil:'Difícil'})[sess.difficulty]||''}</span>${sess.lvlMsg?`<span class="pt-lvl">${sess.lvlMsg}</span>`:''}</div>`));
+  const qcard = h(`<div class="question-card"><div class="qtext mono"></div></div>`);
   const qtextEl = qcard.querySelector('.qtext');
   addSpeakButton(qcard, ex); addScratchButton(qcard, ex);
   if(ex.columns){
@@ -1065,6 +1073,10 @@ function personalizedSessionScreen(){
       sess.results.push(correct);
       if(correct) sess.correct++; else sess.wrong++;
       ptAfterAnswer(sess, correct);
+      { const L = sess.log[sess.log.length-1];
+        L.typed = [...form.querySelectorAll('input')].map(i=>i.value.trim()).filter(Boolean).join(' · ');
+        L.q = String(ex.question||'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim().slice(0,90);
+        L.ans = ex.displayAnswer ? ex.displayAnswer : (ex.type==='pair'? `x' = ${fmt(ex.answer[0])} e x'' = ${fmt(ex.answer[1])}` : ex.type==='xy'? `x = ${fmt(ex.answer.x)} e y = ${fmt(ex.answer.y)}` : fmt(ex.answer)); }
       await recordAnswer(sess.currentSubjectId, correct, {difficulty: sess.difficulty, ex});
       sess.config.progress = await loadProgress(); // atualiza pra próxima questão já considerar essa resposta
       render();

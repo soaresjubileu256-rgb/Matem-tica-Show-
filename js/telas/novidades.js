@@ -10,8 +10,9 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
-  {v:5, date:'2026-10-05', title:'Desafios de cara nova', items:[
+  {v:5, date:'2026-10-05', title:'Desafios e Treino de cara nova', items:[
     {ico:'🏆', t:'Desafios', d:'Escolha os assuntos e quantas questões, bata seu recorde e reveja cada resposta no fim.', go:'challengeDifficulty'},
+    {ico:'🎯', t:'Treino personalizado', d:'Atalhos (pontos fracos, meu nível, surpresa), dificuldade em cartões e revisão de cada resposta.', go:'personalizedSetup'},
   ]},
   {v:4, date:'2026-10-05', title:'Trilha de cara nova', items:[
     {ico:'⭐', t:'Trilha', d:'Resumo do seu progresso, episódios concluídos recolhidos, nome de cada fase, linha colorida mostrando até onde você chegou e botão pra voltar à fase atual.', go:'path'},
