@@ -262,3 +262,24 @@ A Tabuada agora tem três partes (antes era só a lista de 1 a 10):
   - As contas que você erra aparecem mais vezes.
   - No fim aparecem estrelas, tempo, XP (2 por acerto), **recorde** (só com 10/10) e os erros para revisar, com o botão **Treinar os erros**.
 - O que a pessoa acerta e erra fica salvo na conta dela.
+
+## 23. Duelo novo
+
+- **Tela inicial:**
+  - Cartão com os dois jogadores frente a frente: inicial colorida (azul embaixo, roxo em cima), nome e "VS". O botão ⇅ troca os dois de lugar.
+  - **Placar histórico** entre os dois ("Ana 3 × 2 João"), guardado mesmo se trocarem de lado.
+  - **Tipo de conta:** Misturadas, Tabuada, + e −, × e ÷.
+  - **Nível** e **número de rodadas** (5, 10 ou 15).
+  - As regras aparecem em 4 cartõezinhos.
+  - O app lembra as escolhas para o próximo duelo.
+- **Partida:**
+  - Começa com uma contagem **3, 2, 1**.
+  - Cada metade tem a sua cor e uma barrinha com os pontos.
+  - No meio ficam o placar dos dois, a rodada e a **barra de tempo** (10, 9 ou 8 segundos, conforme o nível). Se o tempo acaba, ninguém pontua e aparece a resposta.
+  - Quem acerta primeiro ganha um "+1" grande e a metade fica verde. O outro lado vê de quem foi o ponto e a resposta certa.
+  - 3 acertos seguidos mostram "🔥 3 seguidas!".
+  - **Quem erra fica travado de verdade até a próxima conta.** Antes destravava depois de 1 segundo. Se os dois erram, a resposta aparece e passa para a próxima.
+  - A mesma conta não se repete na partida.
+  - O toque responde na hora (os dois podem tocar ao mesmo tempo).
+  - Para sair é preciso tocar duas vezes no ✕ ("Sair?"), para ninguém sair sem querer.
+- **Final:** troféu, aperto de mão ou "Quase!", placar, quantas certas e erradas cada um teve, a resposta mais rápida, e os botões **Revanche** e **Sair**.
