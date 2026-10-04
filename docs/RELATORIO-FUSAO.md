@@ -375,3 +375,4 @@ A Tabuada agora tem três partes (antes era só a lista de 1 a 10):
   - Link "Rever a explicação".
 - **A barra do topo** (ofensiva, moedas e vidas) agora fica presa ao rolar. Antes ela sumia, por causa de um ajuste da página que impedia barras fixas.
 - A Trilha também entrou nas **Novidades**.
+- **Correção:** o balão "▶ JOGAR" (e o "🎁 ABRIR" do prêmio) não respondia ao toque; só o hexágono funcionava. Agora o balão e o nome da fase abrem a fase. O "▶ Continuar" do topo abre direto a fase atual.

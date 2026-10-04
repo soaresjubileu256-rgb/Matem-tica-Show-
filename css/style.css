@@ -1250,11 +1250,14 @@ section.block h3{font-size:12.5px; text-transform:uppercase; color:var(--ink-sof
 .pnode.trophy{width:88px; height:82px;}
 .pnode.chest.cur{animation:show-wiggle 1.3s ease-in-out infinite;}
 .pnode-lbl{position:absolute; top:50%; transform:translateY(-50%); display:flex; flex-direction:column; gap:3px; width:max-content; max-width:130px; pointer-events:none;}
+.pnode-lbl:not(.locked){pointer-events:auto; cursor:pointer;}
 .pnode-lbl.right{left:calc(100% + 12px); align-items:flex-start;} .pnode-lbl.left{right:calc(100% + 12px); align-items:flex-end; text-align:right;}
 .pnode-lbl span{font-size:12px; font-weight:700; color:var(--ink-soft); background:var(--paper); padding:3px 8px; border-radius:999px;}
 .pnode-lbl.locked span{opacity:.6;}
 .pnode-lbl.cur span{color:var(--ink);}
-.pnode-lbl b{background:var(--show-grad-gold); color:#2A1B00; border-radius:999px; padding:6px 12px; font-size:12px; letter-spacing:.06em; box-shadow:0 8px 18px -8px rgba(255,184,0,.8); animation:lbl-float 1.4s ease-in-out infinite;}
+.pnode-play{border:none; font:800 12px 'Inter',sans-serif; cursor:pointer; touch-action:manipulation;}
+.pnode-play:active{transform:scale(.94);}
+.pnode-lbl b, .pnode-play{background:var(--show-grad-gold); color:#2A1B00; border-radius:999px; padding:6px 12px; font-size:12px; letter-spacing:.06em; box-shadow:0 8px 18px -8px rgba(255,184,0,.8); animation:lbl-float 1.4s ease-in-out infinite;}
 @keyframes lbl-float{50%{transform:translateY(-4px);}}
 .path-mascot{position:absolute; top:-4px; pointer-events:none;}
 .path-mascot.right{right:-150px;} .path-mascot.left{left:-150px;}
@@ -1456,7 +1459,7 @@ section.block h3{font-size:12.5px; text-transform:uppercase; color:var(--ink-sof
 .gm-modal .show-btn.ghost{background:transparent; margin-top:10px;}
 :root.theme-light .pnode.locked{background:#DCDCEA; color:#8A8AA3;}
 :root.theme-light .path-col::before{background:linear-gradient(to bottom, var(--uc) 0, var(--uc2) var(--fill), transparent var(--fill)), repeating-linear-gradient(to bottom, #CFCFE0 0 8px, transparent 8px 16px);}
-@media (prefers-reduced-motion: reduce){ .mascot, .pnode-wrap.is-cur, .pnode-tip, .pnode-lbl b, .pnode.chest.cur, .quiz-hero .beam{animation:none !important;} }
+@media (prefers-reduced-motion: reduce){ .mascot, .pnode-wrap.is-cur, .pnode-tip, .pnode-lbl b, .pnode-play, .pnode.chest.cur, .quiz-hero .beam{animation:none !important;} }
 /* tela de entrada — palco */
 @keyframes auth-float{0%{transform:translateY(110vh) rotate(0)}100%{transform:translateY(-20vh) rotate(360deg)}}
 .auth-wrap{position:relative; overflow:hidden; justify-content:flex-start; padding:calc(24px + env(safe-area-inset-top)) 16px 32px;}

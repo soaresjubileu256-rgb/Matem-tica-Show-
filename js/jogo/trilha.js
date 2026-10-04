@@ -683,7 +683,9 @@ function pathScreen(){
       const wrapN = h(`<div class="pnode-wrap ${isCur?'is-cur':''}" style="transform:translateX(${off}px)"></div>`);
       const btn = h(`<button type="button" class="pnode ${n.type} ${isDone?'done':''} ${isCur?'cur':''} ${locked?'locked':''}" style="${color}" aria-label="${n.label}${isDone?', concluída':locked?', bloqueada':''}">${ico}</button>`);
       wrapN.appendChild(btn);
-      wrapN.appendChild(h(`<div class="pnode-lbl ${side} ${isCur?'cur':''} ${locked?'locked':''}">${isCur ? `<b>${n.type==='chest'?'🎁 ABRIR':'▶ JOGAR'}</b>` : ''}<span>${escHTML(n.label)}</span></div>`));
+      // o balão "▶ JOGAR" e o nome da fase também abrem a fase (antes só o hexágono respondia ao toque)
+      const lbl = h(`<div class="pnode-lbl ${side} ${isCur?'cur':''} ${locked?'locked':''}">${isCur ? `<button type="button" class="pnode-play">${n.type==='chest'?'🎁 ABRIR':'▶ JOGAR'}</button>` : ''}<span>${escHTML(n.label)}</span></div>`);
+      wrapN.appendChild(lbl);
       if(n.idx===2 && u%2===0 && !isCur){
         wrapN.appendChild(h(`<div class="path-mascot ${off>0?'right':'left'}">${mascotSVG(isDone?'joy':'happy',62)}</div>`));
       }
@@ -692,6 +694,7 @@ function pathScreen(){
         if(n.type==='chest') openChest(n, isDone);
         else nodeSheet(n, color, isDone);
       };
+      if(!locked) lbl.onclick = ()=> btn.onclick();
       col.appendChild(wrapN);
       if(isCur) currentEl = wrapN;
     });
@@ -703,7 +706,7 @@ function pathScreen(){
     const fab = h(`<button type="button" class="path-fab" hidden>📍 Fase atual</button>`);
     const goCur = ()=>{ try{ currentEl.scrollIntoView({block:'center', behavior:'smooth'}); }catch(e){} };
     fab.onclick = goCur;
-    const sgo = sum.querySelector('.ps-go'); if(sgo) sgo.onclick = goCur;
+    const sgo = sum.querySelector('.ps-go'); if(sgo) sgo.onclick = ()=>{ goCur(); const b = currentEl.querySelector('.pnode'); if(b) setTimeout(()=> b.onclick(), 350); };
     wrap.appendChild(fab);
     if('IntersectionObserver' in window){
       const io = new IntersectionObserver(es=>{ es.forEach(e=>{ fab.hidden = e.isIntersecting; }); });
