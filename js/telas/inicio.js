@@ -142,7 +142,7 @@ function homeScreen(){
     spacedBanner.querySelector('.spaced-text').textContent = `Hora de relembrar: ${names}${due.length>3?` e mais ${due.length-3}`:''}.`;
   });
   // depois de uma atualização mostra as Novidades; senão, talvez o lembrete de backup (nunca os dois juntos)
-  if(tutorialDone()) setTimeout(()=>{ if(state.screen==='home' && wrap.isConnected && !document.querySelector('.gm-modal-bg')){ if(!showNewsSheet()) maybeAskBackup(); } }, 1200);
+  if(tutorialDone()) setTimeout(()=>{ if(state.screen==='home' && wrap.isConnected && !document.querySelector('.gm-modal-bg')){ if(!showNewsSheet()) maybeAskFeedback().then(shown=>{ if(!shown) maybeAskBackup(); }); } }, 1200);
 
   // ordem da tela: continuar a trilha → pra fazer hoje → ferramentas.
   // Cada coisa mora na sua aba: treinos em Exercícios, jogos na Arena, conquistas/relatório/histórico em Progresso,

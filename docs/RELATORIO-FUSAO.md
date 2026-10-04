@@ -411,3 +411,11 @@ A Tabuada agora tem três partes (antes era só a lista de 1 a 10):
 - **Durante:** número da questão, assunto e dificuldade coloridos (com "⬆ subiu / ⬇ mais leve" na Adaptativa).
 - **Final:** desempenho por assunto, como antes, mais a **revisão de cada resposta**, com a certa e o que foi digitado.
 - O Treino entrou nas **Novidades**.
+
+## 31. Fale com a gente (feedback)
+
+- **No Perfil:** item "💬 Fale com a gente". Abre uma janela com uma **nota de 1 a 5 ⭐** e o botão **"Escrever uma mensagem"**, que abre o Formulário Google do Matemática Show. As respostas caem na planilha ligada ao formulário.
+- **Pedido automático:** aparece **uma única vez** por conta, depois de 50 questões respondidas. Nunca aparece junto com as Novidades nem com o lembrete de backup.
+- A frase muda conforme a nota (alta: "Que bom!"; baixa: "Conta o que podemos melhorar").
+- Para trocar o formulário, basta mudar `FEEDBACK_FORM_URL` em `js/telas/feedback.js`. Se o link ficar vazio, nada aparece.
+- Entrou nas **Novidades**.

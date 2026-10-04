@@ -10,6 +10,9 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
+  {v:6, date:'2026-10-05', title:'Fale com a gente', items:[
+    {ico:'💬', t:'Sua opinião', d:'Dê uma nota pro app e mande sugestões ou avise de um erro. Fica no Perfil, em "Fale com a gente".', go:'profile'},
+  ]},
   {v:5, date:'2026-10-05', title:'Desafios e Treino de cara nova', items:[
     {ico:'🏆', t:'Desafios', d:'Escolha os assuntos e quantas questões, bata seu recorde e reveja cada resposta no fim.', go:'challengeDifficulty'},
     {ico:'🎯', t:'Treino personalizado', d:'Atalhos (pontos fracos, meu nível, surpresa), dificuldade em cartões e revisão de cada resposta.', go:'personalizedSetup'},
