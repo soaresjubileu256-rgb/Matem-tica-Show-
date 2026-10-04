@@ -303,3 +303,20 @@ A Tabuada agora tem três partes (antes era só a lista de 1 a 10):
   - XP, acertos, **precisão**, **maior sequência** e **contas por minuto**.
   - Lista das contas erradas para revisar, com o que a pessoa marcou.
   - Botões **Jogar de novo** e **Trocar tipo**.
+
+## 25. Quiz do Show novo
+
+- **Tela inicial:**
+  - Cartão com o **seu recorde** (o maior de todos).
+  - **Assuntos:** Todos, Fundamental ou Ensino Médio. O app lembra a escolha.
+  - Dificuldade em cartões com descrição, recorde e botão ▶ na cor do nível. Cada combinação (assuntos + dificuldade) tem o seu recorde; os recordes antigos continuam valendo em "Todos".
+  - "Como funciona" em 4 cartõezinhos.
+- **Ajudas do Show** (uma vez cada por partida):
+  - **50:50** risca duas alternativas erradas.
+  - **+10s** dá mais 10 segundos.
+  - **Pular** troca a pergunta por outra, sem contar como pergunta.
+  - As ajudas não aparecem no Desafio do Dia nem nas fases da Arena, que continuam iguais.
+- As perguntas não repetem o mesmo assunto duas vezes seguidas.
+- **Final:**
+  - Recorde do nível com os assuntos escolhidos e **maior sequência** de acertos.
+  - **Revisão de todas as respostas**: assunto, pergunta, resposta certa, o que a pessoa marcou (ou "acabou o tempo"), o tempo que levou e os pontos de cada uma.
