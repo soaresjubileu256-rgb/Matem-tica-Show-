@@ -199,3 +199,7 @@ A pergunta "Quer sair do app?" (botão voltar na tela Início) foi retirada. O "
 ## 17. Certificado mais bonito (verde e roxo)
 
 As duas versões ganharam cores próprias: **Verde** (esmeralda com dourado) e **Roxo** (violeta com lilás). Também ganharam moldura dupla com cantos em losango, brilho atrás do número do episódio, "concedido a" acima do nome, um traço colorido sob o nome, um **selo** redondo com a logo e a frase "Episódio concluído", e uma **assinatura** do Matemática Show. Os textos de baixo ficaram maiores, e o número fica sempre dentro da moldura. No fundo há alguns símbolos de matemática bem clarinhos (π, √, ∑, ÷, ∞, x², Δ, %, =), só nos espaços vazios.
+
+## 18. Login mais bonito e mais fácil
+
+A tela de entrada ganhou a marca do app no topo ("Matemática Show · Seu professor de matemática digital") e o mascote menor logo abaixo. As contas aparecem numa lista, cada uma com uma cor própria, o nível, a ofensiva e uma setinha. Ao escolher a conta, ela aparece num cartão com o botão "Trocar". O campo de senha agora diz "Digite sua senha" (antes parecia já preenchido) e avisa quando o Caps Lock está ligado. No cadastro, o "Repita a senha" mostra na hora se as senhas são iguais.
