@@ -6,7 +6,7 @@ const state = {
   subjectId: null,
   difficulty: null,
   session: null, // {index, total, correct, wrong, current, checked, wasCorrect}
-  calc: {cur:'0', prev:'', op:null, waiting:false, sciMode:false, angleMode:'DEG'},
+  calc: {expr:'', done:false, res:'', resRaw:'', prevLine:'', err:'', sciMode:false, angleMode:'DEG'},
 };
 
 function go(screen, extra={}){

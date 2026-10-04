@@ -211,3 +211,16 @@ A tela de entrada ganhou a marca do app no topo ("Matemática Show · Seu profes
 - **Escolha do papel:** as prévias agora mostram as linhas, os pontos e o plano cartesiano (antes pareciam em branco).
 - **Página:** fica como uma folha sobre a mesa, com margem e sombra. No computador a folha não passa de uns 880px de largura. O topo mostra "Salvando…" e depois "✓ Salvo".
 - **Ferramentas:** os ícones agora são desenhados, todos no mesmo estilo, e a ferramenta escolhida fica destacada em degradê. Os botões de espessura mostram a cor atual. Isso vale também para o Rascunho das questões.
+
+## 20. Calculadora nova
+
+- **Conta inteira no visor**, com **parênteses** e a **ordem certa das operações**: primeiro potência, depois × e ÷, depois + e −. Antes, 2 + 3 × 4 dava 20; agora dá 14.
+- O **resultado aparece enquanto você digita** ("= 12.500"). O "=" confirma, e a conta sobe para a linha de cima.
+- **Resultados precisos:** até 12 algarismos, sem erro de 0,1 + 0,2. Antes só mostrava 2 casas (1 ÷ 3 = 0,33).
+- Números grandes com separador de milhar (1.250).
+- **Mensagens claras** quando a conta não dá: "Não dá pra dividir por zero", "Raiz de número negativo não existe nos reais", "Conta incompleta"…
+- **Histórico** das últimas 30 contas, salvo na conta de cada pessoa. Tocar numa conta usa o resultado.
+- Tocar no resultado copia.
+- **Científica** em 3 linhas: DEG/RAD, sen, cos, tan, π, x², xʸ, √, ln, log, 1/x, n! (fatorial), parênteses e e.
+- **Teclado do computador** funciona: números, + − * /, ^, parênteses, %, Enter, Backspace e Esc.
+- Visual novo: teclas com relevo e cores por tipo, "=" em degradê e resultado colorido.

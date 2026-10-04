@@ -54,7 +54,7 @@ js/
     exercicios.js     aba Exercícios: modos de treino, sessões, dicas, Desafios, Treino personalizado
     tabuada.js        Tabuada
     estudo.js         nivelamento, plano de estudos, cartões de revisão e Caderno de erros
-    ferramentas.js    Resolver questão e Calculadora
+    ferramentas.js    Resolver questão e Calculadora (com parênteses, ordem das operações e histórico)
     caderno.js        caderno escrito à mão e rascunho
     progresso.js      aba Progresso e Histórico
     relatorio.js      Relatório semanal
@@ -83,7 +83,7 @@ Os assuntos aparecem sempre na mesma ordem e nos mesmos grupos (1º ao 5º ano, 
 
 - **Ordem dos scripts:** os arquivos de `js/` dividem as mesmas variáveis e funções. Eles precisam ser carregados na ordem do `index.html`, e o `iniciar.js` é sempre o último.
 - **Arquivo novo:** coloque o `<script>` no `index.html` e o caminho na lista `APP_SHELL` do `sw.js`.
-- **Depois de qualquer mudança:** aumente o `CACHE_VERSION` no `sw.js` (ex.: `mat-show-v41` → `mat-show-v42`). Assim quem já instalou recebe a versão nova.
+- **Depois de qualquer mudança:** aumente o `CACHE_VERSION` no `sw.js` (ex.: `mat-show-v42` → `mat-show-v43`). Assim quem já instalou recebe a versão nova.
 
 ## Como acrescentar um assunto
 
