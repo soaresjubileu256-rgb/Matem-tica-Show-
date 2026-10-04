@@ -2736,3 +2736,15 @@ section.block h3::before, .rp-sec::before, .hq-head span::before{content:''; wid
 .pt-actions .btn:first-child{grid-column:1 / -1;}
 .pt-end .pt-breakdown{margin-bottom:14px;}
 :root.theme-light .pt-diff .rec{color:#0E8A62;} :root.theme-light .pt-subj-btn i{color:#0E8A62;}
+/* feedback */
+.fb-box{text-align:center;}
+.fbx-hero{display:flex; align-items:center; gap:10px; text-align:left; margin-bottom:10px;}
+.fbx-hero h2{margin:0; font-size:20px;} .fbx-hero p{margin:4px 0 0; font-size:13px; color:#C9C4F0; line-height:1.4;}
+.fbx-lbl{font-size:11.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#C9C4F0; margin:6px 0 6px;}
+.fbx-stars{display:flex; justify-content:center; gap:6px;}
+.gm-modal .fbx-stars button{width:48px; height:48px; padding:0; margin:0; border-radius:14px; font-size:30px; line-height:1; background:rgba(255,255,255,.07); color:rgba(255,255,255,.25); border:1px solid rgba(255,255,255,.12); transition:transform .1s, color .15s;}
+.gm-modal .fbx-stars button.on{color:#FFD45C; background:rgba(255,212,92,.14); border-color:rgba(255,212,92,.45);}
+.gm-modal .fbx-stars button:active{transform:scale(.9);}
+.fbx-msg{min-height:20px; margin:10px 0 4px; font-size:14px; font-weight:700; color:#fff;}
+.gm-modal .fbx-go{margin-top:8px; background:var(--show-grad); color:#fff; font-weight:800;}
+.fbx-note{margin:8px 0 0; font-size:12px; color:#C9C4F0; line-height:1.4;}

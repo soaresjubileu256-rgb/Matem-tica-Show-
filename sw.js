@@ -3,7 +3,7 @@
      versão mais nova, e usa a cópia guardada quando estiver offline
    - fontes do Google: usa a cópia guardada (elas não mudam)
    Mude CACHE_VERSION quando quiser forçar todo mundo a baixar tudo de novo. */
-const CACHE_VERSION = 'mat-show-v53';
+const CACHE_VERSION = 'mat-show-v54';
 const APP_SHELL = [
   './', './index.html', './manifest.json', './css/style.css', './js/base/ferramentas.js', './js/base/sons.js',
   './js/base/geometria.js', './js/assuntos/ensino-medio-visual.js', './js/assuntos/fundamental.js',
@@ -13,7 +13,7 @@ const APP_SHELL = [
   './js/jogo/duelo.js', './js/telas/entrada.js', './js/telas/inicio.js', './js/telas/aprender.js',
   './js/telas/exercicios.js', './js/telas/tabuada.js', './js/telas/estudo.js', './js/telas/ferramentas.js',
   './js/telas/caderno.js', './js/telas/progresso.js', './js/telas/relatorio.js', './js/telas/certificados.js',
-  './js/telas/perfil.js', './js/telas/configuracoes.js', './js/telas/ajuda.js', './js/telas/novidades.js', './js/iniciar.js',
+  './js/telas/perfil.js', './js/telas/configuracoes.js', './js/telas/ajuda.js', './js/telas/novidades.js', './js/telas/feedback.js', './js/iniciar.js',
   './img/logo.png', './img/favicon-48.png', './img/apple-touch-icon.png', './img/icon-192.png',
   './img/icon-512.png', './img/maskable-512.png',
 ];

@@ -52,6 +52,7 @@ async function profileScreen(){
   group('Ajuda e conta');
   item('🔔', 'Novidades', newsUnseen().length ? '✨ Tem novidade pra você!' : 'O que mudou no app', ()=> go('news'), newsUnseen().length ? 'has-news' : '');
   item('📘', 'Como usar o app', 'Guia e tour guiado', ()=> go('help'));
+  if(feedbackEnabled()) item('💬', 'Fale com a gente', 'Dê sua nota, sugestões ou avise de um erro', ()=> showFeedbackSheet(false));
   item('⚙️', 'Configurações', 'Tema, som, meta, senha e backup', ()=> go('settings'));
   item('🚪', 'Sair da conta', '', ()=> showConfirm({
     icon:'🚪', title:'Sair da conta?', message:'Seu progresso continua salvo neste aparelho. É só entrar de novo com seu nome e senha.',
