@@ -1,73 +1,107 @@
 /* =========================================================
    TELAS: RESOLVER QUESTÃO E CALCULADORA
    ========================================================= */
-/* ---------------- SOLVE ---------------- */
+/* ---------------- RESOLVER QUESTÃO ---------------- */
+const SOLVE_EXAMPLES = [
+  ['Conta', '(12 + 8) × 3'], ['Equação 1º grau', '3(x + 2) = 18'], ['Equação 2º grau', 'x² − 5x + 6 = 0'],
+  ['Porcentagem', '25% de 300'], ['Frações', '1/2 + 1/3'], ['Fração de', '2/3 de 120'], ['Regra de três', '3/6 = 5/x'],
+  ['MMC', 'mmc de 12 e 18'], ['MDC', 'mdc de 24 e 36'], ['Média', 'média de 7, 8 e 9'], ['Raiz', 'raiz de 144'],
+  ['Potência', '2^10'], ['Fatorial', '5!'], ['Sistema', 'x + y = 10, x − y = 2'], ['Função', 'f(x) = 2x + 1, f(3)'],
+];
+const SOLVE_KEYS = ['x','²','√','(',')','×','÷','=','%','/'];
+function solveRecentKey(){ return `mathstudy-solve-recent:${currentUserId()}`; }
+function solveRecent(){ try{ return JSON.parse(localStorage.getItem(solveRecentKey())||'[]'); }catch(e){ return []; } }
+function addSolveRecent(q){ try{ const l = solveRecent().filter(x=>x!==q); l.unshift(q); localStorage.setItem(solveRecentKey(), JSON.stringify(l.slice(0,6))); }catch(e){} }
+
 function solveScreen(){
   const wrap = document.createElement('div');
   wrap.appendChild(topbar('Resolver questão', true, ()=>go('home')));
-  const c = h(`<div class="content"></div>`);
-  const card = h(`
-    <div>
-      <div class="solve-input-card">
-        <label style="font-size:12px;font-weight:700;color:var(--ink-soft);display:block;margin-bottom:8px;">Digite sua conta, equação ou problema</label>
-        <textarea id="solveInput" placeholder="Ex: 2x + 5 = 15"></textarea>
-        <div class="solve-examples">
-          <span class="ex-chip">(12 + 8) × 3</span>
-          <span class="ex-chip">2x + 5 = 15</span>
-          <span class="ex-chip">x² − 5x + 6 = 0</span>
-          <span class="ex-chip">25% de 300</span>
-          <span class="ex-chip">1/2 + 1/3</span>
-          <span class="ex-chip">3/6 = 5/x</span>
-        </div>
-        <button class="solve-btn">Resolver</button>
-      </div>
-      <div id="solveResult"></div>
-    </div>
-  `);
-  card.querySelectorAll('.ex-chip').forEach(chip=>{
-    chip.onclick = ()=>{ card.querySelector('#solveInput').value = chip.textContent; };
+  const c = h(`<div class="content solve-wrap"></div>`);
+  const card = h(`<div class="solve-input-card">
+      <div class="solve-head"><label for="solveInput">✍️ Digite a conta, equação ou problema</label><button type="button" class="solve-clear" hidden>Limpar</button></div>
+      <textarea id="solveInput" rows="2" placeholder="Ex.: 2x + 5 = 15" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
+      <div class="solve-keys">${SOLVE_KEYS.map(k=>`<button type="button" class="solve-key" data-k="${k}">${k}</button>`).join('')}</div>
+      <button class="solve-btn">Resolver ▶</button>
+    </div>`);
+  const input = card.querySelector('#solveInput'), clear = card.querySelector('.solve-clear');
+  const syncClear = ()=>{ clear.hidden = !input.value; };
+  input.addEventListener('input', syncClear);
+  clear.onclick = ()=>{ input.value = ''; syncClear(); result.innerHTML = ''; input.focus(); };
+  card.querySelectorAll('.solve-key').forEach(b=> b.onclick = ()=>{
+    const k = b.dataset.k, a = input.selectionStart ?? input.value.length, z = input.selectionEnd ?? a;
+    const ins = (k==='=' ? ' = ' : k);
+    input.value = input.value.slice(0,a) + ins + input.value.slice(z);
+    input.focus(); input.selectionStart = input.selectionEnd = a + ins.length; syncClear();
   });
-  card.querySelector('.solve-btn').onclick = ()=>{
-    const val = card.querySelector('#solveInput').value.trim();
-    const resultBox = card.querySelector('#solveResult');
-    resultBox.innerHTML = '';
-    if(!val){
-      resultBox.appendChild(h(`<div class="unrecognized">✏️ Digite uma conta ou equação primeiro, ou toque num dos exemplos acima.</div>`));
-      card.querySelector('#solveInput').focus();
-      return;
-    }
-    const r = solveQuestion(val);
-    if(!r){
-      resultBox.appendChild(h(`<div class="unrecognized">Não consegui entender essa questão. 🤔<br>Tente reescrever de forma mais simples, como nos exemplos acima.</div>`));
-      return;
-    }
-    resultBox.appendChild(h(`
-      <div class="result-section">
-        <div class="sec-label"><span class="n">1</span>Como resolver</div>
-        <div class="result-card"><p>${r.howTo}</p></div>
-      </div>`));
-    const stepsSec = h(`<div class="result-section"><div class="sec-label"><span class="n">2</span>Passo a passo</div><div class="result-card"></div></div>`);
-    const stepsCard = stepsSec.querySelector('.result-card');
-    if(r.visual){ stepsCard.appendChild(h(`<div class="solve-visual">${r.visual}</div>`)); }
-    r.steps.forEach((st,i)=>{
-      stepsCard.appendChild(h(`<div class="step-item"><span class="num">${i+1}</span><span class="txt">${st}</span></div>`));
-    });
-    resultBox.appendChild(stepsSec);
-    resultBox.appendChild(h(`
-      <div class="result-section">
-        <div class="sec-label"><span class="n">3</span>Explicação simples</div>
-        <div class="result-card"><p>${r.simple}</p></div>
-      </div>`));
-    resultBox.appendChild(h(`
-      <div class="result-section">
-        <div class="sec-label"><span class="n">4</span>Resposta final</div>
-        <div class="final-answer-box"><div class="lbl">RESULTADO</div><div class="val">${r.final}</div></div>
-      </div>`));
-    const practice = solvePracticeCard(val);
-    if(practice) resultBox.appendChild(practice);
-    const gs = loadGame(); gs.solves = (gs.solves||0) + 1; gameCheckAchievements(); saveGame();
-  };
+  // Enter resolve; Shift+Enter pula linha (pra sistemas)
+  input.addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); solve(); } });
+  card.querySelector('.solve-btn').onclick = ()=> solve();
   c.appendChild(card);
+
+  const picks = h(`<div class="solve-picks"></div>`);
+  function paintPicks(){
+    picks.innerHTML = '';
+    const rec = solveRecent();
+    if(rec.length){
+      picks.appendChild(h(`<div class="solve-sub">🕘 Recentes</div>`));
+      const row = h(`<div class="solve-chips"></div>`);
+      rec.forEach(q=>{ const b = h(`<button type="button" class="solve-chip recent"></button>`); b.textContent = q; b.onclick = ()=>{ input.value = q; syncClear(); solve(); }; row.appendChild(b); });
+      picks.appendChild(row);
+    }
+    picks.appendChild(h(`<div class="solve-sub">✨ Exemplos — toque pra experimentar</div>`));
+    const row = h(`<div class="solve-chips ex"></div>`);
+    SOLVE_EXAMPLES.forEach(([cat,q])=>{
+      const b = h(`<button type="button" class="solve-chip"><small></small><span></span></button>`);
+      b.querySelector('small').textContent = cat; b.querySelector('span').textContent = q;
+      b.onclick = ()=>{ input.value = q; syncClear(); solve(); };
+      row.appendChild(b);
+    });
+    picks.appendChild(row);
+  }
+  paintPicks();
+  c.appendChild(picks);
+
+  const result = h(`<div id="solveResult"></div>`);
+  c.appendChild(result);
+
+  function solve(){
+    const val = input.value.trim();
+    result.innerHTML = '';
+    if(!val){
+      result.appendChild(h(`<div class="unrecognized">✏️ Digite uma conta ou equação primeiro, ou toque num dos exemplos.</div>`));
+      input.focus(); return;
+    }
+    let r = null;
+    try{ r = solveQuestion(val); }catch(e){ r = null; }
+    if(!r){
+      const box = h(`<div class="solve-unknown"><div class="t">🤔 Não consegui entender essa questão</div>
+        <p>Tente escrever só a conta, sem palavras a mais. Eu sei resolver:</p><div class="solve-chips wrapc"></div></div>`);
+      const row = box.querySelector('.solve-chips');
+      SOLVE_EXAMPLES.forEach(([cat,q])=>{ const b = h(`<button type="button" class="solve-chip mini"></button>`); b.textContent = cat; b.title = q; b.onclick = ()=>{ input.value = q; syncClear(); solve(); }; row.appendChild(b); });
+      result.appendChild(box);
+      result.scrollIntoView({behavior:'smooth', block:'start'});
+      return;
+    }
+    addSolveRecent(val);
+    result.appendChild(h(`<div class="solve-answer">
+        <div class="sa-top"><span class="sa-kind">${escHTML(r.kind||'Resolvido')}</span><span class="sa-q mono">${escHTML(val)}</span></div>
+        <div class="sa-lbl">Resposta</div>
+        <div class="sa-val mono">${r.final}</div>
+      </div>`));
+    const stepsSec = h(`<div class="result-section"><div class="sec-label"><span class="ico">🪜</span>Passo a passo</div><div class="result-card solve-steps"><p class="how">${r.howTo}</p></div></div>`);
+    const stepsCard = stepsSec.querySelector('.result-card');
+    if(r.visual) stepsCard.appendChild(h(`<div class="solve-visual">${r.visual}</div>`));
+    const list = h(`<ol class="step-list"></ol>`);
+    r.steps.forEach(st=> list.appendChild(h(`<li class="step-item"><span class="txt">${st}</span></li>`)));
+    stepsCard.appendChild(list);
+    result.appendChild(stepsSec);
+    result.appendChild(h(`<div class="solve-tip"><span class="ico">💡</span><div><b>Dica</b><p>${r.simple}</p></div></div>`));
+    const practice = solvePracticeCard(val);
+    if(practice) result.appendChild(practice);
+    const gs = loadGame(); gs.solves = (gs.solves||0) + 1; gameCheckAchievements(); saveGame();
+    paintPicks();
+    requestAnimationFrame(()=> result.scrollIntoView({behavior:'smooth', block:'start'}));
+  }
   wrap.appendChild(c);
   return wrap;
 }

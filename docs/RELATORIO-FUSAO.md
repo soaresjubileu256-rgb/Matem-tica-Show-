@@ -224,3 +224,20 @@ A tela de entrada ganhou a marca do app no topo ("Matemática Show · Seu profes
 - **Científica** em 3 linhas: DEG/RAD, sen, cos, tan, π, x², xʸ, √, ln, log, 1/x, n! (fatorial), parênteses e e.
 - **Teclado do computador** funciona: números, + − * /, ^, parênteses, %, Enter, Backspace e Esc.
 - Visual novo: teclas com relevo e cores por tipo, "=" em degradê e resultado colorido.
+
+## 21. Resolver questão melhor e mais bonito
+
+- **Resolve mais tipos de questão:**
+  - equações com parênteses e frações ("3(x + 2) = 18", "x/2 + 3 = 7", "x(x − 3) = 0");
+  - "2/3 de 120";
+  - MMC e MDC pela fatoração em primos ("mmc de 12 e 18", "mdc 24 36");
+  - média ("média de 7, 8 e 9");
+  - fatorial ("5!", que antes dava 5 por engano);
+  - divisão por zero, agora explicada em vez de "não entendi".
+- **Resposta em destaque logo no topo:** cartão colorido com o tipo da questão ("Equação do 1º grau", "MMC e MDC"…) e a resposta grande.
+- **Passo a passo em linha do tempo:** passos numerados e ligados, com o desenho da resolução (conta armada, cadeia de reduções, Bhaskara…) e uma **Dica** separada. Antes, "Como resolver" e "Explicação simples" repetiam a mesma ideia.
+- **Teclas de símbolos** embaixo do campo (x, ², √, parênteses, ×, ÷, =, %, /), para não precisar procurar no teclado do celular. Enter resolve, Shift+Enter pula linha.
+- **Recentes:** as últimas 6 questões ficam salvas na conta.
+- **Exemplos:** 15 exemplos por tipo numa faixa que rola para o lado; tocar já resolve.
+- **Quando não entende:** mostra os tipos que sabe resolver, e tocar num tipo resolve um exemplo dele.
+- O "Praticar parecidas" agora usa o assunto certo também nos tipos novos (MMC → MMC e MDC, média → Estatística, fatorial → Combinatória).
