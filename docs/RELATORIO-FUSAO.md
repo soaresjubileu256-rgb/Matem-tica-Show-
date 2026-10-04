@@ -442,3 +442,17 @@ A Tabuada agora tem três partes (antes era só a lista de 1 a 10):
 - **Destaques** em dois cartões (pontos fortes e precisa de atenção) e o botão **"Treinar os pontos de atenção"**, que monta um Treino personalizado com eles.
 - A **impressão / PDF** continua limpa, em fundo branco e sem os botões.
 - O Relatório entrou nas **Novidades**.
+
+## 34. Caderno de erros novo
+
+- **Cartão do topo:** anel com o % já aprendido e quantas questões há para revisar hoje. Fica rosa quando tem revisão e verde quando está tudo em dia.
+- **Etapas até aprender** (a revisão espaçada, agora visível): Etapa 1 (revisar já), Etapa 2 (volta em 3 dias), Etapa 3 (volta em 7 dias) e Aprendida, com quantas questões há em cada uma.
+- Botão grande **"Revisar N agora"** e cartão de **Treino recomendado**.
+- **Suas questões:**
+  - Lista com filtro por assunto.
+  - Cada questão mostra o assunto, a dificuldade, quando volta ("Revisar hoje", "Volta em 3 dias"), a etapa e quantas vezes foi errada.
+  - **"Ver resposta"** mostra a resposta, e a lixeira **tira a questão do caderno**, com confirmação.
+  - Filtrando por assunto, aparecem "Ver explicação" e "Revisar" daquele assunto.
+- **Revisão:**
+  - Cabeçalho com o número, o assunto, a dificuldade e a etapa da questão.
+  - No fim aparece quantas foram **aprendidas**, quantas **subiram de etapa** e quantas **voltam amanhã**, com o botão **Voltar ao caderno**.

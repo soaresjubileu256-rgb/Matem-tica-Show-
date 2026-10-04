@@ -331,16 +331,25 @@ async function recordReviewAnswer(item, correct){
 function reviewErrorsSessionScreen(){
   const sess = state.session;
   const wrap = document.createElement('div');
-  wrap.appendChild(topbar('Revisar erros', true, ()=>go('exercisesSubjects')));
+  wrap.appendChild(topbar('Revisar erros', true, ()=>go('errors')));
   const c = h(`<div class="content"></div>`);
 
   if(!sess || sess.index >= sess.total){
     const pct = (sess && sess.total)? Math.round((sess.correct/sess.total)*100) : 0;
     gameSessionEnd(c, sess? sess.correct : 0, sess? sess.total : 0, `Você acertou ${pct}% na revisão dos seus erros.`);
+    const items = sess ? sess.errorQueue.slice(0, sess.index) : [];
+    const n = k=> items.filter(x=>x.reviewResult===k).length;
+    c.appendChild(h(`<div class="er-res">
+        <div class="g"><b>${n('learned')}</b><span>🎓 aprendidas</span></div>
+        <div class="u"><b>${n('up')}</b><span>⬆ subiram de etapa</span></div>
+        <div class="b"><b>${n('again')}</b><span>🔁 voltam amanhã</span></div>
+      </div>`));
     const actions = h(`<div class="cta-row" style="margin-top:14px"></div>`);
-    const home = h(`<button class="btn primary">Início</button>`);
+    const back = h(`<button class="btn primary">🔁 Voltar ao caderno</button>`);
+    back.onclick = ()=> go('errors');
+    const home = h(`<button class="btn secondary">Início</button>`);
     home.onclick = ()=> go('home');
-    actions.appendChild(home);
+    actions.appendChild(back); actions.appendChild(home);
     c.appendChild(actions);
     wrap.appendChild(c);
     return wrap;
@@ -359,8 +368,9 @@ function reviewErrorsSessionScreen(){
   c.appendChild(dots);
   c.appendChild(sessionHud());
 
-  const diffLabel = ({facil:'FÁCIL',medio:'MÉDIO',dificil:'DIFÍCIL'})[item.difficulty] || '';
-  const qcard = h(`<div class="question-card"><div class="qlabel">ERRO ${sess.index+1} DE ${sess.total} · ${item.subjectName}${diffLabel? ' · '+diffLabel : ''}${(item.count||1)>1? ` · ERRADA ${item.count}x` : ''}</div><div class="qtext mono"></div></div>`);
+  const sR = SUBJECTS.find(x=>x.id===item.subjectId);
+  c.appendChild(h(`<div class="ch-runhead er-runhead"><span class="ch-qn">${sess.index+1}<small>/${sess.total}</small></span><span class="ch-subj">${sR?sR.sym+' ':''}${escHTML(item.subjectName||'')}</span>${item.difficulty?`<span class="ch-diff d-${item.difficulty}">${({facil:'Fácil',medio:'Médio',dificil:'Difícil'})[item.difficulty]}</span>`:''}<span class="er-tag">Etapa ${item.box||1}${(item.count||1)>1?` · errou ${item.count}x`:''}</span></div>`));
+  const qcard = h(`<div class="question-card"><div class="qtext mono"></div></div>`);
   const qtextEl = qcard.querySelector('.qtext');
   addSpeakButton(qcard, ex); addScratchButton(qcard, ex);
   if(ex.columns){

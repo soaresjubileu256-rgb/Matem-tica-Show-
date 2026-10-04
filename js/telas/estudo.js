@@ -331,44 +331,109 @@ function chooseCardsLevel(subjectId){
 /* =========================================================
    CADERNO DE ERROS (visão geral)
    ========================================================= */
+function errAnswerText(ex){
+  if(!ex) return '';
+  if(ex.displayAnswer!==undefined) return String(ex.displayAnswer);
+  if(ex.type==='pair') return `x' = ${fmt(ex.answer[0])} e x'' = ${fmt(ex.answer[1])}`;
+  if(ex.type==='xy') return `x = ${fmt(ex.answer.x)} e y = ${fmt(ex.answer.y)}`;
+  return fmt(ex.answer);
+}
+function errWhen(e, now){
+  if(errorIsDue(e, now)) return 'Revisar hoje';
+  const days = Math.ceil((e.due - now)/864e5);
+  return days<=1 ? 'Volta amanhã' : `Volta em ${days} dias`;
+}
+async function removeErrorEntry(id){
+  const errs = await loadErrors();
+  const i = errs.findIndex(e=>e.id===id);
+  if(i>=0){ errs.splice(i,1); await saveErrors(); }
+}
 function errorsScreen(){
   const wrap = document.createElement('div');
   wrap.appendChild(topbar('🔁 Caderno de erros', true, ()=>go('exercisesSubjects')));
-  const c = h(`<div class="content"><div class="ar-muted" style="padding:20px 0;text-align:center">Carregando…</div></div>`);
+  const c = h(`<div class="content er-wrap"><div class="ar-muted" style="padding:20px 0;text-align:center">Carregando…</div></div>`);
   wrap.appendChild(c);
   Promise.all([loadErrors(), loadProgress()]).then(([errs, progress])=>{
     if(!wrap.isConnected) return;
     c.innerHTML = '';
     const now = Date.now(), due = errs.filter(e=>errorIsDue(e, now)), learned = loadGame().errLearned || 0;
-    c.appendChild(h(`<div class="greeting"><h2>${due.length ? `${due.length} para revisar hoje` : errs.length ? 'Tudo em dia ✓' : 'Caderno vazio'}</h2>
-      <p>Toda questão que você erra vem para cá. Acertou na revisão, ela volta daqui a 3 e depois 7 dias. Acertou de novo, ela sai do caderno: você aprendeu.</p></div>`));
-    c.appendChild(h(`<div class="stat-grid ar-stats3"><div class="stat-card"><div class="num">${errs.length}</div><div class="lbl">no caderno</div></div><div class="stat-card"><div class="num">${due.length}</div><div class="lbl">para hoje</div></div><div class="stat-card acc"><div class="num">${learned}</div><div class="lbl">aprendidas</div></div></div>`));
+    const boxes = [1,2,3].map(b=> errs.filter(e=>(e.box||1)===b).length);
+    const total = errs.length + learned;
+    const pct = total ? Math.round(learned/total*100) : 0;
+    c.appendChild(h(`<div class="er-hero ${due.length?'':'ok'}">
+        <div class="erh-top">
+          <div class="erh-ring" style="--p:${pct}"><b>${pct}%</b><small>aprendido</small></div>
+          <div class="erh-txt"><h2>${due.length ? `${due.length} pra revisar hoje` : errs.length ? 'Tudo em dia ✓' : 'Caderno vazio 🎉'}</h2>
+            <p>${errs.length ? `${errs.length} ${errs.length===1?'questão':'questões'} no caderno · ${learned} já aprendida${learned===1?'':'s'}` : learned ? `Você já aprendeu ${learned} ${learned===1?'questão':'questões'} que tinha errado!` : 'Quando errar uma questão, ela vem pra cá.'}</p></div>
+        </div>
+      </div>`));
+    // caminho de cada questão até ser aprendida
+    c.appendChild(h(`<div class="er-steps">
+        <div class="ers"><b>${boxes[0]}</b><span>Etapa 1</span><small>revisar já</small></div><i>›</i>
+        <div class="ers"><b>${boxes[1]}</b><span>Etapa 2</span><small>volta em 3 dias</small></div><i>›</i>
+        <div class="ers"><b>${boxes[2]}</b><span>Etapa 3</span><small>volta em 7 dias</small></div><i>›</i>
+        <div class="ers done"><b>${learned}</b><span>Aprendida</span><small>saiu do caderno</small></div>
+      </div>`));
+    c.appendChild(h(`<p class="er-how">Acertou na revisão, a questão sobe uma etapa. Errou, volta pra etapa 1. Passou da etapa 3, você aprendeu! 🎓</p>`));
     if(!errs.length){ c.appendChild(h(`<div class="empty-note">Quando você errar uma questão em qualquer parte do app, ela aparece aqui para revisar.</div>`)); return; }
-    const acts = h(`<div class="cta-row" style="margin:6px 0 4px"></div>`);
-    const rv = h(`<button type="button" class="btn primary">${due.length ? `Revisar os ${Math.min(due.length, REVIEW_ERRORS_MAX)} de hoje` : 'Revisar mesmo assim'}</button>`);
+    const rv = h(`<button type="button" class="btn primary er-go">${due.length ? `🔁 Revisar ${Math.min(due.length, REVIEW_ERRORS_MAX)} agora` : 'Revisar mesmo assim'}</button>`);
     rv.onclick = ()=> startReviewErrors({all: !due.length});
-    acts.appendChild(rv);
+    c.appendChild(rv);
     const rec = recommendSubjects(progress, errs, 3);
     if(rec.length){
-      const tr = h(`<button type="button" class="btn secondary">Treino recomendado</button>`);
+      const tr = h(`<button type="button" class="er-rec"><span>🎯</span><span><b>Treino recomendado</b><small>${rec.map(id=>subjById(id).name).join(', ')}</small></span><i>›</i></button>`);
       tr.onclick = ()=> startPersonalizedSession({subjectIds:rec, difficultyMode:'adaptativa', qty:10, focusWeak:rec.length>1, progress});
-      acts.appendChild(tr);
+      c.appendChild(tr);
     }
-    c.appendChild(acts);
-    if(rec.length) c.appendChild(h(`<p class="ar-muted">Recomendado para você agora: <b>${rec.map(id=>subjById(id).name).join(', ')}</b> (pelos erros guardados e pelo acerto recente).</p>`));
+    // filtro por assunto + lista das questões
     const by = {};
     errs.forEach(e=>{ (by[e.subjectId] = by[e.subjectId] || []).push(e); });
-    c.appendChild(h(`<h3 class="ar-label">Por assunto</h3>`));
-    Object.entries(by).sort((a,b)=> b[1].length - a[1].length).forEach(([id,arr])=>{
-      const s = subjById(id); if(!s) return;
-      const d = arr.filter(e=>errorIsDue(e, now)).length, times = arr.reduce((x,e)=>x+(e.count||1),0);
-      const diffs = ['facil','medio','dificil'].map(k=>[k, arr.filter(e=>e.difficulty===k).length]).filter(x=>x[1]);
-      const row = h(`<div class="ar-err"><div class="ar-err-h"><span class="ar-sym">${s.sym}</span><span class="ar-row-t"><b>${s.name}</b><small>${arr.length} questão(ões) · errou ${times}x · ${d} para hoje${diffs.length?' · '+diffs.map(([k,n])=>`${n} ${({facil:'fácil',medio:'média',dificil:'difícil'})[k]}`).join(', '):''}</small></span></div>
-        <div class="cta-row"><button type="button" class="btn secondary" data-a="t">Ver explicação</button><button type="button" class="btn primary" data-a="r">Revisar</button></div></div>`);
-      row.querySelector('[data-a=t]').onclick = ()=> go('subjectDetail', {subjectId:id});
-      row.querySelector('[data-a=r]').onclick = ()=> startReviewErrors({subjectId:id, all:!d});
-      c.appendChild(row);
-    });
+    const ids = Object.keys(by).filter(id=>subjById(id)).sort((x,y)=> by[y].length - by[x].length);
+    let filter = state.errFilter && by[state.errFilter] ? state.errFilter : 'all';
+    c.appendChild(h(`<h3 class="ar-label">Suas questões</h3>`));
+    const chips = h(`<div class="er-chips"></div>`);
+    const list = h(`<div class="er-list"></div>`);
+    const subjBar = h(`<div></div>`);
+    function paint(){
+      chips.innerHTML = '';
+      [['all', `Todas (${errs.length})`], ...ids.map(id=>[id, `${subjById(id).sym} ${subjById(id).name} (${by[id].length})`])].forEach(([id,label])=>{
+        const b = h(`<button type="button" class="er-chip ${filter===id?'on':''}"></button>`); b.textContent = label;
+        b.onclick = ()=>{ filter = id; state.errFilter = id; paint(); };
+        chips.appendChild(b);
+      });
+      subjBar.innerHTML = '';
+      if(filter!=='all'){
+        const d = by[filter].filter(e=>errorIsDue(e, now)).length;
+        const bar = h(`<div class="cta-row er-subj-acts"><button type="button" class="btn secondary" data-a="t">📖 Ver explicação</button><button type="button" class="btn primary" data-a="r">🔁 Revisar ${subjById(filter).name}</button></div>`);
+        bar.querySelector('[data-a=t]').onclick = ()=> go('subjectDetail', {subjectId:filter});
+        bar.querySelector('[data-a=r]').onclick = ()=> startReviewErrors({subjectId:filter, all:!d});
+        subjBar.appendChild(bar);
+      }
+      list.innerHTML = '';
+      const shown = (filter==='all' ? errs : by[filter]).slice().sort((x,y)=> (errorIsDue(y,now)-errorIsDue(x,now)) || ((y.count||1)-(x.count||1)));
+      shown.slice(0, 40).forEach(e=>{
+        const s0 = subjById(e.subjectId); if(!s0) return;
+        const q = String((e.ex && e.ex.question) || '').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
+        const box = e.box||1;
+        const card = h(`<div class="er-card ${errorIsDue(e,now)?'due':''}">
+            <div class="erc-top"><span class="erc-s">${s0.sym} ${escHTML(s0.name)}</span>${e.difficulty?`<span class="ch-diff d-${e.difficulty}">${({facil:'Fácil',medio:'Médio',dificil:'Difícil'})[e.difficulty]}</span>`:''}<span class="erc-when">${errWhen(e, now)}</span></div>
+            <div class="erc-q"></div>
+            <div class="erc-meta"><span class="erc-box">${[1,2,3].map(i=>`<i class="${i<=box?'on':''}"></i>`).join('')} Etapa ${box}</span><span>Errou ${e.count||1}x</span></div>
+            <div class="erc-ans" hidden></div>
+            <div class="erc-acts"><button type="button" class="erc-show">👁 Ver resposta</button><button type="button" class="erc-del" title="Tirar do caderno">🗑</button></div>
+          </div>`);
+        card.querySelector('.erc-q').textContent = q || 'Conta armada / desenho';
+        const ans = card.querySelector('.erc-ans');
+        ans.textContent = `Resposta: ${errAnswerText(e.ex)}`;
+        card.querySelector('.erc-show').onclick = ev=>{ ans.hidden = !ans.hidden; ev.currentTarget.textContent = ans.hidden ? '👁 Ver resposta' : '🙈 Esconder'; };
+        card.querySelector('.erc-del').onclick = ()=> showConfirm({icon:'🗑️', title:'Tirar do caderno?', message:'Essa questão sai do caderno de erros e não volta mais pra revisão.', ok:'Tirar', cancel:'Cancelar', danger:true})
+          .then(async ok=>{ if(ok){ await removeErrorEntry(e.id); render(); } });
+        list.appendChild(card);
+      });
+      if(shown.length > 40) list.appendChild(h(`<p class="ar-muted" style="text-align:center">Mostrando 40 de ${shown.length}. Filtre por assunto pra ver mais.</p>`));
+    }
+    paint();
+    c.appendChild(chips); c.appendChild(subjBar); c.appendChild(list);
   });
   return wrap;
 }
