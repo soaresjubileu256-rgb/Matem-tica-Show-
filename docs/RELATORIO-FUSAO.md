@@ -508,3 +508,12 @@ A Tabuada agora tem três partes (antes era só a lista de 1 a 10):
   - As bloqueadas têm cadeado e, quando dá pra medir, barra de progresso (ex.: 138/200 acertos). O progresso é calculado só pra mostrar; quem desbloqueia continua sendo o jogo.
 - **Títulos em escada:** os títulos já conquistados, o atual em destaque e quantos níveis faltam para os próximos.
 - Entrou nas **Novidades**.
+
+## 38. Impressão do certificado sem cortes
+
+- **Problema:** a impressão decidia se girava o certificado olhando a posição da **tela** (celular em pé), e não a da folha. Com o celular em pé e a folha deitada, o certificado saía girado e pequeno, ou cortado e passando para uma 2ª folha. O tamanho também dependia da tela (`vw`/`vh`).
+- **Correção:**
+  - O certificado agora é impresso em medidas de papel: 250 mm de largura, centralizado e sem girar. Assim cabe com folga numa folha A4 ou Carta deitada, mesmo com as margens da impressora.
+  - Se a folha vier em pé, ele só fica menor, nunca cortado.
+  - As cores de fundo são mantidas na impressão.
+- Testado gerando o PDF em A4 (pelo próprio app, deitada, em pé e com margens de 10–12 mm) e em Carta, com tela de celular e de computador: sempre 1 página, com o certificado inteiro.

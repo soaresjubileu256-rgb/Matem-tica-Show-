@@ -2748,18 +2748,18 @@ section.block h3::before, .rp-sec::before, .hq-head span::before{content:''; wid
 .fbx-msg{min-height:20px; margin:10px 0 4px; font-size:14px; font-weight:700; color:#fff;}
 .gm-modal .fbx-go{margin-top:8px; background:var(--show-grad); color:#fff; font-weight:800;}
 .fbx-note{margin:8px 0 0; font-size:12px; color:#C9C4F0; line-height:1.4;}
-/* impressão do certificado: uma folha só, deitada ou girada quando a folha vier em pé */
+/* impressão do certificado: uma folha só, em medidas de papel (mm).
+   Nada depende do tamanho da tela (vw/vh) nem da posição do celular: em folha deitada o certificado
+   ocupa a folha quase toda; se a impressora usar folha em pé, ele só fica menor, nunca cortado. */
 #cert-print{display:none;}
 @media print{
-  html.cert-printing, html.cert-printing body{margin:0 !important; padding:0 !important; height:auto !important; min-height:0 !important; overflow:hidden !important; background:#fff !important;}
+  html.cert-printing, html.cert-printing body{margin:0 !important; padding:0 !important; width:auto !important; height:auto !important; min-height:0 !important; overflow:visible !important; background:#fff !important;}
   html.cert-printing body > *:not(#cert-print){display:none !important;}
-  html.cert-printing #cert-print{display:block; position:relative; width:100vw; height:99.5vh; overflow:hidden; break-after:avoid; page-break-after:avoid;}
-  html.cert-printing #cert-print .cert{page:auto !important; --w:min(96vw, 135.5vh); position:absolute; left:50%; top:50%; width:var(--w) !important; max-width:none !important; margin:0 !important;
-    transform:translate(-50%,-50%); border-radius:0 !important; box-shadow:none !important;}
-}
-@media print and (orientation:portrait){
-  /* folha em pé: gira 90° e usa a altura da folha como largura do certificado */
-  html.cert-printing #cert-print .cert{--w:min(96vh, 135.5vw); transform:translate(-50%,-50%) rotate(90deg);}
+  html.cert-printing #cert-print{display:block !important; box-sizing:border-box; width:100%; padding:6mm 0 0; break-after:avoid; page-break-after:avoid;}
+  html.cert-printing #cert-print .cert{page:auto !important; position:relative !important; left:auto !important; top:auto !important; transform:none !important;
+    width:250mm !important; max-width:calc(100% - 14mm) !important; margin:0 auto !important; border-radius:0 !important; box-shadow:none !important;
+    break-inside:avoid; page-break-inside:avoid; -webkit-print-color-adjust:exact; print-color-adjust:exact;}
+  html.cert-printing #cert-print .cert-in{border-radius:0 !important;}
 }
 /* relatório semanal */
 .rp-wrap{max-width:600px; margin:0 auto;}
