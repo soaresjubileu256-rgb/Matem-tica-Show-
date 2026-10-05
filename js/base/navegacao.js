@@ -100,7 +100,7 @@ const BOTTOM_NAV_ITEMS = [
   {screen:'home', icon:'⌂', label:'Início', group:['home','calculator','solve','notebook','notePage','help','news','profile','settings','placement','plan']},
   {screen:'path', icon:'★', label:'Trilha', group:['path']},
   {screen:'content', icon:'∑', label:'Aprender', group:['content','subjectDetail','geoLab','cardsDeck']},
-  {screen:'exercisesSubjects', icon:'✎', label:'Exercícios', group:['exercisesSubjects','exerciseDifficulty','exerciseSession','personalizedSetup','personalizedSession','challengeDifficulty','challengeSession','tabuada','errors','reviewErrorsSession','enemSetup','enemRun','stepSetup','stepGuide']},
+  {screen:'exercisesSubjects', icon:'✎', label:'Exercícios', group:['exercisesSubjects','exerciseDifficulty','exerciseSession','personalizedSetup','personalizedSession','challengeDifficulty','challengeSession','tabuada','errors','reviewErrorsSession','stepSetup','stepGuide','exams','examDetail']},
   {screen:'arena', icon:'⚔', label:'Arena', group:['arena','arenaDaily','dailyIntro','dailyReview','examSetup','examResult','lightning','quizSetup','duel']},
   {screen:'progress', icon:'↑', label:'Progresso', group:['progress','report','history','achievements','certificates','certificate']},
 ];

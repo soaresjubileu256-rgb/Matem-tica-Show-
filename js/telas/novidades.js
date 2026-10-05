@@ -10,11 +10,10 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
-  {v:15, date:'2026-10-05', title:'3 novos modos de estudo', items:[
-    {ico:'📰', t:'Estilo ENEM/SAEB', d:'Questões com situações do dia a dia, alternativas de A a E e a habilidade da BNCC de cada uma. No fim, veja seu acerto por habilidade.', go:'enemSetup'},
+  {v:15, date:'2026-10-05', title:'Provas e vestibulares e novos modos de estudo', items:[
+    {ico:'🎓', t:'Provas e vestibulares', d:'Veja o que mais cai de Matemática no ENEM, na ETEC, na Fuvest, na Unicamp, na Unesp e na OBMEP, e treine ou faça um simulado só com esses assuntos. Marque a sua prova e ela aparece no Início.', go:'exams'},
     {ico:'🪜', t:'Qual o próximo passo?', d:'O Pi resolve um exemplo com você, mas antes de cada passo você tenta adivinhar qual vem. Depois é sua vez de resolver uma parecida.', go:'stepSetup'},
     {ico:'🔀', t:'Mistura do dia', d:'10 questões de vários assuntos que você já estudou, misturados. Ajuda a lembrar e a escolher o caminho certo, como numa prova. Vale +20 XP por dia.', go:'home'},
-    {ico:'📋', t:'Habilidades da BNCC', d:'Cada assunto do Aprender e o Relatório semanal agora mostram os códigos da BNCC.', go:'content'},
   ]},
   {v:14, date:'2026-10-05', title:'Início de cara nova', items:[
     {ico:'🏠', t:'Início', d:'Bom dia/boa tarde do Pi, a meta de hoje num anel com certas, acerto e combo, as fases do episódio na Trilha, "Tudo em dia" quando não sobra nada e uma Dica do Pi nova todo dia.', go:'home'},

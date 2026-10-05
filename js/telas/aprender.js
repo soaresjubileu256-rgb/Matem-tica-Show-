@@ -12,7 +12,7 @@ function contentScreen(){
   lab.onclick = ()=> go('geoLab', {geoBack:'content'});
   c.appendChild(lab);
   subjectListGrouped(c, (s,u)=>{
-    const row = h(`<button class="subject-row" style="${unitStyle(u)}"><span class="sym">${s.sym}</span><span class="txt"><span class="name">${s.name}</span><span class="subj-meta">${BNCC_ANO[s.id]?`📚 ${BNCC_ANO[s.id]} · `:''}${masteryChip(masterySync(s.id))}</span></span><span class="chev">›</span></button>`);
+    const row = h(`<button class="subject-row" style="${unitStyle(u)}"><span class="sym">${s.sym}</span><span class="txt"><span class="name">${s.name}</span><span class="subj-meta">${BNCC_ANO[s.id]?`📚 ${BNCC_ANO[s.id]} · `:''}${masteryChip(masterySync(s.id))}${examTagsHTML(s.id, 2)}</span></span><span class="chev">›</span></button>`);
     row.onclick = ()=>go('subjectDetail', {subjectId:s.id});
     return row;
   });
@@ -37,7 +37,12 @@ function subjectDetailScreen(){
   c.appendChild(h(`<div class="learn-hero" style="${unitStyle(Math.max(0, SUBJECTS.indexOf(s)))}"><span class="sym-big mono">${s.sym}</span><h2>${s.name}</h2></div>`));
   { const m = masterySync(s.id);
     c.appendChild(h(`<div class="mst-box"><div>${masteryChip(m)}${BNCC_ANO[s.id]?`<span class="bncc-tag">📚 BNCC · ${BNCC_ANO[s.id]}</span>`:''}</div><p>${m.next}</p></div>`)); }
-  { const bb = bnccBoxHTML(s.id); if(bb) c.appendChild(h(bb)); }
+  { const ex = examsForSubject(s.id);
+    if(ex.length){
+      const box = h(`<div class="pv-subj"><div class="pv-subj-h">🎓 Cai nas provas</div><div class="pv-subj-l">${ex.map(x=>`<button type="button" class="pv-chip ${x.lvl}" style="--c:${x.exam.color}" data-e="${x.exam.id}">${x.exam.ico} ${x.exam.name}<small>${x.lvl==='muito'?'🔥 cai muito':x.lvl==='bastante'?'⭐ cai bastante':'✓ às vezes'}</small></button>`).join('')}</div></div>`);
+      box.querySelectorAll('[data-e]').forEach(b=> b.onclick = ()=> go('examDetail', {examId:b.dataset.e}));
+      c.appendChild(box);
+    } }
   const explain = h(`<div class="explain-card"></div>`);
   const examplesList = s.examples || [s.example];
   const boxesHtml = examplesList.map(ex=>{

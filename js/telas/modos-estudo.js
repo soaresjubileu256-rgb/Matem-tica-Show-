@@ -1,140 +1,15 @@
 /* =========================================================
    MODOS DE ESTUDO (aba Exercícios)
-   1. Estilo ENEM/SAEB: questões com situação do dia a dia, alternativas A–E e a habilidade da BNCC.
-   2. Qual o próximo passo?: exemplo resolvido em que o aluno tenta cada passo antes de ver.
+   1. Qual o próximo passo?: exemplo resolvido em que o aluno tenta cada passo antes de ver.
       (tentar lembrar/prever o passo ajuda a fixar mais do que só ler a resolução)
-   3. Mistura do dia: 10 questões de vários assuntos já estudados, intercalados
+   2. Mistura do dia: 10 questões de vários assuntos já estudados, intercalados
       (misturar assuntos ajuda mais do que treinar um de cada vez).
    Todas as respostas passam por recordAnswer: contam no progresso, no histórico, no XP e no caderno de erros.
    ========================================================= */
 
-/* ---------------- 1. ESTILO ENEM / SAEB ---------------- */
-function enemStats(){ const g = loadGame(); g.enem = g.enem || {played:0, best:{}}; return g.enem; }
-function enemSetupScreen(){
-  const wrap = document.createElement('div');
-  wrap.appendChild(topbar('📰 Estilo ENEM/SAEB', true, ()=>go('exercisesSubjects')));
-  const c = h(`<div class="content me-screen"></div>`);
-  const st = enemStats();
-  let lvl = state.enemLvl || (dailyDefaultTrack()==='em' ? 'em' : 'fund'), qty = state.enemQty || 10;
-  c.appendChild(h(`<div class="me-hero en"><span class="me-hero-ico">📰</span><div><b>Questões do jeito da prova</b><p>Situações do dia a dia, 5 alternativas (A a E) e a habilidade da BNCC de cada questão, como no ENEM e no SAEB. As alternativas erradas são erros comuns: leia com atenção!</p></div></div>`));
-  const card = h(`<section class="st-card"></section>`);
-  card.appendChild(h(`<div class="st-lbl" style="margin-top:0">Nível</div>`));
-  const list = h(`<div class="me-skills"></div>`);
-  const paintSkills = ()=>{
-    const ms = ctxModelsFor(lvl);
-    const by = {};
-    ms.forEach(m=>{ (by[m.bncc] = by[m.bncc] || []).push(m); });
-    list.innerHTML = `<div class="me-skills-h">O que pode cair <small>${ms.length} tipos de questão</small></div>` +
-      Object.keys(by).map(code=>`<div class="me-skill"><b>${code}</b><span>${BNCC_DESC[code]||''}</span><em>${by[code].map(m=>m.tema).join(' · ')}</em></div>`).join('');
-  };
-  card.appendChild(stSeg([['fund','📘 Fundamental'],['em','🎓 Médio'],['all','Os dois']], lvl, v=>{ lvl = v; state.enemLvl = v; paintSkills(); }));
-  card.appendChild(h(`<div class="st-lbl">Quantas questões</div>`));
-  card.appendChild(stSeg([[5,'5'],[10,'10'],[15,'15']], qty, v=>{ qty = v; state.enemQty = v; }));
-  const best = st.best[lvl];
-  if(st.played) card.appendChild(h(`<small class="st-hint">Você já fez ${st.played} prova${st.played===1?'':'s'} neste modo${best ? ` · melhor acerto: ${best}%` : ''}.</small>`));
-  const go1 = h(`<button type="button" class="st-btn me-go">Começar ▶</button>`);
-  go1.onclick = ()=> startEnem(lvl, qty);
-  card.appendChild(go1);
-  c.appendChild(card);
-  paintSkills();
-  c.appendChild(list);
-  wrap.appendChild(c);
-  return wrap;
-}
-function startEnem(lvl, qty){
-  const models = ctxModelsFor(lvl);
-  if(!models.length) return;
-  const items = []; let bag = [];
-  while(items.length < qty){
-    if(!bag.length) bag = shuffle(models.slice());
-    const m = bag.pop();
-    if(items.length && items[items.length-1].model.id===m.id && models.length>1) continue;
-    const it = ctxBuild(m); if(it) items.push(it);
-  }
-  state.session = {kind:'enem', lvl, items, index:0, correct:0, picks:[], answered:false, startTs:Date.now(), id:`en${Date.now().toString(36)}`};
-  go('enemRun');
-}
-function enemRunScreen(){
-  const sess = state.session;
-  if(!sess || sess.kind!=='enem'){ setTimeout(()=>go('enemSetup'),0); return document.createElement('div'); }
-  const wrap = document.createElement('div');
-  const total = sess.items.length;
-  wrap.appendChild(topbar('📰 Estilo ENEM/SAEB', true, ()=>{
-    if(sess.index>0 && sess.index<total) showConfirm({icon:'📰', title:'Sair da prova?', message:`Você respondeu ${sess.index} de ${total}. Os acertos ficam salvos, mas a prova não termina.`, ok:'Sair', cancel:'Continuar'}).then(ok=>{ if(ok) go('enemSetup'); });
-    else go('enemSetup');
-  }));
-  const c = h(`<div class="content me-screen"></div>`);
-  wrap.appendChild(c);
-
-  if(sess.index >= total){
-    if(!sess.saved){
-      sess.saved = true;
-      const st = enemStats(), pct = Math.round(sess.correct/total*100);
-      st.played++; st.best[sess.lvl] = Math.max(st.best[sess.lvl]||0, pct); saveGame();
-    }
-    gameSessionEnd(c, sess.correct, total, `Você acertou ${sess.correct} de ${total} questões no estilo ENEM/SAEB.`);
-    // por habilidade
-    const by = {};
-    sess.items.forEach((it,i)=>{ const b = by[it.model.bncc] = by[it.model.bncc] || {ok:0, n:0}; b.n++; if(sess.picks[i] && sess.picks[i].ok) b.ok++; });
-    const hb = h(`<div class="me-hab"><h3>Por habilidade da BNCC</h3></div>`);
-    Object.keys(by).sort((a,b)=> by[a].ok/by[a].n - by[b].ok/by[b].n).forEach(code=>{
-      const b = by[code], p = Math.round(b.ok/b.n*100);
-      hb.appendChild(h(`<div class="me-hab-row ${p>=70?'good':p>=40?'mid':'low'}"><b>${code}</b><span>${BNCC_DESC[code]||''}</span><em>${b.ok}/${b.n}</em><i><u style="width:${p}%"></u></i></div>`));
-    });
-    c.appendChild(hb);
-    const acts = h(`<div class="pt-actions"></div>`);
-    const again = h(`<button class="btn primary">🔁 Nova prova</button>`); again.onclick = ()=> startEnem(sess.lvl, total);
-    const back = h(`<button class="btn secondary">Escolher de novo</button>`); back.onclick = ()=> go('enemSetup');
-    acts.appendChild(again); acts.appendChild(back); c.appendChild(acts);
-    const rev = h(`<div class="ch-review"><div class="chr-h"><b>Suas respostas</b><span>${sess.correct} de ${total} certas</span></div></div>`);
-    sess.items.forEach((it,i)=>{
-      const p = sess.picks[i] || {};
-      const row = h(`<div class="chr-row ${p.ok?'ok':'bad'}"><span class="chr-n">${p.ok?'✓':'✗'}</span><div class="chr-b"><div class="chr-s"></div><div class="chr-q"></div><div class="chr-a"></div></div></div>`);
-      row.querySelector('.chr-s').textContent = `${i+1}. ${it.model.bncc} · ${it.subjectName}`;
-      row.querySelector('.chr-q').textContent = it.q;
-      row.querySelector('.chr-a').textContent = p.ok ? `✓ ${it.right}` : `Você: ${p.label||'—'} · Certa: ${it.right}`;
-      rev.appendChild(row);
-    });
-    c.appendChild(rev);
-    return wrap;
-  }
-
-  const it = sess.items[sess.index], s = SUBJECTS.find(x=>x.id===it.subjectId);
-  c.appendChild(h(`<div class="ch-runhead"><span class="ch-qn">${sess.index+1}<small>/${total}</small></span><span class="ch-subj">${s?s.sym+' ':''}${escHTML(it.subjectName)}</span><span class="me-code" title="${escHTML(BNCC_DESC[it.model.bncc]||'')}">${it.model.bncc}</span></div>`));
-  const card = h(`<div class="me-q"><div class="me-tema">${escHTML(it.model.tema)}</div><p></p></div>`);
-  card.querySelector('p').textContent = it.q;
-  c.appendChild(card);
-  const opts = h(`<div class="me-opts"></div>`);
-  const pick1 = sess.answered ? sess.picks[sess.index] : null;
-  it.opts.forEach((o,i)=>{
-    const b = h(`<button type="button" class="me-opt"><span class="me-l">${CTX_LETTERS[i]}</span><span class="me-t"></span></button>`);
-    b.querySelector('.me-t').textContent = o.label;
-    if(pick1){ b.disabled = true; if(o.ok) b.classList.add('right'); else if(pick1.i===i) b.classList.add('wrong'); else b.classList.add('dim'); }
-    b.onclick = async ()=>{
-      if(sess.answered) return;
-      sess.answered = true;
-      sess.picks[sess.index] = {i, ok:o.ok, label:`${CTX_LETTERS[i]}) ${o.label}`};
-      if(o.ok) sess.correct++;
-      try{ playFeedbackSound(o.ok); playFeedbackVibration(o.ok); }catch(e){}
-      await recordAnswer(it.subjectId, o.ok, {difficulty:'medio', ex:it.ex});
-      render();
-    };
-    opts.appendChild(b);
-  });
-  c.appendChild(opts);
-  if(pick1){
-    const ri = it.opts.findIndex(o=>o.ok);
-    const fb = h(`<div class="me-fb ${pick1.ok?'ok':'bad'}"><b>${pick1.ok ? '✓ Isso mesmo!' : `✗ A certa é a ${CTX_LETTERS[ri]}`}</b><div class="me-sol"><div class="me-sol-h">Resolução</div>${it.steps.map((t,k)=>`<div class="ex-step"><span class="num">${k+1}</span><span class="txt">${t}</span></div>`).join('')}</div></div>`);
-    c.appendChild(fb);
-    const nx = h(`<button type="button" class="st-btn me-next">${sess.index+1<total ? 'Próxima questão ›' : 'Ver resultado 🏁'}</button>`);
-    nx.onclick = ()=>{ sess.index++; sess.answered = false; render(); window.scrollTo(0,0); };
-    c.appendChild(nx);
-  }
-  return wrap;
-}
-
-/* ---------------- 2. QUAL O PRÓXIMO PASSO? ---------------- */
+/* ---------------- 1. QUAL O PRÓXIMO PASSO? ---------------- */
 const STEP_EXAMPLES = 3;
+const OPT_LETTERS = ['A','B','C','D','E'];
 const stepPlain = t=> String(t||'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
 function stepSetupScreen(){
   const wrap = document.createElement('div');
@@ -273,7 +148,7 @@ function stepGuideScreen(){
   c.querySelector('.sg-qbody').classList.toggle('stacked', !!tq.stacked);
   const opts = h(`<div class="me-opts"></div>`);
   sess.tryOpts.forEach((o,i)=>{
-    const b = h(`<button type="button" class="me-opt"><span class="me-l">${CTX_LETTERS[i]}</span><span class="me-t"></span></button>`);
+    const b = h(`<button type="button" class="me-opt"><span class="me-l">${OPT_LETTERS[i]}</span><span class="me-t"></span></button>`);
     b.querySelector('.me-t').textContent = o.label;
     if(sess.tryPick!=null){ b.disabled = true; if(o.ok) b.classList.add('right'); else if(sess.tryPick===i) b.classList.add('wrong'); else b.classList.add('dim'); }
     b.onclick = async ()=>{
@@ -296,7 +171,7 @@ function stepGuideScreen(){
   return wrap;
 }
 
-/* ---------------- 3. MISTURA DO DIA ---------------- */
+/* ---------------- 2. MISTURA DO DIA ---------------- */
 const MIX_QTY = 10, MIX_SUBJECTS = 5, MIX_BONUS_XP = 20;
 function mixToday(){ const m = loadGame().mix; return m && m.day===isoDay() ? m : null; }
 /* assuntos da mistura: os já estudados, priorizando os praticados há mais tempo e os com menos acerto.

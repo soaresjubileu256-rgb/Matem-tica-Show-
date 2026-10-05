@@ -586,29 +586,32 @@ A Tabuada agora tem três partes (antes era só a lista de 1 a 10):
 - O tour de primeiro acesso continua funcionando: as classes `.player-card`, `.path-hero`, `.missions` e `.quick-grid` não mudaram.
 - Entrou nas **Novidades**.
 
-## 44. Três modos de estudo novos e a BNCC
+## 44. Provas e vestibulares, Qual o próximo passo? e Mistura do dia
 
-Feitos a partir da pesquisa em outras plataformas (Khan Academy, Duolingo, Brilliant, Matific, ANTON) e em estudos sobre como se aprende matemática: tentar lembrar, espaçar e misturar assuntos ajudam.
+Feitos a partir da pesquisa em outras plataformas (Khan Academy, Duolingo, Brilliant, Matific, ANTON) e em estudos sobre aprendizagem de matemática (tentar lembrar, espaçar e misturar assuntos ajudam).
 
-- **Habilidades da BNCC** (`js/assuntos/bncc-contexto.js`):
-  - `BNCC_HAB` liga cada assunto às suas habilidades principais, e `BNCC_DESC` tem um resumo de cada código, com nossas palavras.
-  - Aparecem no Aprender (caixa "Habilidades da BNCC") e no Relatório semanal (códigos embaixo de cada assunto).
-  - É uma referência aproximada. Matrizes, determinantes, conjuntos, função modular, identidades e geometria analítica não têm código próprio e ficam de fora.
-- **📰 Estilo ENEM/SAEB** (Exercícios):
-  - 23 modelos de questão com situação do dia a dia (`CTX_QUESTIONS`): 14 do Fundamental e 9 do Médio, cada um com a sua habilidade da BNCC.
-  - Os números mudam a cada vez. São 5 alternativas (A–E), e as erradas vêm de erros comuns (ex.: usar o perímetro no lugar da área, somar porcentagens em vez de aplicar uma depois da outra, juros simples em vez de compostos).
-  - Escolha de nível (Fundamental / Médio / os dois) e de quantidade (5, 10 ou 15).
-  - Depois de responder, aparece a resolução. No fim, o acerto por habilidade e a revisão de cada resposta.
-  - Recorde por nível em `g.enem`.
-  - Testado: cada modelo gerado 300 vezes sempre teve 5 alternativas diferentes e uma só certa.
+- **🎓 Provas e vestibulares** (Exercícios → "Provas e vestibulares"; dados em `js/assuntos/provas.js`, telas em `js/telas/provas.js`):
+  - ENEM, ETEC (Vestibulinho), Fuvest, Unicamp, Unesp e OBMEP. Cada prova tem quem faz, como é a prova e uma dica.
+  - Os assuntos do app vêm em três faixas: 🔥 cai muito, ⭐ cai bastante e ✓ às vezes cai. Há também a lista "Também cai", com temas que ainda não têm assunto próprio no app (ex.: polinômios, números complexos, escalas).
+  - A lista foi montada a partir de levantamentos de provas anteriores publicados por cursinhos e sites de educação. A tela avisa que é uma orientação e que vale conferir o edital.
+  - **Treinar o que mais cai:** 15 questões dos assuntos 🔥 e ⭐, com dificuldade adaptativa e foco nos pontos fracos.
+  - **Simulado da prova:** 20 questões em 40 minutos, só com esses assuntos. Os 🔥 aparecem mais.
+  - Cada assunto da lista tem os botões 📖 (estudar) e "Treinar".
+  - **% pronto:** quantos assuntos 🔥 e ⭐ estão em Proficiente ou Dominado.
+  - **Minha prova** (`g.targetExam`): a prova marcada aparece no Início ("Rumo ao ENEM…").
+  - **Etiquetas nos assuntos:**
+    - nas listas do Aprender e de Exercícios (ex.: "ENEM 🔥 · ETEC");
+    - na caixa "Cai nas provas" de cada assunto, em que tocar abre a prova;
+    - no Relatório semanal, na linha "Cai em".
 - **🪜 Qual o próximo passo?** (Exercícios, e "Exemplo guiado" no Aprender):
   - Exemplo resolvido em 3 rodadas.
   - Antes de cada passo, o aluno escolhe entre 3 opções. As erradas são erros plausíveis da mesma conta (resultado errado ou sinal trocado) ou o mesmo passo de outra questão.
-  - Depois de todos os passos, "Agora é sua vez" com uma questão parecida, que conta no progresso.
+  - Depois vem "Agora é sua vez", com uma questão parecida que conta no progresso.
   - Funciona nos 41 assuntos e nas 3 dificuldades.
 - **🔀 Mistura do dia** (Início e Exercícios):
   - 10 questões, com dificuldade adaptativa, de até 5 assuntos já estudados. São escolhidos os praticados há mais tempo e os com menos acerto, e a escolha vale o dia todo.
-  - Os assuntos se alternam sem repetir em seguida (usa o motor do Treino personalizado com `isMix`).
+  - Os assuntos se alternam sem repetir em seguida.
   - +20 XP na primeira do dia (`g.mix`).
-  - O aviso "Tudo em dia" do Início agora também espera a Mistura.
+  - O aviso "Tudo em dia" do Início também espera a Mistura.
+- O modo "Estilo ENEM/SAEB" e os códigos de habilidade da BNCC foram testados mas retirados a pedido. A etiqueta antiga com o ano escolar ("📚 BNCC · 6º ano") continua.
 - Entrou nas **Novidades**.

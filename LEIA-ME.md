@@ -37,7 +37,7 @@ js/
     ensino-medio-visual.js desenhos e ajudantes usados pelo Ensino Médio
     ensino-medio.js        os 23 assuntos do Ensino Médio
     catalogo.js            GRUPOS DE ASSUNTOS (a ordem única do app), ano (BNCC)
-    bncc-contexto.js       habilidades da BNCC por assunto e questões no estilo ENEM/SAEB
+    provas.js              o que cai em cada prova (ENEM, ETEC, Fuvest, Unicamp, Unesp, OBMEP)
   dados/
     progresso.js      acertos, histórico, caderno de erros e revisão espaçada
     configuracoes.js  configurações salvas (tema, som, volume, meta, nível)
@@ -53,7 +53,8 @@ js/
     inicio.js         aba Início
     aprender.js       aba Aprender
     exercicios.js     aba Exercícios: modos de treino, sessões, dicas, Desafios, Treino personalizado
-    modos-estudo.js   Estilo ENEM/SAEB, Qual o próximo passo? e Mistura do dia
+    modos-estudo.js   Qual o próximo passo? e Mistura do dia
+    provas.js         Provas e vestibulares: lista, tela de cada prova e "minha prova"
     tabuada.js        Tabuada (Estudar, Quadro e Treinar)
     estudo.js         nivelamento, plano de estudos, cartões de revisão e Caderno de erros
     ferramentas.js    Resolver questão e Calculadora (com parênteses, ordem das operações e histórico)
@@ -93,5 +94,5 @@ Os assuntos aparecem sempre na mesma ordem e nos mesmos grupos (1º ao 5º ano, 
 ## Como acrescentar um assunto
 
 1. Copie um assunto parecido em `js/assuntos/fundamental.js` ou `js/assuntos/ensino-medio.js`. Mude o `id`, o `name`, o `sym`, a explicação (`learn`), os `examples` e os geradores (`gen.facil`, `gen.medio`, `gen.dificil`).
-2. Em `js/assuntos/catalogo.js`, acrescente o `id` no grupo certo de `SUBJECT_GROUPS` (é isso que define a ordem e o lugar dele em todas as telas) e em `BNCC_ANO`. Se quiser, coloque as habilidades em `BNCC_HAB` (`js/assuntos/bncc-contexto.js`).
+2. Em `js/assuntos/catalogo.js`, acrescente o `id` no grupo certo de `SUBJECT_GROUPS` (é isso que define a ordem e o lugar dele em todas as telas) e em `BNCC_ANO`.
 3. Em `js/telas/exercicios.js`, acrescente uma dica em `HINTS`.

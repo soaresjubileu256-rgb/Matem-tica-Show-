@@ -201,6 +201,7 @@ function homeScreen(){
   wrap.appendChild(secTitle('Pra fazer hoje'));
   if(importCard) wrap.appendChild(importCard);
   if(placementCard) wrap.appendChild(placementCard);
+  { const eb = examHomeBanner(); if(eb) wrap.appendChild(eb); }
   wrap.appendChild(dailyBanner);
   wrap.appendChild(mixBannerEl());
   if(planBanner) wrap.appendChild(planBanner);
