@@ -615,3 +615,16 @@ Feitos a partir da pesquisa em outras plataformas (Khan Academy, Duolingo, Brill
   - O aviso "Tudo em dia" do Início também espera a Mistura.
 - O modo "Estilo ENEM/SAEB" e os códigos de habilidade da BNCC foram testados mas retirados a pedido. A etiqueta antiga com o ano escolar ("📚 BNCC · 6º ano") continua.
 - Entrou nas **Novidades**.
+
+## 45. Abas em todas as seções
+
+- **Abas no topo de cada seção** (`SECTION_TABS` em `js/base/navegacao.js`), colocadas num lugar só (`withSectionTabs` no desenho das telas, em `js/iniciar.js`):
+  - **Progresso:** Resumo | Relatório | Histórico | Conquistas | Certificados
+  - **Exercícios:** Assuntos | Provas | Treino | Desafios | Passo a passo | Tabuada | Erros
+  - **Arena:** Arena | Desafio do Dia | Simulado | Relâmpago | Quiz | Duelo
+  - **Aprender:** Assuntos | Laboratório
+  - **Ferramentas:** Resolver | Calculadora | Caderno
+  - **Perfil:** Perfil | Configurações | Novidades | Ajuda
+- A barra fica presa no topo ao rolar e desliza para os lados no celular. Telas de jogo e de sessão (questões, Trilha, simulado em andamento) não têm abas.
+- **Provas:** cada prova (ENEM, ETEC, Fuvest, Unicamp, Unesp, OBMEP) tem sua própria aba, com o % pronto. A "minha prova" abre primeiro e tem ⭐. Os links "Cai nas provas" e o botão voltar do treino abrem a aba certa.
+- O menu de Exercícios ficou com a Mistura do dia em destaque e a lista de assuntos. Os outros modos viraram abas.

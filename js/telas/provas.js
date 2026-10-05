@@ -7,26 +7,27 @@
    ========================================================= */
 function myExamId(){ return loadGame().targetExam || null; }
 
+/* uma aba por prova: ENEM | ETEC | Fuvest | Unicamp | Unesp | OBMEP.
+   A aba aberta fica em state.examId (a "minha prova" abre primeiro). */
 function examsScreen(){
   const wrap = document.createElement('div');
   wrap.appendChild(topbar('🎓 Provas e vestibulares', true, ()=>go('exercisesSubjects')));
-  const c = h(`<div class="content pv-screen"></div>`);
-  c.appendChild(h(`<div class="pv-intro"><span>🎯</span><div><b>Estude o que cai na sua prova</b><p>Veja os assuntos de Matemática que mais caem no ENEM, na ETEC e nos principais vestibulares, e treine só eles.</p></div></div>`));
   const mine = myExamId();
-  const sorted = EXAMS.slice().sort((a,b)=> (b.id===mine) - (a.id===mine));
-  sorted.forEach(e=>{
-    const r = examReadiness(e), hot = examTopicIds(e, ['muito']).length;
-    const card = h(`<button type="button" class="pv-card ${e.id===mine?'mine':''}" style="--c:${e.color}; --c2:${e.color2}">
-      <span class="pv-ico">${e.ico}</span>
-      <span class="pv-t"><b>${e.name}${e.id===mine?' <em>⭐ minha prova</em>':''}</b><small>${escHTML(e.full)}</small>
-        <span class="pv-bar"><i style="width:${r.pct}%"></i></span>
-        <span class="pv-meta">${r.ready} de ${r.total} assuntos prontos · ${hot} que caem muito 🔥</span></span>
-      <span class="chev">›</span></button>`);
-    card.onclick = ()=> go('examDetail', {examId:e.id});
-    c.appendChild(card);
+  const e = examById(state.examId) || examById(mine) || EXAMS[0];
+  state.examId = e.id;
+  const tabs = h(`<div class="pv-tabs" role="tablist"></div>`);
+  EXAMS.forEach(x=>{
+    const r = examReadiness(x);
+    const t = h(`<button type="button" role="tab" class="pv-tab ${x.id===e.id?'on':''}" aria-selected="${x.id===e.id}" style="--c:${x.color}"><span>${x.ico}</span><b>${x.name}${x.id===mine?' ⭐':''}</b><small>${r.pct}%</small></button>`);
+    t.onclick = ()=>{ if(state.examId===x.id) return; state.examId = x.id; render(); };
+    tabs.appendChild(t);
   });
-  c.appendChild(h(`<p class="pv-note">📊 Baseado em levantamentos de provas anteriores feitos por cursinhos e sites de educação. É uma orientação de estudo: confira sempre o edital da sua prova.</p>`));
+  wrap.appendChild(tabs);
+  const c = h(`<div class="content pv-screen"></div>`);
+  examTabBody(e, c);
   wrap.appendChild(c);
+  // deixa a aba escolhida visível na barra
+  setTimeout(()=>{ const on = tabs.querySelector('.pv-tab.on'); if(on) tabs.scrollLeft = on.offsetLeft - (tabs.clientWidth - on.offsetWidth)/2; }, 0);
   return wrap;
 }
 
@@ -41,11 +42,7 @@ function startExamSimulado(e){
   startExam({subjects: examTopicIds(e, ['muito']).concat(ids), n:20, mins:40, diff:'misturada'});
 }
 
-function examDetailScreen(){
-  const e = examById(state.examId) || EXAMS[0];
-  const wrap = document.createElement('div');
-  wrap.appendChild(topbar(`${e.ico} ${e.name}`, true, ()=>go('exams')));
-  const c = h(`<div class="content pv-screen"></div>`);
+function examTabBody(e, c){
   const r = examReadiness(e), mine = myExamId()===e.id;
   const R = 34, C = 2*Math.PI*R;
   const hero = h(`<div class="pv-hero" style="--c:${e.color}; --c2:${e.color2}">
@@ -98,9 +95,9 @@ function examDetailScreen(){
     c.appendChild(h(`<div class="pv-extra"><b>📌 Também cai</b><p>Temas que aparecem nessa prova e você pode revisar no caderno ou no livro:</p><div>${e.extra.map(x=>`<span>${escHTML(x)}</span>`).join('')}</div></div>`));
   }
   c.appendChild(h(`<p class="pv-note">📊 Baseado em levantamentos de provas anteriores. Confira sempre o edital da sua prova.</p>`));
-  wrap.appendChild(c);
-  return wrap;
 }
+/* rota antiga (links de "Cai nas provas", botão voltar do treino): abre a aba da prova */
+function examDetailScreen(){ return examsScreen(); }
 
 /* aviso no Início quando a pessoa marcou "minha prova" */
 function examHomeBanner(){

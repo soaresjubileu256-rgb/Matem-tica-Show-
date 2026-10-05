@@ -9,20 +9,10 @@ function exercisesSubjectsScreen(){
   const wrap = document.createElement('div');
   wrap.appendChild(topbar('Exercícios', true, ()=>go('home')));
   const c = h(`<div class="content"></div>`);
-  // modos de treino (cada um mora aqui, na aba Exercícios)
-  c.appendChild(h(`<h3 class="home-sec" style="margin:4px 0 10px">Modos de treino</h3>`));
-  const modes = h(`<div class="quick-grid ex-modes" style="padding:0"></div>`);
-  [
-    {sym:'🔀', cls:'tile-mix', label:'Mistura do dia', go:()=>startMix()},
-    {sym:'🎓', cls:'tile-exam', label:'Provas e vestibulares', go:()=>go('exams')},
-    {sym:'🪜', cls:'tile-step', label:'Qual o próximo passo?', go:()=>go('stepSetup')},
-    {sym:'🎯', cls:'tile-train', label:'Treino personalizado', go:()=>go('personalizedSetup')},
-    {sym:'🏆', cls:'challenge', label:'Desafios', go:()=>go('challengeDifficulty')},
-    {sym:'×', cls:'tabuada', label:'Tabuada', go:()=>go('tabuada')},
-    {sym:'🔁', cls:'tile-hist', label:'Caderno de erros', go:()=>go('errors')},
-  ].forEach(m=>{ const t = h(`<button type="button" class="quick-tile ${m.cls}"><span class="sym">${m.sym}</span><span class="label">${m.label}</span></button>`); t.onclick = m.go; modes.appendChild(t); });
-  c.appendChild(modes);
-  c.appendChild(h(`<h3 class="home-sec" style="margin:18px 0 6px">Por assunto</h3>`));
+  // os modos (Provas, Treino, Desafios, Passo a passo, Tabuada, Erros) ficam nas abas do topo;
+  // aqui fica a Mistura do dia em destaque e a lista de assuntos
+  c.appendChild(mixBannerEl());
+  c.appendChild(h(`<h3 class="home-sec" style="margin:14px 0 6px">Por assunto</h3>`));
   c.appendChild(h(`<p style="color:var(--ink-soft); font-size:14px; margin:2px 0 8px;">Escolha um assunto para praticar.</p>`));
   subjectListGrouped(c, (s,u)=>{
     const row = h(`<button class="subject-row" style="${unitStyle(u)}"><span class="sym">${s.sym}</span><span class="txt"><span class="name">${s.name}</span><span class="subj-meta">${masteryChip(masterySync(s.id))}${examTagsHTML(s.id, 2)}</span></span><span class="chev">›</span></button>`);
@@ -982,8 +972,8 @@ function personalizedSessionScreen(){
   wrap.appendChild(topbar(sess.config.examName ? `🎓 Treino ${sess.config.examName}` : sess.config.isMix ? '🔀 Mistura do dia' : sess.config.isReview ? '🧠 Revisão do dia' : '🎯 Treino personalizado', true, ()=>{
     if(sess.index>0 && sess.index<sess.total){
       showConfirm({icon:'🎯', title:'Sair do treino?', message:`Você já respondeu ${sess.index} de ${sess.total} questões. Os acertos ficam salvos, mas o treino não termina.`, ok:'Sair', cancel:'Continuar'})
-        .then(ok=>{ if(ok) go(ptBack); });
-    } else go(ptBack);
+        .then(ok=>{ if(ok) go(ptBack, sess.config.examId ? {examId:sess.config.examId} : {}); });
+    } else go(ptBack, sess.config.examId ? {examId:sess.config.examId} : {});
   }));
   const c = h(`<div class="content"></div>`);
 

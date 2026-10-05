@@ -64,41 +64,41 @@ function renderAsyncSafe(){
   if(state.screen === 'progress'){
     const placeholder = h(`<div class="content" style="padding-top:40px;text-align:center;color:var(--ink-soft)">Carregando…</div>`);
     app.appendChild(placeholder);
-    progressScreen().then(el=>{ app.innerHTML=''; app.appendChild(el); app.appendChild(bottomNav()); });
+    progressScreen().then(el=>{ app.innerHTML=''; app.appendChild(withSectionTabs(el)); app.appendChild(bottomNav()); });
     return;
   }
   if(state.screen === 'profile'){
     const placeholder = h(`<div class="content" style="padding-top:40px;text-align:center;color:var(--ink-soft)">Carregando…</div>`);
     app.appendChild(placeholder);
-    profileScreen().then(el=>{ app.innerHTML=''; app.appendChild(el); app.appendChild(bottomNav()); });
+    profileScreen().then(el=>{ app.innerHTML=''; app.appendChild(withSectionTabs(el)); app.appendChild(bottomNav()); });
     return;
   }
   if(state.screen === 'history'){
     const placeholder = h(`<div class="content" style="padding-top:40px;text-align:center;color:var(--ink-soft)">Carregando…</div>`);
     app.appendChild(placeholder);
-    historyScreen().then(el=>{ app.innerHTML=''; app.appendChild(el); app.appendChild(bottomNav()); });
+    historyScreen().then(el=>{ app.innerHTML=''; app.appendChild(withSectionTabs(el)); app.appendChild(bottomNav()); });
     return;
   }
   if(state.screen === 'personalizedSetup'){
     const placeholder = h(`<div class="content" style="padding-top:40px;text-align:center;color:var(--ink-soft)">Carregando…</div>`);
     app.appendChild(placeholder);
-    personalizedSetupScreen().then(el=>{ app.innerHTML=''; app.appendChild(el); app.appendChild(bottomNav()); });
+    personalizedSetupScreen().then(el=>{ app.innerHTML=''; app.appendChild(withSectionTabs(el)); app.appendChild(bottomNav()); });
     return;
   }
   if(state.screen === 'report'){
     const placeholder = h(`<div class="content" style="padding-top:40px;text-align:center;color:var(--ink-soft)">Carregando…</div>`);
     app.appendChild(placeholder);
-    reportScreen().then(el=>{ app.innerHTML=''; app.appendChild(el); app.appendChild(bottomNav()); });
+    reportScreen().then(el=>{ app.innerHTML=''; app.appendChild(withSectionTabs(el)); app.appendChild(bottomNav()); });
     return;
   }
   if(state.screen === 'settings'){
     const placeholder = h(`<div class="content" style="padding-top:40px;text-align:center;color:var(--ink-soft)">Carregando…</div>`);
     app.appendChild(placeholder);
-    settingsScreen().then(el=>{ app.innerHTML=''; app.appendChild(el); app.appendChild(bottomNav()); });
+    settingsScreen().then(el=>{ app.innerHTML=''; app.appendChild(withSectionTabs(el)); app.appendChild(bottomNav()); });
     return;
   }
   const fn = SCREENS[state.screen] || homeScreen;
-  app.appendChild(fn());
+  app.appendChild(withSectionTabs(fn()));
   if(!['lesson','notePage','examRun'].includes(state.screen)) app.appendChild(bottomNav());
 }
 render = renderAsyncSafe;
