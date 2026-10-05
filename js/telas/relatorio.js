@@ -132,7 +132,7 @@ async function reportScreen(){
   } else r.subjects.forEach(s=>{
     const cls = s.pct>=80 ? '' : s.pct>=60 ? 'mid' : 'low';
     const tr = s.prevPct===null ? '' : ` <span class="rp-trend ${s.pct>s.prevPct?'up':s.pct<s.prevPct?'down':'same'}" style="display:inline">${s.pct>s.prevPct?'▲':s.pct<s.prevPct?'▼':'='}</span>`;
-    const row = h(`<div class="mastery-row"><div class="top"><span class="name">${s.sym} ${escHTML(s.name)}</span><span class="pct">${s.n} q · ${s.pct}%${tr}</span></div><div class="bar-track"><div class="bar-fill ${cls}" style="width:${s.pct}%"></div></div></div>`);
+    const row = h(`<div class="mastery-row"><div class="top"><span class="name">${s.sym} ${escHTML(s.name)}</span><span class="pct">${s.n} q · ${s.pct}%${tr}</span></div><div class="bar-track"><div class="bar-fill ${cls}" style="width:${s.pct}%"></div></div>${bnccFor(s.id).length ? `<div class="rp-bncc">BNCC: ${bnccFor(s.id).join(' · ')}</div>` : ''}</div>`);
     if(s.pct<80){ const b = h(`<button type="button" class="rp-train rp-actions">Treinar</button>`); b.onclick = ()=> startSession(s.id, s.pct<60?'facil':'medio'); row.querySelector('.top .pct').after(b); }
     c.appendChild(row);
   });

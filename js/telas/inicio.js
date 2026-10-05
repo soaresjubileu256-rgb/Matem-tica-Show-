@@ -202,12 +202,13 @@ function homeScreen(){
   if(importCard) wrap.appendChild(importCard);
   if(placementCard) wrap.appendChild(placementCard);
   wrap.appendChild(dailyBanner);
+  wrap.appendChild(mixBannerEl());
   if(planBanner) wrap.appendChild(planBanner);
   wrap.appendChild(reviewBanner);
   wrap.appendChild(spacedBanner);
   // nada pendente (desafio feito, sem revisão vencida): um aviso de "tudo em dia" no lugar
-  if(dailyDone && !planBanner && !placementCard && !importCard){
-    const allSet = h(`<div class="hd-allset" style="display:none"><span>✅</span><div><b>Tudo em dia por hoje!</b><small>Desafio feito e nenhuma revisão pendente. Que tal uma fase da Trilha?</small></div></div>`);
+  if(dailyDone && mixToday() && !planBanner && !placementCard && !importCard){
+    const allSet = h(`<div class="hd-allset" style="display:none"><span>✅</span><div><b>Tudo em dia por hoje!</b><small>Desafio e Mistura feitos, e nenhuma revisão pendente. Que tal uma fase da Trilha?</small></div></div>`);
     spacedBanner.after(allSet);
     Promise.all([loadErrors(), loadProgress()]).then(([errs, progress])=>{
       if(!errs.some(e=>errorIsDue(e)) && !dueReviewSubjects(progress).length) allSet.style.display = '';

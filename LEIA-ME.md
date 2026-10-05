@@ -37,6 +37,7 @@ js/
     ensino-medio-visual.js desenhos e ajudantes usados pelo Ensino Médio
     ensino-medio.js        os 23 assuntos do Ensino Médio
     catalogo.js            GRUPOS DE ASSUNTOS (a ordem única do app), ano (BNCC)
+    bncc-contexto.js       habilidades da BNCC por assunto e questões no estilo ENEM/SAEB
   dados/
     progresso.js      acertos, histórico, caderno de erros e revisão espaçada
     configuracoes.js  configurações salvas (tema, som, volume, meta, nível)
@@ -52,6 +53,7 @@ js/
     inicio.js         aba Início
     aprender.js       aba Aprender
     exercicios.js     aba Exercícios: modos de treino, sessões, dicas, Desafios, Treino personalizado
+    modos-estudo.js   Estilo ENEM/SAEB, Qual o próximo passo? e Mistura do dia
     tabuada.js        Tabuada (Estudar, Quadro e Treinar)
     estudo.js         nivelamento, plano de estudos, cartões de revisão e Caderno de erros
     ferramentas.js    Resolver questão e Calculadora (com parênteses, ordem das operações e histórico)
@@ -86,10 +88,10 @@ Os assuntos aparecem sempre na mesma ordem e nos mesmos grupos (1º ao 5º ano, 
 - **Ordem dos scripts:** os arquivos de `js/` dividem as mesmas variáveis e funções. Eles precisam ser carregados na ordem do `index.html`, e o `iniciar.js` é sempre o último.
 - **Arquivo novo:** coloque o `<script>` no `index.html` e o caminho na lista `APP_SHELL` do `sw.js`.
 - **Lançou algo novo pras pessoas verem?** Acrescente uma entrada no topo de `NEWS` em `js/telas/novidades.js` (com um `v` maior que o anterior). Quem já usa o app vê a janela "Novidades" ao abrir o Início.
-- **Depois de qualquer mudança:** aumente o `CACHE_VERSION` no `sw.js` (ex.: `mat-show-v66` → `mat-show-v67`). Assim quem já instalou recebe a versão nova.
+- **Depois de qualquer mudança:** aumente o `CACHE_VERSION` no `sw.js` (ex.: `mat-show-v67` → `mat-show-v68`). Assim quem já instalou recebe a versão nova.
 
 ## Como acrescentar um assunto
 
 1. Copie um assunto parecido em `js/assuntos/fundamental.js` ou `js/assuntos/ensino-medio.js`. Mude o `id`, o `name`, o `sym`, a explicação (`learn`), os `examples` e os geradores (`gen.facil`, `gen.medio`, `gen.dificil`).
-2. Em `js/assuntos/catalogo.js`, acrescente o `id` no grupo certo de `SUBJECT_GROUPS` (é isso que define a ordem e o lugar dele em todas as telas) e em `BNCC_ANO`.
+2. Em `js/assuntos/catalogo.js`, acrescente o `id` no grupo certo de `SUBJECT_GROUPS` (é isso que define a ordem e o lugar dele em todas as telas) e em `BNCC_ANO`. Se quiser, coloque as habilidades em `BNCC_HAB` (`js/assuntos/bncc-contexto.js`).
 3. Em `js/telas/exercicios.js`, acrescente uma dica em `HINTS`.

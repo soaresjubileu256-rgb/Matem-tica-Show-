@@ -37,6 +37,7 @@ function subjectDetailScreen(){
   c.appendChild(h(`<div class="learn-hero" style="${unitStyle(Math.max(0, SUBJECTS.indexOf(s)))}"><span class="sym-big mono">${s.sym}</span><h2>${s.name}</h2></div>`));
   { const m = masterySync(s.id);
     c.appendChild(h(`<div class="mst-box"><div>${masteryChip(m)}${BNCC_ANO[s.id]?`<span class="bncc-tag">📚 BNCC · ${BNCC_ANO[s.id]}</span>`:''}</div><p>${m.next}</p></div>`)); }
+  { const bb = bnccBoxHTML(s.id); if(bb) c.appendChild(h(bb)); }
   const explain = h(`<div class="explain-card"></div>`);
   const examplesList = s.examples || [s.example];
   const boxesHtml = examplesList.map(ex=>{
@@ -45,9 +46,10 @@ function subjectDetailScreen(){
   }).join('');
   explain.innerHTML = s.learn + boxesHtml;
   c.appendChild(explain);
-  const cta = h(`<div class="cta-row"><button class="btn primary sd-practice">Praticar este assunto</button><button class="btn secondary sd-cards">🃏 Cartões de revisão</button><button class="btn secondary sd-note">✏️ Anotar no caderno</button></div>`);
+  const cta = h(`<div class="cta-row"><button class="btn primary sd-practice">Praticar este assunto</button><button class="btn secondary sd-step">🪜 Exemplo guiado</button><button class="btn secondary sd-cards">🃏 Cartões de revisão</button><button class="btn secondary sd-note">✏️ Anotar no caderno</button></div>`);
   cta.querySelector('.sd-practice').onclick = ()=>go('exerciseDifficulty', {subjectId:s.id});
   cta.querySelector('.sd-cards').onclick = ()=> chooseCardsLevel(s.id);
+  cta.querySelector('.sd-step').onclick = ()=> startStepGuide(s.id, adaptiveDifficultyFor(progressSync(), s.id) || 'medio', 'subjectDetail');
   if(s.id==='geometria'){
     const labBtn = h(`<button class="btn secondary sd-lab" style="flex-basis:100%">🔺 Abrir o Laboratório de Geometria</button>`);
     labBtn.onclick = ()=> go('geoLab', {geoBack:'subjectDetail'});

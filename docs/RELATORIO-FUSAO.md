@@ -585,3 +585,30 @@ A Tabuada agora tem três partes (antes era só a lista de 1 a 10):
 - **Dica do Pi:** uma curiosidade ou truque de matemática por dia, em rodízio de 20 (`PI_TIPS`).
 - O tour de primeiro acesso continua funcionando: as classes `.player-card`, `.path-hero`, `.missions` e `.quick-grid` não mudaram.
 - Entrou nas **Novidades**.
+
+## 44. Três modos de estudo novos e a BNCC
+
+Feitos a partir da pesquisa em outras plataformas (Khan Academy, Duolingo, Brilliant, Matific, ANTON) e em estudos sobre como se aprende matemática: tentar lembrar, espaçar e misturar assuntos ajudam.
+
+- **Habilidades da BNCC** (`js/assuntos/bncc-contexto.js`):
+  - `BNCC_HAB` liga cada assunto às suas habilidades principais, e `BNCC_DESC` tem um resumo de cada código, com nossas palavras.
+  - Aparecem no Aprender (caixa "Habilidades da BNCC") e no Relatório semanal (códigos embaixo de cada assunto).
+  - É uma referência aproximada. Matrizes, determinantes, conjuntos, função modular, identidades e geometria analítica não têm código próprio e ficam de fora.
+- **📰 Estilo ENEM/SAEB** (Exercícios):
+  - 23 modelos de questão com situação do dia a dia (`CTX_QUESTIONS`): 14 do Fundamental e 9 do Médio, cada um com a sua habilidade da BNCC.
+  - Os números mudam a cada vez. São 5 alternativas (A–E), e as erradas vêm de erros comuns (ex.: usar o perímetro no lugar da área, somar porcentagens em vez de aplicar uma depois da outra, juros simples em vez de compostos).
+  - Escolha de nível (Fundamental / Médio / os dois) e de quantidade (5, 10 ou 15).
+  - Depois de responder, aparece a resolução. No fim, o acerto por habilidade e a revisão de cada resposta.
+  - Recorde por nível em `g.enem`.
+  - Testado: cada modelo gerado 300 vezes sempre teve 5 alternativas diferentes e uma só certa.
+- **🪜 Qual o próximo passo?** (Exercícios, e "Exemplo guiado" no Aprender):
+  - Exemplo resolvido em 3 rodadas.
+  - Antes de cada passo, o aluno escolhe entre 3 opções. As erradas são erros plausíveis da mesma conta (resultado errado ou sinal trocado) ou o mesmo passo de outra questão.
+  - Depois de todos os passos, "Agora é sua vez" com uma questão parecida, que conta no progresso.
+  - Funciona nos 41 assuntos e nas 3 dificuldades.
+- **🔀 Mistura do dia** (Início e Exercícios):
+  - 10 questões, com dificuldade adaptativa, de até 5 assuntos já estudados. São escolhidos os praticados há mais tempo e os com menos acerto, e a escolha vale o dia todo.
+  - Os assuntos se alternam sem repetir em seguida (usa o motor do Treino personalizado com `isMix`).
+  - +20 XP na primeira do dia (`g.mix`).
+  - O aviso "Tudo em dia" do Início agora também espera a Mistura.
+- Entrou nas **Novidades**.
