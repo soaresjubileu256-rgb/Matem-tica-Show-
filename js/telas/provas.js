@@ -82,8 +82,7 @@ function examTabBody(e, c){
       const s = SUBJECTS.find(x=>x.id===id), m = masterySync(id);
       const row = h(`<div class="pv-row ${L.id}">
         <span class="ar-sym">${s.sym}</span>
-        <span class="pv-row-t"><b>${escHTML(s.name)}</b>${masteryChip(m)}</span>
-        <button type="button" class="pv-btn" data-a="learn" aria-label="Estudar ${escHTML(s.name)}">📖</button>
+        <button type="button" class="pv-row-t" data-a="learn" aria-label="Estudar ${escHTML(s.name)}"><b>${escHTML(s.name)}</b>${masteryChip(m)}</button>
         <button type="button" class="pv-btn go" data-a="train">Treinar</button>
       </div>`);
       row.querySelector('[data-a=learn]').onclick = ()=> go('subjectDetail', {subjectId:id});

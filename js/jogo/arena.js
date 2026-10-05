@@ -112,27 +112,6 @@ function arenaScreen(){
       <div><b>🔥 ${dailyStreak()}</b><span>dias de desafio</span></div>
     </div></div>`));
 
-  // desafio do dia
-  const k = isoDay(), done = a.daily[k], streak = dailyStreak();
-  const daily = h(`<div class="ar-daily ${done?'done':''}">
-    <div class="ar-daily-h">
-      <span class="ar-daily-cal"><small>${['DOM','SEG','TER','QUA','QUI','SEX','SÁB'][new Date().getDay()]}</small><b>${new Date().getDate()}</b></span>
-      <div class="ar-daily-t"><small>DESAFIO DO DIA #${dailyNumber(k)}</small><b>${done ? `Feito! ${done.ok}/${done.n} em ${mmssA(done.secs)}` : `${DAILY_N} perguntas, as mesmas pra todo mundo`}</b>
-        <span>${done ? escHTML(done.marks||'') : `+${DAILY_BONUS_XP} XP${streak ? ` · 🔥 ${streak} dia${streak===1?'':'s'} seguido${streak===1?'':'s'}` : ' · comece uma sequência!'}`}</span></div>
-    </div>
-    <div class="ar-daily-f"></div>
-  </div>`);
-  daily.querySelector('.ar-daily-h').after(dailyWeekStrip());
-  const df = daily.querySelector('.ar-daily-f');
-  if(done){
-    df.appendChild(dailyCountdown('Próximo desafio em '));
-    const b = h(`<button type="button" class="ar-daily-btn ghost">Ver resultado ›</button>`); b.onclick = ()=> startDaily(); df.appendChild(b);
-  } else {
-    df.appendChild(dailyCountdown('Termina em '));
-    const b = h(`<button type="button" class="ar-daily-btn">Jogar agora ▶</button>`); b.onclick = ()=> startDaily(); df.appendChild(b);
-  }
-  c.appendChild(daily);
-
   // continuar: próxima fase sugerida
   const nx = arenaNextPhase();
   if(nx){
@@ -144,21 +123,6 @@ function arenaScreen(){
     cont.onclick = ()=> startArenaPhase(nx.s.id, nx.d);
     c.appendChild(cont);
   }
-
-  // modos com recordes
-  c.appendChild(h(`<h3 class="ar-label">Modos de jogo</h3>`));
-  const lastExam = a.exams.length ? a.exams[a.exams.length-1] : null;
-  const grid = h(`<div class="ar-modes"></div>`);
-  [
-    {sym:'⚡', cls:'ar-bolt', label:'Relâmpago', sub:'Quantas contas em 60s?', rec: g.boltBest ? `🏆 ${g.boltBest} acertos` : 'sem recorde ainda', go:()=>go('lightning')},
-    {sym:'🎤', cls:'ar-quiz', label:'Quiz do Show', sub:'10 perguntas com ajudas', rec: quizBest ? `🏆 ${quizBest.toLocaleString('pt-BR')} pts` : 'sem recorde ainda', go:()=>go('quizSetup')},
-    {sym:'📝', cls:'ar-exam', label:'Simulado', sub:'Prova com nota de 0 a 10', rec: lastExam ? `última nota ${fmt(lastExam.grade)}` : 'nenhum feito ainda', go:()=>go('examSetup')},
-    {sym:'⚔️', cls:'ar-duel', label:'Duelo a dois', sub:'No mesmo celular', rec: g.duels ? `${g.duels} duelo${g.duels===1?'':'s'}` : 'chame um amigo', go:()=>go('duel')},
-  ].forEach(m=>{
-    const t = h(`<button type="button" class="ar-mode ${m.cls}"><span class="ar-mode-sym">${m.sym}</span><b>${m.label}</b><small>${m.sub}</small><span class="ar-mode-rec">${m.rec}</span></button>`);
-    t.onclick = m.go; grid.appendChild(t);
-  });
-  c.appendChild(grid);
 
   // fases com estrelas
   c.appendChild(h(`<h3 class="ar-label">Fases da Arena</h3>`));

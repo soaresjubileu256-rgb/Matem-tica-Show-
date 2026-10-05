@@ -125,16 +125,6 @@ async function profileScreen(){
   </div>`);
   c.appendChild(stats);
 
-  // atalhos de conquistas
-  const links = h(`<div class="pf-links"></div>`);
-  [
-    {ico:'🏅', n:`${achN}/${ACHIEVEMENTS.length}`, l:'Conquistas', go:'achievements'},
-    {ico:'📜', n:`${certN}`, l:`Certificado${certN===1?'':'s'}`, go:'certificates'},
-    {ico:'📅', n:`${daysN}`, l:'Dias de estudo', go:'progress'},
-    {ico:'🏆', n:`${g.bestStreak||0}`, l:'Maior ofensiva', go:'achievements'},
-  ].forEach(x=>{ const b = h(`<button type="button" class="pf-link"><span>${x.ico}</span><b>${x.n}</b><small>${x.l}</small></button>`); b.onclick = ()=> go(x.go); links.appendChild(b); });
-  c.appendChild(links);
-
   // medalhas recentes
   const recent = ACHIEVEMENTS.filter(a=> g.ach && typeof g.ach[a.id]==='number').sort((x,y)=> g.ach[y.id]-g.ach[x.id]).slice(0,4);
   if(recent.length){
@@ -154,16 +144,11 @@ async function profileScreen(){
     menu.appendChild(b);
   };
   const group = t=> menu.appendChild(h(`<div class="pm-group">${t}</div>`));
-  group('Personalizar');
-  item('🎨', 'Trocar avatar', 'Use uma foto ou escolha um bichinho e a cor', ()=> showAvatarSheet(()=> render()), '', '#B23FE0');
   group('Estudo');
   item('🧭', 'Teste de nivelamento', studyData().placement ? `Último: ${studyData().placement.ok}/${studyData().placement.n}` : 'Descubra por onde começar', ()=> startPlacement(), '', '#33D2E3');
   item('🗺️', 'Plano de estudos', studyData().plan ? `Prova em ${studyData().plan.examDate.split('-').reverse().join('/')}` : 'Monte um plano até o dia da prova', ()=> go('plan'), '', '#12B886');
   group('Ajuda e conta');
-  item('🔔', 'Novidades', newsUnseen().length ? '✨ Tem novidade pra você!' : 'O que mudou no app', ()=> go('news'), newsUnseen().length ? 'has-news' : '', '#FFB800');
-  item('📘', 'Como usar o app', 'Guia e tour guiado', ()=> go('help'), '', '#4C7DFF');
   if(feedbackEnabled()) item('💬', 'Fale com a gente', 'Dê sua nota, sugestões ou avise de um erro', ()=> showFeedbackSheet(false), '', '#F06595');
-  item('⚙️', 'Configurações', 'Tema, som, meta, senha e backup', ()=> go('settings'), '', '#94A3B8');
   item('🚪', 'Sair da conta', '', ()=> showConfirm({
     icon:'🚪', title:'Sair da conta?', message:'Seu progresso continua salvo neste aparelho. É só entrar de novo com seu nome e senha.',
     ok:'Sair da conta', cancel:'Cancelar', danger:true,

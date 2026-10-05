@@ -8,9 +8,6 @@ function contentScreen(){
   wrap.appendChild(topbar('Aprender', true, ()=>go('home')));
   const c = h(`<div class="content"></div>`);
   c.appendChild(h(`<p style="color:var(--ink-soft); font-size:14px; margin:2px 0 16px;">Escolha um assunto para estudar a teoria e ver exemplos.</p>`));
-  const lab = h(`<button type="button" class="alert-banner" style="margin:0 0 14px"><span class="sym">🔺</span><span class="txt"><span class="title">Laboratório de Geometria</span><span class="sub">Mexa nas figuras e veja área, perímetro, volume e ângulos mudando</span></span><span class="chev">›</span></button>`);
-  lab.onclick = ()=> go('geoLab', {geoBack:'content'});
-  c.appendChild(lab);
   subjectListGrouped(c, (s,u)=>{
     const row = h(`<button class="subject-row" style="${unitStyle(u)}"><span class="sym">${s.sym}</span><span class="txt"><span class="name">${s.name}</span><span class="subj-meta">${BNCC_ANO[s.id]?`📚 ${BNCC_ANO[s.id]} · `:''}${masteryChip(masterySync(s.id))}${examTagsHTML(s.id, 2)}</span></span><span class="chev">›</span></button>`);
     row.onclick = ()=>go('subjectDetail', {subjectId:s.id});

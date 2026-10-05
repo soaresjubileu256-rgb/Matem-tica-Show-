@@ -33,10 +33,7 @@ function homeScreen(){
   const profileBtn = h(`<button class="auth-logout profile-btn-avatar ${myAv ? 'av-custom' : ''} ${avatarImg(myAv) ? 'is-img' : myAv && myAv.emo ? 'is-emo' : ''}" title="Perfil" aria-label="Abrir meu perfil">${avatarFace(currentUser)}</button>`);
   if(myAv) profileBtn.style.setProperty('--avbg', avatarColor(currentUser));
   profileBtn.onclick = ()=> go('profile');
-  const helpBtn = h(`<button class="auth-logout tut-help-btn" title="Como usar" aria-label="Como usar o app">?</button>`);
-  helpBtn.onclick = ()=> go('help');
   bar.appendChild(newsBellButton());
-  bar.appendChild(helpBtn);
   bar.appendChild(profileBtn);
   wrap.appendChild(bar);
   const firstName = currentUser ? currentUser.name.split(' ')[0] : '';
@@ -227,12 +224,10 @@ function homeScreen(){
   setOpen(msReady || !!state.missionsOpen);
   mToggle.onclick = ()=>{ state.missionsOpen = missions.classList.contains('collapsed'); setOpen(state.missionsOpen); };
   wrap.appendChild(missions);
-  wrap.appendChild(secTitle('Ferramentas'));
-  wrap.appendChild(tileGrid([
-    {sym:'?', cls:'solve', label:'Resolver questão', sub:'passo a passo', screen:'solve'},
-    {sym:'#', cls:'tile-calc', label:'Calculadora', sub:'com histórico', screen:'calculator'},
-    {sym:'✏️', cls:'tile-report', label:'Caderno', sub:'suas anotações', screen:'notebook'},
-  ]));
+  // ferramentas: uma entrada só; Resolver, Calculadora e Caderno ficam nas abas lá dentro
+  const tools = h(`<div class="quick-grid tools-one"><button type="button" class="tools-btn"><span class="tools-ico">🧰</span><span class="tools-t"><b>Ferramentas</b><small>Resolver questão · Calculadora · Caderno</small></span><span class="chev">›</span></button></div>`);
+  tools.querySelector('button').onclick = ()=> go('solve');
+  wrap.appendChild(tools);
   // dica do Pi: uma curiosidade por dia (muda à meia-noite)
   const tip = PI_TIPS[Math.floor(new Date(isoDay()+'T12:00').getTime()/864e5) % PI_TIPS.length];
   wrap.appendChild(h(`<div class="hd-tip"><div class="hd-tip-m">${mascotSVG('joy', 54)}</div><div><small>💡 DICA DO PI · HOJE</small><b>${tip[0]}</b><p>${tip[1]}</p></div></div>`));

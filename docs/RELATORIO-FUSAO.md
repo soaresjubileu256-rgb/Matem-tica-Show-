@@ -628,3 +628,16 @@ Feitos a partir da pesquisa em outras plataformas (Khan Academy, Duolingo, Brill
 - A barra fica presa no topo ao rolar e desliza para os lados no celular. Telas de jogo e de sessão (questões, Trilha, simulado em andamento) não têm abas.
 - **Provas:** cada prova (ENEM, ETEC, Fuvest, Unicamp, Unesp, OBMEP) tem sua própria aba, com o % pronto. A "minha prova" abre primeiro e tem ⭐. Os links "Cai nas provas" e o botão voltar do treino abrem a aba certa.
 - O menu de Exercícios ficou com a Mistura do dia em destaque e a lista de assuntos. Os outros modos viraram abas.
+
+## 46. Menos atalhos
+
+Com as abas no topo, os botões que levavam pras mesmas páginas saíram:
+- **Início:**
+  - Saiu o botão "?". A Ajuda fica no Perfil e o tour aponta pra foto do perfil.
+  - As 3 ferramentas viraram uma entrada só, "🧰 Ferramentas". Lá dentro, Resolver, Calculadora e Caderno são abas.
+- **Arena:** saíram o cartão do Desafio do Dia e os 4 cartões de modos de jogo, que agora são abas. Ficam o topo com a patente, a próxima fase e as fases.
+- **Progresso:** saiu "Seus registros" (Relatório, Histórico, Conquistas e Certificados são abas).
+- **Perfil:** saíram a grade de atalhos e os itens Novidades, Como usar, Configurações e Trocar avatar. O avatar se troca pelo ✏️ da foto.
+- **Configurações:** saiu a linha Avatar (fica no Perfil).
+- **Aprender:** saiu o cartão do Laboratório de Geometria (é uma aba).
+- **Provas:** cada assunto tem um botão só ("Treinar"). Tocar no nome abre a explicação.

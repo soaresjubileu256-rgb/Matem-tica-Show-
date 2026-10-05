@@ -14,9 +14,9 @@ const TOUR_STEPS = [
   {sel:'.bottom-nav', title:'Menu principal',
    text:'<b>Trilha</b> leva direto pros episódios. <b>Aprender</b> tem a explicação de cada assunto com exemplos. <b>Exercícios</b> é pra treinar um assunto específico. <b>Progresso</b> mostra como você está indo.'},
   {sel:'.quick-grid', title:'Ferramentas 🧰',
-   text:'<b>Resolver questão</b> (digite uma conta e eu mostro o passo a passo), calculadora e caderno. Treinos ficam em <b>Exercícios</b>, jogos na <b>Arena</b> e suas conquistas em <b>Progresso</b>.'},
-  {sel:'.tut-help-btn', title:'Precisa de ajuda?',
-   text:'Toque no <b>?</b> a qualquer momento pra abrir o guia "Como usar" ou rever este tour.'},
+   text:'<b>Resolver questão</b> (digite uma conta e eu mostro o passo a passo), calculadora e caderno. Dentro de cada parte do app, as <b>abas no topo</b> levam pras outras páginas.'},
+  {sel:'.profile-btn-avatar', title:'Seu perfil 👤',
+   text:'Toque na sua foto pra abrir o <b>Perfil</b>. Lá ficam as abas <b>Configurações</b>, <b>Novidades</b> e <b>Ajuda</b>, onde você pode rever este tour.'},
   {sel:null, mood:'joy', title:'Tudo pronto! 🌟', final:true,
    text:'Que tal começar pela primeira fase da Trilha? Errar faz parte — você pode tentar de novo e pedir uma dica sempre que precisar.'},
 ];

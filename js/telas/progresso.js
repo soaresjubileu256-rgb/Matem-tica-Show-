@@ -76,18 +76,6 @@ async function progressScreen(){
     <div class="pg-mst-leg">${[4,3,2,1,0].map(l=>`<span class="m${l}"><i></i>${MASTERY_LEVELS[l].ico} ${MASTERY_LEVELS[l].name} <b>${mcount[l]}</b></span>`).join('')}</div>
   </div>`));
 
-  // atalhos
-  const weekHist = hist.filter(e=> Date.now()-e.ts < 7*864e5).length;
-  c.appendChild(h(`<h3 class="ar-label">Seus registros</h3>`));
-  const pmenu = h(`<div class="pg-links"></div>`);
-  [
-    {sym:'📊', cls:'pl-rep', label:'Relatório semanal', sub:`${weekHist} questões nesta semana`, go:()=>go('report')},
-    {sym:'🕘', cls:'pl-hist', label:'Histórico', sub:`${hist.length} resposta${hist.length===1?'':'s'} salvas`, go:()=>go('history')},
-    {sym:'🏅', cls:'pl-ach', label:'Conquistas', sub:`${achN} de ${ACHIEVEMENTS.length} desbloqueadas`, go:()=>go('achievements'), bar:achN/ACHIEVEMENTS.length},
-    {sym:'📜', cls:'pl-cert', label:'Certificados', sub:'Veja e imprima os seus', go:()=>go('certificates')},
-  ].forEach(m=>{ const t = h(`<button type="button" class="pg-link ${m.cls}"><span class="pg-link-sym">${m.sym}</span><span class="pg-link-t"><b>${m.label}</b><small>${m.sub}</small>${m.bar!=null?`<span class="pg-link-bar"><i style="width:${Math.round(m.bar*100)}%"></i></span>`:''}</span><span class="chev">›</span></button>`); t.onclick = m.go; pmenu.appendChild(t); });
-  c.appendChild(pmenu);
-
   // assuntos praticados
   c.appendChild(h(`<h3 class="ar-label">Assuntos praticados${ids.length ? ` · ${ids.length}` : ''}</h3>`));
   if(ids.length===0){
