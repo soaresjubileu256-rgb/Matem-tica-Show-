@@ -3537,3 +3537,11 @@ section.block h3::before, .rp-sec::before, .hq-head span::before{content:''; wid
 .td-row.done .td-t b{color:var(--ink-soft); text-decoration:line-through; text-decoration-color:rgba(18,184,134,.6);}
 .td-allset{font-size:13px; font-weight:700; color:#12A86B; padding:10px 2px 2px;}
 .hd-today .m-toggle{margin-top:6px;}
+
+/* ===== Ícones no lugar dos emojis (js/base/icones.js) ===== */
+.ei-w{display:inline-flex; align-items:center; justify-content:center; vertical-align:-0.16em; line-height:1;}
+.ei{width:1.05em; height:1.05em; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none;}
+.es{display:inline-block; vertical-align:-0.08em; width:.85em; height:.85em; margin:0 .06em;}
+.es-sq{border-radius:3px;} .es-dot{border-radius:50%;}
+/* os ícones não herdam regras genéricas de "svg" dos cartões (anéis de progresso etc.) */
+svg.ei{width:1.05em !important; height:1.05em !important; transform:none !important; position:static !important; fill:none !important; filter:none !important;}

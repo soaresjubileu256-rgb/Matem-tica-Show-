@@ -680,3 +680,16 @@ Com as abas no topo, os botões que levavam pras mesmas páginas saíram:
 - O aviso de juntar o progresso do Arena antigo continua, mas só aparece quando existe esse progresso.
 - **Tour:** o passo das missões virou "Hoje 📋", e o passo do Acesso rápido saiu.
 - `examHomeBanner` e `PI_TIPS` foram removidos, assim como o CSS que não era mais usado.
+
+## 50. Sem emojis: ícones desenhados
+
+- O app não mostra mais emojis. Eram cerca de 880 em mais de 40 arquivos.
+- **Como funciona:** em vez de editar cada lugar, um conversor central (`js/base/icones.js`) olha tudo o que entra na página (telas, janelas, avisos e textos que mudam) com um `MutationObserver`:
+  - **Emoji que é ícone** (🔥 ⭐ 🏆 📅 🎯 🔒 …) vira um **ícone desenhado** em SVG de linha (`ICON_PATHS`, mais de 70 desenhos). Ele usa a cor do texto, e alguns têm cor própria (chama laranja, estrela e moeda douradas, coração vermelho, ✓ verde).
+  - **Quadradinhos e bolinhas coloridas** (🟩 🟥 🟢 …) viram formas coloridas, como no resultado do Desafio do Dia.
+  - **Emoji que é só enfeite** numa frase (🎉 no fim, 😄, 👋…) é tirado, junto com o espaço que sobra.
+  - Títulos, `aria-label`, `placeholder` e `alt` também ficam sem emoji.
+  - **Ficam** as teclas e os símbolos de conta: ⌫ ⇔ ↔ ⬆ ⬇ ✓ ✗ ★.
+- **Pra mudar um ícone:** troque o desenho em `ICON_PATHS` ou o nome em `EMOJI_ICON`. Emoji que não está no mapa é tirado.
+- **Avatar:** passou a ser a foto ou a inicial do nome, na cor escolhida. Os bichinhos em emoji saíram (`AV_EMOJIS` ficou vazio), e quem tinha escolhido um passa a ver a inicial.
+- Os textos compartilhados (Desafio do Dia, conquistas) não mudam, porque saem do app.

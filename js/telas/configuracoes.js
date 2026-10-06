@@ -42,7 +42,7 @@ async function settingsScreen(){
   const hero = h(`<div class="st-hero"><span class="st-av">${avatarFace(currentUser)}</span><div><b></b><small class="st-sum">${sum()}</small></div></div>`);
   const av = avatarOf(currentUser);
   hero.querySelector('.st-av').style.background = avatarColor(currentUser);
-  hero.querySelector('.st-av').classList.add(avatarImg(av) ? 'is-img' : av && av.emo ? 'is-emo' : 'x');
+  hero.querySelector('.st-av').classList.add(avatarImg(av) ? 'is-img' : 'x');
   hero.querySelector('b').textContent = (currentUser && currentUser.name) || '';
   const refreshSum = ()=>{ hero.querySelector('.st-sum').textContent = sum(); };
   c.appendChild(hero);
