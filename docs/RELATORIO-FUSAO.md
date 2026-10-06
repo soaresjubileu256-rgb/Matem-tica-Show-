@@ -650,3 +650,13 @@ Com as abas no topo, os botões que levavam pras mesmas páginas saíram:
 - **Ícones desenhados** (SVG, cor do tema) no lugar dos símbolos de texto. O botão aceso tem fundo colorido.
 - **Bolinha vermelha na Arena** quando o Desafio do Dia de hoje ainda não foi feito. Ela some quando você está na Arena ou depois de jogar.
 - O texto do tour ("Menu principal") foi atualizado.
+
+## 48. Acesso rápido no Início
+
+- Logo abaixo do cartão da Trilha: grade **"Acesso rápido"** com 8 botões coloridos (4 por linha no celular, 8 numa linha no computador):
+  - Aprender, Exercícios, Provas e Simulado;
+  - Treino, Resolver, Calculadora e Caderno.
+- Cada botão abre a página certa, com a aba correspondente acesa.
+- A entrada única "Ferramentas" saiu, porque Resolver, Calculadora e Caderno estão direto na grade.
+- O tour de primeiro acesso agora apresenta o "Acesso rápido ⚡".
+- As classes usam o prefixo `qa-`, porque `hq-` já existia num estilo antigo.

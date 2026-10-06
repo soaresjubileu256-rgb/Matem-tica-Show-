@@ -48,6 +48,23 @@ function homeScreen(){
   showStreakNote();
   wrap.appendChild(playerCard());
   wrap.appendChild(pathHero());
+  // acesso rápido: as partes mais usadas a um toque, logo abaixo da Trilha
+  const quick = h(`<div class="qa-wrap"><h3 class="home-sec">Acesso rápido</h3><div class="quick-grid qa-grid"></div></div>`);
+  const qg = quick.querySelector('.qa-grid');
+  [
+    {ico:'📖', label:'Aprender', c:'#4C7DFF', go:()=>go('content')},
+    {ico:'✎', label:'Exercícios', c:'#12B886', go:()=>go('exercisesSubjects')},
+    {ico:'🎓', label:'Provas', c:'#B23FE0', go:()=>go('exams')},
+    {ico:'📝', label:'Simulado', c:'#FF7A00', go:()=>go('examSetup')},
+    {ico:'🎯', label:'Treino', c:'#F06595', go:()=>go('personalizedSetup')},
+    {ico:'🔎', label:'Resolver', c:'#33D2E3', go:()=>go('solve')},
+    {ico:'🧮', label:'Calculadora', c:'#FFB800', go:()=>go('calculator')},
+    {ico:'✏️', label:'Caderno', c:'#94D82D', go:()=>go('notebook')},
+  ].forEach(it=>{
+    const b = h(`<button type="button" class="qa-btn" style="--c:${it.c}"><span class="qa-ico">${it.ico}</span><span class="qa-l">${it.label}</span></button>`);
+    b.onclick = it.go; qg.appendChild(b);
+  });
+  wrap.appendChild(quick);
 
   // meta diária de questões — anel com o progresso de hoje e os números do dia; editável aqui mesmo
   const GR = 30, GC = 2*Math.PI*GR;
@@ -181,7 +198,7 @@ function homeScreen(){
   // depois de uma atualização mostra as Novidades; senão, talvez o lembrete de backup (nunca os dois juntos)
   if(tutorialDone()) setTimeout(()=>{ if(state.screen==='home' && wrap.isConnected && !document.querySelector('.gm-modal-bg')){ if(!showNewsSheet()) maybeAskFeedback().then(shown=>{ if(!shown) maybeAskBackup(); }); } }, 1200);
 
-  // ordem da tela: continuar a trilha → pra fazer hoje → ferramentas.
+  // ordem da tela: continuar a trilha → acesso rápido → pra fazer hoje → dica do Pi.
   // Cada coisa mora na sua aba: treinos em Exercícios, jogos na Arena, conquistas/relatório/histórico em Progresso,
   // nivelamento/plano/configurações no Perfil.
   const secTitle = t=> h(`<h3 class="home-sec">${t}</h3>`);
@@ -224,10 +241,7 @@ function homeScreen(){
   setOpen(msReady || !!state.missionsOpen);
   mToggle.onclick = ()=>{ state.missionsOpen = missions.classList.contains('collapsed'); setOpen(state.missionsOpen); };
   wrap.appendChild(missions);
-  // ferramentas: uma entrada só; Resolver, Calculadora e Caderno ficam nas abas lá dentro
-  const tools = h(`<div class="quick-grid tools-one"><button type="button" class="tools-btn"><span class="tools-ico">🧰</span><span class="tools-t"><b>Ferramentas</b><small>Resolver questão · Calculadora · Caderno</small></span><span class="chev">›</span></button></div>`);
-  tools.querySelector('button').onclick = ()=> go('solve');
-  wrap.appendChild(tools);
+
   // dica do Pi: uma curiosidade por dia (muda à meia-noite)
   const tip = PI_TIPS[Math.floor(new Date(isoDay()+'T12:00').getTime()/864e5) % PI_TIPS.length];
   wrap.appendChild(h(`<div class="hd-tip"><div class="hd-tip-m">${mascotSVG('joy', 54)}</div><div><small>💡 DICA DO PI · HOJE</small><b>${tip[0]}</b><p>${tip[1]}</p></div></div>`));
