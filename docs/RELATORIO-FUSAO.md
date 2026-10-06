@@ -660,3 +660,23 @@ Com as abas no topo, os botões que levavam pras mesmas páginas saíram:
 - A entrada única "Ferramentas" saiu, porque Resolver, Calculadora e Caderno estão direto na grade.
 - O tour de primeiro acesso agora apresenta o "Acesso rápido ⚡".
 - As classes usam o prefixo `qa-`, porque `hq-` já existia num estilo antigo.
+
+## 49. Início organizado
+
+- **Saiu:**
+  - o "Acesso rápido";
+  - os avisos grandes separados (Desafio, Mistura, Caderno de erros, Revisão do dia, Plano, Minha prova, Nivelamento);
+  - o "Tudo em dia" solto, a Dica do Pi e o texto do rodapé.
+- **O Início agora tem 4 blocos:** saudação do Pi → cartão do jogador → Trilha → cartão **"Hoje"**.
+- **Cartão "Hoje"** (continua com a classe `.missions`, usada pelo tour):
+  - **No topo:** anel com as questões de hoje, "Meta: X de Y questões" e o botão "Mudar meta".
+  - **Lista curta de tarefas,** cada uma numa linha com ✓ quando feita:
+    - Desafio do Dia e Mistura do dia;
+    - Revisar meus erros e Relembrar assuntos (só quando há algo pra revisar);
+    - Plano de estudos e "Rumo ao ENEM" (só pra quem usa);
+    - Descubra seu nível (só pra conta nova).
+  - **"Tudo em dia por hoje!"** aparece quando as tarefas do dia estão feitas.
+  - **Missões do dia** ficam recolhidas no rodapé do cartão. Abrem sozinhas quando tem prêmio pra pegar.
+- O aviso de juntar o progresso do Arena antigo continua, mas só aparece quando existe esse progresso.
+- **Tour:** o passo das missões virou "Hoje 📋", e o passo do Acesso rápido saiu.
+- `examHomeBanner` e `PI_TIPS` foram removidos, assim como o CSS que não era mais usado.

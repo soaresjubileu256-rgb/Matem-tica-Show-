@@ -2,29 +2,6 @@
    TELA INÍCIO
    Cartão do jogador, avisos do dia (Desafio do Dia, revisão, plano), jogos e atalhos.
    ========================================================= */
-/* dicas e curiosidades do Pi (uma por dia, em rodízio) */
-const PI_TIPS = [
-  ['Truque do 9 na tabuada', 'Em 9 × 7, abaixe o 7º dedo: ficam 6 dedos de um lado e 3 do outro. Resposta: 63!'],
-  ['Divisível por 3?', 'Some os algarismos: se a soma for múltiplo de 3, o número também é. Ex.: 471 → 4+7+1 = 12 ✓'],
-  ['Porcentagem de cabeça', '10% é só andar uma casa com a vírgula. 10% de 250 = 25, e 5% é a metade disso: 12,5.'],
-  ['Multiplicar por 5', 'Multiplique por 10 e divida por 2. Ex.: 48 × 5 = 480 ÷ 2 = 240.'],
-  ['O número π', 'π ≈ 3,14159… é a razão entre o comprimento e o diâmetro de qualquer círculo. Ele nunca termina!'],
-  ['Frações equivalentes', '1/2, 2/4 e 50/100 valem a mesma coisa: multiplique ou divida em cima e embaixo pelo mesmo número.'],
-  ['Quadrados terminados em 5', '35² = 3 × 4 = 12, e põe 25 no final: 1225. Funciona com 15, 25, 45…'],
-  ['Ordem das operações', 'Primeiro parênteses, depois potências, depois × e ÷, e por último + e −.'],
-  ['Ângulos do triângulo', 'Em qualquer triângulo, os três ângulos somam sempre 180°.'],
-  ['Números primos', 'Primo só se divide por 1 e por ele mesmo: 2, 3, 5, 7, 11, 13… O 2 é o único primo par!'],
-  ['Multiplicar por 11', 'Com 2 algarismos, some os dois e ponha no meio: 53 × 11 → 5 (5+3) 3 = 583.'],
-  ['Regra de sinais', 'Sinais iguais dão +, sinais diferentes dão −. (−3) × (−4) = +12.'],
-  ['Média', 'Some tudo e divida pela quantidade. A média de 6, 8 e 10 é 24 ÷ 3 = 8.'],
-  ['Área do retângulo', 'Base × altura. Um quarto de 4 m por 3 m tem 12 m² de área.'],
-  ['Equação é balança', 'O que você faz de um lado do = faz do outro também, e ela continua equilibrada.'],
-  ['Revise os erros', 'Rever uma questão errada uns dias depois ajuda a guardar de vez. Use o Caderno de erros!'],
-  ['Zero no denominador', 'Não existe divisão por zero: nenhum número vezes 0 dá 5, por exemplo.'],
-  ['Potência de 10', '10³ = 1000: o expoente diz quantos zeros vêm depois do 1.'],
-  ['Estimar antes', 'Arredonde antes de calcular: 49 × 21 é perto de 50 × 20 = 1000. Ajuda a conferir a resposta.'],
-  ['Pouquinho todo dia', '10 minutos por dia ensinam mais que 2 horas de uma vez só. Por isso a ofensiva 🔥 conta!'],
-];
 /* ---------------- HOME ---------------- */
 function homeScreen(){
   const wrap = document.createElement('div');
@@ -36,6 +13,9 @@ function homeScreen(){
   bar.appendChild(newsBellButton());
   bar.appendChild(profileBtn);
   wrap.appendChild(bar);
+
+  // ordem da tela (só o essencial): saudação → cartão do jogador → Trilha → "Hoje" (meta, tarefas e missões).
+  // Todo o resto mora nas abas de cada parte (Estudar, Arena, Progresso, Perfil).
   const firstName = currentUser ? currentUser.name.split(' ')[0] : '';
   const streakNow = gameStreakNow();
   const hr = new Date().getHours();
@@ -48,128 +28,11 @@ function homeScreen(){
   showStreakNote();
   wrap.appendChild(playerCard());
   wrap.appendChild(pathHero());
-  // acesso rápido: as partes mais usadas a um toque, logo abaixo da Trilha
-  const quick = h(`<div class="qa-wrap"><h3 class="home-sec">Acesso rápido</h3><div class="quick-grid qa-grid"></div></div>`);
-  const qg = quick.querySelector('.qa-grid');
-  [
-    {ico:'📖', label:'Aprender', c:'#4C7DFF', go:()=>go('content')},
-    {ico:'✎', label:'Exercícios', c:'#12B886', go:()=>go('exercisesSubjects')},
-    {ico:'🎓', label:'Provas', c:'#B23FE0', go:()=>go('exams')},
-    {ico:'📝', label:'Simulado', c:'#FF7A00', go:()=>go('examSetup')},
-    {ico:'🎯', label:'Treino', c:'#F06595', go:()=>go('personalizedSetup')},
-    {ico:'🔎', label:'Resolver', c:'#33D2E3', go:()=>go('solve')},
-    {ico:'🧮', label:'Calculadora', c:'#FFB800', go:()=>go('calculator')},
-    {ico:'✏️', label:'Caderno', c:'#94D82D', go:()=>go('notebook')},
-  ].forEach(it=>{
-    const b = h(`<button type="button" class="qa-btn" style="--c:${it.c}"><span class="qa-ico">${it.ico}</span><span class="qa-l">${it.label}</span></button>`);
-    b.onclick = it.go; qg.appendChild(b);
-  });
-  wrap.appendChild(quick);
 
-  // meta diária de questões — anel com o progresso de hoje e os números do dia; editável aqui mesmo
-  const GR = 30, GC = 2*Math.PI*GR;
-  const goalRow = h(`
-    <div class="hd-goal" style="display:none">
-      <div class="hd-ring"><svg viewBox="0 0 72 72"><circle cx="36" cy="36" r="${GR}" class="bg"/><circle cx="36" cy="36" r="${GR}" class="fg" stroke-dasharray="${GC}" stroke-dashoffset="${GC}"/></svg><div class="hd-ring-in"><b class="goal-num">0</b><small class="goal-of">de 0</small></div></div>
-      <div class="hd-goal-t">
-        <div class="name">🎯 Meta de hoje</div>
-        <small class="hd-left"></small>
-        <div class="hd-chips"><span class="c-ok">✅ 0 certas</span><span class="c-acc">🎯 –</span><span class="c-combo">🔥 0</span></div>
-      </div>
-    </div>`);
-  const goalEditBtn = h(`<button type="button" class="link-btn hd-edit">Mudar meta</button>`);
-  const goalEditRow = h(`<div class="diff-row" style="display:none; margin-top:8px; flex-wrap:wrap;"></div>`);
-  [5,10,15,20,30].forEach(n=>{
-    const chip = h(`<button type="button" class="diff-chip" style="flex:1 1 auto; padding:8px 14px; font-size:12.5px;">${n}</button>`);
-    chip.onclick = async ()=>{
-      const settings = await loadSettings();
-      settings.dailyGoal = n;
-      await saveSettings();
-      refreshGoal();
-      goalEditRow.style.display='none'; goalEditBtn.textContent='Mudar meta';
-    };
-    goalEditRow.appendChild(chip);
-  });
-  goalEditBtn.onclick = ()=>{
-    const open = goalEditRow.style.display==='none';
-    goalEditRow.style.display = open ? 'flex' : 'none';
-    goalEditBtn.textContent = open ? 'Fechar' : 'Mudar meta';
-  };
-  goalRow.querySelector('.hd-goal-t').appendChild(goalEditBtn);
-  const goalWrap = h(`<div class="hd-goal-wrap"></div>`);
-  goalWrap.appendChild(goalRow); goalWrap.appendChild(goalEditRow);
-  wrap.appendChild(goalWrap);
-  wrap.appendChild(missionsCard());
-  function refreshGoal(){
-    Promise.all([loadHistory(), loadSettings()]).then(([hist, settings])=>{
-      const todayStr = new Date().toDateString();
-      const today = hist.filter(e=> new Date(e.ts).toDateString()===todayStr);
-      const doneToday = today.length, okToday = today.filter(e=>e.correct).length;
-      const goal = settings.dailyGoal || 10;
-      const pct = Math.max(0, Math.min(100, Math.round(doneToday/goal*100)));
-      const done = doneToday>=goal;
-      goalRow.style.display = '';
-      goalRow.classList.toggle('done', done);
-      goalRow.querySelector('.goal-num').textContent = doneToday;
-      goalRow.querySelector('.goal-of').textContent = `de ${goal}`;
-      goalRow.querySelector('.fg').setAttribute('stroke-dashoffset', GC*(1-pct/100));
-      goalRow.querySelector('.fg').style.opacity = doneToday ? 1 : 0;
-      goalRow.querySelector('.name').textContent = done ? '🎉 Meta de hoje concluída!' : '🎯 Meta de hoje';
-      const left = goal - doneToday;
-      goalRow.querySelector('.hd-left').textContent = done ? `Você respondeu ${doneToday} questões hoje. Mandou bem!` : doneToday ? `Faltam ${left} ${left===1?'questão':'questões'} pra bater a meta` : `Responda ${goal} questões hoje`;
-      goalRow.querySelector('.c-ok').textContent = `✅ ${okToday} cert${okToday===1?'a':'as'}`;
-      goalRow.querySelector('.c-acc').textContent = doneToday ? `🎯 ${Math.round(okToday/doneToday*100)}%` : '🎯 –';
-      goalRow.querySelector('.c-combo').textContent = `🔥 combo ${(loadGame().today||{}).bestCombo||0}`;
-      goalEditRow.querySelectorAll('.diff-chip').forEach(ch=>{
-        ch.classList.toggle('active', parseInt(ch.textContent)===goal);
-      });
-    });
-  }
-  refreshGoal();
-
-  // aviso de erros pendentes — banner compacto, só aparece quando existem, logo no topo por ser acionável
-  const reviewBanner = h(`
-    <button type="button" class="alert-banner danger" style="display:none">
-      <span class="sym">🔁</span>
-      <span class="txt"><span class="title">Revisar meus erros</span><span class="sub review-count-text">Volte nas questões que você errou e tente de novo.</span></span>
-      <span class="chev">›</span>
-    </button>`);
-  reviewBanner.onclick = ()=> go('errors');
-  wrap.appendChild(reviewBanner);
-  loadErrors().then(errs=>{
-    // só aparece quando tem erro "vencido" hoje (os outros esperam o dia certo no caderno)
-    const due = errs.filter(e=>errorIsDue(e)).length;
-    if(due>0){
-      reviewBanner.style.display = '';
-      reviewBanner.querySelector('.title').textContent = 'Caderno de erros';
-      reviewBanner.querySelector('.review-count-text').textContent =
-        due===1 ? '1 questão errada pra revisar hoje.' : `${due} questões erradas pra revisar hoje.`;
-    }
-  });
-
-  // Arena: Desafio do Dia (igual pra todo mundo) e plano de estudos até a prova
-  const dk = isoDay(), dailyDone = arenaData().daily[dk];
-  const dailyBanner = h(`<button type="button" class="alert-banner ${dailyDone?'':'purple'}"><span class="sym">📅</span>
-    <span class="txt"><span class="title">Desafio do Dia #${dailyNumber(dk)}</span><span class="sub">${dailyDone ? `Feito: ${dailyDone.marks} ${dailyDone.ok}/${dailyDone.n}${dailyStreak()>1 ? ` · 🔥 ${dailyStreak()} dias` : ''}` : `${DAILY_N} perguntas do seu nível · +${DAILY_BONUS_XP} XP${dailyStreak() ? ` · 🔥 ${dailyStreak()} dias seguidos` : ''}`}</span></span><span class="chev">${dailyDone?'✓':'›'}</span></button>`);
-  dailyBanner.onclick = ()=> startDaily();
-  const pt = planToday(), plan = studyData().plan;
-  let planBanner = null;
-  if(plan){
-    const left = Math.round((new Date(plan.examDate+'T12:00') - new Date(dk+'T12:00'))/864e5);
-    planBanner = h(`<button type="button" class="alert-banner"><span class="sym">🗺️</span><span class="txt"><span class="title">${left>0 ? `Prova em ${left} dia${left===1?'':'s'}` : left===0 ? 'A prova é hoje!' : 'Plano de estudos'}</span>
-      <span class="sub">${pt ? 'Hoje: ' + (pt.subjects.map(id=>(SUBJECTS.find(x=>x.id===id)||{}).name).filter(Boolean).join(' + ') || '') + (pt.exam ? (pt.subjects.length?' + ':'')+'simulado' : '') : 'Ver o plano'}</span></span><span class="chev">›</span></button>`);
-    planBanner.onclick = ()=> go('plan');
-  }
-  // conta nova: sugere o teste de nivelamento; aparelho com o antigo Arena: oferece trazer o progresso
-  let placementCard = null;
-  if(!studyData().placement && totalAnswered() < 5){
-    placementCard = h(`<button type="button" class="alert-banner purple"><span class="sym">🧭</span><span class="txt"><span class="title">Descubra seu nível</span><span class="sub">Teste de nivelamento com 10 perguntas: mostra por onde começar</span></span><span class="chev">›</span></button>`);
-    placementCard.onclick = ()=> startPlacement();
-  }
-  let importCard = null;
+  // avisos que só aparecem uma vez na vida da conta
   const arenaOld = arenaV2Pending();
   if(arenaOld){
-    importCard = h(`<div class="card ar-import"><b>📦 Encontramos progresso do Matemática Show Arena</b><p>${arenaOld.answered} questões e ${arenaOld.xp} XP guardados neste aparelho. Quer juntar tudo nesta conta? (XP, estrelas, simulados, caderno de erros e conquistas)</p>
+    const importCard = h(`<div class="card ar-import"><b>📦 Encontramos progresso do Matemática Show Arena</b><p>${arenaOld.answered} questões e ${arenaOld.xp} XP guardados neste aparelho. Quer juntar tudo nesta conta? (XP, estrelas, simulados, caderno de erros e conquistas)</p>
       <div class="cta-row"><button type="button" class="btn secondary" data-a="no">Agora não</button><button type="button" class="btn primary" data-a="yes">Trazer meu progresso</button></div></div>`);
     importCard.querySelector('[data-a=no]').onclick = ()=>{ arenaV2Dismiss(); importCard.remove(); };
     importCard.querySelector('[data-a=yes]').onclick = async ()=>{
@@ -177,76 +40,84 @@ function homeScreen(){
       if(r){ queueToast('📦', 'Progresso do Arena trazido!', `+${r.xp} XP · ${r.answered} questões`); launchConfetti(120); }
       render();
     };
+    wrap.appendChild(importCard);
   }
 
-  // revisão espaçada — assuntos que já "venceram" e precisam ser relembrados
-  const spacedBanner = h(`
-    <button type="button" class="alert-banner purple" style="display:none">
-      <span class="sym">🧠</span>
-      <span class="txt"><span class="title">Revisão do dia</span><span class="sub spaced-text"></span></span>
-      <span class="chev">›</span>
-    </button>`);
-  spacedBanner.onclick = ()=> startSpacedReview();
-  wrap.appendChild(spacedBanner);
-  loadProgress().then(progress=>{
-    const due = dueReviewSubjects(progress);
-    if(!due.length) return;
-    spacedBanner.style.display = '';
-    const names = due.slice(0,3).map(s=>s.name).join(', ');
-    spacedBanner.querySelector('.spaced-text').textContent = `Hora de relembrar: ${names}${due.length>3?` e mais ${due.length-3}`:''}.`;
+  // ---------- cartão "Hoje": meta + tarefas do dia + missões (recolhidas) ----------
+  const card = missionsCard();               // .missions (o tour aponta pra ele)
+  card.classList.add('hd-today');
+  const GR = 24, GC = 2*Math.PI*GR;
+  const head = h(`<div class="td-head">
+      <div class="td-ring"><svg viewBox="0 0 56 56"><circle cx="28" cy="28" r="${GR}" class="bg"/><circle cx="28" cy="28" r="${GR}" class="fg" stroke-dasharray="${GC}" stroke-dashoffset="${GC}" style="opacity:0"/></svg><b class="goal-num">0</b></div>
+      <div class="td-head-t"><b>Hoje</b><small class="td-goal">Meta: 0 de 0 questões</small></div>
+      <button type="button" class="td-edit">Mudar meta</button>
+    </div>`);
+  const goalEditRow = h(`<div class="diff-row td-goals" style="display:none"></div>`);
+  [5,10,15,20,30].forEach(n=>{
+    const chip = h(`<button type="button" class="diff-chip">${n}</button>`);
+    chip.onclick = async ()=>{ const st = await loadSettings(); st.dailyGoal = n; await saveSettings(); goalEditRow.style.display='none'; refreshGoal(); };
+    goalEditRow.appendChild(chip);
   });
+  head.querySelector('.td-edit').onclick = ()=>{ goalEditRow.style.display = goalEditRow.style.display==='none' ? 'flex' : 'none'; };
+  const list = h(`<div class="td-list"></div>`);
+  const row = (ico, title, sub, done, fn)=>{
+    const r = h(`<button type="button" class="td-row ${done?'done':''}"><span class="td-ico">${ico}</span><span class="td-t"><b></b><small></small></span><span class="td-st">${done?'✓':'›'}</span></button>`);
+    r.querySelector('b').textContent = title; r.querySelector('small').textContent = sub;
+    r.onclick = fn; list.appendChild(r); return r;
+  };
+  const dk = isoDay(), dailyDone = arenaData().daily[dk], mix = mixToday();
+  if(!studyData().placement && totalAnswered() < 5) row('🧭', 'Descubra seu nível', '10 perguntas pra saber por onde começar', false, ()=> startPlacement());
+  row('📅', `Desafio do Dia #${dailyNumber(dk)}`, dailyDone ? `Feito: ${dailyDone.ok}/${dailyDone.n} certas` : `${DAILY_N} perguntas · +${DAILY_BONUS_XP} XP${dailyStreak() ? ` · 🔥 ${dailyStreak()} dias` : ''}`, !!dailyDone, ()=> startDaily());
+  row('🔀', 'Mistura do dia', mix ? `Feita: ${mix.ok}/${mix.n} certas` : `${MIX_QTY} questões misturadas · +${MIX_BONUS_XP} XP`, !!mix, ()=> startMix());
+  // revisão: erros vencidos e assuntos pra relembrar (só aparece quando tem)
+  Promise.all([loadErrors(), loadProgress()]).then(([errs, progress])=>{
+    const dueErr = errs.filter(e=>errorIsDue(e)).length, dueSubj = dueReviewSubjects(progress);
+    if(dueErr){ const r = row('🔁', 'Revisar meus erros', `${dueErr} ${dueErr===1?'questão errada':'questões erradas'} pra rever hoje`, false, ()=> go('errors')); list.insertBefore(r, list.querySelector('.td-extra')); }
+    if(dueSubj.length){ const r = row('🧠', 'Relembrar assuntos', dueSubj.slice(0,2).map(s=>s.name).join(', ') + (dueSubj.length>2 ? ` e mais ${dueSubj.length-2}` : ''), false, ()=> startSpacedReview()); list.insertBefore(r, list.querySelector('.td-extra')); }
+    paintAllSet();
+  });
+  // extras de quem usa: plano de estudos e "minha prova"
+  const plan = studyData().plan, pt = planToday();
+  if(plan){
+    const left = Math.round((new Date(plan.examDate+'T12:00') - new Date(dk+'T12:00'))/864e5);
+    const r = row('🗺️', left>0 ? `Plano: prova em ${left} dia${left===1?'':'s'}` : left===0 ? 'Plano: a prova é hoje!' : 'Plano de estudos', pt ? 'Hoje: ' + (pt.subjects.map(id=>(SUBJECTS.find(x=>x.id===id)||{}).name).filter(Boolean).join(' + ') || '') + (pt.exam ? (pt.subjects.length?' + ':'')+'simulado' : '') : 'Ver o plano', false, ()=> go('plan'));
+    r.classList.add('td-extra');
+  }
+  const ex = examById(myExamId());
+  if(ex){
+    const rd = examReadiness(ex);
+    const r = row(ex.ico, `Rumo ${ex.id==='enem'?'ao':'à'} ${ex.name}`, `${rd.ready} de ${rd.total} assuntos prontos`, false, ()=> go('examDetail', {examId:ex.id}));
+    r.classList.add('td-extra');
+  }
+  const allSet = h(`<div class="td-allset" style="display:none">✅ Tudo em dia por hoje! Que tal uma fase da Trilha?</div>`);
+  function paintAllSet(){ allSet.style.display = list.querySelector('.td-row:not(.done):not(.td-extra)') ? 'none' : ''; }
+  function refreshGoal(){
+    Promise.all([loadHistory(), loadSettings()]).then(([hist, st])=>{
+      const todayStr = new Date().toDateString();
+      const n = hist.filter(e=> new Date(e.ts).toDateString()===todayStr).length;
+      const goal = st.dailyGoal || 10, pct = Math.min(100, Math.round(n/goal*100));
+      head.querySelector('.goal-num').textContent = n;
+      const fg = head.querySelector('.fg');
+      fg.setAttribute('stroke-dashoffset', GC*(1-pct/100)); fg.style.opacity = n ? 1 : 0;
+      head.classList.toggle('done', n>=goal);
+      head.querySelector('.td-goal').textContent = n>=goal ? `🎉 Meta batida: ${n} de ${goal} questões` : `Meta: ${n} de ${goal} questões`;
+      goalEditRow.querySelectorAll('.diff-chip').forEach(ch=> ch.classList.toggle('active', parseInt(ch.textContent)===goal));
+    });
+  }
+  refreshGoal();
+  // missões recolhidas no rodapé do cartão (abrem sozinhas quando tem prêmio pra pegar)
+  const ms = missionState(), msDone = ms.filter(x=>x.claimed).length, msReady = ms.some(x=>x.done && !x.claimed);
+  const mToggle = h(`<button type="button" class="m-toggle" aria-expanded="false"><span>📜 Missões do dia</span><b>${msDone}/${ms.length}${msReady ? ' · 🎁 prêmio!' : ''}</b><i>▾</i></button>`);
+  card.querySelector('h3').replaceWith(mToggle);
+  card.prepend(allSet); card.prepend(list); card.prepend(goalEditRow); card.prepend(head);
+  const setOpen = open=>{ card.classList.toggle('collapsed', !open); mToggle.setAttribute('aria-expanded', String(open)); };
+  setOpen(msReady || !!state.missionsOpen);
+  mToggle.onclick = ()=>{ state.missionsOpen = card.classList.contains('collapsed'); setOpen(state.missionsOpen); };
+  paintAllSet();
+  wrap.appendChild(card);
+
   // depois de uma atualização mostra as Novidades; senão, talvez o lembrete de backup (nunca os dois juntos)
   if(tutorialDone()) setTimeout(()=>{ if(state.screen==='home' && wrap.isConnected && !document.querySelector('.gm-modal-bg')){ if(!showNewsSheet()) maybeAskFeedback().then(shown=>{ if(!shown) maybeAskBackup(); }); } }, 1200);
-
-  // ordem da tela: continuar a trilha → acesso rápido → pra fazer hoje → dica do Pi.
-  // Cada coisa mora na sua aba: treinos em Exercícios, jogos na Arena, conquistas/relatório/histórico em Progresso,
-  // nivelamento/plano/configurações no Perfil.
-  const secTitle = t=> h(`<h3 class="home-sec">${t}</h3>`);
-  const tileGrid = items=>{
-    const grid = h(`<div class="quick-grid six"></div>`);
-    items.forEach(item=>{
-      const tile = h(`<button type="button" class="quick-tile ${item.cls}"><span class="sym">${item.sym}</span><span class="label">${item.label}</span>${item.sub?`<small class="qt-sub">${item.sub}</small>`:''}</button>`);
-      tile.onclick = ()=> item.screen==='placement' ? startPlacement() : go(item.screen, item.screen==='geoLab' ? {geoBack:'home'} : {});
-      grid.appendChild(tile);
-    });
-    return grid;
-  };
-  // "Pra fazer hoje": avisos (quando existem), meta e missões — appendChild move os blocos já criados pra cá
-  wrap.appendChild(secTitle('Pra fazer hoje'));
-  if(importCard) wrap.appendChild(importCard);
-  if(placementCard) wrap.appendChild(placementCard);
-  { const eb = examHomeBanner(); if(eb) wrap.appendChild(eb); }
-  wrap.appendChild(dailyBanner);
-  wrap.appendChild(mixBannerEl());
-  if(planBanner) wrap.appendChild(planBanner);
-  wrap.appendChild(reviewBanner);
-  wrap.appendChild(spacedBanner);
-  // nada pendente (desafio feito, sem revisão vencida): um aviso de "tudo em dia" no lugar
-  if(dailyDone && mixToday() && !planBanner && !placementCard && !importCard){
-    const allSet = h(`<div class="hd-allset" style="display:none"><span>✅</span><div><b>Tudo em dia por hoje!</b><small>Desafio e Mistura feitos, e nenhuma revisão pendente. Que tal uma fase da Trilha?</small></div></div>`);
-    spacedBanner.after(allSet);
-    Promise.all([loadErrors(), loadProgress()]).then(([errs, progress])=>{
-      if(!errs.some(e=>errorIsDue(e)) && !dueReviewSubjects(progress).length) allSet.style.display = '';
-    });
-  }
-  // meta do dia + missões num cartão só; as missões ficam recolhidas (abrem sozinhas quando tem prêmio pra pegar)
-  const missions = wrap.querySelector('.missions');
-  const ms = missionState(), msDone = ms.filter(x=>x.claimed).length, msReady = ms.some(x=>x.done && !x.claimed);
-  goalWrap.classList.add('in-missions');
-  missions.prepend(goalWrap);
-  const mTitle = missions.querySelector('h3');
-  const mToggle = h(`<button type="button" class="m-toggle" aria-expanded="false"><span>📜 Missões do dia</span><b>${msDone}/${ms.length}${msReady ? ' · 🎁 prêmio!' : ''}</b><i>▾</i></button>`);
-  mTitle.replaceWith(mToggle);
-  const setOpen = open=>{ missions.classList.toggle('collapsed', !open); mToggle.setAttribute('aria-expanded', String(open)); };
-  setOpen(msReady || !!state.missionsOpen);
-  mToggle.onclick = ()=>{ state.missionsOpen = missions.classList.contains('collapsed'); setOpen(state.missionsOpen); };
-  wrap.appendChild(missions);
-
-  // dica do Pi: uma curiosidade por dia (muda à meia-noite)
-  const tip = PI_TIPS[Math.floor(new Date(isoDay()+'T12:00').getTime()/864e5) % PI_TIPS.length];
-  wrap.appendChild(h(`<div class="hd-tip"><div class="hd-tip-m">${mascotSVG('joy', 54)}</div><div><small>💡 DICA DO PI · HOJE</small><b>${tip[0]}</b><p>${tip[1]}</p></div></div>`));
-
-  wrap.appendChild(h(`<div class="footer-note">Seu professor de matemática digital 📐</div>`));
   // primeiro acesso: tour guiado pelo Pi
   if(!tutorialDone()) setTimeout(()=>{ if(state.screen==='home' && !tutorialDone() && wrap.isConnected) startTour(); }, 700);
   return wrap;

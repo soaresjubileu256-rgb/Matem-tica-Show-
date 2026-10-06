@@ -98,12 +98,3 @@ function examTabBody(e, c){
 /* rota antiga (links de "Cai nas provas", botão voltar do treino): abre a aba da prova */
 function examDetailScreen(){ return examsScreen(); }
 
-/* aviso no Início quando a pessoa marcou "minha prova" */
-function examHomeBanner(){
-  const e = examById(myExamId());
-  if(!e) return null;
-  const r = examReadiness(e);
-  const b = h(`<button type="button" class="alert-banner pv-home" style="--c:${e.color}"><span class="sym">${e.ico}</span><span class="txt"><span class="title">Rumo ${e.id==='enem'?'ao':'à'} ${e.name}</span><span class="sub">${r.ready} de ${r.total} assuntos prontos · treine o que mais cai</span></span><span class="chev">›</span></button>`);
-  b.onclick = ()=> go('examDetail', {examId:e.id});
-  return b;
-}
