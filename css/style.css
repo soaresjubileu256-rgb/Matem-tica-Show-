@@ -1685,14 +1685,14 @@ section.block h3{font-size:12.5px; text-transform:uppercase; color:var(--ink-sof
    brilho atrás do número do episódio, nome em destaque, selo e assinatura.
    Duas cores: v1 = verde (esmeralda + dourado) e v2 = roxo (violeta + lilás).
    Tudo em cqw pra ficar igual no celular, na prévia pequena e na impressão. */
-.cert{container-type:inline-size; border-radius:14px; background:#0b0b10; box-shadow:0 14px 38px rgba(0,0,0,.35);
+.cert{container-type:inline-size; isolation:isolate; border-radius:14px; background:#0b0b10; box-shadow:0 14px 38px rgba(0,0,0,.35);
   --acc:#2FD68A; --acc2:#F2C14E; --acc-soft:#BFF5DA; --bg1:#0E2A1F; --bg2:#08160F; --bg3:#050C08;}
 .cert-v2{--acc:#A77BFF; --acc2:#E2D2FF; --acc-soft:#E9DEFF; --bg1:#24164A; --bg2:#140C2B; --bg3:#0A0617;}
 .cert-in{position:relative; aspect-ratio:1000/707; overflow:hidden; color:#fff; font-family:'Inter',sans-serif; text-align:left; border-radius:14px;
   background:radial-gradient(120% 95% at 18% 22%, var(--bg1) 0%, var(--bg2) 55%, var(--bg3) 100%);}
 .cert-waves{position:absolute; inset:0; width:100%; height:100%; color:var(--acc); opacity:.16;}
 .cert-glow{position:absolute; right:-6cqw; top:12cqw; width:52cqw; height:52cqw; border-radius:50%;
-  background:radial-gradient(circle, color-mix(in srgb, var(--acc) 38%, transparent) 0%, transparent 68%); filter:blur(1cqw);}
+  background:radial-gradient(circle, color-mix(in srgb, var(--acc) 38%, transparent) 0%, transparent 68%);}
 .cert-syms{position:absolute; inset:0; z-index:1; pointer-events:none;}
 .cert-syms span{position:absolute; font-family:'Fraunces',serif; font-weight:700; line-height:1; color:var(--acc2); opacity:.17;}
 .cert-frame{position:absolute; inset:2.4cqw; border:.18cqw solid color-mix(in srgb, var(--acc2) 55%, transparent); border-radius:1cqw; z-index:2; pointer-events:none;}
@@ -1707,8 +1707,7 @@ section.block h3{font-size:12.5px; text-transform:uppercase; color:var(--ink-sof
 .cert-num{position:absolute; right:7.5cqw; top:50%; transform:translateY(-50%); z-index:1;
   font:900 36cqw/0.8 'Inter',sans-serif; letter-spacing:-.06em;
   background:linear-gradient(160deg, var(--acc-soft) 0%, var(--acc) 38%, var(--acc2) 100%);
-  -webkit-background-clip:text; background-clip:text; color:transparent;
-  filter:drop-shadow(0 1cqw 2.5cqw color-mix(in srgb, var(--acc) 35%, transparent));}
+  -webkit-background-clip:text; background-clip:text; color:transparent;}
 .cert-v2 .cert-num{background-image:linear-gradient(160deg, #FFFFFF 0%, #E2D2FF 25%, #A77BFF 60%, #6A2FE0 100%);}
 .cert-v1 .cert-num{background-image:linear-gradient(160deg, #F7F0C6 0%, #F2C14E 30%, #2FD68A 70%, #129C5E 100%);}
 .cert-num.two{font-size:26cqw; right:6.5cqw;}
@@ -1719,14 +1718,13 @@ section.block h3{font-size:12.5px; text-transform:uppercase; color:var(--ink-sof
 .cert-k{font-size:1.3cqw; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:var(--acc-soft);}
 .cert-to{font-family:'Fraunces',serif; font-style:italic; font-size:2cqw; color:rgba(255,255,255,.75); margin-bottom:.4cqw;}
 .cert-name{font-size:5.2cqw; font-weight:900; line-height:1.06; text-transform:uppercase; letter-spacing:.005em; word-break:break-word;
-  background:linear-gradient(180deg, #FFFFFF 30%, var(--acc-soft) 100%); -webkit-background-clip:text; background-clip:text; color:transparent;
-  filter:drop-shadow(0 .3cqw 1cqw rgba(0,0,0,.45));}
+  background:linear-gradient(180deg, #FFFFFF 30%, var(--acc-soft) 100%); -webkit-background-clip:text; background-clip:text; color:transparent;}
 .cert-bar{width:22cqw; height:.45cqw; border-radius:1cqw; margin:1.6cqw 0 1.5cqw; background:linear-gradient(90deg, var(--acc2), var(--acc), transparent);}
 .cert-subj{font-size:2.15cqw; font-weight:500; line-height:1.35; color:rgba(255,255,255,.88);}
 .cert-subj b{font-weight:800; color:#fff;}
 .cert-lvl{margin-top:.8cqw; font-size:1.65cqw; font-weight:700; letter-spacing:.04em; color:var(--acc-soft); opacity:.9;}
 .cert-bottom{position:absolute; left:6.4cqw; right:6.4cqw; bottom:5.6cqw; display:flex; align-items:center; gap:2.4cqw; z-index:3;}
-.cert-seal{width:11.5cqw; height:11.5cqw; flex-shrink:0; filter:drop-shadow(0 .6cqw 1.4cqw rgba(0,0,0,.45));}
+.cert-seal{width:11.5cqw; height:11.5cqw; flex-shrink:0;}
 .cert-seal .seal-out{fill:color-mix(in srgb, var(--acc) 22%, #0b0b10); stroke:var(--acc2); stroke-width:2;}
 .cert-seal .seal-ring{fill:none; stroke:color-mix(in srgb, var(--acc2) 55%, transparent); stroke-width:1; stroke-dasharray:2 3;}
 .cert-seal .seal-in{fill:#0b0b10; stroke:var(--acc); stroke-width:1.5;}

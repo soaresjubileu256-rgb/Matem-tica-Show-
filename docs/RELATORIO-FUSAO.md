@@ -693,3 +693,8 @@ Com as abas no topo, os botões que levavam pras mesmas páginas saíram:
 - **Pra mudar um ícone:** troque o desenho em `ICON_PATHS` ou o nome em `EMOJI_ICON`. Emoji que não está no mapa é tirado.
 - **Avatar:** passou a ser a foto ou a inicial do nome, na cor escolhida. Os bichinhos em emoji saíram (`AV_EMOJIS` ficou vazio), e quem tinha escolhido um passa a ver a inicial.
 - Os textos compartilhados (Desafio do Dia, conquistas) não mudam, porque saem do app.
+
+## 51. Certificado sem "chuvisco" no Android
+- **Bug:** no celular Android, um retângulo de pixels embaralhados aparecia por cima da prévia do certificado (Progresso → Certificados).
+- **Causa:** efeitos pesados de GPU no certificado: `filter:blur()` no brilho de fundo e `filter:drop-shadow()` no número e no nome (que usam texto com gradiente, `background-clip:text`) e no selo. Alguns celulares desenham essa mistura errado.
+- **Correção:** os filtros saíram (o brilho já é um degradê suave, não precisava de blur) e o `.cert` ganhou `isolation:isolate`. O visual fica quase igual na tela e na impressão.
