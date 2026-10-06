@@ -3531,3 +3531,13 @@ section.block h3::before, .rp-sec::before, .hq-head span::before{content:''; wid
 .tools-t{flex:1; min-width:0;} .tools-t b{display:block; font-family:'Fraunces',serif; font-size:15px;} .tools-t small{display:block; font-size:12px; color:var(--ink-soft); margin-top:1px;}
 .tools-btn .chev{color:var(--ink-soft); font-size:20px;}
 .pv-row-t{border:none; background:none; padding:0; cursor:pointer; text-align:left; color:inherit;}
+
+/* ===== Barra de baixo nova: 5 botões com ícones desenhados ===== */
+.bn-item{position:relative;}
+.bn-item .bn-icon{position:relative; width:44px; height:28px; border-radius:14px; transition:background .2s, box-shadow .2s;}
+.bn-item .bn-icon svg{width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round;}
+.bn-item .bn-label{font-size:11px; font-weight:700;}
+.bn-item.active .bn-icon{width:48px; height:28px;}
+.bn-item.active .bn-icon svg{stroke-width:2.2;}
+.bn-dot{position:absolute; top:-3px; right:4px; width:9px; height:9px; border-radius:50%; background:#FF5C7A; box-shadow:0 0 0 2px rgba(16,18,36,.95); animation:nw-ping 1.6s ease-out infinite;}
+:root.theme-light .bn-dot{box-shadow:0 0 0 2px #fff;}

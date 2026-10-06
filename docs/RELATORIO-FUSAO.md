@@ -641,3 +641,12 @@ Com as abas no topo, os botões que levavam pras mesmas páginas saíram:
 - **Configurações:** saiu a linha Avatar (fica no Perfil).
 - **Aprender:** saiu o cartão do Laboratório de Geometria (é uma aba).
 - **Provas:** cada assunto tem um botão só ("Treinar"). Tocar no nome abre a explicação.
+
+## 47. Barra de baixo nova
+
+- **5 botões em vez de 6:** Início, Trilha, **Estudar**, Arena e Progresso. Aprender e Exercícios viraram um botão só, "Estudar" (`BOTTOM_NAV_ITEMS` e `STUDY_SCREENS` em `js/base/navegacao.js`).
+- **Abas de Estudar:** Aprender | Exercícios | Provas | Treino | Desafios | Passo a passo | Tabuada | Erros | Laboratório. A seção "study" em `SECTION_TABS` junta as antigas "learn" e "exercises".
+- **Estudar lembra a última aba:** se você estava em Provas e foi pro Início, tocar em Estudar volta pra Provas (`state.lastStudy`).
+- **Ícones desenhados** (SVG, cor do tema) no lugar dos símbolos de texto. O botão aceso tem fundo colorido.
+- **Bolinha vermelha na Arena** quando o Desafio do Dia de hoje ainda não foi feito. Ela some quando você está na Arena ou depois de jogar.
+- O texto do tour ("Menu principal") foi atualizado.

@@ -12,7 +12,7 @@ const TOUR_STEPS = [
   {sel:'.missions', title:'Missões do dia 📜',
    text:'Todo dia aparecem missões novas. Quando completar uma, toque em <b>Pegar</b> pra ganhar XP extra!'},
   {sel:'.bottom-nav', title:'Menu principal',
-   text:'<b>Trilha</b> leva direto pros episódios. <b>Aprender</b> tem a explicação de cada assunto com exemplos. <b>Exercícios</b> é pra treinar um assunto específico. <b>Progresso</b> mostra como você está indo.'},
+   text:'<b>Trilha</b> leva direto pros episódios. <b>Estudar</b> tem a explicação de cada assunto, os exercícios e as provas, em abas. Na <b>Arena</b> ficam os jogos, e o <b>Progresso</b> mostra como você está indo.'},
   {sel:'.quick-grid', title:'Ferramentas 🧰',
    text:'<b>Resolver questão</b> (digite uma conta e eu mostro o passo a passo), calculadora e caderno. Dentro de cada parte do app, as <b>abas no topo</b> levam pras outras páginas.'},
   {sel:'.profile-btn-avatar', title:'Seu perfil 👤',

@@ -95,15 +95,6 @@ function topbar(title, showBack, onBack){
   return bar;
 }
 
-/* ---------------- barra de navegação inferior ---------------- */
-const BOTTOM_NAV_ITEMS = [
-  {screen:'home', icon:'⌂', label:'Início', group:['home','calculator','solve','notebook','notePage','help','news','profile','settings','placement','plan']},
-  {screen:'path', icon:'★', label:'Trilha', group:['path']},
-  {screen:'content', icon:'∑', label:'Aprender', group:['content','subjectDetail','geoLab','cardsDeck']},
-  {screen:'exercisesSubjects', icon:'✎', label:'Exercícios', group:['exercisesSubjects','exerciseDifficulty','exerciseSession','personalizedSetup','personalizedSession','challengeDifficulty','challengeSession','tabuada','errors','reviewErrorsSession','stepSetup','stepGuide','exams','examDetail']},
-  {screen:'arena', icon:'⚔', label:'Arena', group:['arena','arenaDaily','dailyIntro','dailyReview','examSetup','examResult','lightning','quizSetup','duel']},
-  {screen:'progress', icon:'↑', label:'Progresso', group:['progress','report','history','achievements','certificates','certificate']},
-];
 /* ---------------- abas no topo de cada seção ----------------
    Cada seção mostra suas páginas como abas logo abaixo do título. "match" diz em quais telas
    a aba fica acesa (ex.: o Desafio do Dia tem 3 telas). Telas de jogo/sessão não têm abas. */
@@ -115,14 +106,16 @@ const SECTION_TABS = [
     {screen:'achievements', ico:'🏅', label:'Conquistas'},
     {screen:'certificates', ico:'📜', label:'Certificados'},
   ]},
-  {id:'exercises', tabs:[
-    {screen:'exercisesSubjects', ico:'✎', label:'Assuntos'},
+  {id:'study', tabs:[
+    {screen:'content', ico:'📖', label:'Aprender'},
+    {screen:'exercisesSubjects', ico:'✎', label:'Exercícios'},
     {screen:'exams', ico:'🎓', label:'Provas', match:['exams','examDetail']},
     {screen:'personalizedSetup', ico:'🎯', label:'Treino'},
     {screen:'challengeDifficulty', ico:'🏆', label:'Desafios'},
     {screen:'stepSetup', ico:'🪜', label:'Passo a passo'},
     {screen:'tabuada', ico:'✖️', label:'Tabuada'},
     {screen:'errors', ico:'🔁', label:'Erros'},
+    {screen:'geoLab', ico:'🔺', label:'Laboratório', extra:{geoBack:'content'}},
   ]},
   {id:'arena', tabs:[
     {screen:'arena', ico:'⚔️', label:'Arena'},
@@ -131,10 +124,6 @@ const SECTION_TABS = [
     {screen:'lightning', ico:'⚡', label:'Relâmpago'},
     {screen:'quizSetup', ico:'🎤', label:'Quiz'},
     {screen:'duel', ico:'🤝', label:'Duelo'},
-  ]},
-  {id:'learn', tabs:[
-    {screen:'content', ico:'∑', label:'Assuntos'},
-    {screen:'geoLab', ico:'🔺', label:'Laboratório', extra:{geoBack:'content'}},
   ]},
   {id:'tools', tabs:[
     {screen:'solve', ico:'🔎', label:'Resolver'},
@@ -174,12 +163,37 @@ function withSectionTabs(el){
   return el;
 }
 
+/* ---------------- barra de navegação inferior ----------------
+   5 botões: Início, Trilha, Estudar (Aprender + Exercícios + Provas, em abas), Arena e Progresso.
+   "Estudar" volta pra última aba usada. A Arena mostra uma bolinha se o Desafio do Dia não foi feito. */
+const BN_ICONS = {
+  home:'<path d="M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+  path:'<path d="M9 4 3 6.5v14L9 18l6 2.5 6-2.5v-14L15 6.5 9 4z"/><path d="M9 4v14M15 6.5v14"/>',
+  study:'<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5M8.5 7.5h7M8.5 11h5"/>',
+  arena:'<path d="M8 3.5h8v5.5a4 4 0 0 1-8 0z"/><path d="M8 5.5H5.5a2.5 2.5 0 0 0 2.6 4.4M16 5.5h2.5a2.5 2.5 0 0 1-2.6 4.4M12 13v3.5M8.5 20.5h7M10 16.5h4"/>',
+  progress:'<path d="M3.5 20.5h17"/><path d="M6.5 20.5v-6M11.5 20.5V6M16.5 20.5v-9.5"/><path d="m5 10.5 5-5 4 3 5.5-5"/>',
+};
+const STUDY_SCREENS = ['content','subjectDetail','geoLab','cardsDeck','exercisesSubjects','exerciseDifficulty','exerciseSession','personalizedSetup','personalizedSession','challengeDifficulty','challengeSession','tabuada','errors','reviewErrorsSession','stepSetup','stepGuide','exams','examDetail'];
+const BOTTOM_NAV_ITEMS = [
+  {id:'home', screen:'home', label:'Início', group:['home','calculator','solve','notebook','notePage','help','news','profile','settings','placement','plan']},
+  {id:'path', screen:'path', label:'Trilha', group:['path']},
+  {id:'study', screen:'content', label:'Estudar', group:STUDY_SCREENS},
+  {id:'arena', screen:'arena', label:'Arena', group:['arena','arenaDaily','dailyIntro','dailyReview','examSetup','examResult','lightning','quizSetup','duel']},
+  {id:'progress', screen:'progress', label:'Progresso', group:['progress','report','history','achievements','certificates','certificate']},
+];
 function bottomNav(){
-  const bar = h(`<div class="bottom-nav"></div>`);
+  const bar = h(`<nav class="bottom-nav" aria-label="Menu principal"></nav>`);
+  // lembra a última aba de Estudar pra voltar nela
+  const sec = typeof sectionOf==='function' ? sectionOf(state.screen) : null;
+  if(sec && sec.sec.id==='study') state.lastStudy = sec.tab.screen;
+  let dailyPending = false;
+  try{ dailyPending = typeof arenaData==='function' && !arenaData().daily[isoDay()]; }catch(e){}
   BOTTOM_NAV_ITEMS.forEach(item=>{
     const active = item.group.includes(state.screen);
-    const btn = h(`<button class="bn-item ${active?'active':''}"><span class="bn-icon">${item.icon}</span><span class="bn-label">${item.label}</span></button>`);
-    btn.onclick = ()=>{ if(state.screen !== item.screen) go(item.screen); };
+    const dot = item.id==='arena' && dailyPending && !active;
+    const btn = h(`<button class="bn-item ${active?'active':''}" ${active?'aria-current="page"':''}><span class="bn-icon"><svg viewBox="0 0 24 24" aria-hidden="true">${BN_ICONS[item.id]}</svg>${dot?'<i class="bn-dot" title="Desafio do Dia esperando"></i>':''}</span><span class="bn-label">${item.label}</span></button>`);
+    const target = item.id==='study' ? (state.lastStudy || item.screen) : item.screen;
+    btn.onclick = ()=>{ if(state.screen !== target) go(target, target==='geoLab' ? {geoBack:'content'} : {}); };
     bar.appendChild(btn);
   });
   return bar;
