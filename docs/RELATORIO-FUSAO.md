@@ -585,3 +585,111 @@ A Tabuada agora tem três partes (antes era só a lista de 1 a 10):
 - **Dica do Pi:** uma curiosidade ou truque de matemática por dia, em rodízio de 20 (`PI_TIPS`).
 - O tour de primeiro acesso continua funcionando: as classes `.player-card`, `.path-hero`, `.missions` e `.quick-grid` não mudaram.
 - Entrou nas **Novidades**.
+
+## 44. Provas e vestibulares, Qual o próximo passo? e Mistura do dia
+
+Feitos a partir da pesquisa em outras plataformas (Khan Academy, Duolingo, Brilliant, Matific, ANTON) e em estudos sobre aprendizagem de matemática (tentar lembrar, espaçar e misturar assuntos ajudam).
+
+- **🎓 Provas e vestibulares** (Exercícios → "Provas e vestibulares"; dados em `js/assuntos/provas.js`, telas em `js/telas/provas.js`):
+  - ENEM, ETEC (Vestibulinho), Fuvest, Unicamp, Unesp e OBMEP. Cada prova tem quem faz, como é a prova e uma dica.
+  - Os assuntos do app vêm em três faixas: 🔥 cai muito, ⭐ cai bastante e ✓ às vezes cai. Há também a lista "Também cai", com temas que ainda não têm assunto próprio no app (ex.: polinômios, números complexos, escalas).
+  - A lista foi montada a partir de levantamentos de provas anteriores publicados por cursinhos e sites de educação. A tela avisa que é uma orientação e que vale conferir o edital.
+  - **Treinar o que mais cai:** 15 questões dos assuntos 🔥 e ⭐, com dificuldade adaptativa e foco nos pontos fracos.
+  - **Simulado da prova:** 20 questões em 40 minutos, só com esses assuntos. Os 🔥 aparecem mais.
+  - Cada assunto da lista tem os botões 📖 (estudar) e "Treinar".
+  - **% pronto:** quantos assuntos 🔥 e ⭐ estão em Proficiente ou Dominado.
+  - **Minha prova** (`g.targetExam`): a prova marcada aparece no Início ("Rumo ao ENEM…").
+  - **Etiquetas nos assuntos:**
+    - nas listas do Aprender e de Exercícios (ex.: "ENEM 🔥 · ETEC");
+    - na caixa "Cai nas provas" de cada assunto, em que tocar abre a prova;
+    - no Relatório semanal, na linha "Cai em".
+- **🪜 Qual o próximo passo?** (Exercícios, e "Exemplo guiado" no Aprender):
+  - Exemplo resolvido em 3 rodadas.
+  - Antes de cada passo, o aluno escolhe entre 3 opções. As erradas são erros plausíveis da mesma conta (resultado errado ou sinal trocado) ou o mesmo passo de outra questão.
+  - Depois vem "Agora é sua vez", com uma questão parecida que conta no progresso.
+  - Funciona nos 41 assuntos e nas 3 dificuldades.
+- **🔀 Mistura do dia** (Início e Exercícios):
+  - 10 questões, com dificuldade adaptativa, de até 5 assuntos já estudados. São escolhidos os praticados há mais tempo e os com menos acerto, e a escolha vale o dia todo.
+  - Os assuntos se alternam sem repetir em seguida.
+  - +20 XP na primeira do dia (`g.mix`).
+  - O aviso "Tudo em dia" do Início também espera a Mistura.
+- O modo "Estilo ENEM/SAEB" e os códigos de habilidade da BNCC foram testados mas retirados a pedido. A etiqueta antiga com o ano escolar ("📚 BNCC · 6º ano") continua.
+- Entrou nas **Novidades**.
+
+## 45. Abas em todas as seções
+
+- **Abas no topo de cada seção** (`SECTION_TABS` em `js/base/navegacao.js`), colocadas num lugar só (`withSectionTabs` no desenho das telas, em `js/iniciar.js`):
+  - **Progresso:** Resumo | Relatório | Histórico | Conquistas | Certificados
+  - **Exercícios:** Assuntos | Provas | Treino | Desafios | Passo a passo | Tabuada | Erros
+  - **Arena:** Arena | Desafio do Dia | Simulado | Relâmpago | Quiz | Duelo
+  - **Aprender:** Assuntos | Laboratório
+  - **Ferramentas:** Resolver | Calculadora | Caderno
+  - **Perfil:** Perfil | Configurações | Novidades | Ajuda
+- A barra fica presa no topo ao rolar e desliza para os lados no celular. Telas de jogo e de sessão (questões, Trilha, simulado em andamento) não têm abas.
+- **Provas:** cada prova (ENEM, ETEC, Fuvest, Unicamp, Unesp, OBMEP) tem sua própria aba, com o % pronto. A "minha prova" abre primeiro e tem ⭐. Os links "Cai nas provas" e o botão voltar do treino abrem a aba certa.
+- O menu de Exercícios ficou com a Mistura do dia em destaque e a lista de assuntos. Os outros modos viraram abas.
+
+## 46. Menos atalhos
+
+Com as abas no topo, os botões que levavam pras mesmas páginas saíram:
+- **Início:**
+  - Saiu o botão "?". A Ajuda fica no Perfil e o tour aponta pra foto do perfil.
+  - As 3 ferramentas viraram uma entrada só, "🧰 Ferramentas". Lá dentro, Resolver, Calculadora e Caderno são abas.
+- **Arena:** saíram o cartão do Desafio do Dia e os 4 cartões de modos de jogo, que agora são abas. Ficam o topo com a patente, a próxima fase e as fases.
+- **Progresso:** saiu "Seus registros" (Relatório, Histórico, Conquistas e Certificados são abas).
+- **Perfil:** saíram a grade de atalhos e os itens Novidades, Como usar, Configurações e Trocar avatar. O avatar se troca pelo ✏️ da foto.
+- **Configurações:** saiu a linha Avatar (fica no Perfil).
+- **Aprender:** saiu o cartão do Laboratório de Geometria (é uma aba).
+- **Provas:** cada assunto tem um botão só ("Treinar"). Tocar no nome abre a explicação.
+
+## 47. Barra de baixo nova
+
+- **5 botões em vez de 6:** Início, Trilha, **Estudar**, Arena e Progresso. Aprender e Exercícios viraram um botão só, "Estudar" (`BOTTOM_NAV_ITEMS` e `STUDY_SCREENS` em `js/base/navegacao.js`).
+- **Abas de Estudar:** Aprender | Exercícios | Provas | Treino | Desafios | Passo a passo | Tabuada | Erros | Laboratório. A seção "study" em `SECTION_TABS` junta as antigas "learn" e "exercises".
+- **Estudar lembra a última aba:** se você estava em Provas e foi pro Início, tocar em Estudar volta pra Provas (`state.lastStudy`).
+- **Ícones desenhados** (SVG, cor do tema) no lugar dos símbolos de texto. O botão aceso tem fundo colorido.
+- **Bolinha vermelha na Arena** quando o Desafio do Dia de hoje ainda não foi feito. Ela some quando você está na Arena ou depois de jogar.
+- O texto do tour ("Menu principal") foi atualizado.
+
+## 48. Acesso rápido no Início
+
+- Logo abaixo do cartão da Trilha: grade **"Acesso rápido"** com 8 botões coloridos (4 por linha no celular, 8 numa linha no computador):
+  - Aprender, Exercícios, Provas e Simulado;
+  - Treino, Resolver, Calculadora e Caderno.
+- Cada botão abre a página certa, com a aba correspondente acesa.
+- A entrada única "Ferramentas" saiu, porque Resolver, Calculadora e Caderno estão direto na grade.
+- O tour de primeiro acesso agora apresenta o "Acesso rápido ⚡".
+- As classes usam o prefixo `qa-`, porque `hq-` já existia num estilo antigo.
+
+## 49. Início organizado
+
+- **Saiu:**
+  - o "Acesso rápido";
+  - os avisos grandes separados (Desafio, Mistura, Caderno de erros, Revisão do dia, Plano, Minha prova, Nivelamento);
+  - o "Tudo em dia" solto, a Dica do Pi e o texto do rodapé.
+- **O Início agora tem 4 blocos:** saudação do Pi → cartão do jogador → Trilha → cartão **"Hoje"**.
+- **Cartão "Hoje"** (continua com a classe `.missions`, usada pelo tour):
+  - **No topo:** anel com as questões de hoje, "Meta: X de Y questões" e o botão "Mudar meta".
+  - **Lista curta de tarefas,** cada uma numa linha com ✓ quando feita:
+    - Desafio do Dia e Mistura do dia;
+    - Revisar meus erros e Relembrar assuntos (só quando há algo pra revisar);
+    - Plano de estudos e "Rumo ao ENEM" (só pra quem usa);
+    - Descubra seu nível (só pra conta nova).
+  - **"Tudo em dia por hoje!"** aparece quando as tarefas do dia estão feitas.
+  - **Missões do dia** ficam recolhidas no rodapé do cartão. Abrem sozinhas quando tem prêmio pra pegar.
+- O aviso de juntar o progresso do Arena antigo continua, mas só aparece quando existe esse progresso.
+- **Tour:** o passo das missões virou "Hoje 📋", e o passo do Acesso rápido saiu.
+- `examHomeBanner` e `PI_TIPS` foram removidos, assim como o CSS que não era mais usado.
+
+## 50. Sem emojis: ícones desenhados
+
+- O app não mostra mais emojis. Eram cerca de 880 em mais de 40 arquivos.
+- **Como funciona:** em vez de editar cada lugar, um conversor central (`js/base/icones.js`) olha tudo o que entra na página (telas, janelas, avisos e textos que mudam) com um `MutationObserver`:
+  - **Emoji que é ícone** (🔥 ⭐ 🏆 📅 🎯 🔒 …) vira um **ícone desenhado** em SVG de linha (`ICON_PATHS`, mais de 70 desenhos). Ele usa a cor do texto, e alguns têm cor própria (chama laranja, estrela e moeda douradas, coração vermelho, ✓ verde).
+  - **Quadradinhos e bolinhas coloridas** (🟩 🟥 🟢 …) viram formas coloridas, como no resultado do Desafio do Dia.
+  - **Emoji que é só enfeite** numa frase (🎉 no fim, 😄, 👋…) é tirado, junto com o espaço que sobra.
+  - Títulos, `aria-label`, `placeholder` e `alt` também ficam sem emoji.
+  - **Ficam** as teclas e os símbolos de conta: ⌫ ⇔ ↔ ⬆ ⬇ ✓ ✗ ★.
+- **Pra mudar um ícone:** troque o desenho em `ICON_PATHS` ou o nome em `EMOJI_ICON`. Emoji que não está no mapa é tirado.
+- **Avatar:** passou a ser a foto ou a inicial do nome, na cor escolhida. Os bichinhos em emoji saíram (`AV_EMOJIS` ficou vazio), e quem tinha escolhido um passa a ver a inicial.
+- Os textos compartilhados (Desafio do Dia, conquistas) não mudam, porque saem do app.

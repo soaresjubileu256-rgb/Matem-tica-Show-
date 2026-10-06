@@ -42,13 +42,13 @@ async function settingsScreen(){
   const hero = h(`<div class="st-hero"><span class="st-av">${avatarFace(currentUser)}</span><div><b></b><small class="st-sum">${sum()}</small></div></div>`);
   const av = avatarOf(currentUser);
   hero.querySelector('.st-av').style.background = avatarColor(currentUser);
-  hero.querySelector('.st-av').classList.add(avatarImg(av) ? 'is-img' : av && av.emo ? 'is-emo' : 'x');
+  hero.querySelector('.st-av').classList.add(avatarImg(av) ? 'is-img' : 'x');
   hero.querySelector('b').textContent = (currentUser && currentUser.name) || '';
   const refreshSum = ()=>{ hero.querySelector('.st-sum').textContent = sum(); };
   c.appendChild(hero);
 
   // ---------- Conta ----------
-  const acc = stCard('👤', 'Conta', 'Nome, senha e avatar');
+  const acc = stCard('👤', 'Conta', 'Nome e senha');
   const nameRow = stRow('✏️', '#4C7DFF', 'Nome', (currentUser&&currentUser.name)||'', h(`<button type="button" class="st-link">Editar</button>`));
   const namePanel = h(`<div class="st-panel" hidden>
       <div class="auth-field"><label>Novo nome</label><input type="text" class="settingsNameInput" aria-label="Nome" maxlength="40"></div>
@@ -90,9 +90,6 @@ async function settingsScreen(){
     stMsg(box, true, 'Senha alterada!');
   };
   acc.appendChild(passRow); acc.appendChild(passPanel);
-  const avRow = stRow('🎨', '#B23FE0', 'Avatar', 'Foto, bichinho ou símbolo e a cor', h(`<button type="button" class="st-link">Trocar</button>`));
-  avRow.querySelector('.st-link').onclick = ()=> showAvatarSheet(()=> render());
-  acc.appendChild(avRow);
   c.appendChild(acc);
 
   // ---------- Estudo ----------

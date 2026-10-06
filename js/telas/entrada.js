@@ -13,7 +13,7 @@ const AV_GRADS = [
   ['#FF922B','#F03E3E'], ['#3BC9DB','#4C6EF5'], ['#94D82D','#12B886'], ['#CC5DE8','#F783AC'],
 ];
 /* avatar escolhido no Perfil (emoji e cor), guardado no jogo da conta: {emo:'🦊', c:3} */
-const AV_EMOJIS = ['🦊','🐼','🐯','🦁','🐸','🐵','🦄','🐙','🐧','🦉','🐨','🐶','🐱','🐲','🦖','🐢','🚀','⭐','🧠','🤖','👾','🎩','⚽','🎮'];
+const AV_EMOJIS = []; // o app não usa emojis: o avatar é a foto ou a inicial do nome (com a cor escolhida)
 function avatarOf(u){
   const uid = u && u.id; if(!uid) return null;
   try{
@@ -38,12 +38,11 @@ function avatarImg(av){ return av && typeof av.img==='string' && /^data:image\/(
 function avatarFace(u){
   const av = avatarOf(u);
   if(avatarImg(av)) return `<img class="av-img" src="${avatarImg(av)}" alt="">`;
-  if(av && av.emo) return av.emo;
   return u && u.name ? escHTML(u.name.trim().charAt(0).toUpperCase()) : '?';
 }
 function avatarHTML(u, cls, idx){
   const av = avatarOf(u);
-  const k = avatarImg(av) ? 'is-img' : av && av.emo ? 'is-emo' : '';
+  const k = avatarImg(av) ? 'is-img' : '';
   return `<span class="${cls||'av'} ${k}" style="background:${avatarColor(u, idx)}">${avatarFace(u)}</span>`;
 }
 /* lê o XP/ofensiva de uma conta sem precisar estar logado nela */

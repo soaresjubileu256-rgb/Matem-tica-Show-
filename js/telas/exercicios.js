@@ -9,20 +9,13 @@ function exercisesSubjectsScreen(){
   const wrap = document.createElement('div');
   wrap.appendChild(topbar('Exercícios', true, ()=>go('home')));
   const c = h(`<div class="content"></div>`);
-  // modos de treino (cada um mora aqui, na aba Exercícios)
-  c.appendChild(h(`<h3 class="home-sec" style="margin:4px 0 10px">Modos de treino</h3>`));
-  const modes = h(`<div class="quick-grid ex-modes" style="padding:0"></div>`);
-  [
-    {sym:'🎯', cls:'tile-train', label:'Treino personalizado', go:()=>go('personalizedSetup')},
-    {sym:'🏆', cls:'challenge', label:'Desafios', go:()=>go('challengeDifficulty')},
-    {sym:'×', cls:'tabuada', label:'Tabuada', go:()=>go('tabuada')},
-    {sym:'🔁', cls:'tile-hist', label:'Caderno de erros', go:()=>go('errors')},
-  ].forEach(m=>{ const t = h(`<button type="button" class="quick-tile ${m.cls}"><span class="sym">${m.sym}</span><span class="label">${m.label}</span></button>`); t.onclick = m.go; modes.appendChild(t); });
-  c.appendChild(modes);
-  c.appendChild(h(`<h3 class="home-sec" style="margin:18px 0 6px">Por assunto</h3>`));
+  // os modos (Provas, Treino, Desafios, Passo a passo, Tabuada, Erros) ficam nas abas do topo;
+  // aqui fica a Mistura do dia em destaque e a lista de assuntos
+  c.appendChild(mixBannerEl());
+  c.appendChild(h(`<h3 class="home-sec" style="margin:14px 0 6px">Por assunto</h3>`));
   c.appendChild(h(`<p style="color:var(--ink-soft); font-size:14px; margin:2px 0 8px;">Escolha um assunto para praticar.</p>`));
   subjectListGrouped(c, (s,u)=>{
-    const row = h(`<button class="subject-row" style="${unitStyle(u)}"><span class="sym">${s.sym}</span><span class="txt"><span class="name">${s.name}</span><span class="subj-meta">${masteryChip(masterySync(s.id))}</span></span><span class="chev">›</span></button>`);
+    const row = h(`<button class="subject-row" style="${unitStyle(u)}"><span class="sym">${s.sym}</span><span class="txt"><span class="name">${s.name}</span><span class="subj-meta">${masteryChip(masterySync(s.id))}${examTagsHTML(s.id, 2)}</span></span><span class="chev">›</span></button>`);
     row.onclick = ()=>go('exerciseDifficulty', {subjectId:s.id});
     return row;
   });
@@ -943,7 +936,7 @@ async function personalizedSetupScreen(){
 }
 
 function startPersonalizedSession(config){
-  if(!config.isReview) saveLastTraining(config);
+  if(!config.isReview && !config.isMix && !config.examId) saveLastTraining(config);
   const subjects = SUBJECTS.filter(s=>config.subjectIds.includes(s.id));
   state.session = {
     config, subjects,
@@ -975,17 +968,19 @@ function personalizedSessionScreen(){
   const sess = state.session;
   const wrap = document.createElement('div');
   // sair no meio do treino pede confirmação, pra não perder o progresso sem querer
-  wrap.appendChild(topbar(sess.config.isReview ? '🧠 Revisão do dia' : '🎯 Treino personalizado', true, ()=>{
+  const ptBack = sess.config.isMix ? 'home' : sess.config.examId ? 'examDetail' : 'personalizedSetup';
+  wrap.appendChild(topbar(sess.config.examName ? `🎓 Treino ${sess.config.examName}` : sess.config.isMix ? '🔀 Mistura do dia' : sess.config.isReview ? '🧠 Revisão do dia' : '🎯 Treino personalizado', true, ()=>{
     if(sess.index>0 && sess.index<sess.total){
       showConfirm({icon:'🎯', title:'Sair do treino?', message:`Você já respondeu ${sess.index} de ${sess.total} questões. Os acertos ficam salvos, mas o treino não termina.`, ok:'Sair', cancel:'Continuar'})
-        .then(ok=>{ if(ok) go('personalizedSetup'); });
-    } else go('personalizedSetup');
+        .then(ok=>{ if(ok) go(ptBack, sess.config.examId ? {examId:sess.config.examId} : {}); });
+    } else go(ptBack, sess.config.examId ? {examId:sess.config.examId} : {});
   }));
   const c = h(`<div class="content"></div>`);
 
   if(sess.index >= sess.total){
     const pct = Math.round((sess.correct/sess.total)*100);
-    gameSessionEnd(c, sess.correct, sess.total, sess.config.isReview ? `Você acertou ${pct}% da revisão. Os assuntos voltam pra revisão no tempo certo pra fixar de vez.` : `Você acertou ${pct}% do seu treino personalizado.`);
+    if(sess.config.isMix) mixFinish(sess);
+    gameSessionEnd(c, sess.correct, sess.total, sess.config.examName ? `Você acertou ${pct}% do treino com o que mais cai no ${sess.config.examName}.` : sess.config.isMix ? `Você acertou ${pct}% da Mistura do dia. Misturar assuntos treina a escolher o caminho certo, como numa prova.` : sess.config.isReview ? `Você acertou ${pct}% da revisão. Os assuntos voltam pra revisão no tempo certo pra fixar de vez.` : `Você acertou ${pct}% do seu treino personalizado.`);
     const {box, missedIds} = ptBreakdown(sess);
     const actions = h(`<div class="cta-row" style="margin-top:14px"></div>`);
     if(missedIds.length){

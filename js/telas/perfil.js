@@ -33,7 +33,7 @@ function showAvatarSheet(onDone){
   const bg = document.createElement('div');
   bg.className = 'gm-modal-bg sheet';
   bg.innerHTML = `<div class="gm-modal pf-sheet" role="dialog" aria-label="Escolher avatar">
-      <div class="pf-sheet-prev"><span class="pf-av big"></span><div><h2>Seu avatar</h2><p>Use uma foto ou escolha um bichinho ou símbolo e a cor. Ele aparece no Perfil, no Início e na tela de entrada.</p></div></div>
+      <div class="pf-sheet-prev"><span class="pf-av big"></span><div><h2>Seu avatar</h2><p>Use uma foto ou fique com a inicial do seu nome na cor que quiser. Ele aparece no Perfil, no Início e na tela de entrada.</p></div></div>
       <div class="pf-sl">Foto</div>
       <div class="pf-photo">
         <label class="pf-ph-btn">📷 Tirar foto<input type="file" accept="image/*" capture="user" hidden></label>
@@ -41,8 +41,6 @@ function showAvatarSheet(onDone){
         <button type="button" class="pf-ph-del">🗑️ Remover a foto</button>
       </div>
       <p class="pf-ph-note">A foto fica guardada só neste aparelho, junto com a sua conta.</p>
-      <div class="pf-sl">Ou um rosto</div>
-      <div class="pf-emos"><button type="button" data-e="" class="ini">${ini}</button>${AV_EMOJIS.map(e=>`<button type="button" data-e="${e}">${e}</button>`).join('')}</div>
       <div class="pf-sl">Cor</div>
       <div class="pf-colors">${AV_GRADS.map(([x,y],i)=>`<button type="button" data-c="${i}" style="background:linear-gradient(135deg,${x},${y})" aria-label="Cor ${i+1}"></button>`).join('')}</div>
       <button type="button" class="pf-save">Salvar avatar</button>
@@ -51,7 +49,7 @@ function showAvatarSheet(onDone){
   const prev = bg.querySelector('.pf-av');
   let c = cur.c >= 0 ? cur.c : AV_GRADS.findIndex(([x,y])=> avatarColor(currentUser).includes(x));
   if(c < 0) c = 0;
-  let emo = cur.emo || '', img = avatarImg(cur);
+  let emo = '', img = avatarImg(cur);
   const paint = ()=>{
     const [x,y] = AV_GRADS[c];
     prev.style.background = `linear-gradient(135deg,${x},${y})`;
@@ -68,7 +66,6 @@ function showAvatarSheet(onDone){
     catch(e){ showFloat('Não deu pra abrir essa imagem 😕', true); }
   });
   bg.querySelector('.pf-ph-del').onclick = ()=>{ img = ''; paint(); };
-  bg.querySelectorAll('.pf-emos button').forEach(b=> b.onclick = ()=>{ emo = b.dataset.e; img = ''; paint(); playTones([660], 0.04, 'triangle', 0.04); });
   bg.querySelectorAll('.pf-colors button').forEach(b=> b.onclick = ()=>{ c = +b.dataset.c; paint(); playTones([520], 0.04, 'triangle', 0.04); });
   bg.querySelector('.pf-save').onclick = ()=>{
     const gg = loadGame(); gg.avatar = img ? {emo, c, img} : {emo, c};
@@ -104,7 +101,7 @@ async function profileScreen(){
   // cartão do jogador
   const hero = h(`<div class="pf-hero">
     <div class="pf-hero-bg" aria-hidden="true"><span>+</span><span>×</span><span>π</span><span>÷</span><span>√</span></div>
-    <button type="button" class="pf-av-btn" aria-label="Trocar avatar"><span class="pf-av ${avatarImg(av) ? 'is-img' : av && av.emo ? 'is-emo' : ''}" style="background:${avatarColor(currentUser)}">${avatarFace(currentUser)}</span><span class="pf-edit">✏️</span></button>
+    <button type="button" class="pf-av-btn" aria-label="Trocar avatar"><span class="pf-av ${avatarImg(av) ? 'is-img' : ''}" style="background:${avatarColor(currentUser)}">${avatarFace(currentUser)}</span><span class="pf-edit">✏️</span></button>
     <div class="pf-name"></div>
     <div class="pf-title">${lv.title}</div>
     <div class="pf-lv"><span class="pf-lv-b">NÍVEL ${lv.level}</span><div class="pf-xp"><i style="width:${lv.pct}%"></i></div><small>${lv.into}/${lv.need} XP</small></div>
@@ -125,16 +122,6 @@ async function profileScreen(){
   </div>`);
   c.appendChild(stats);
 
-  // atalhos de conquistas
-  const links = h(`<div class="pf-links"></div>`);
-  [
-    {ico:'🏅', n:`${achN}/${ACHIEVEMENTS.length}`, l:'Conquistas', go:'achievements'},
-    {ico:'📜', n:`${certN}`, l:`Certificado${certN===1?'':'s'}`, go:'certificates'},
-    {ico:'📅', n:`${daysN}`, l:'Dias de estudo', go:'progress'},
-    {ico:'🏆', n:`${g.bestStreak||0}`, l:'Maior ofensiva', go:'achievements'},
-  ].forEach(x=>{ const b = h(`<button type="button" class="pf-link"><span>${x.ico}</span><b>${x.n}</b><small>${x.l}</small></button>`); b.onclick = ()=> go(x.go); links.appendChild(b); });
-  c.appendChild(links);
-
   // medalhas recentes
   const recent = ACHIEVEMENTS.filter(a=> g.ach && typeof g.ach[a.id]==='number').sort((x,y)=> g.ach[y.id]-g.ach[x.id]).slice(0,4);
   if(recent.length){
@@ -154,16 +141,11 @@ async function profileScreen(){
     menu.appendChild(b);
   };
   const group = t=> menu.appendChild(h(`<div class="pm-group">${t}</div>`));
-  group('Personalizar');
-  item('🎨', 'Trocar avatar', 'Use uma foto ou escolha um bichinho e a cor', ()=> showAvatarSheet(()=> render()), '', '#B23FE0');
   group('Estudo');
   item('🧭', 'Teste de nivelamento', studyData().placement ? `Último: ${studyData().placement.ok}/${studyData().placement.n}` : 'Descubra por onde começar', ()=> startPlacement(), '', '#33D2E3');
   item('🗺️', 'Plano de estudos', studyData().plan ? `Prova em ${studyData().plan.examDate.split('-').reverse().join('/')}` : 'Monte um plano até o dia da prova', ()=> go('plan'), '', '#12B886');
   group('Ajuda e conta');
-  item('🔔', 'Novidades', newsUnseen().length ? '✨ Tem novidade pra você!' : 'O que mudou no app', ()=> go('news'), newsUnseen().length ? 'has-news' : '', '#FFB800');
-  item('📘', 'Como usar o app', 'Guia e tour guiado', ()=> go('help'), '', '#4C7DFF');
   if(feedbackEnabled()) item('💬', 'Fale com a gente', 'Dê sua nota, sugestões ou avise de um erro', ()=> showFeedbackSheet(false), '', '#F06595');
-  item('⚙️', 'Configurações', 'Tema, som, meta, senha e backup', ()=> go('settings'), '', '#94A3B8');
   item('🚪', 'Sair da conta', '', ()=> showConfirm({
     icon:'🚪', title:'Sair da conta?', message:'Seu progresso continua salvo neste aparelho. É só entrar de novo com seu nome e senha.',
     ok:'Sair da conta', cancel:'Cancelar', danger:true,
