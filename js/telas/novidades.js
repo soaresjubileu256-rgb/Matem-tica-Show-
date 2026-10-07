@@ -11,7 +11,6 @@
    ========================================================= */
 const NEWS = [
   {v:15, date:'2026-10-05', title:'Abas, provas e vestibulares e novos modos de estudo', items:[
-    {ico:'✨', t:'Visual mais limpo', d:'O Início ficou mais organizado e os emojis deram lugar a ícones desenhados em todo o app. O avatar agora é a sua foto ou a inicial do seu nome.', go:'home'},
     {ico:'🗂️', t:'Menu novo e abas', d:'O menu de baixo ficou com 5 botões: Aprender e Exercícios agora moram juntos em "Estudar". Dentro de cada parte, abas no topo levam direto a cada página.', go:'content'},
     {ico:'🎓', t:'Provas e vestibulares', d:'Veja o que mais cai de Matemática no ENEM, na ETEC, na Fuvest, na Unicamp, na Unesp e na OBMEP, cada uma na sua aba, e treine ou faça um simulado só com esses assuntos. Marque a sua prova e ela aparece no Início.', go:'exams'},
     {ico:'🪜', t:'Qual o próximo passo?', d:'O Pi resolve um exemplo com você, mas antes de cada passo você tenta adivinhar qual vem. Depois é sua vez de resolver uma parecida.', go:'stepSetup'},
