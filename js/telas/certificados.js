@@ -27,11 +27,12 @@ function syncCertDates(units){
   return g.certDates;
 }
 function fmtCertDate(ts){ const d = new Date(ts); return `${d.getDate()} de ${MESES[d.getMonth()]} de ${d.getFullYear()}`; }
-/* as duas versões do certificado: fundo escuro com linhas onduladas e o número do episódio
+/* as versões do certificado (verde, roxo e azul): fundo escuro com linhas onduladas e o número do episódio
    grandão em degradê. Sem escolha salva, o Fundamental usa a 1 e o Ensino Médio a 2. */
 const CERT_STYLES = [
   {id:'v1', name:'Versão 1 · Verde'},
   {id:'v2', name:'Versão 2 · Roxo'},
+  {id:'v3', name:'Versão 3 · Azul'},
 ];
 function certStyleFor(s){
   const st = currentSettingsSync().certStyle;
