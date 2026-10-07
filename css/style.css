@@ -1683,11 +1683,12 @@ section.block h3{font-size:12.5px; text-transform:uppercase; color:var(--ink-sof
 @media (max-height:700px){ .duel-opt{padding:10px 6px; font-size:20px;} .dh-wrap{gap:7px;} .duel-q{font-size:28px;} }
 /* certificado — paisagem (A4 deitada), fundo escuro com linhas onduladas, moldura com cantos,
    brilho atrás do número do episódio, nome em destaque, selo e assinatura.
-   Duas cores: v1 = verde (esmeralda + dourado) e v2 = roxo (violeta + lilás).
+   Três cores: v1 = verde (esmeralda + dourado), v2 = roxo (violeta + lilás) e v3 = azul (azul-céu + gelo).
    Tudo em cqw pra ficar igual no celular, na prévia pequena e na impressão. */
 .cert{container-type:inline-size; border-radius:14px; background:#0b0b10; box-shadow:0 14px 38px rgba(0,0,0,.35);
   --acc:#2FD68A; --acc2:#F2C14E; --acc-soft:#BFF5DA; --bg1:#0E2A1F; --bg2:#08160F; --bg3:#050C08;}
 .cert-v2{--acc:#A77BFF; --acc2:#E2D2FF; --acc-soft:#E9DEFF; --bg1:#24164A; --bg2:#140C2B; --bg3:#0A0617;}
+.cert-v3{--acc:#4FA8FF; --acc2:#CFE6FF; --acc-soft:#DCEEFF; --bg1:#0F2550; --bg2:#08152F; --bg3:#040A18;}
 .cert-in{position:relative; aspect-ratio:1000/707; overflow:hidden; color:#fff; font-family:'Inter',sans-serif; text-align:left; border-radius:14px;
   background:radial-gradient(120% 95% at 18% 22%, var(--bg1) 0%, var(--bg2) 55%, var(--bg3) 100%);}
 .cert-waves{position:absolute; inset:0; width:100%; height:100%; color:var(--acc); opacity:.16;}
@@ -1711,6 +1712,7 @@ section.block h3{font-size:12.5px; text-transform:uppercase; color:var(--ink-sof
   filter:drop-shadow(0 1cqw 2.5cqw color-mix(in srgb, var(--acc) 35%, transparent));}
 .cert-v2 .cert-num{background-image:linear-gradient(160deg, #FFFFFF 0%, #E2D2FF 25%, #A77BFF 60%, #6A2FE0 100%);}
 .cert-v1 .cert-num{background-image:linear-gradient(160deg, #F7F0C6 0%, #F2C14E 30%, #2FD68A 70%, #129C5E 100%);}
+.cert-v3 .cert-num{background-image:linear-gradient(160deg, #FFFFFF 0%, #CFE6FF 25%, #4FA8FF 60%, #1662D6 100%);}
 .cert-num.two{font-size:26cqw; right:6.5cqw;}
 .cert-main{position:absolute; left:6.4cqw; top:17.5cqw; width:56%; z-index:3;}
 .cert-num.two ~ .cert-main{width:52%;}
@@ -1741,6 +1743,7 @@ section.block h3{font-size:12.5px; text-transform:uppercase; color:var(--ink-sof
 .cs-dot{width:16px; height:16px; border-radius:50%; display:inline-block;}
 .cs-v1{background:linear-gradient(135deg,#F2C14E,#2FD68A);}
 .cs-v2{background:linear-gradient(135deg,#E2D2FF,#A77BFF);}
+.cs-v3{background:linear-gradient(135deg,#CFE6FF,#4FA8FF);}
 /* caderno digital */
 .nb-tips{display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; margin:2px -20px 14px; padding:0 20px;}
 .nb-tips::-webkit-scrollbar{display:none;}
@@ -3188,7 +3191,7 @@ section.block h3::before, .rp-sec::before, .hq-head span::before{content:''; wid
 .ct-st-t > span{display:block; font-size:12.5px; color:var(--ink-soft); margin-top:2px; line-height:1.4;} .ct-st-t > span b{display:inline; font-family:inherit; font-size:inherit;}
 .ct-st-t small{display:block; font-size:11px; font-weight:800; color:var(--ink-soft); margin-top:4px;}
 .ct-lbl{font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-soft); margin:2px 2px 8px;}
-.ct-styles{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+.ct-styles{display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:8px;}
 .ct-sw{justify-content:flex-start; border-radius:14px; padding:10px 12px; position:relative;}
 .ct-sw span{flex:1; text-align:left;}
 .ct-sw .cs-dot{width:22px; height:22px; box-shadow:0 0 0 2px var(--white), 0 0 0 3px var(--border);}
