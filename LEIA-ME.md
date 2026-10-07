@@ -89,7 +89,7 @@ Os assuntos aparecem sempre na mesma ordem e nos mesmos grupos (1º ao 5º ano, 
 - **Ordem dos scripts:** os arquivos de `js/` dividem as mesmas variáveis e funções. Eles precisam ser carregados na ordem do `index.html`, e o `iniciar.js` é sempre o último.
 - **Arquivo novo:** coloque o `<script>` no `index.html` e o caminho na lista `APP_SHELL` do `sw.js`.
 - **Lançou algo novo pras pessoas verem?** Acrescente uma entrada no topo de `NEWS` em `js/telas/novidades.js` (com um `v` maior que o anterior). Quem já usa o app vê a janela "Novidades" ao abrir o Início.
-- **Depois de qualquer mudança:** aumente o `CACHE_VERSION` no `sw.js` (ex.: `mat-show-v67` → `mat-show-v68`). Assim quem já instalou recebe a versão nova.
+- **Depois de qualquer mudança:** aumente o `CACHE_VERSION` no `sw.js` (ex.: `mat-show-v68` → `mat-show-v69`). Assim quem já instalou recebe a versão nova.
 
 ## Como acrescentar um assunto
 

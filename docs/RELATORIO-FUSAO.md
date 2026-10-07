@@ -693,3 +693,11 @@ Com as abas no topo, os botões que levavam pras mesmas páginas saíram:
 - **Pra mudar um ícone:** troque o desenho em `ICON_PATHS` ou o nome em `EMOJI_ICON`. Emoji que não está no mapa é tirado.
 - **Avatar:** passou a ser a foto ou a inicial do nome, na cor escolhida. Os bichinhos em emoji saíram (`AV_EMOJIS` ficou vazio), e quem tinha escolhido um passa a ver a inicial.
 - Os textos compartilhados (Desafio do Dia, conquistas) não mudam, porque saem do app.
+
+## 51. Certificado sem quadro preto/embaralhado no Android
+- **Bug:** no celular Android, um retângulo preto ou de pixels embaralhados aparecia por cima da prévia do certificado (Progresso → Certificados).
+- **Causa:** efeitos que alguns celulares desenham errado: texto com degradê (`background-clip:text`) no número e no nome do certificado, `filter:blur()`/`drop-shadow()`, a marca d'água girada, e a barra de abas fixa com desfoque (`backdrop-filter`) junto com máscara (`mask-image`).
+- **Correção:**
+  - Certificado: número e nome em cor sólida (verde no v1, roxo no v2; nome branco), sem filtros, marca d'água "PRÉVIA" reta, `.cert` com `isolation:isolate`.
+  - Barras de abas (`.sec-tabs`, `.pv-tabs`): fundo sólido, sem desfoque e sem máscara.
+- **Regra pra frente:** evitar `background-clip:text`, `filter` e `backdrop-filter`+`mask-image` em elementos grandes ou fixos.
