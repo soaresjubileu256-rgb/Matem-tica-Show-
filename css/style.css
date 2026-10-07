@@ -3806,3 +3806,13 @@ button.gl-res:active{transform:scale(.99);}
 .lr-nextsubj small{font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft);} .lr-nextsubj b{font-size:15px;}
 :root.theme-light .lr-quick-fb.ok{color:#0A7A88;} :root.theme-light .lr-step .num{color:#0A7A88;}
 .lr-hero .mst-chip{background:rgba(0,0,0,.22) !important; color:#fff !important; border-color:rgba(255,255,255,.25) !important;}
+
+/* impressão: nada que fica "grudado" na tela (abas da seção, avisos, XP voando)
+   pode sair no papel — antes a barra de abas aparecia por cima do relatório */
+@media print{
+  .sec-tabs, .lr-nav, .upd-bar, .gm-float, .gm-toast, .path-fab, .bottom-nav, .topbar{display:none !important;}
+  .rp-sec, .rp-tip{break-after:avoid; page-break-after:avoid;}
+  .rp-achs, .rp-hl, .rp-days, .mastery-row, .rp-hl-c, .rp-tip, .rp-print-foot{break-inside:avoid; page-break-inside:avoid;}
+  .rp-print-foot{margin-top:6px !important; padding-top:4px !important; font-size:9.5px !important;}
+  .rp-sec{margin-top:10px !important;}
+}
