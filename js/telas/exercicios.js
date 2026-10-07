@@ -37,32 +37,11 @@ function exercisesSubjectsScreen(){
     c.appendChild(cont);
   }
   c.appendChild(h(`<h3 class="home-sec" style="margin:14px 0 8px">Por assunto</h3>`));
-  const search = h(`<label class="ex-search"><span aria-hidden="true">🔎</span><input type="search" placeholder="Procurar assunto (ex.: fração, porcentagem)" aria-label="Procurar assunto"></label>`);
-  c.appendChild(search);
-  const list = h(`<div class="ex-list"></div>`);
-  const empty = h(`<p class="ex-empty" hidden>Nenhum assunto com esse nome. Tente outra palavra.</p>`);
-  subjectListGrouped(list, (s,u)=>{
-    const row = h(`<button class="subject-row" style="${unitStyle(u)}" data-name="${escHTML(s.name)}"><span class="sym">${s.sym}</span><span class="txt"><span class="name">${s.name}</span><span class="subj-meta">${masteryChip(masterySync(s.id))}${examTagsHTML(s.id, 2)}</span></span><span class="chev">›</span></button>`);
+  subjectSearchList(c, (s,u)=>{
+    const row = h(`<button class="subject-row" style="${unitStyle(u)}"><span class="sym">${s.sym}</span><span class="txt"><span class="name">${s.name}</span><span class="subj-meta">${masteryChip(masterySync(s.id))}${examTagsHTML(s.id, 2)}</span></span><span class="chev">›</span></button>`);
     row.onclick = ()=>go('exerciseDifficulty', {subjectId:s.id});
     return row;
   });
-  c.appendChild(list);
-  c.appendChild(empty);
-  // busca: esconde os assuntos que não batem e os títulos de grupo que ficaram vazios
-  const norm = t=> t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
-  search.querySelector('input').oninput = e=>{
-    const q = norm(e.target.value.trim());
-    let any = false, area = null, areaHas = false, level = null, levelHas = false;
-    const closeArea = ()=>{ if(area) area.hidden = !areaHas; };
-    const closeLevel = ()=>{ if(level) level.hidden = !levelHas; };
-    [...list.children].forEach(el=>{
-      if(el.classList.contains('subj-level')){ closeArea(); closeLevel(); level = el; levelHas = false; area = null; }
-      else if(el.classList.contains('subj-area')){ closeArea(); area = el; areaHas = false; }
-      else { const ok = !q || norm(el.dataset.name||'').includes(q); el.hidden = !ok; if(ok){ areaHas = levelHas = any = true; } }
-    });
-    closeArea(); closeLevel();
-    empty.hidden = any;
-  };
   wrap.appendChild(c);
   return wrap;
 }
