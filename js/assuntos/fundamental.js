@@ -6,13 +6,17 @@
 const SUBJECTS = [
   {
     id:'adicao', name:'Adição', sym:'+',
-    learn:`<p>Imagina que você tem 3 balas numa mão e 5 na outra. Se juntar tudo numa mão só, quantas balas você tem? Isso é <b>somar</b>: é só juntar quantidades. O resultado de uma soma se chama <b>total</b>.</p>
-    <p><b>Quando os números são grandes, dá pra somar em pé (uma conta "armada"). Veja como:</b></p>
+    learn:`<p>Imagina que você tem 3 balas numa mão e 5 na outra. Se juntar tudo numa mão só, fica com 8 balas. Isso é <b>somar</b>: juntar quantidades. Os números que a gente junta se chamam <b>parcelas</b>, e o resultado se chama <b>soma</b> ou <b>total</b>.</p>
+    <p><b>Com números grandes, a gente arma a conta, um número embaixo do outro:</b></p>
     <ol style="margin:0 0 10px; padding-left:20px; line-height:1.7;">
-      <li>Escreva um número embaixo do outro, alinhando pela <b>direita</b> — como se estivesse enfileirando moedinhas: unidade sob unidade, dezena sob dezena, centena sob centena.</li>
-      <li>Comece somando a coluna mais à direita, a das <b>unidades</b>, e vá andando para a esquerda, uma coluna de cada vez.</li>
-      <li>Se a soma de uma coluna passar de 9, ela não cabe sozinha ali: escreva só o último dígito e "empreste" o resto pra próxima coluna. Esse empréstimo é o famoso <b>"vai um"</b>.</li>
-    </ol>`,
+      <li>Escreva os números alinhados pela <b>direita</b>: unidade embaixo de unidade, dezena embaixo de dezena, centena embaixo de centena.</li>
+      <li>Comece pela coluna da <b>direita</b> (as unidades) e vá andando para a esquerda, uma coluna de cada vez.</li>
+      <li>Se a soma da coluna der <b>9 ou menos</b>, é só escrever o resultado embaixo dela.</li>
+      <li>Se der <b>10 ou mais</b>, ela não cabe numa casa só. Escreva embaixo só o algarismo das unidades e leve a dezena para a coluna da esquerda: esse é o <b>"vai um"</b>. O 1 fica escrito pequenininho em cima da próxima coluna, e entra na soma dela.</li>
+      <li>Se na última coluna ainda sobrar um "vai um", escreva ele na frente do resultado.</li>
+    </ol>
+    <p><b>Por que "vai um"?</b> Porque 10 unidades valem 1 dezena, e 10 dezenas valem 1 centena. Quando uma coluna junta 10 ou mais, a gente troca esses 10 por 1 da casa seguinte. Por exemplo, 7 + 5 = 12 unidades, que é o mesmo que 1 dezena e 2 unidades: escreve 2 e vai 1 para as dezenas.</p>
+    <p><b>Dica para conferir:</b> a ordem das parcelas não muda a soma (3 + 5 = 5 + 3). Se quiser conferir a conta, some de novo trocando a ordem.</p>`,
     examples:[
       {title:'Exemplo 1', text:'234 + 158 = 392', columns:{nums:['234','158'], op:'+', result:'392', carries:addColumnSteps([234,158]).carries}, steps:addColumnSteps([234,158]).steps},
       {title:'Exemplo 2', text:'47 + 38 = 85', columns:{nums:['47','38'], op:'+', result:'85', carries:addColumnSteps([47,38]).carries}, steps:addColumnSteps([47,38]).steps},
