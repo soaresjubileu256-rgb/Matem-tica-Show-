@@ -5,16 +5,39 @@
    ========================================================= */
 
 /* ---------------- EXERCISES: subject list ---------------- */
+/* recordes por assunto+dificuldade, último treino e quantidade escolhida (por conta) */
+const EXB_KEY_BASE = 'mathstudy-exbest-v1';
+function exbData(){ try{ const d = JSON.parse(localStorage.getItem(`${EXB_KEY_BASE}:${currentUserId()}`)||'{}'); d.best = d.best||{}; return d; }catch(e){ return {best:{}}; } }
+function saveExb(d){ try{ localStorage.setItem(`${EXB_KEY_BASE}:${currentUserId()}`, JSON.stringify(d)); }catch(e){} }
+const EX_DIFFS = [
+  ['facil','Fácil','🟢','Pra aquecer','Números menores, poucos passos'],
+  ['medio','Médio','🟡','O desafio certo','Números maiores, mais passos'],
+  ['dificil','Difícil','🔴','Pra quem é fera','Contas longas, atenção aos detalhes'],
+];
+const EX_QTYS = [5,10,15];
+function exDiffName(d){ const x = EX_DIFFS.find(y=>y[0]===d); return x ? x[1] : ''; }
+/* enunciado em uma linha só (pra prévia e pra lista de revisão) */
+function exPlainText(ex, max){
+  let t = String((ex && ex.question) || '').replace(/<br\s*\/?>/gi,' ').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
+  if(max && t.length > max) t = t.slice(0, max-1).trim() + '…';
+  return t;
+}
 function exercisesSubjectsScreen(){
   const wrap = document.createElement('div');
   wrap.appendChild(topbar('Exercícios', true, ()=>go('home')));
   const c = h(`<div class="content"></div>`);
   // os modos (Provas, Treino, Desafios, Passo a passo, Tabuada, Erros) ficam nas abas do topo;
-  // aqui fica a Mistura do dia em destaque e a lista de assuntos
+  // aqui fica a Mistura do dia em destaque, o "continuar" e a lista de assuntos com busca
   c.appendChild(mixBannerEl());
-  c.appendChild(h(`<h3 class="home-sec" style="margin:14px 0 6px">Por assunto</h3>`));
-  c.appendChild(h(`<p style="color:var(--ink-soft); font-size:14px; margin:2px 0 8px;">Escolha um assunto para praticar.</p>`));
-  subjectListGrouped(c, (s,u)=>{
+  const last = exbData().last;
+  const lastSubj = last && SUBJECTS.find(s=>s.id===last.subjectId);
+  if(lastSubj){
+    const cont = h(`<button type="button" class="ex-continue"><span class="ex-continue-sym">${lastSubj.sym}</span><span class="ex-continue-txt"><small>Continuar de onde parou</small><b>${lastSubj.name} · ${exDiffName(last.difficulty)}</b></span><span class="ex-continue-go">▶</span></button>`);
+    cont.onclick = ()=> startSession(lastSubj.id, last.difficulty, last.total || 5);
+    c.appendChild(cont);
+  }
+  c.appendChild(h(`<h3 class="home-sec" style="margin:14px 0 8px">Por assunto</h3>`));
+  subjectSearchList(c, (s,u)=>{
     const row = h(`<button class="subject-row" style="${unitStyle(u)}"><span class="sym">${s.sym}</span><span class="txt"><span class="name">${s.name}</span><span class="subj-meta">${masteryChip(masterySync(s.id))}${examTagsHTML(s.id, 2)}</span></span><span class="chev">›</span></button>`);
     row.onclick = ()=>go('exerciseDifficulty', {subjectId:s.id});
     return row;
@@ -24,18 +47,49 @@ function exercisesSubjectsScreen(){
 }
 
 function exerciseDifficultyScreen(){
-  const s = SUBJECTS.find(x=>x.id===state.subjectId) || SUBJECTS[0];
+  const si = Math.max(0, SUBJECTS.findIndex(x=>x.id===state.subjectId));
+  const s = SUBJECTS[si];
   const wrap = document.createElement('div');
   wrap.appendChild(topbar(s.name, true, ()=>go('exercisesSubjects')));
   const c = h(`<div class="content"></div>`);
-  c.appendChild(h(`<p style="color:var(--ink-soft); font-size:14px; margin:2px 0 16px;">Escolha a dificuldade para começar 5 exercícios.</p>`));
-  const row = h(`<div class="diff-row"></div>`);
-  [['facil','Fácil'],['medio','Médio'],['dificil','Difícil']].forEach(([id,label])=>{
-    const chip = h(`<button class="diff-chip" data-d="${id}">${label}</button>`);
-    chip.onclick = ()=> startSession(s.id, id);
-    row.appendChild(chip);
+  const prog = progressSync()[s.id];
+  const acc = prog && prog.attempted ? Math.round(prog.correct/prog.attempted*100) : null;
+  const hero = h(`<div class="ex-hero" style="${unitStyle(si)}">
+    <span class="ex-hero-sym">${s.sym}</span>
+    <div class="ex-hero-txt"><b>${s.name}</b>${masteryChip(masterySync(s.id))}
+      <small>${acc===null ? 'Você ainda não praticou esse assunto.' : `${prog.attempted} resposta${prog.attempted===1?'':'s'} · ${acc}% de acerto`}</small></div>
+    <button type="button" class="ex-hero-learn">📖 Rever a explicação</button>
+  </div>`);
+  hero.querySelector('.ex-hero-learn').onclick = ()=> go('subjectDetail', {subjectId:s.id});
+  c.appendChild(hero);
+  const d = exbData();
+  let qty = EX_QTYS.includes(d.qty) ? d.qty : 5;
+  c.appendChild(h(`<h3 class="home-sec ex-sec">Quantas questões?</h3>`));
+  const qrow = h(`<div class="ex-qty" role="group" aria-label="Quantidade de questões"></div>`);
+  EX_QTYS.forEach(n=>{
+    const b = h(`<button type="button" class="${n===qty?'active':''}" aria-pressed="${n===qty}">${n}</button>`);
+    b.onclick = ()=>{ qty = n; const dd = exbData(); dd.qty = n; saveExb(dd); qrow.querySelectorAll('button').forEach(x=>{ const on = x===b; x.classList.toggle('active', on); x.setAttribute('aria-pressed', on); }); };
+    qrow.appendChild(b);
   });
-  c.appendChild(row);
+  c.appendChild(qrow);
+  c.appendChild(h(`<h3 class="home-sec ex-sec">Escolha a dificuldade</h3>`));
+  const sug = adaptiveDifficultyFor(progressSync(), s.id);
+  EX_DIFFS.forEach(([id,label,ico,sub,desc])=>{
+    let sample = '';
+    try{ sample = exPlainText(s.gen[id](), 46); }catch(e){}
+    const b = d.best[`${s.id}:${id}`];
+    const card = h(`<button type="button" class="ex-dcard" data-d="${id}">
+      <span class="ex-dcard-ico" aria-hidden="true">${ico}</span>
+      <span class="ex-dcard-txt">
+        <span class="ex-dcard-top"><b>${label}</b>${id===sug ? '<em class="ex-sug">Sugerido pra você</em>' : ''}</span>
+        <small>${sub} · ${desc}</small>
+        ${sample ? `<code>${sample}</code>` : ''}
+      </span>
+      <span class="ex-dcard-best">${b ? `<small>Recorde</small><b>${b.c}/${b.t}</b>` : '<small>Novo</small>'}</span>
+    </button>`);
+    card.onclick = ()=> startSession(s.id, id, qty);
+    c.appendChild(card);
+  });
   wrap.appendChild(c);
   return wrap;
 }
@@ -110,11 +164,24 @@ function renderDrillButton(container, subjectId, difficulty){
   container.appendChild(btn);
 }
 
-function startSession(subjectId, difficulty){
+function startSession(subjectId, difficulty, total){
   const subj = SUBJECTS.find(s=>s.id===subjectId);
   const {ex, signature} = genQuestionAvoidingRepeat(subj, difficulty, null);
-  state.session = {subjectId, difficulty, index:0, total:5, correct:0, wrong:0, results:[], checked:false, wasCorrect:null, current: ex, lastSignature: signature};
+  state.session = {subjectId, difficulty, index:0, total: total||5, correct:0, wrong:0, results:[], log:[], checked:false, wasCorrect:null, current: ex, lastSignature: signature};
+  const d = exbData(); d.last = {subjectId, difficulty, total: total||5, ts: Date.now()}; saveExb(d);
   go('exerciseSession');
+}
+/* texto da resposta certa de uma questão (single, pair ou xy) */
+function exAnswerText(ex){
+  return ex.displayAnswer ? ex.displayAnswer : (ex.type==='pair'? `x' = ${fmt(ex.answer[0])} e x'' = ${fmt(ex.answer[1])}` : ex.type==='xy'? `x = ${fmt(ex.answer.x)} e y = ${fmt(ex.answer.y)}` : fmt(ex.answer));
+}
+/* barra de progresso em segmentos: verde acertou, vermelho errou, brilhando = questão atual */
+function exProgressEl(sess){
+  const segs = Array.from({length:sess.total}, (_,i)=>{
+    const cls = i<sess.results.length ? (sess.results[i] ? 'ok' : 'bad') : i===sess.index ? 'now' : '';
+    return `<i class="${cls}"></i>`;
+  }).join('');
+  return h(`<div class="ex-prog"><div class="ex-prog-top"><span>Questão <b>${Math.min(sess.index+1, sess.total)}</b> de ${sess.total}</span><span class="ex-dpill ex-dp-${sess.difficulty}">${exDiffName(sess.difficulty)}</span></div><div class="ex-seg">${segs}</div></div>`);
 }
 
 function checkAnswerValue(userVal, correctVal){
@@ -164,37 +231,60 @@ function parseUserNumber(str){
 
 function exerciseSessionScreen(){
   const sess = state.session;
-  const s = SUBJECTS.find(x=>x.id===sess.subjectId);
+  const si = Math.max(0, SUBJECTS.findIndex(x=>x.id===sess.subjectId));
+  const s = SUBJECTS[si];
   const wrap = document.createElement('div');
   wrap.appendChild(topbar(s.name, true, ()=>go('exerciseDifficulty', {subjectId:s.id})));
-  const c = h(`<div class="content"></div>`);
+  const c = h(`<div class="content ex-sess"></div>`);
 
   if(sess.index >= sess.total){
     const pct = Math.round((sess.correct/sess.total)*100);
-    gameSessionEnd(c, sess.correct, sess.total, `Você acertou ${pct}% dos exercícios de ${s.name}.`);
-    const actions = h(`<div class="cta-row" style="margin-top:14px"></div>`);
-    const again = h(`<button class="btn primary">Praticar de novo</button>`);
-    again.onclick = ()=> startSession(sess.subjectId, sess.difficulty);
-    const home = h(`<button class="btn secondary">Início</button>`);
-    home.onclick = ()=> go('home');
-    actions.appendChild(again); actions.appendChild(home);
+    // guarda o recorde (uma vez só por sessão)
+    let newBest = false;
+    if(!sess.bestSaved){
+      sess.bestSaved = true;
+      const d = exbData(), key = `${sess.subjectId}:${sess.difficulty}`, old = d.best[key];
+      if(!old || sess.correct/sess.total > old.c/old.t || (sess.correct/sess.total === old.c/old.t && sess.total > old.t)){ d.best[key] = {c:sess.correct, t:sess.total}; newBest = sess.correct>0; }
+      saveExb(d);
+      sess.newBest = newBest;
+    }
+    gameSessionEnd(c, sess.correct, sess.total, `Você acertou ${pct}% dos exercícios de ${s.name} no ${exDiffName(sess.difficulty).toLowerCase()}.`);
+    if(sess.newBest) c.appendChild(h(`<div class="ex-record">🏅 Novo recorde no ${exDiffName(sess.difficulty)}!</div>`));
+    const next = {facil:'medio', medio:'dificil'}[sess.difficulty];
+    const actions = h(`<div class="ex-end-actions"></div>`);
+    if(next && pct>=80){
+      const up = h(`<button class="btn primary">Subir para o ${exDiffName(next)} ›</button>`);
+      up.onclick = ()=> startSession(sess.subjectId, next, sess.total);
+      actions.appendChild(up);
+    }
+    const again = h(`<button class="btn ${next && pct>=80 ? 'secondary' : 'primary'}">Praticar de novo</button>`);
+    again.onclick = ()=> startSession(sess.subjectId, sess.difficulty, sess.total);
+    actions.appendChild(again);
+    const other = h(`<button class="btn secondary">Outra dificuldade</button>`);
+    other.onclick = ()=> go('exerciseDifficulty', {subjectId:s.id});
+    actions.appendChild(other);
+    if(pct<60){
+      const learn = h(`<button class="btn secondary">📖 Rever a explicação</button>`);
+      learn.onclick = ()=> go('subjectDetail', {subjectId:s.id});
+      actions.appendChild(learn);
+    }
     c.appendChild(actions);
+    if(sess.log && sess.log.length){
+      const rev = h(`<div class="ex-review"><h3 class="home-sec ex-sec">Como foi cada questão</h3></div>`);
+      sess.log.forEach((x,i)=>{
+        rev.appendChild(h(`<div class="ex-rv ${x.ok?'ok':'bad'}"><span class="ex-rv-n">${x.ok?'✓':'✕'}</span><div class="ex-rv-txt"><b>${i+1}. ${x.q}</b>${x.ok ? `<small>Sua resposta: ${x.user}</small>` : `<small>Você respondeu <s>${x.user}</s> · certa: <b>${x.right}</b></small>`}</div></div>`));
+      });
+      c.appendChild(rev);
+    }
     wrap.appendChild(c);
     return wrap;
   }
 
-  const dots = h(`<div class="progress-dots"></div>`);
-  for(let i=0;i<sess.total;i++){
-    let cls='dot';
-    if(i<sess.results.length) cls += sess.results[i] ? ' ok':' bad';
-    else if(i===sess.index) cls += ' now';
-    dots.appendChild(h(`<span class="${cls}"></span>`));
-  }
-  c.appendChild(dots);
+  c.appendChild(exProgressEl(sess));
   c.appendChild(sessionHud());
 
   const ex = sess.current;
-  const qcard = h(`<div class="question-card"><div class="qlabel">QUESTÃO ${sess.index+1} DE ${sess.total} · ${({facil:'FÁCIL',medio:'MÉDIO',dificil:'DIFÍCIL'})[sess.difficulty]}</div><div class="qtext mono"></div></div>`);
+  const qcard = h(`<div class="question-card ex-qcard"><div class="qlabel">${s.sym} ${s.name}</div><div class="qtext mono"></div></div>`);
   const qtextEl = qcard.querySelector('.qtext');
   addSpeakButton(qcard, ex); addScratchButton(qcard, ex);
   if(ex.columns){
@@ -212,16 +302,23 @@ function exerciseSessionScreen(){
   c.appendChild(qcard);
 
   if(!sess.checked){
-    const form = h(`<div class="answer-form"></div>`);
+    const form = h(`<div class="answer-form ex-form"></div>`);
     if(ex.type==='single'){
-      form.appendChild(h(`<div><label>Resposta</label>${answerInputHTML('ans1','Digite o valor')}</div>`));
+      form.appendChild(h(`<div><label for="ans1">Sua resposta</label>${answerInputHTML('ans1','Digite o valor')}</div>`));
     } else if(ex.type==='pair'){
-      form.appendChild(h(`<div class="pair-row"><div style="flex:1"><label>x'</label>${answerInputHTML('ans1','raiz 1')}</div><div style="flex:1"><label>x''</label>${answerInputHTML('ans2','raiz 2')}</div></div>`));
+      form.appendChild(h(`<div class="pair-row"><div style="flex:1"><label for="ans1">x'</label>${answerInputHTML('ans1','raiz 1')}</div><div style="flex:1"><label for="ans2">x''</label>${answerInputHTML('ans2','raiz 2')}</div></div>`));
     } else if(ex.type==='xy'){
-      form.appendChild(h(`<div class="pair-row"><div style="flex:1"><label>x</label>${answerInputHTML('ans1','valor de x')}</div><div style="flex:1"><label>y</label>${answerInputHTML('ans2','valor de y')}</div></div>`));
+      form.appendChild(h(`<div class="pair-row"><div style="flex:1"><label for="ans1">x</label>${answerInputHTML('ans1','valor de x')}</div><div style="flex:1"><label for="ans2">y</label>${answerInputHTML('ans2','valor de y')}</div></div>`));
     }
+    const warn = h(`<p class="ex-warn" role="alert" hidden>Digite a resposta antes de corrigir.</p>`);
+    form.appendChild(warn);
     const btn = h(`<button class="check-btn">Corrigir</button>`);
     btn.onclick = async ()=>{
+      const inputs = [...form.querySelectorAll('input')];
+      // campo vazio não conta como erro: só avisa
+      const blank = inputs.find(i=>!i.value.trim());
+      if(blank){ warn.hidden = false; blank.classList.remove('ex-shake'); void blank.offsetWidth; blank.classList.add('ex-shake'); blank.focus(); return; }
+      btn.disabled = true;
       const v1 = parseUserNumber(form.querySelector('#ans1').value);
       let correct;
       if(ex.type==='single'){
@@ -234,6 +331,10 @@ function exerciseSessionScreen(){
         const v2 = parseUserNumber(form.querySelector('#ans2').value);
         correct = checkAnswerValue(v1, ex.answer.x) && checkAnswerValue(v2, ex.answer.y);
       }
+      const raw = inputs.map(i=>escHTML(i.value.trim()));
+      sess.lastUser = ex.type==='pair' ? `x' = ${raw[0]} e x'' = ${raw[1]}` : ex.type==='xy' ? `x = ${raw[0]} e y = ${raw[1]}` : raw[0];
+      sess.log = sess.log || [];
+      sess.log.push({q: exPlainText(ex, 60), user: sess.lastUser, right: exAnswerText(ex), ok: correct});
       sess.checked = true; sess.wasCorrect = correct;
       giveAnswerFeedback(correct);
       sess.results.push(correct);
@@ -241,6 +342,9 @@ function exerciseSessionScreen(){
       await recordAnswer(sess.subjectId, correct, {difficulty: sess.difficulty, ex});
       render();
     };
+    // Enter no teclado também corrige
+    form.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); btn.click(); } });
+    form.addEventListener('input', ()=>{ warn.hidden = true; });
     { const tip = firstTimeTip('typed', 'Digite a resposta e toque em <b>Corrigir</b>. Use vírgula pra decimais (2,5) e o botão <b>/</b> pra frações (3/4).'); if(tip) form.prepend(tip); }
     renderHintButton(form, sess.subjectId);
     form.appendChild(btn);
@@ -248,7 +352,7 @@ function exerciseSessionScreen(){
     wireSlashButtons(form);
   } else {
     const correct = sess.wasCorrect;
-    const fb = h(`<div class="feedback ${correct?'correct':'wrong'}"><div class="fb-title">${correct? cheerLine() : '✕ Quase! Veja como resolver:'}</div><div class="fb-explain"></div></div>`);
+    const fb = h(`<div class="feedback ex-fb ${correct?'correct':'wrong'}"><div class="fb-title">${correct? cheerLine() : '✕ Quase! Veja como resolver:'}</div><div class="ex-cmp"></div><div class="fb-explain"></div></div>`);
     let stepsList = ex.steps;
     if(ex.columns){
       stepsList = [contaArmada(ex.columns.nums, ex.columns.op, fmt(ex.answer), ex.columns.carries, ex.columns.marks), ...ex.steps];
@@ -260,12 +364,14 @@ function exerciseSessionScreen(){
     } else if(ex.solvedVisual){
       stepsList = [ex.solvedVisual, ...ex.steps];
     }
-    const stepsHtml = stepsList.map(st=>`<div class="step">${st}</div>`).join('');
-    const finalTxt = ex.displayAnswer ? ex.displayAnswer : (ex.type==='pair'? `x' = ${ex.answer[0]}  e  x'' = ${ex.answer[1]}` : ex.type==='xy'? `x = ${ex.answer.x}  e  y = ${ex.answer.y}` : fmt(ex.answer));
-    fb.querySelector('.fb-explain').innerHTML = stepsHtml + `<div class="step" style="margin-top:8px"><b>Resposta: ${finalTxt}</b></div>`;
+    const finalTxt = exAnswerText(ex);
+    fb.querySelector('.ex-cmp').innerHTML = correct
+      ? `<div class="ex-cmp-box ok"><small>Sua resposta</small><b>${sess.lastUser||finalTxt}</b></div>`
+      : `<div class="ex-cmp-box bad"><small>Você respondeu</small><b>${sess.lastUser||'—'}</b></div><div class="ex-cmp-box ok"><small>Resposta certa</small><b>${finalTxt}</b></div>`;
+    fb.querySelector('.fb-explain').innerHTML = `<div class="ex-steps-t">Passo a passo</div>` + stepsList.map(st=>`<div class="step">${st}</div>`).join('');
     c.appendChild(fb);
     if(!correct) renderDrillButton(c, sess.subjectId, sess.difficulty);
-    const nextBtn = h(`<button class="next-btn">${sess.index+1<sess.total? 'Próxima questão':'Ver resultado'}</button>`);
+    const nextBtn = h(`<button class="next-btn ex-next">${sess.index+1<sess.total? 'Próxima questão ›':'Ver resultado ›'}</button>`);
     nextBtn.onclick = ()=>{
       sess.index++;
       sess.checked=false; sess.wasCorrect=null;

@@ -54,6 +54,31 @@ function subjectListGrouped(container, makeRow, onlyIds){
   });
 }
 
+/* lista agrupada com busca em cima: esconde os assuntos que não batem e os títulos
+   de grupo que ficaram vazios (a busca ignora acentos: "fracao" acha "Frações") */
+function subjectSearchList(container, makeRow){
+  const search = h(`<label class="ex-search"><span aria-hidden="true">🔎</span><input type="search" placeholder="Procurar assunto (ex.: fração, porcentagem)" aria-label="Procurar assunto"></label>`);
+  const list = h(`<div class="ex-list"></div>`);
+  const empty = h(`<p class="ex-empty" hidden>Nenhum assunto com esse nome. Tente outra palavra.</p>`);
+  subjectListGrouped(list, (s,u)=>{ const row = makeRow(s,u); row.dataset.name = s.name; return row; });
+  container.appendChild(search); container.appendChild(list); container.appendChild(empty);
+  const norm = t=> t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  search.querySelector('input').oninput = e=>{
+    const q = norm(e.target.value.trim());
+    let any = false, area = null, areaHas = false, level = null, levelHas = false;
+    const closeArea = ()=>{ if(area) area.hidden = !areaHas; };
+    const closeLevel = ()=>{ if(level) level.hidden = !levelHas; };
+    [...list.children].forEach(el=>{
+      if(el.classList.contains('subj-level')){ closeArea(); closeLevel(); level = el; levelHas = false; area = null; }
+      else if(el.classList.contains('subj-area')){ closeArea(); area = el; areaHas = false; }
+      else { const ok = !q || norm(el.dataset.name||'').includes(q); el.hidden = !ok; if(ok){ areaHas = levelHas = any = true; } }
+    });
+    closeArea(); closeLevel();
+    empty.hidden = any;
+  };
+  return list;
+}
+
 function fmtSigned(n){ return n>=0? `+ ${n}` : `− ${Math.abs(n)}`; }
 
 function mkSingle(question, answer, steps, columns, qVisual, solvedVisual){ return {type:'single', question, answer, steps, columns, qVisual, solvedVisual}; }
