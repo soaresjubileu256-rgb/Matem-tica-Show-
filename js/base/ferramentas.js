@@ -215,14 +215,14 @@ function addColumnSteps(nums, decimalPlaces){
     const digit = sum % 10;
     const newCarry = Math.floor(sum/10);
     const place = placeName(col, decimalPlaces);
-    const terms = colDigits.join(' + ') + (carry ? ` + ${carry} (transporte)` : '');
+    const terms = colDigits.join(' + ') + (carry ? ` + ${carry} (do vai um)` : '');
     let line = `${cap1(place)}: ${terms} = ${sum}`;
     line += newCarry>0 ? ` → escreve ${digit}, vai ${newCarry}` : ` → escreve ${digit}`;
     steps.push(line);
     resultDigits.push(digit);
     carry = newCarry;
   }
-  if(carry>0){ steps.push(`Sobrou ${carry} do transporte: escreve ${carry} na casa seguinte.`); resultDigits.push(carry); }
+  if(carry>0){ steps.push(`Ainda tem o vai ${carry}: escreve ${carry} na frente do resultado.`); resultDigits.push(carry); }
   const resultRaw = resultDigits.reverse().join('').replace(/^0+(?=\d)/,'');
   const result = insertComma(resultRaw, decimalPlaces);
   steps.push(`Resultado: ${result}`);
@@ -277,13 +277,13 @@ function mulSingleDigitSteps(a, m){
     const digit = prod % 10;
     const newCarry = Math.floor(prod/10);
     const place = placeName(col, 0);
-    let line = `${cap1(place)} de ${a}: ${da[col]} × ${m}` + (carry? ` + ${carry} (transporte)`:'') + ` = ${prod}`;
+    let line = `${cap1(place)} de ${a}: ${da[col]} × ${m}` + (carry? ` + ${carry} (do vai um)`:'') + ` = ${prod}`;
     line += newCarry>0 ? ` → escreve ${digit}, vai ${newCarry}` : ` → escreve ${digit}`;
     steps.push(line);
     resultDigits.push(digit);
     carry = newCarry;
   }
-  if(carry>0){ steps.push(`Sobrou ${carry} do transporte: escreve ${carry} na próxima casa.`); resultDigits.push(carry); }
+  if(carry>0){ steps.push(`Ainda tem o vai ${carry}: escreve ${carry} na frente do resultado.`); resultDigits.push(carry); }
   const result = resultDigits.reverse().join('').replace(/^0+(?=\d)/,'');
   steps.push(`Resultado: ${result}`);
   return {steps, result: Number(result), carries};
