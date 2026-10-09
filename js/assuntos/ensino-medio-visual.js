@@ -9,6 +9,8 @@ function nm(n){ return fmt(n).replace('-', '−'); }
 // número entre parênteses quando é negativo: 3 → 3 · −3 → (−3)
 function np(n){ return n<0 ? `(${nm(n)})` : nm(n); }
 function round2(v){ return Math.round(v*100)/100; }
+// número com até 4 casas, sem zeros sobrando (1.1025 → "1,1025"); fmt() corta em 2 casas
+function fmt4(v){ const r = Math.round(v*10000)/10000; return String(r).replace('.', ',').replace('-', '−'); }
 // polinômio ax² + bx + c escrito do jeito que a gente escreve no caderno
 function quadStr(a,b,c){
   const coef = (k, v)=> Math.abs(k)===1 ? v : `${Math.abs(k)}${v}`;

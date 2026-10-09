@@ -26,14 +26,14 @@ function factorsStr(f){ const ks = Object.keys(f); return ks.length ? ks.map(k=>
 function mmcSteps(a,b){
   const fa = primeFactors(a), fb = primeFactors(b), keys = [...new Set([...Object.keys(fa), ...Object.keys(fb)])].sort((x,y)=>x-y);
   const used = keys.map(k=>{ const e = Math.max(fa[k]||0, fb[k]||0); return e>1?`${k}<sup>${e}</sup>`:k; });
-  return [`Fatore: ${a} = ${factorsStr(fa)} · ${b} = ${factorsStr(fb)}`, `Pegue todos os fatores, cada um com o maior expoente: ${used.join(' × ')}`, `MMC(${a}, ${b}) = ${lcm(a,b)}`];
+  return [`MMC é o menor número que está na tabuada do ${a} e na do ${b} ao mesmo tempo.`, `Fatore em primos: ${a} = ${factorsStr(fa)} · ${b} = ${factorsStr(fb)}`, `Pegue todos os fatores que aparecem, cada um com o maior expoente: ${used.join(' × ')}`, `MMC(${a}, ${b}) = ${lcm(a,b)} (confira: ${lcm(a,b)} ÷ ${a} = ${lcm(a,b)/a} e ${lcm(a,b)} ÷ ${b} = ${lcm(a,b)/b}, os dois exatos)`];
 }
 function mdcSteps(a,b){
   const fa = primeFactors(a), fb = primeFactors(b), common = Object.keys(fa).filter(k=>fb[k]).sort((x,y)=>x-y);
   const used = common.map(k=>{ const e = Math.min(fa[k], fb[k]); return e>1?`${k}<sup>${e}</sup>`:k; });
-  return [`Fatore: ${a} = ${factorsStr(fa)} · ${b} = ${factorsStr(fb)}`,
+  return [`MDC é o maior número que divide o ${a} e o ${b} sem sobrar resto.`, `Fatore em primos: ${a} = ${factorsStr(fa)} · ${b} = ${factorsStr(fb)}`,
     common.length ? `Pegue só os fatores em comum, cada um com o menor expoente: ${used.join(' × ')}` : 'Eles não têm fator primo em comum.',
-    `MDC(${a}, ${b}) = ${gcd(a,b)}`];
+    `MDC(${a}, ${b}) = ${gcd(a,b)} (confira: ${a} ÷ ${gcd(a,b)} = ${a/gcd(a,b)} e ${b} ÷ ${gcd(a,b)} = ${b/gcd(a,b)}, os dois exatos)`];
 }
 function brl(cents){ return 'R$ ' + (cents/100).toFixed(2).replace('.', ','); }
 function cap(t){ return t.charAt(0).toUpperCase() + t.slice(1); }
@@ -190,6 +190,14 @@ function placeName(col, decimalPlaces){
   const i = col - decimalPlaces;
   return PLACE_NAMES[i] || `casa ${i+1}`;
 }
+const PLACE_SING = ['unidade','dezena','centena','milhar','dezena de milhar','centena de milhar'];
+const DECIMAL_SING = ['décimo','centésimo','milésimo'];
+function placeSing(col, decimalPlaces){
+  if(col < decimalPlaces){ const idx = decimalPlaces - 1 - col; return DECIMAL_SING[idx] || `casa decimal ${idx+1}`; }
+  return PLACE_SING[col - decimalPlaces] || `casa ${col - decimalPlaces + 1}`;
+}
+// "as dezenas" / "os milhares" / "os décimos" (pra montar frases como "vai 1 para as dezenas")
+function placeArt(name){ return /^(unidade|dezena|centena)/.test(name) ? 'as' : 'os'; }
 function toDigitsInt(n){ return String(Math.abs(Math.round(n))).split('').reverse().map(Number); }
 function insertComma(numStr, decimals){
   if(decimals<=0) return numStr;
@@ -208,6 +216,7 @@ function addColumnSteps(nums, decimalPlaces){
   const steps = [];
   const resultDigits = [];
   const carries = []; // carries[col] = "vai" recebido na coluna col (carries[0] sempre 0)
+  let explained = false; // o porquê do "vai um" aparece só na primeira vez
   for(let col=0; col<maxLen; col++){
     carries[col] = carry;
     const colDigits = digitArrays.map(d => d[col] || 0);
@@ -217,7 +226,12 @@ function addColumnSteps(nums, decimalPlaces){
     const place = placeName(col, decimalPlaces);
     const terms = colDigits.join(' + ') + (carry ? ` + ${carry} (do vai um)` : '');
     let line = `${cap1(place)}: ${terms} = ${sum}`;
-    line += newCarry>0 ? ` → escreve ${digit}, vai ${newCarry}` : ` → escreve ${digit}`;
+    if(newCarry>0){
+      const next = placeName(col+1, decimalPlaces);
+      line += ` → escreve ${digit} e vai ${newCarry} para ${placeArt(next)} ${next}`;
+      // na primeira vez, explica o porquê do "vai um"
+      if(!explained){ explained = true; line += ` (${sum} ${place} = ${newCarry} ${newCarry===1 ? placeSing(col+1, decimalPlaces) : next} e ${digit} ${digit===1 ? placeSing(col, decimalPlaces) : place})`; }
+    } else line += ` → escreve ${digit}`;
     steps.push(line);
     resultDigits.push(digit);
     carry = newCarry;
@@ -244,13 +258,23 @@ function subColumnSteps(a, b, decimalPlaces){
     const place = placeName(col, decimalPlaces);
     let top = top0 - borrowIn;
     let borrowOut, digit;
-    if(top < bottom){
+    const name = cap1(place), next = placeName(col+1, decimalPlaces), isLast = col===maxLen-1;
+    const askTo = `${placeArt(next)==='as'?'às':'aos'} ${next}`;
+    if(top < 0){
+      // um 0 que precisava emprestar: ele mesmo pede à casa vizinha (vira 10), empresta 1 e fica 9
       digit = top+10-bottom;
-      steps.push(`${cap1(place)}: ${top0}${borrowIn?` (já emprestou, ficou ${top})`:''} é menor que ${bottom} → empresta 1 da casa vizinha: ${top+10} − ${bottom} = ${digit}`);
+      steps.push(`${name}: o 0 precisava emprestar 1 para a casa da direita, mas não tinha. Ele pede 1 emprestado ${askTo} (vira 10), empresta 1 e fica com 9: 9 − ${bottom} = ${digit}`);
+      borrowOut = 1;
+    } else if(top < bottom){
+      digit = top+10-bottom;
+      steps.push(`${name}: ${borrowIn ? `o ${top0} emprestou 1 e ficou ${top}, que é menor que ${bottom}` : `${top0} é menor que ${bottom}, não dá pra tirar`}. Pede 1 emprestado ${askTo}: o ${top} vira ${top+10}. ${top+10} − ${bottom} = ${digit}`);
       borrowOut = 1;
     } else {
       digit = top-bottom;
-      steps.push(`${cap1(place)}: ${top} − ${bottom} = ${digit}`);
+      const zero = isLast && digit===0 && col>decimalPlaces ? ' (zero à esquerda não se escreve)' : '';
+      const nothing = col >= db.length; // o número de baixo não tem essa casa
+      if(borrowIn) steps.push(nothing ? `${name}: o ${top0} emprestou 1 e ficou ${top}. Embaixo não tem nada pra tirar: fica ${digit}${zero}` : `${name}: o ${top0} emprestou 1 e ficou ${top}. ${top} − ${bottom} = ${digit}${zero}`);
+      else steps.push(nothing ? `${name}: embaixo não tem nada pra tirar, desce o ${top0}${zero}` : `${name}: ${top0} − ${bottom} = ${digit}${zero}`);
       borrowOut = 0;
     }
     if(borrowIn){ marks[col] = {type:'lend', value: top0 - borrowIn + 10*borrowOut}; }
@@ -266,6 +290,7 @@ function subColumnSteps(a, b, decimalPlaces){
 }
 // multiplica a (inteiro) por m (dígito único 0-9), coluna por coluna, com "vai".
 function mulSingleDigitSteps(a, m){
+  if(a < 10) return {steps:[`É uma conta da tabuada do ${m}: ${a} × ${m} = ${a*m}`, `(${a} × ${m} é o mesmo que somar o ${m}, ${a} vez${a===1?'':'es'}${a>1 && a<=5 ? `: ${Array(a).fill(m).join(' + ')} = ${a*m}` : ''})`, `Resultado: ${a*m}`], result: a*m, carries:[0]};
   const da = toDigitsInt(a);
   let carry = 0;
   const steps = [];
@@ -277,8 +302,9 @@ function mulSingleDigitSteps(a, m){
     const digit = prod % 10;
     const newCarry = Math.floor(prod/10);
     const place = placeName(col, 0);
-    let line = `${cap1(place)} de ${a}: ${da[col]} × ${m}` + (carry? ` + ${carry} (do vai um)`:'') + ` = ${prod}`;
-    line += newCarry>0 ? ` → escreve ${digit}, vai ${newCarry}` : ` → escreve ${digit}`;
+    let line = `${cap1(place)} de ${a}: ${da[col]} × ${m} = ${da[col]*m}` + (carry? `, mais ${carry} do vai um = ${prod}`:'');
+    if(newCarry>0){ const next = placeName(col+1, 0); line += ` → escreve ${digit} e vai ${newCarry} para ${placeArt(next)} ${next}`; }
+    else line += ` → escreve ${digit}`;
     steps.push(line);
     resultDigits.push(digit);
     carry = newCarry;
@@ -293,14 +319,16 @@ function mulLongSteps(a, b){
   const bDigits = String(b).split('').reverse();
   const steps = [];
   const partials = [];
+  steps.push(`Separe o ${b} em casas: ${bDigits.slice().reverse().map((ch,i)=>{ const col = bDigits.length-1-i; return `${ch} ${Number(ch)<=1 ? placeSing(col,0) : placeName(col,0)}`; }).join(', ').replace(/, ([^,]*)$/, ' e $1')}. Multiplique o ${a} por cada parte e depois some.`);
   bDigits.forEach((chStr, i)=>{
     const d = Number(chStr);
     const partial = a*d*Math.pow(10,i);
     partials.push(partial);
-    const label = i===0 ? `unidade de ${b} (${d})` : i===1 ? `dezena de ${b} (${d}, vale ${d*10})` : `${placeName(i,0)} de ${b} (${d}, vale ${d*Math.pow(10,i)})`;
-    steps.push(`Multiplique ${a} pela ${label}: ${a} × ${d*Math.pow(10,i)} = ${partial}`);
+    if(i===0) steps.push(`1ª linha (unidades): ${a} × ${d} = ${partial}`);
+    else if(d===0) steps.push(`${i+1}ª linha (${placeName(i,0)}): o algarismo é 0, então essa linha dá 0.`);
+    else steps.push(`${i+1}ª linha (${placeName(i,0)}): ${a} × ${d} = ${a*d}. Como esse ${d} vale ${d*Math.pow(10,i)}, coloque ${i===1?'um 0':`${i} zeros`} no fim: ${partial}`);
   });
-  steps.push(`Some os produtos parciais: ${partials.join(' + ')} = ${a*b}`);
+  steps.push(`Some as linhas: ${partials.join(' + ')} = ${a*b}`);
   return {steps, partials, result: a*b};
 }
 // conta armada de multiplicação: opera armando a×b, com produtos parciais deslocados quando b tem 2+ dígitos.
@@ -469,15 +497,15 @@ function stepChain(lines){
 // pular direto da fórmula pro resultado final.
 function bhaskaraSteps(a,b,c){
   const D = b*b - 4*a*c;
-  const bStr = b<0 ? `(${b})` : `${b}`;
-  const cStr = c<0 ? `(${c})` : `${c}`;
+  const bStr = b<0 ? `(${nm(b)})` : `${b}`;
+  const cStr = c<0 ? `(${nm(c)})` : `${c}`;
   const fourAC = 4*a*c;
   const fourACLine = fourAC<0 ? `+ ${Math.abs(fourAC)}` : `− ${fourAC}`;
   const negB = -b;
-  const negBStr = negB<0 ? `(${negB})` : `${negB}`;
+  const negBStr = negB<0 ? `(${nm(negB)})` : `${negB}`;
   const steps = [
-    `Identifique os coeficientes: a = ${a}, b = ${b}, c = ${c}`,
-    `Calcule o discriminante: Δ = b² − 4ac = ${bStr}² − 4×${a}×${cStr} = ${b*b} ${fourACLine} = ${D}`,
+    `Identifique os coeficientes: a = ${nm(a)}, b = ${nm(b)}, c = ${nm(c)}`,
+    `Calcule o discriminante: Δ = b² − 4ac = ${bStr}² − 4×${a}×${cStr} = ${b*b} ${fourACLine} = ${nm(D)}`,
   ];
   if(D < 0){
     steps.push(`Δ é negativo (${D}) — não existe raiz quadrada de número negativo, então essa equação não tem solução real.`);
@@ -492,10 +520,10 @@ function bhaskaraSteps(a,b,c){
     steps.push(`Conjunto solução: S = {${fmt(xPlus)}}`);
     return steps;
   }
-  steps.push(`Calcule a 1ª raiz (usando +): x' = (−b + √Δ) / 2a = (${negBStr} + ${fmt(sqrtD)}) / ${2*a} = ${fmt(xPlus)}`);
-  steps.push(`Calcule a 2ª raiz (usando −): x'' = (−b − √Δ) / 2a = (${negBStr} − ${fmt(sqrtD)}) / ${2*a} = ${fmt(xMinus)}`);
-  steps.push(`Raízes: x' = ${fmt(xPlus)}  e  x'' = ${fmt(xMinus)}`);
-  steps.push(`Conjunto solução: S = {${fmt(xPlus)}, ${fmt(xMinus)}}`);
+  steps.push(`Calcule a 1ª raiz (usando +): x' = (−b + √Δ) / 2a = (${negBStr} + ${fmt(sqrtD)}) / ${2*a} = ${nm(xPlus)}`);
+  steps.push(`Calcule a 2ª raiz (usando −): x'' = (−b − √Δ) / 2a = (${negBStr} − ${fmt(sqrtD)}) / ${2*a} = ${nm(xMinus)}`);
+  steps.push(`Raízes: x' = ${nm(xPlus)}  e  x'' = ${nm(xMinus)}`);
+  steps.push(`Conjunto solução: S = {${nm(xPlus)}, ${nm(xMinus)}}`);
   return steps;
 }
 
@@ -510,14 +538,14 @@ function bhaskaraFormulaBox(){
 }
 function bhaskaraCard(a,b,c,skipFormula){
   const D = b*b - 4*a*c;
-  const bStr = b<0 ? `(${b})` : `${b}`;
-  const cStr = c<0 ? `(${c})` : `${c}`;
+  const bStr = b<0 ? `(${nm(b)})` : `${b}`;
+  const cStr = c<0 ? `(${nm(c)})` : `${c}`;
   const fourAC = 4*a*c;
   const fourACLine = fourAC<0 ? `+ ${Math.abs(fourAC)}` : `− ${fourAC}`;
   const negB = -b;
-  const negBStr = negB<0 ? `(${negB})` : `${negB}`;
+  const negBStr = negB<0 ? `(${nm(negB)})` : `${negB}`;
   let html = `<div class="bhaskara-card">`;
-  html += `<div class="bk-row">a = ${a}, &nbsp;&nbsp; b = ${b}, &nbsp;&nbsp; c = ${c}</div>`;
+  html += `<div class="bk-row">a = ${nm(a)}, &nbsp;&nbsp; b = ${nm(b)}, &nbsp;&nbsp; c = ${nm(c)}</div>`;
   html += `<div class="bk-row">Δ = b² − 4ac = ${bStr}² − 4·${a}·${cStr} = ${b*b} ${fourACLine} <span class="bk-badge">Δ = ${D}</span></div>`;
   if(D < 0){
     html += `<div class="bk-row">Não existe raiz quadrada de número negativo — não há solução real.</div>`;
@@ -593,6 +621,24 @@ function sistemaArmado(rows, sumRow){
   return `<div class="sis-stack">${out}</div>`;
 }
 
+/* divisão que não é exata, com 2 casas depois da vírgula: continua a conta juntando 0 ao resto
+   e arredonda olhando a 3ª casa. Devolve {steps, answer} (answer já arredondado). */
+function divDecimalSteps(a, b){
+  const q0 = Math.floor(a/b); let r = a - q0*b;
+  const steps = [`${b} cabe ${q0} vez${q0===1?'':'es'} em ${a} (${b} × ${q0} = ${b*q0}) e sobram ${r}.`];
+  if(r===0){ steps.push(`Não sobrou nada: ${a} ÷ ${b} = ${q0}`); return {steps, answer:q0}; }
+  steps.push(`Sobrou ${r}: coloque a vírgula depois do ${q0} e continue, juntando um 0 ao resto.`);
+  const ds = [];
+  for(let k=0; k<3; k++){
+    if(r===0){ ds.push(0); continue; }
+    const cur = r*10, d = Math.floor(cur/b); r = cur - d*b; ds.push(d);
+    steps.push(`${['1ª','2ª','3ª'][k]} casa: ${cur} ÷ ${b} = ${d}${r ? ` e sobram ${r}` : ' e não sobra nada'} → ${q0},${ds.join('')}`);
+  }
+  const up = ds[2] >= 5;
+  const cents = q0*100 + ds[0]*10 + ds[1] + (up ? 1 : 0), answer = cents/100;
+  steps.push(`Arredonde para 2 casas olhando a 3ª (${ds[2]}): ${up ? '5 ou mais, a 2ª casa sobe 1' : 'menor que 5, a 2ª casa fica igual'} → ${fmt(answer)}`);
+  return {steps, answer};
+}
 /* ---------------- divisão pela chave: calcula os blocos do algoritmo ---------------- */
 // dividend, divisor: inteiros positivos. Retorna {quotient, remainder, blocks}.
 // cada block = {current, q, product, newRemainder} — o "current" é o pedaço do dividendo sendo dividido naquele passo.

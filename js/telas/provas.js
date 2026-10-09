@@ -73,6 +73,17 @@ function examTabBody(e, c){
     <div><span>💡</span><div><b>Dica</b><p>${escHTML(e.tip)}</p></div></div>
   </div>`));
 
+  if(e.contents && e.contents.length){
+    c.appendChild(h(`<h3 class="ar-label">Conteúdos que caem</h3>`));
+    const box = h(`<div class="pv-cont" style="--c:${e.color}"></div>`);
+    e.contents.forEach(([t, d, ids], i)=>{
+      const subs = (ids||[]).map(id=>SUBJECTS.find(x=>x.id===id)).filter(Boolean);
+      const item = h(`<div class="pv-ci"><span class="pv-ci-n">${i+1}</span><div class="pv-ci-t"><b>${escHTML(t)}</b><p>${escHTML(d)}</p>${subs.length ? `<div class="pv-ci-l">${subs.map(s=>`<button type="button" data-s="${s.id}"><i>${s.sym}</i>${escHTML(s.name)}</button>`).join('')}</div>` : ''}</div></div>`);
+      item.querySelectorAll('[data-s]').forEach(b=> b.onclick = ()=> go('subjectDetail', {subjectId:b.dataset.s}));
+      box.appendChild(item);
+    });
+    c.appendChild(box);
+  }
   c.appendChild(h(`<h3 class="ar-label">O que cai de Matemática</h3>`));
   EXAM_LEVELS.forEach(L=>{
     const ids = examTopicIds(e, [L.id]);
