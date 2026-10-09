@@ -139,7 +139,7 @@ function subjectDetailScreen(){
   const mins = Math.max(1, Math.round(words/160 + examplesList.length*0.7));
   const m = masterySync(s.id);
   const hero = h(`<div class="lr-hero" style="${unitStyle(si)}">
-    <span class="lr-hero-sym mono">${s.sym}</span>
+    <span class="lr-hero-sym mono ${s.sym.length>3?'long':''}">${s.sym}</span>
     <div class="lr-hero-txt"><small>${BNCC_ANO[s.id] ? `📚 ${BNCC_ANO[s.id]}` : 'Aprender'}</small><h2>${s.name}</h2>
       <div class="lr-hero-meta"><span>⏱ ${mins} min</span><span>🧩 ${examplesList.length} exemplo${examplesList.length===1?'':'s'}</span>${masteryChip(m)}</div></div>
     <p class="lr-hero-next">${m.next}</p>

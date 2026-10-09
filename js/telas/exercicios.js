@@ -96,6 +96,16 @@ function exerciseDifficultyScreen(){
 
 /* dica curta, por assunto: lembra o método geral, sem revelar o resultado da questão atual */
 const HINTS = {
+  primos: 'Primo tem só 2 divisores (1 e ele mesmo). Pra contar divisores: decomponha em primos, some 1 a cada expoente e multiplique.',
+  unidades: 'km→m: ×1.000; m→cm: ×100; L→mL: ×1.000. Área anda de 100 em 100 e volume de 1.000 em 1.000. km/h ÷ 3,6 = m/s. Escala: multiplique pelo número da escala.',
+  prodnotaveis: '(a+b)² = a² + 2ab + b²; (a−b)² = a² − 2ab + b²; (a+b)(a−b) = a² − b². E x² + y² = (x+y)² − 2xy.',
+  pitagoras: 'hipotenusa² = cateto² + cateto². Pra achar um cateto: hipotenusa² − outro cateto². Trios: 3-4-5, 5-12-13, 8-15-17.',
+  semelhanca: 'Lados correspondentes são proporcionais: monte a fração e multiplique cruzado. Sombras: altura/sombra é igual pros dois.',
+  casapombos: 'Pense no pior caso: espalhe tudo ao máximo. Depois, mais 1 garante a repetição. N pombos em c casas: pelo menos N÷c (pra cima).',
+  inequacoes: 'Resolva como equação, mas ao multiplicar ou dividir por negativo, inverta o sinal. No 2º grau com a > 0: negativo entre as raízes.',
+  circunferencia: '(x − a)² + (y − b)² = r²: centro (a, b) com sinal trocado, raio = √(número do lado direito). Na geral: a = −D/2, b = −E/2, r² = a² + b² − F.',
+  polinomios: 'P(k): troque x por k. Resto da divisão por (x − a) é P(a). Girard (x³ + bx² + cx + d): soma = −b, produto = −d.',
+  complexos: 'i² = −1. Some real com real e imaginário com imaginário. Produto: distributiva e troque i² por −1. |a + bi| = √(a² + b²).',
   conjuntos: 'ℕ ⊂ ℤ ⊂ ℚ ⊂ ℝ. Raiz de quadrado perfeito é racional; raiz de número que não é quadrado perfeito (e o π) é irracional. Dízima com período de 2 algarismos: período sobre 99.',
   funcquad: 'Pra calcular f(x), troque x pelo número (com parênteses se for negativo). Vértice: <b>xᵥ = −b / 2a</b> e yᵥ = f(xᵥ). a > 0 → mínimo; a < 0 → máximo.',
   modular: 'O módulo tira o sinal: |−5| = 5. Em |x − a| = k, o que está dentro vale <b>k</b> ou <b>−k</b> — são duas equações.',

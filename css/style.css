@@ -3830,3 +3830,4 @@ button.gl-res:active{transform:scale(.99);}
   background:color-mix(in srgb, var(--c) 10%, transparent); color:var(--ink); font:700 12px 'Inter',sans-serif; cursor:pointer;}
 .pv-ci-l button i{font-style:normal; min-width:22px; height:22px; padding:0 4px; border-radius:99px; display:grid; place-items:center; font:800 10.5px 'JetBrains Mono',monospace; color:#fff; background:var(--c);}
 .pv-ci-l button:active{transform:scale(.95);}
+.lr-hero-sym.long{font-size:15px; letter-spacing:-.04em;}
