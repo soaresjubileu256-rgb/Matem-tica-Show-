@@ -911,14 +911,38 @@ function questionSignature(ex){
 /* gera uma questão de [subject/difficulty] tentando não repetir a última pergunta exata.
    como os geradores são aleatórios, às vezes sorteiam os mesmos números de novo — aqui a
    gente tenta de novo (até um limite) até sair algo diferente do que apareceu por último. */
+/* memória das questões já vistas (por conta): o sorteio evita repetir qualquer questão
+   que a pessoa já tenha visto, não só a anterior. Guarda um "resumo" curto de cada uma
+   (no máximo as 5.000 mais recentes). Se um assunto já esgotou as combinações, aceita repetir. */
+const SEEN_KEY_BASE = 'mathstudy-seen-v1', SEEN_MAX = 5000;
+let _seen = null, _seenUid = null;
+function seenStore(){
+  const uid = currentUserId();
+  if(!_seen || _seenUid!==uid){
+    let list = [];
+    try{ list = JSON.parse(localStorage.getItem(`${SEEN_KEY_BASE}:${uid}`)||'[]'); }catch(e){}
+    _seen = {list, set:new Set(list)}; _seenUid = uid;
+  }
+  return _seen;
+}
+function seenHash(sig){ let h = 5381; for(let i=0;i<sig.length;i++) h = ((h<<5) + h + sig.charCodeAt(i)) | 0; return (h>>>0).toString(36); }
+function markSeen(hh){
+  const st = seenStore();
+  if(st.set.has(hh)) return;
+  st.list.push(hh); st.set.add(hh);
+  if(st.list.length > SEEN_MAX){ st.set.delete(st.list.shift()); }
+  try{ localStorage.setItem(`${SEEN_KEY_BASE}:${_seenUid}`, JSON.stringify(st.list)); }catch(e){}
+}
 function genQuestionAvoidingRepeat(subject, difficulty, lastSignature){
-  let ex, sig;
-  let attempts = 0;
+  const st = seenStore();
+  let ex, sig, hh, attempts = 0;
   do{
     ex = subject.gen[difficulty]();
     sig = questionSignature(ex);
+    hh = seenHash(subject.id + '|' + sig);
     attempts++;
-  } while(sig === lastSignature && attempts < 8);
+  } while((sig === lastSignature || st.set.has(hh)) && attempts < 30);
+  markSeen(hh);
   return {ex, signature: sig};
 }
 

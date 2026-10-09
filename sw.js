@@ -3,11 +3,11 @@
      versão mais nova, e usa a cópia guardada quando estiver offline
    - fontes do Google: usa a cópia guardada (elas não mudam)
    Mude CACHE_VERSION quando quiser forçar todo mundo a baixar tudo de novo. */
-const CACHE_VERSION = 'mat-show-v80';
+const CACHE_VERSION = 'mat-show-v81';
 const APP_SHELL = [
   './', './index.html', './manifest.json', './css/style.css', './js/base/ferramentas.js', './js/base/sons.js',
   './js/base/geometria.js', './js/assuntos/ensino-medio-visual.js', './js/assuntos/fundamental.js',
-  './js/assuntos/ensino-medio.js', './js/assuntos/catalogo.js', './js/assuntos/provas.js', './js/base/resolvedor.js',
+  './js/assuntos/ensino-medio.js', './js/assuntos/catalogo.js', './js/assuntos/variacoes.js', './js/assuntos/provas.js', './js/base/resolvedor.js',
   './js/dados/progresso.js', './js/dados/configuracoes.js', './js/dados/contas.js', './js/base/navegacao.js',
   './js/jogo/xp-e-conquistas.js', './js/jogo/trilha.js', './js/jogo/arena.js', './js/jogo/relampago.js',
   './js/jogo/duelo.js', './js/telas/entrada.js', './js/telas/inicio.js', './js/telas/aprender.js',
