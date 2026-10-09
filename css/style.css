@@ -3816,3 +3816,17 @@ button.gl-res:active{transform:scale(.99);}
   .rp-print-foot{margin-top:6px !important; padding-top:4px !important; font-size:9.5px !important;}
   .rp-sec{margin-top:10px !important;}
 }
+
+/* provas: lista "Conteúdos que caem" com atalhos pros assuntos do app */
+.pv-cont{display:flex; flex-direction:column; gap:8px; margin-bottom:16px;}
+.pv-ci{display:flex; gap:12px; padding:13px 14px; border-radius:18px; background:var(--white); border:1px solid var(--card-edge); box-shadow:var(--card-shadow); position:relative; overflow:hidden;}
+.pv-ci::before{content:''; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--c);}
+.pv-ci-n{width:28px; height:28px; flex-shrink:0; border-radius:10px; display:grid; place-items:center; font:800 13px 'Inter',sans-serif; color:#fff; background:var(--c);}
+.pv-ci-t{flex:1; min-width:0;}
+.pv-ci-t b{display:block; font:700 15px 'Inter',sans-serif; color:var(--ink);}
+.pv-ci-t p{margin:3px 0 0; font-size:13px; line-height:1.45; color:var(--ink-soft);}
+.pv-ci-l{display:flex; flex-wrap:wrap; gap:6px; margin-top:9px;}
+.pv-ci-l button{display:inline-flex; align-items:center; gap:6px; padding:5px 10px 5px 5px; border-radius:99px; border:1px solid color-mix(in srgb, var(--c) 40%, transparent);
+  background:color-mix(in srgb, var(--c) 10%, transparent); color:var(--ink); font:700 12px 'Inter',sans-serif; cursor:pointer;}
+.pv-ci-l button i{font-style:normal; min-width:22px; height:22px; padding:0 4px; border-radius:99px; display:grid; place-items:center; font:800 10.5px 'JetBrains Mono',monospace; color:#fff; background:var(--c);}
+.pv-ci-l button:active{transform:scale(.95);}
