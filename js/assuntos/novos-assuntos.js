@@ -3,6 +3,8 @@
    Números primos e divisores, Grandezas e unidades, Produtos notáveis,
    Teorema de Pitágoras, Semelhança e Tales, Casa dos pombos (Fundamental)
    e Inequações, Circunferência, Polinômios, Números complexos (Ensino Médio).
+   No fim: Restos, Ângulos, Regra de três composta, Lógica e jogos, Cônicas,
+   Probabilidade condicional e Parcelamento.
    Mesmo formato dos outros assuntos: learn, examples e gen fácil/médio/difícil.
    ========================================================= */
 function isPrime(n){ if(n<2) return false; for(let d=2; d*d<=n; d++) if(n%d===0) return false; return true; }
@@ -326,6 +328,202 @@ SUBJECTS.push(
       dificil:()=>{ const [p,q,r] = pick(PIT_TRIPLES), sa = pick([1,-1]), sb = pick([1,-1]); const a = p*sa, b = q*sb;
         if(randInt(0,1)) return mkSingle(`Qual é o módulo do número complexo z = ${nm(a)} ${b>=0?'+':'−'} ${Math.abs(b)}i?`, r, [`|z| = √(a² + b²)`, `= √(${a*a} + ${b*b}) = √${r*r}`, `|z| = ${r}`]);
         return mkSingle(`Seja z = ${nm(a)} ${b>=0?'+':'−'} ${Math.abs(b)}i e z̄ o seu conjugado. Quanto vale z · z̄?`, r*r, [`z̄ = ${nm(a)} ${b>=0?'−':'+'} ${Math.abs(b)}i`, `z · z̄ = a² + b² (os termos com i se cancelam)`, `= ${a*a} + ${b*b} = ${r*r}`]); },
+    }
+  },
+);
+
+/* ---------- mais assuntos das provas: restos, ângulos, regra de três composta, lógica e jogos
+   (Fundamental) e cônicas, probabilidade condicional, parcelamento (Ensino Médio) ---------- */
+function modCycle(a, m){ const seq = []; let v = a % m; while(!seq.includes(v)){ seq.push(v); v = (v*a) % m; } return seq; }
+function lastDigitCycle(a){ const seq = []; let v = a % 10; while(!seq.includes(v)){ seq.push(v); v = (v*a) % 10; } return seq; }
+function reaisFmt(v){ return 'R$ ' + Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+SUBJECTS.push(
+  {
+    id:'restos', name:'Restos e congruências', sym:'mod',
+    learn:`<p>Na divisão de um número por outro, o <b>resto</b> é o que sobra. 23 ÷ 5 dá 4 e sobra <b>3</b>, porque 23 = 5 × 4 + 3. O resto é sempre <b>menor que o divisor</b>.</p>
+    <p>Dois números são <b>congruentes módulo m</b> quando deixam o <b>mesmo resto</b> na divisão por m. 17 e 32 deixam resto 2 na divisão por 5: escrevemos 17 ≡ 32 (mod 5).</p>
+    <p><b>Truques que caem na OBMEP:</b></p>
+    <ol>
+      <li><b>Somar e multiplicar restos:</b> o resto de uma soma (ou produto) é o resto da soma (ou produto) dos restos. Não precisa fazer a conta inteira!</li>
+      <li><b>Potências repetem:</b> os restos de 2¹, 2², 2³… na divisão por 7 são 2, 4, 1, 2, 4, 1… Um ciclo de 3. Pra achar o de 2¹⁰⁰, veja onde o 100 cai no ciclo (100 ÷ 3 sobra 1 → resto 2).</li>
+      <li><b>Algarismo das unidades</b> é o resto na divisão por 10, e também anda em ciclo: 7, 9, 3, 1, 7, 9, 3, 1…</li>
+      <li><b>Calendário:</b> dias da semana repetem de 7 em 7. Daqui a 100 dias é o mesmo dia da semana que daqui a 2 (100 ÷ 7 sobra 2).</li>
+    </ol>`,
+    examples:[
+      {title:'Exemplo 1 (resto)', text:'Resto de 158 ÷ 9', steps:['9 × 17 = 153', '158 − 153 = 5', 'Resto 5 (158 ≡ 5 mod 9)']},
+      {title:'Exemplo 2 (algarismo das unidades)', text:'Unidades de 3⁴⁵', steps:['Unidades das potências de 3: 3, 9, 7, 1, 3, 9, 7, 1… (ciclo de 4)', '45 ÷ 4 dá 11 e sobra 1', 'Sobra 1 → 1ª posição do ciclo: 3']},
+      {title:'Exemplo 3 (resto de potência)', text:'Resto de 2⁵⁰ ÷ 7', steps:['Restos de 2ⁿ por 7: 2, 4, 1, 2, 4, 1… (ciclo de 3)', '50 ÷ 3 dá 16 e sobra 2', 'Sobra 2 → 2ª posição do ciclo: 4']},
+    ],
+    gen:{
+      facil:()=>{ const d = randInt(3,12), q = randInt(5,25), r = randInt(0,d-1), n = d*q + r;
+        return mkSingle(`Qual é o resto da divisão de ${n} por ${d}?`, r, [`${d} × ${q} = ${d*q}`, `${n} − ${d*q} = ${r}`, `Resto: ${r}`]); },
+      medio:()=>{ const a = pick([2,3,4,7,8,9]), n = randInt(10,80), cyc = lastDigitCycle(a), L = cyc.length, pos = ((n-1) % L);
+        return mkSingle(`Qual é o algarismo das unidades de ${a}${supNum(n)}?`, cyc[pos], [`Unidades das potências de ${a}: ${cyc.join(', ')}, ${cyc[0]}… (ciclo de ${L})`, `${n} ÷ ${L} sobra ${n % L}${n % L===0 ? ' → é a última posição do ciclo' : ` → ${n % L}ª posição do ciclo`}`, `Algarismo das unidades: ${cyc[pos]}`]); },
+      dificil:()=>{ const [a,m] = pick([[2,7],[3,7],[2,5],[3,5],[2,9],[4,7],[5,7],[3,8]]), n = randInt(20,120), cyc = modCycle(a, m), L = cyc.length, pos = ((n-1) % L);
+        return mkSingle(`Qual é o resto da divisão de ${a}${supNum(n)} por ${m}?`, cyc[pos], [`Restos de ${a}¹, ${a}², ${a}³… por ${m}: ${cyc.join(', ')}, ${cyc[0]}… (ciclo de ${L})`, `${n} ÷ ${L} sobra ${n % L}${n % L===0 ? ' → última posição do ciclo' : ` → ${n % L}ª posição do ciclo`}`, `Resto: ${cyc[pos]}`]); },
+    }
+  },
+  {
+    id:'angulos', name:'Ângulos e polígonos', sym:'∠',
+    learn:`<p><b>Ângulo</b> é a abertura entre duas semirretas, medida em graus (°). Uma volta inteira tem <b>360°</b>, meia volta <b>180°</b> e um ângulo reto <b>90°</b>.</p>
+    <ol>
+      <li><b>Complementares:</b> somam 90°. O complemento de 35° é 55°.</li>
+      <li><b>Suplementares:</b> somam 180°. O suplemento de 35° é 145°.</li>
+      <li><b>Opostos pelo vértice</b> (formados por duas retas que se cruzam): são <b>iguais</b>.</li>
+      <li><b>Triângulo:</b> os 3 ângulos internos somam <b>180°</b>.</li>
+    </ol>
+    <p><b>Polígonos:</b> a soma dos ângulos internos de um polígono de n lados é <b>(n − 2) × 180°</b> (dá pra dividir em n − 2 triângulos).</p>
+    <p>Num polígono <b>regular</b> (lados e ângulos iguais), cada ângulo interno mede <b>(n − 2) × 180° ÷ n</b>. A soma dos ângulos externos é sempre <b>360°</b>.</p>`,
+    examples:[
+      {title:'Exemplo 1 (suplemento)', text:'Suplemento de 72°', steps:['Suplementares somam 180°', '180° − 72° = 108°']},
+      {title:'Exemplo 2 (hexágono regular)', text:'Ângulo interno do hexágono regular', steps:['Soma: (6 − 2) × 180° = 720°', 'Cada um: 720° ÷ 6 = 120°']},
+      {title:'Exemplo 3 (triângulo)', text:'Ângulos x, 2x e 3x', steps:['x + 2x + 3x = 180°', '6x = 180°', 'x = 30° (os ângulos são 30°, 60° e 90°)']},
+    ],
+    gen:{
+      facil:()=>{ const a = randInt(5,85), sup = randInt(0,1);
+        return sup ? mkSingle(`Qual é o suplemento de um ângulo de ${a}°? (resposta em graus)`, 180-a, [`Suplementares somam 180°`, `180° − ${a}° = ${180-a}°`])
+                   : mkSingle(`Qual é o complemento de um ângulo de ${a}°? (resposta em graus)`, 90-a, [`Complementares somam 90°`, `90° − ${a}° = ${90-a}°`]); },
+      medio:()=>{ const n = pick([3,4,5,6,8,9,10,12,15,18,20]), soma = (n-2)*180, nome = {3:'triângulo equilátero',4:'quadrado',5:'pentágono regular',6:'hexágono regular',8:'octógono regular',9:'eneágono regular',10:'decágono regular',12:'dodecágono regular'}[n] || `polígono regular de ${n} lados`;
+        return mkSingle(`Quanto mede cada ângulo interno de um ${nome}? (em graus)`, soma/n, [`Soma dos ângulos internos: (${n} − 2) × 180° = ${soma}°`, `Polígono regular: todos iguais → ${soma}° ÷ ${n} = ${fmt(soma/n)}°`]); },
+      dificil:()=>{ if(randInt(0,1)){ let p,q,r; do{ p=randInt(1,5); q=randInt(1,5); r=randInt(1,6); }while(180%(p+q+r)!==0 || p+q+r<4);
+          const x = 180/(p+q+r), tx = k=> k===1 ? 'x' : `${k}x`;
+          return mkSingle(`Os ângulos de um triângulo medem ${tx(p)}, ${tx(q)} e ${tx(r)}. Quanto vale x, em graus?`, x, [`A soma dos ângulos de um triângulo é 180°`, `${tx(p)} + ${tx(q)} + ${tx(r)} = ${p+q+r}x = 180°`, `x = 180° ÷ ${p+q+r} = ${x}°`]); }
+        const x = randInt(10,40), a = randInt(2,6), c = randInt(1,a-1), b = randInt(5,40), d = a*x + b - c*x;
+        return mkSingle(`Duas retas se cruzam formando ângulos opostos pelo vértice que medem ${a}x + ${b}° e ${c===1?'':c}x + ${d}°. Quanto vale x, em graus?`, x, [`Opostos pelo vértice são iguais: ${a}x + ${b} = ${c===1?'':c}x + ${d}`, `${a}x − ${c===1?'':c}x = ${d} − ${b} → ${a-c}x = ${d-b}`, `x = ${d-b} ÷ ${a-c} = ${x}°`]); },
+    }
+  },
+  {
+    id:'regra3comp', name:'Regra de três composta', sym:'∝∝',
+    learn:`<p>A <b>regra de três composta</b> aparece quando <b>três ou mais grandezas</b> mudam juntas: operários, dias, horas por dia, peças…</p>
+    <p><b>Passo a passo:</b></p>
+    <ol>
+      <li>Monte uma tabela: cada grandeza numa coluna, a situação 1 numa linha e a situação 2 na outra.</li>
+      <li>Marque com uma seta a coluna do x.</li>
+      <li>Compare <b>cada</b> grandeza com a do x, <b>uma de cada vez</b>: se aumentando uma, o x aumenta → <b>diretamente</b> proporcional (seta igual). Se o x diminui → <b>inversamente</b> (seta ao contrário: inverta a fração).</li>
+      <li>x = valor conhecido × (frações de cada grandeza, já invertidas quando for inversa).</li>
+    </ol>
+    <p><b>Pergunta-chave:</b> "Com <b>mais</b> operários, preciso de <b>mais</b> ou de <b>menos</b> dias?" Menos → inversa.</p>`,
+    examples:[
+      {title:'Exemplo 1 (só diretas)', text:'4 máquinas, 3 h, 120 peças → 6 máquinas, 5 h?', steps:['Mais máquinas → mais peças (direta): × 6/4', 'Mais horas → mais peças (direta): × 5/3', 'x = 120 × 6/4 × 5/3 = 300 peças']},
+      {title:'Exemplo 2 (com inversa)', text:'6 pedreiros, 8 h/dia, 10 dias → 4 pedreiros, 6 h/dia?', steps:['Menos pedreiros → mais dias (inversa): × 6/4', 'Menos horas por dia → mais dias (inversa): × 8/6', 'x = 10 × 6/4 × 8/6 = 20 dias']},
+      {title:'Exemplo 3', text:'5 operários, 200 m em 8 dias → 300 m em 6 dias?', steps:['Mais metros → mais operários (direta): × 300/200', 'Menos dias → mais operários (inversa): × 8/6', 'x = 5 × 300/200 × 8/6 = 10 operários']},
+    ],
+    gen:{
+      facil:()=>{ const m1 = randInt(2,5), h1 = randInt(2,4), u = randInt(3,12), m2 = randInt(2,8), h2 = randInt(2,6); const p1 = m1*h1*u, p2 = m2*h2*u;
+        return mkSingle(`${m1} máquinas iguais produzem ${p1} peças em ${h1} horas. Quantas peças ${m2} máquinas produzem em ${h2} horas?`, p2, [`Mais máquinas → mais peças (direta): × ${m2}/${m1}`, `Mais horas → mais peças (direta): × ${h2}/${h1}`, `x = ${p1} × ${m2}/${m1} × ${h2}/${h1} = ${p2} peças`]); },
+      medio:()=>{ let w1,d1,h1,w2,h2,T; do{ w1 = randInt(3,10); d1 = randInt(4,15); h1 = pick([6,8,10]); w2 = randInt(2,12); h2 = pick([4,5,6,8,10]); T = w1*d1*h1; }while(T % (w2*h2) !==0 || w2===w1);
+        const d2 = T/(w2*h2);
+        return mkSingle(`${w1} pedreiros, trabalhando ${h1} horas por dia, constroem um muro em ${d1} dias. Em quantos dias ${w2} pedreiros, trabalhando ${h2} horas por dia, constroem o mesmo muro?`, d2, [`${w2>w1?'Mais':'Menos'} pedreiros → ${w2>w1?'menos':'mais'} dias (inversa): × ${w1}/${w2}`, `${h2>h1?'Mais':h2<h1?'Menos':'As mesmas'} horas por dia → ${h2>h1?'menos':h2<h1?'mais':'mesmos'} dias (inversa): × ${h1}/${h2}`, `x = ${d1} × ${w1}/${w2} × ${h1}/${h2} = ${d2} dias`]); },
+      dificil:()=>{ let o1,d1,r,o2,d2; do{ o1 = randInt(3,10); d1 = randInt(4,12); r = pick([2,3,4,5,10]); o2 = randInt(2,15); d2 = randInt(3,12); }while(o2===o1 || d2===d1);
+        const L1 = o1*d1*r, L2 = o2*d2*r;
+        return mkSingle(`${o1} operários fazem ${L1} m de estrada em ${d1} dias. Quantos operários são necessários para fazer ${L2} m em ${d2} dias?`, o2, [`${L2>L1?'Mais':'Menos'} metros → ${L2>L1?'mais':'menos'} operários (direta): × ${L2}/${L1}`, `${d2<d1?'Menos':'Mais'} dias → ${d2<d1?'mais':'menos'} operários (inversa): × ${d1}/${d2}`, `x = ${o1} × ${L2}/${L1} × ${d1}/${d2} = ${o2} operários`]); },
+    }
+  },
+  {
+    id:'logica', name:'Lógica e jogos', sym:'?!',
+    learn:`<p>Nas olimpíadas, muitas questões não pedem fórmula: pedem <b>raciocínio</b>. Algumas estratégias que funcionam sempre:</p>
+    <ol>
+      <li><b>Teste casos pequenos</b> e procure um <b>padrão</b>. Pra saber quantos palitos formam 50 quadradinhos em fila, conte para 1, 2, 3… (4, 7, 10…): cada quadradinho novo usa 3 palitos → 3n + 1.</li>
+      <li><b>Pense de trás pra frente</b> nos jogos: descubra quais posições são vencedoras a partir do fim.</li>
+      <li><b>Divida em 3</b> nas pesagens: numa balança de pratos, cada pesagem tem 3 resultados (esquerda, direita ou equilíbrio). Com k pesagens dá pra achar a moeda diferente entre até 3ᵏ moedas.</li>
+      <li><b>Organize em tabela</b> as informações de quem é quem.</li>
+    </ol>
+    <p><b>Jogo dos palitos:</b> há N palitos, cada jogador tira de 1 a k, quem tira o último ganha. O segredo é deixar sempre um <b>múltiplo de k + 1</b> para o adversário. Na primeira jogada, tire o <b>resto de N ÷ (k + 1)</b>.</p>`,
+    examples:[
+      {title:'Exemplo 1 (padrão)', text:'Palitos para 10 quadradinhos em fila', steps:['1 quadradinho: 4 palitos; 2: 7; 3: 10', 'Cada quadradinho novo usa 3 palitos: 3n + 1', '3 × 10 + 1 = 31 palitos']},
+      {title:'Exemplo 2 (pesagens)', text:'27 moedas, uma mais pesada', steps:['Divida em 3 grupos de 9 e pese 2 grupos: descobre o grupo da pesada.', 'Repita com 9 → 3 → 1.', '27 = 3³ → 3 pesagens']},
+      {title:'Exemplo 3 (jogo)', text:'20 palitos, tira de 1 a 3', steps:['Deixe sempre um múltiplo de 4 (k + 1 = 4) pro adversário.', '20 ÷ 4 sobra 0: quem começa está em desvantagem!', 'Com 22 palitos: 22 ÷ 4 sobra 2 → tire 2 e deixe 20.']},
+    ],
+    gen:{
+      facil:()=>{ const n = randInt(5,40), t = randInt(0,1);
+        if(t) return mkSingle(`Com palitos de fósforo, formamos quadradinhos em fila, um colado no outro (1 quadradinho usa 4 palitos, 2 usam 7, 3 usam 10…). Quantos palitos são necessários para ${n} quadradinhos?`, 3*n+1, [`Padrão: 4, 7, 10… cada quadradinho novo usa 3 palitos`, `Fórmula: 3n + 1`, `3 × ${n} + 1 = ${3*n+1}`]);
+        return mkSingle(`Com palitos, formamos triângulos em fila, um colado no outro (1 triângulo usa 3 palitos, 2 usam 5, 3 usam 7…). Quantos palitos são necessários para ${n} triângulos?`, 2*n+1, [`Padrão: 3, 5, 7… cada triângulo novo usa 2 palitos`, `Fórmula: 2n + 1`, `2 × ${n} + 1 = ${2*n+1}`]); },
+      medio:()=>{ const n = pick([3,8,9,10,12,20,26,27,28,40,60,81,82,100,200,243]); let k = 0; while(3**k < n) k++;
+        return mkSingle(`Entre ${n} moedas iguais, uma é falsa e mais pesada. Usando uma balança de dois pratos (sem pesos), qual é o número mínimo de pesagens que garante achar a falsa?`, k, [`Cada pesagem tem 3 resultados: com k pesagens dá pra separar até 3ᵏ moedas.`, `3${supNum(k-1)} = ${3**(k-1)} < ${n} ≤ 3${supNum(k)} = ${3**k}`, `Mínimo: ${k} pesagens (divida sempre em 3 grupos o mais iguais possível)`]); },
+      dificil:()=>{ let n,k; do{ k = randInt(2,5); n = randInt(15,45); }while(n % (k+1) === 0);
+        const r = n % (k+1);
+        return mkSingle(`Num jogo há ${n} palitos. Cada jogador, na sua vez, tira de 1 a ${k} palitos. Quem tirar o último palito ganha. Você começa: quantos palitos deve tirar na primeira jogada para garantir a vitória?`, r, [`Estratégia: deixe sempre um múltiplo de ${k+1} (${k} + 1) para o adversário.`, `Se ele tira t, você tira ${k+1} − t, e o múltiplo de ${k+1} continua.`, `${n} ÷ ${k+1} sobra ${r} → tire ${r} e deixe ${n-r}`]); },
+    }
+  },
+  {
+    id:'conicas', name:'Cônicas: elipse, hipérbole e parábola', sym:'⬭',
+    learn:`<p>As <b>cônicas</b> são as curvas que aparecem quando um plano corta um cone: <b>circunferência, elipse, hipérbole e parábola</b>.</p>
+    <p><b>Elipse</b> (forma "oval"): x²/a² + y²/b² = 1, com a &gt; b.</p>
+    <ol>
+      <li>Eixo maior = <b>2a</b>; eixo menor = <b>2b</b>.</li>
+      <li>Os focos ficam a uma distância c do centro, com <b>a² = b² + c²</b>. Distância focal = 2c.</li>
+      <li>Excentricidade e = c/a (entre 0 e 1: quanto mais perto de 0, mais redonda).</li>
+    </ol>
+    <p><b>Hipérbole</b> (dois "braços"): x²/a² − y²/b² = 1, com <b>c² = a² + b²</b>. Distância focal = 2c.</p>
+    <p><b>Parábola</b> com vértice na origem: <b>x² = 4py</b>. O foco fica em (0, p): a distância do vértice ao foco é p.</p>
+    <p><b>Dica:</b> na elipse, a é o maior (a² = b² + c²). Na hipérbole, c é o maior (c² = a² + b²).</p>`,
+    examples:[
+      {title:'Exemplo 1 (elipse)', text:'x²/25 + y²/9 = 1', steps:['a² = 25 → a = 5; b² = 9 → b = 3', 'Eixo maior = 2a = 10; eixo menor = 6', 'c² = 25 − 9 = 16 → c = 4: distância focal 2c = 8']},
+      {title:'Exemplo 2 (hipérbole)', text:'x²/9 − y²/16 = 1', steps:['a² = 9 e b² = 16', 'c² = a² + b² = 25 → c = 5', 'Distância focal = 2c = 10']},
+      {title:'Exemplo 3 (parábola)', text:'x² = 12y', steps:['Compare com x² = 4py: 4p = 12', 'p = 3', 'Foco em (0, 3), a 3 unidades do vértice']},
+    ],
+    gen:{
+      facil:()=>{ let a,b; do{ a = randInt(2,10); b = randInt(1,9); }while(b>=a);
+        return mkSingle(`Quanto mede o eixo maior da elipse x²/${a*a} + y²/${b*b} = 1?`, 2*a, [`a² = ${a*a} → a = ${a} (o maior)`, `Eixo maior = 2a = ${2*a}`]); },
+      medio:()=>{ const [p,q,r] = pick(PIT_TRIPLES), [b,c] = randInt(0,1) ? [p,q] : [q,p], a = r;
+        return mkSingle(`Qual é a distância entre os focos da elipse x²/${a*a} + y²/${b*b} = 1?`, 2*c, [`a² = ${a*a} e b² = ${b*b}`, `Na elipse: c² = a² − b² = ${a*a} − ${b*b} = ${c*c} → c = ${c}`, `Distância focal = 2c = ${2*c}`]); },
+      dificil:()=>{ if(randInt(0,1)){ const [a,b,c] = pick(PIT_TRIPLES);
+          return mkSingle(`Qual é a distância entre os focos da hipérbole x²/${a*a} − y²/${b*b} = 1?`, 2*c, [`a² = ${a*a} e b² = ${b*b}`, `Na hipérbole: c² = a² + b² = ${a*a+b*b} → c = ${c}`, `Distância focal = 2c = ${2*c}`]); }
+        const p = randInt(1,9);
+        return mkSingle(`Na parábola x² = ${4*p}y, qual é a distância entre o vértice e o foco?`, p, [`Compare com x² = 4py`, `4p = ${4*p} → p = ${p}`, `O foco é (0, ${p}): distância ${p}`]); },
+    }
+  },
+  {
+    id:'probcond', name:'Probabilidade condicional', sym:'P(A|B)',
+    learn:`<p>A <b>probabilidade condicional</b> é a chance de algo acontecer <b>sabendo que outra coisa já aconteceu</b>. Escrevemos P(A | B): "probabilidade de A, dado B".</p>
+    <p><b>A ideia:</b> a informação "já aconteceu B" <b>encolhe o espaço</b>. Você passa a contar só dentro de B.</p>
+    <p style="text-align:center; font-size:17px"><b>P(A | B) = casos de A e B juntos ÷ casos de B</b></p>
+    <ol>
+      <li>Descubra quem é o "dado que" (B): esse é o novo total.</li>
+      <li>Dentro de B, conte quantos também são A.</li>
+      <li>Divida.</li>
+    </ol>
+    <p><b>Tabelas de dupla entrada</b> (como meninos/meninas × usa óculos/não usa) são o formato preferido do ENEM: o "dado que" diz qual linha ou coluna vira o total.</p>
+    <p><b>Sem reposição:</b> ao tirar 2 bolas de uma urna sem devolver, a 2ª retirada depende da 1ª. P(2 azuis) = P(1ª azul) × P(2ª azul | 1ª azul).</p>`,
+    examples:[
+      {title:'Exemplo 1 (dado)', text:'Saiu par: chance de ser maior que 3?', steps:['Dado que saiu par: {2, 4, 6} → 3 casos', 'Desses, maiores que 3: {4, 6} → 2 casos', 'P = 2/3']},
+      {title:'Exemplo 2 (tabela)', text:'12 meninos (4 de óculos) e 18 meninas (6 de óculos)', steps:['Sabendo que usa óculos: 4 + 6 = 10 pessoas', 'Dessas, meninas: 6', 'P(menina | óculos) = 6/10 = 3/5']},
+      {title:'Exemplo 3 (sem reposição)', text:'Urna com 3 azuis e 2 vermelhas, tira 2', steps:['P(1ª azul) = 3/5', 'Sobram 2 azuis em 4: P(2ª azul | 1ª azul) = 2/4', 'P(2 azuis) = 3/5 × 2/4 = 6/20 = 3/10']},
+    ],
+    gen:{
+      facil:()=>{ const SETS = [['saiu um número par',[2,4,6]],['saiu um número ímpar',[1,3,5]],['saiu um número maior que 2',[3,4,5,6]],['saiu um número menor que 5',[1,2,3,4]],['saiu um número primo',[2,3,5]]];
+        const EV = [['ser maior que 3',x=>x>3],['ser par',x=>x%2===0],['ser ímpar',x=>x%2===1],['ser múltiplo de 3',x=>x%3===0],['ser menor que 4',x=>x<4],['ser o 6',x=>x===6]];
+        let B, A, inter; do{ B = pick(SETS); A = pick(EV); inter = B[1].filter(A[1]); }while(!inter.length || inter.length===B[1].length);
+        return mkFrac(`Um dado comum é lançado. Sabendo que ${B[0]}, qual é a probabilidade de ${A[0]}? (responda como fração, ex.: 1/3)`, inter.length, B[1].length, [`Dado que ${B[0]}: {${B[1].join(', ')}} → ${B[1].length} casos`, `Desses, os que satisfazem "${A[0]}": {${inter.join(', ')}} → ${inter.length}`, `P = ${inter.length}/${B[1].length}${gcd(inter.length,B[1].length)>1?` = ${fracStr(inter.length,B[1].length)}`:''}`]); },
+      medio:()=>{ const h = randInt(8,20), m = randInt(8,20), x = randInt(1,h-1), y = randInt(1,m-1);
+        if(randInt(0,1)) return mkFrac(`Numa turma há ${h} meninos (${x} usam óculos) e ${m} meninas (${y} usam óculos). Sorteando uma pessoa que usa óculos, qual é a probabilidade de ser menina? (fração)`, y, x+y, [`Dado que usa óculos: ${x} + ${y} = ${x+y} pessoas`, `Dessas, meninas: ${y}`, `P = ${y}/${x+y}${gcd(y,x+y)>1?` = ${fracStr(y,x+y)}`:''}`]);
+        return mkFrac(`Numa turma há ${h} meninos (${x} usam óculos) e ${m} meninas (${y} usam óculos). Sorteando um menino, qual é a probabilidade de ele usar óculos? (fração)`, x, h, [`Dado que é menino: ${h} pessoas`, `Desses, de óculos: ${x}`, `P = ${x}/${h}${gcd(x,h)>1?` = ${fracStr(x,h)}`:''}`]); },
+      dificil:()=>{ const a = randInt(2,7), v = randInt(2,7), t = a+v;
+        return mkFrac(`Uma urna tem ${a} bolas azuis e ${v} vermelhas. Tiramos 2 bolas, uma depois da outra, sem devolver. Qual é a probabilidade de as duas serem azuis? (fração)`, a*(a-1), t*(t-1), [`P(1ª azul) = ${a}/${t}`, `Sem devolver, sobram ${a-1} azuis em ${t-1}: P(2ª azul | 1ª azul) = ${a-1}/${t-1}`, `P = ${a}/${t} × ${a-1}/${t-1} = ${a*(a-1)}/${t*(t-1)} = ${fracStr(a*(a-1), t*(t-1))}`]); },
+    }
+  },
+  {
+    id:'parcelamento', name:'Parcelamento e financiamento', sym:'R$/n',
+    learn:`<p>Comprar <b>parcelado</b> quase sempre sai mais caro que <b>à vista</b>: a diferença são os <b>juros embutidos</b>.</p>
+    <ol>
+      <li><b>Quanto se paga a mais:</b> total parcelado (nº de parcelas × valor da parcela) − preço à vista.</li>
+      <li><b>Acréscimo em %:</b> (valor a mais ÷ preço à vista) × 100.</li>
+      <li><b>Entrada + resto depois:</b> o que fica devendo (preço − entrada) é que recebe os juros. Com juros de i% em 1 mês, a parcela é saldo × (1 + i/100).</li>
+    </ol>
+    <p><b>Financiamentos longos</b> (carro, casa) usam juros compostos em cada mês. A tabela Price faz todas as parcelas iguais: P = V · i / (1 − (1 + i)⁻ⁿ).</p>
+    <p><b>Dica do ENEM:</b> compare sempre o total pago nas duas opções e veja quanto custa "esperar" pelo dinheiro.</p>`,
+    examples:[
+      {title:'Exemplo 1 (quanto a mais)', text:'À vista R$ 900 ou 10 × R$ 99', steps:['Total parcelado: 10 × 99 = R$ 990', 'A mais: 990 − 900 = R$ 90']},
+      {title:'Exemplo 2 (acréscimo %)', text:'À vista R$ 1.200 ou 6 × R$ 230', steps:['Total: 6 × 230 = R$ 1.380', 'A mais: R$ 180', '180 ÷ 1.200 = 0,15 → 15%']},
+      {title:'Exemplo 3 (entrada)', text:'TV de R$ 2.000: entrada de R$ 800 + 1 parcela com 5%', steps:['Saldo: 2.000 − 800 = R$ 1.200', 'Juros de 5%: 1.200 × 1,05 = R$ 1.260', 'Parcela: R$ 1.260']},
+    ],
+    gen:{
+      facil:()=>{ const P = randInt(5,40)*50, n = pick([3,4,5,6,8,10,12]), t = pick([5,8,10,12,15,20,25]); const x = Math.ceil(P*(1+t/100)/n), tot = n*x;
+        return mkSingle(`Um celular custa ${reaisFmt(P)} à vista ou ${n} parcelas de ${reaisFmt(x)}. Quantos reais a mais se paga no parcelado?`, tot-P, [`Total parcelado: ${n} × ${fmt(x)} = ${fmt(tot)}`, `A mais: ${fmt(tot)} − ${fmt(P)} = ${fmt(tot-P)} reais`]); },
+      medio:()=>{ let P,t,n,tot; do{ P = pick([500,600,800,1000,1200,1500,2000,2400]); t = pick([5,10,12,15,20,25,30]); tot = P*(1+t/100); n = pick([2,3,4,5,6,8,10,12]); }while(Math.abs(tot/n*100 - Math.round(tot/n*100))>1e-6);
+        return mkSingle(`Um produto custa ${reaisFmt(P)} à vista ou ${n} parcelas de ${reaisFmt(tot/n)}. Qual é o acréscimo, em %, do parcelado em relação ao preço à vista?`, t, [`Total parcelado: ${n} × ${fmt(tot/n)} = ${fmt(tot)}`, `A mais: ${fmt(tot)} − ${fmt(P)} = ${fmt(tot-P)}`, `${fmt(tot-P)} ÷ ${fmt(P)} = ${fmt(t/100)} → ${t}%`]); },
+      dificil:()=>{ const P = randInt(15,60)*100, E = randInt(2,Math.floor(P/100)-5)*100, i = pick([2,3,4,5,6,8,10]), S = P-E, x = S*(1+i/100);
+        return mkSingle(`Uma TV custa ${reaisFmt(P)}. Pagando ${reaisFmt(E)} de entrada, o restante é pago um mês depois com juros de ${i}%. Qual é o valor dessa segunda parcela, em reais?`, x, [`Saldo devedor: ${fmt(P)} − ${fmt(E)} = ${fmt(S)}`, `Juros de ${i}% sobre o saldo: ${fmt(S)} × ${fmt(1+i/100)}`, `= ${fmt(x)} reais`]); },
     }
   },
 );
