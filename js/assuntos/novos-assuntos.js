@@ -60,7 +60,8 @@ SUBJECTS.push(
     ],
     gen:{
       facil:()=>{ const n = pick([6,8,10,12,14,15,16,18,20,21,24,28,30,36]); const ds = divisorsOf(n);
-        return mkSingle(`Quantos divisores positivos tem o número ${n}?`, ds.length, [`Teste quem divide ${n} sem sobrar resto.`, `Divisores: ${ds.join(', ')}`, `São ${ds.length} divisores.`]); },
+        const pares = ds.filter(d=>d*d<=n).map(d=> d*d===n ? `${d} × ${d}` : `${d} × ${n/d}`);
+        return mkSingle(`Quantos divisores positivos tem o número ${n}?`, ds.length, [`Divisor é quem divide ${n} sem sobrar resto. Eles aparecem em pares que multiplicados dão ${n}:`, `${pares.join(' · ')}`, `Divisores: ${ds.join(', ')} → são ${ds.length}.`]); },
       medio:()=>{ const a = randInt(2,40), b = a + randInt(10,25); const ps = []; for(let k=a; k<=b; k++) if(isPrime(k)) ps.push(k);
         return mkSingle(`Quantos números primos existem de ${a} até ${b} (incluindo os dois)?`, ps.length, [`Primo tem só 2 divisores: 1 e ele mesmo.`, `Testando cada número de ${a} a ${b}, os primos são: ${ps.join(', ') || 'nenhum'}`, `Total: ${ps.length}`]); },
       dificil:()=>{ const e2 = randInt(1,4), e3 = randInt(0,3), e5 = randInt(0,2); const n = 2**e2 * 3**e3 * 5**e5; const ex = [[2,e2],[3,e3],[5,e5]].filter(x=>x[1]>0); const tot = ex.reduce((m,x)=>m*(x[1]+1),1);
@@ -320,11 +321,11 @@ SUBJECTS.push(
     ],
     gen:{
       facil:()=>{ const a = randInt(-6,8), b = randInt(-6,8), c = randInt(-6,8), d = randInt(-6,8);
-        const z = (x,y)=> `${nm(x)} ${y>=0?'+':'−'} ${Math.abs(y)}i`;
-        return mkXY(`Calcule (${z(a,b)}) + (${z(c,d)}) e escreva como x + yi. Quanto valem x e y?`, a+c, b+d, [`Real com real: ${nm(a)} + ${np(c)} = ${nm(a+c)}`, `Imaginário com imaginário: ${nm(b)} + ${np(d)} = ${nm(b+d)}`, `Resultado: ${z(a+c,b+d)}`]); },
+        const z = cxText;
+        return mkXY(`Calcule (${z(a,b)}) + (${z(c,d)}) e escreva como x + yi. Quanto valem x e y?`, a+c, b+d, [`Real com real: ${nm(a)} + ${np(c)} = ${nm(a+c)}`, `Imaginário com imaginário: ${nm(b)} + ${np(d)} = ${nm(b+d)}`, `Resultado: ${cxText(a+c,b+d)}`]); },
       medio:()=>{ const a = randInt(-4,5), b = randInt(-4,5), c = randInt(-4,5), d = randInt(-4,5); const re = a*c - b*d, im = a*d + b*c;
-        const z = (x,y)=> `${nm(x)} ${y>=0?'+':'−'} ${Math.abs(y)}i`;
-        return mkXY(`Calcule (${z(a,b)}) · (${z(c,d)}) e escreva como x + yi. Quanto valem x e y?`, re, im, [`Distributiva: ${np(a)}·${np(c)} + ${np(a)}·${np(d)}i + ${np(b)}·${np(c)}i + ${np(b)}·${np(d)}i²`, `i² = −1 → parte real: ${nm(a*c)} − ${np(b*d)} = ${nm(re)}`, `Parte imaginária: ${nm(a*d)} + ${np(b*c)} = ${nm(im)}`, `Resultado: ${z(re,im)}`]); },
+        const z = cxText;
+        return mkXY(`Calcule (${z(a,b)}) · (${z(c,d)}) e escreva como x + yi. Quanto valem x e y?`, re, im, [`Distributiva: ${np(a)}·${np(c)} + ${np(a)}·${np(d)}i + ${np(b)}·${np(c)}i + ${np(b)}·${np(d)}i²`, `i² = −1 → parte real: ${nm(a*c)} − ${np(b*d)} = ${nm(re)}`, `Parte imaginária: ${nm(a*d)} + ${np(b*c)} = ${nm(im)}`, `Resultado: ${cxText(re,im)}`]); },
       dificil:()=>{ const [p,q,r] = pick(PIT_TRIPLES), sa = pick([1,-1]), sb = pick([1,-1]); const a = p*sa, b = q*sb;
         if(randInt(0,1)) return mkSingle(`Qual é o módulo do número complexo z = ${nm(a)} ${b>=0?'+':'−'} ${Math.abs(b)}i?`, r, [`|z| = √(a² + b²)`, `= √(${a*a} + ${b*b}) = √${r*r}`, `|z| = ${r}`]);
         return mkSingle(`Seja z = ${nm(a)} ${b>=0?'+':'−'} ${Math.abs(b)}i e z̄ o seu conjugado. Quanto vale z · z̄?`, r*r, [`z̄ = ${nm(a)} ${b>=0?'−':'+'} ${Math.abs(b)}i`, `z · z̄ = a² + b² (os termos com i se cancelam)`, `= ${a*a} + ${b*b} = ${r*r}`]); },
@@ -336,6 +337,7 @@ SUBJECTS.push(
    (Fundamental) e cônicas, probabilidade condicional, parcelamento (Ensino Médio) ---------- */
 function modCycle(a, m){ const seq = []; let v = a % m; while(!seq.includes(v)){ seq.push(v); v = (v*a) % m; } return seq; }
 function lastDigitCycle(a){ const seq = []; let v = a % 10; while(!seq.includes(v)){ seq.push(v); v = (v*a) % 10; } return seq; }
+function cxText(x, y){ if(y===0) return nm(x); const yi = Math.abs(y)===1 ? 'i' : `${Math.abs(y)}i`; return x===0 ? `${y<0?'−':''}${yi}` : `${nm(x)} ${y<0?'−':'+'} ${yi}`; }
 function reaisFmt(v){ return 'R$ ' + Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}); }
 SUBJECTS.push(
   {
@@ -356,7 +358,7 @@ SUBJECTS.push(
     ],
     gen:{
       facil:()=>{ const d = randInt(3,12), q = randInt(5,25), r = randInt(0,d-1), n = d*q + r;
-        return mkSingle(`Qual é o resto da divisão de ${n} por ${d}?`, r, [`${d} × ${q} = ${d*q}`, `${n} − ${d*q} = ${r}`, `Resto: ${r}`]); },
+        return mkSingle(`Qual é o resto da divisão de ${n} por ${d}?`, r, [`Procure o maior múltiplo de ${d} que cabe em ${n}: ${d} × ${q} = ${d*q} (o próximo, ${d*(q+1)}, já passa)`, `O que falta pra chegar em ${n} é o resto: ${n} − ${d*q} = ${r}`, `Resto: ${r} (sempre menor que ${d})`]); },
       medio:()=>{ const a = pick([2,3,4,7,8,9]), n = randInt(10,80), cyc = lastDigitCycle(a), L = cyc.length, pos = ((n-1) % L);
         return mkSingle(`Qual é o algarismo das unidades de ${a}${supNum(n)}?`, cyc[pos], [`Unidades das potências de ${a}: ${cyc.join(', ')}, ${cyc[0]}… (ciclo de ${L})`, `${n} ÷ ${L} sobra ${n % L}${n % L===0 ? ' → é a última posição do ciclo' : ` → ${n % L}ª posição do ciclo`}`, `Algarismo das unidades: ${cyc[pos]}`]); },
       dificil:()=>{ const [a,m] = pick([[2,7],[3,7],[2,5],[3,5],[2,9],[4,7],[5,7],[3,8]]), n = randInt(20,120), cyc = modCycle(a, m), L = cyc.length, pos = ((n-1) % L);
@@ -414,7 +416,7 @@ SUBJECTS.push(
       medio:()=>{ let w1,d1,h1,w2,h2,T; do{ w1 = randInt(3,10); d1 = randInt(4,15); h1 = pick([6,8,10]); w2 = randInt(2,12); h2 = pick([4,5,6,8,10]); T = w1*d1*h1; }while(T % (w2*h2) !==0 || w2===w1);
         const d2 = T/(w2*h2);
         return mkSingle(`${w1} pedreiros, trabalhando ${h1} horas por dia, constroem um muro em ${d1} dias. Em quantos dias ${w2} pedreiros, trabalhando ${h2} horas por dia, constroem o mesmo muro?`, d2, [`${w2>w1?'Mais':'Menos'} pedreiros → ${w2>w1?'menos':'mais'} dias (inversa): × ${w1}/${w2}`, `${h2>h1?'Mais':h2<h1?'Menos':'As mesmas'} horas por dia → ${h2>h1?'menos':h2<h1?'mais':'mesmos'} dias (inversa): × ${h1}/${h2}`, `x = ${d1} × ${w1}/${w2} × ${h1}/${h2} = ${d2} dias`]); },
-      dificil:()=>{ let o1,d1,r,o2,d2; do{ o1 = randInt(3,10); d1 = randInt(4,12); r = pick([2,3,4,5,10]); o2 = randInt(2,15); d2 = randInt(3,12); }while(o2===o1 || d2===d1);
+      dificil:()=>{ let o1,d1,r,o2,d2; do{ o1 = randInt(3,10); d1 = randInt(4,12); r = pick([2,3,4,5,10]); o2 = randInt(2,15); d2 = randInt(3,12); }while(o2===o1 || d2===d1 || o2*d2===o1*d1);
         const L1 = o1*d1*r, L2 = o2*d2*r;
         return mkSingle(`${o1} operários fazem ${L1} m de estrada em ${d1} dias. Quantos operários são necessários para fazer ${L2} m em ${d2} dias?`, o2, [`${L2>L1?'Mais':'Menos'} metros → ${L2>L1?'mais':'menos'} operários (direta): × ${L2}/${L1}`, `${d2<d1?'Menos':'Mais'} dias → ${d2<d1?'mais':'menos'} operários (inversa): × ${d1}/${d2}`, `x = ${o1} × ${L2}/${L1} × ${d1}/${d2} = ${o2} operários`]); },
     }
@@ -496,8 +498,8 @@ SUBJECTS.push(
         let B, A, inter; do{ B = pick(SETS); A = pick(EV); inter = B[1].filter(A[1]); }while(!inter.length || inter.length===B[1].length);
         return mkFrac(`Um dado comum é lançado. Sabendo que ${B[0]}, qual é a probabilidade de ${A[0]}? (responda como fração, ex.: 1/3)`, inter.length, B[1].length, [`Dado que ${B[0]}: {${B[1].join(', ')}} → ${B[1].length} casos`, `Desses, os que satisfazem "${A[0]}": {${inter.join(', ')}} → ${inter.length}`, `P = ${inter.length}/${B[1].length}${gcd(inter.length,B[1].length)>1?` = ${fracStr(inter.length,B[1].length)}`:''}`]); },
       medio:()=>{ const h = randInt(8,20), m = randInt(8,20), x = randInt(1,h-1), y = randInt(1,m-1);
-        if(randInt(0,1)) return mkFrac(`Numa turma há ${h} meninos (${x} usam óculos) e ${m} meninas (${y} usam óculos). Sorteando uma pessoa que usa óculos, qual é a probabilidade de ser menina? (fração)`, y, x+y, [`Dado que usa óculos: ${x} + ${y} = ${x+y} pessoas`, `Dessas, meninas: ${y}`, `P = ${y}/${x+y}${gcd(y,x+y)>1?` = ${fracStr(y,x+y)}`:''}`]);
-        return mkFrac(`Numa turma há ${h} meninos (${x} usam óculos) e ${m} meninas (${y} usam óculos). Sorteando um menino, qual é a probabilidade de ele usar óculos? (fração)`, x, h, [`Dado que é menino: ${h} pessoas`, `Desses, de óculos: ${x}`, `P = ${x}/${h}${gcd(x,h)>1?` = ${fracStr(x,h)}`:''}`]); },
+        if(randInt(0,1)) return mkFrac(`Numa turma há ${h} meninos (${x} ${x===1?'usa':'usam'} óculos) e ${m} meninas (${y} ${y===1?'usa':'usam'} óculos). Sorteando uma pessoa que usa óculos, qual é a probabilidade de ser menina? (fração)`, y, x+y, [`Dado que usa óculos: ${x} + ${y} = ${x+y} pessoas`, `Dessas, meninas: ${y}`, `P = ${y}/${x+y}${gcd(y,x+y)>1?` = ${fracStr(y,x+y)}`:''}`]);
+        return mkFrac(`Numa turma há ${h} meninos (${x} ${x===1?'usa':'usam'} óculos) e ${m} meninas (${y} ${y===1?'usa':'usam'} óculos). Sorteando um menino, qual é a probabilidade de ele usar óculos? (fração)`, x, h, [`Dado que é menino: ${h} pessoas`, `Desses, de óculos: ${x}`, `P = ${x}/${h}${gcd(x,h)>1?` = ${fracStr(x,h)}`:''}`]); },
       dificil:()=>{ const a = randInt(2,7), v = randInt(2,7), t = a+v;
         return mkFrac(`Uma urna tem ${a} bolas azuis e ${v} vermelhas. Tiramos 2 bolas, uma depois da outra, sem devolver. Qual é a probabilidade de as duas serem azuis? (fração)`, a*(a-1), t*(t-1), [`P(1ª azul) = ${a}/${t}`, `Sem devolver, sobram ${a-1} azuis em ${t-1}: P(2ª azul | 1ª azul) = ${a-1}/${t-1}`, `P = ${a}/${t} × ${a-1}/${t-1} = ${a*(a-1)}/${t*(t-1)} = ${fracStr(a*(a-1), t*(t-1))}`]); },
     }

@@ -26,14 +26,14 @@ function factorsStr(f){ const ks = Object.keys(f); return ks.length ? ks.map(k=>
 function mmcSteps(a,b){
   const fa = primeFactors(a), fb = primeFactors(b), keys = [...new Set([...Object.keys(fa), ...Object.keys(fb)])].sort((x,y)=>x-y);
   const used = keys.map(k=>{ const e = Math.max(fa[k]||0, fb[k]||0); return e>1?`${k}<sup>${e}</sup>`:k; });
-  return [`Fatore: ${a} = ${factorsStr(fa)} · ${b} = ${factorsStr(fb)}`, `Pegue todos os fatores, cada um com o maior expoente: ${used.join(' × ')}`, `MMC(${a}, ${b}) = ${lcm(a,b)}`];
+  return [`MMC é o menor número que está na tabuada do ${a} e na do ${b} ao mesmo tempo.`, `Fatore em primos: ${a} = ${factorsStr(fa)} · ${b} = ${factorsStr(fb)}`, `Pegue todos os fatores que aparecem, cada um com o maior expoente: ${used.join(' × ')}`, `MMC(${a}, ${b}) = ${lcm(a,b)} (confira: ${lcm(a,b)} ÷ ${a} = ${lcm(a,b)/a} e ${lcm(a,b)} ÷ ${b} = ${lcm(a,b)/b}, os dois exatos)`];
 }
 function mdcSteps(a,b){
   const fa = primeFactors(a), fb = primeFactors(b), common = Object.keys(fa).filter(k=>fb[k]).sort((x,y)=>x-y);
   const used = common.map(k=>{ const e = Math.min(fa[k], fb[k]); return e>1?`${k}<sup>${e}</sup>`:k; });
-  return [`Fatore: ${a} = ${factorsStr(fa)} · ${b} = ${factorsStr(fb)}`,
+  return [`MDC é o maior número que divide o ${a} e o ${b} sem sobrar resto.`, `Fatore em primos: ${a} = ${factorsStr(fa)} · ${b} = ${factorsStr(fb)}`,
     common.length ? `Pegue só os fatores em comum, cada um com o menor expoente: ${used.join(' × ')}` : 'Eles não têm fator primo em comum.',
-    `MDC(${a}, ${b}) = ${gcd(a,b)}`];
+    `MDC(${a}, ${b}) = ${gcd(a,b)} (confira: ${a} ÷ ${gcd(a,b)} = ${a/gcd(a,b)} e ${b} ÷ ${gcd(a,b)} = ${b/gcd(a,b)}, os dois exatos)`];
 }
 function brl(cents){ return 'R$ ' + (cents/100).toFixed(2).replace('.', ','); }
 function cap(t){ return t.charAt(0).toUpperCase() + t.slice(1); }
