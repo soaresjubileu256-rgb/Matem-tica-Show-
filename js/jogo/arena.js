@@ -655,7 +655,7 @@ function examSetupScreen(){
 function startExam(cfg){
   const ids = shuffle([...cfg.subjects]);
   const Q = [], sigs = new Set();
-  for(let i=0;i<cfg.n && ids.length;i++){
+  for(let i=0;i<cfg.n;i++){
     const s = SUBJECTS.find(x=>x.id===ids[i % ids.length]);
     const d = cfg.diff === 'misturada' ? ARENA_DIFFS[i % 3] : cfg.diff;
     let g, tries = 0;
@@ -663,10 +663,8 @@ function startExam(cfg){
     sigs.add(g.signature);
     Q.push({subjectId:s.id, diff:d, ex:g.ex, opts:buildOptions(g.ex), pick:-1, flag:false});
   }
-  // questões no estilo da prova (já com alternativas): entram junto, na área de Provas
-  (cfg.extraQ || []).forEach(x=> Q.push({subjectId:x.subjectId, diff:x.diff, ex:x.ex, opts:buildOptions(x.ex), pick:-1, flag:false}));
   shuffle(Q);
-  state.session = {kind:'exam', title:cfg.title, id:`${Date.now().toString(36)}${Math.random().toString(36).slice(2,6)}`, Q, cur:0, T0:Date.now(), limit:cfg.mins*60, subjects:[...new Set([...cfg.subjects, ...Q.map(q=>q.subjectId)])]};
+  state.session = {kind:'exam', id:`${Date.now().toString(36)}${Math.random().toString(36).slice(2,6)}`, Q, cur:0, T0:Date.now(), limit:cfg.mins*60, subjects:[...cfg.subjects]};
   go('examRun');
 }
 /* refazer só as questões erradas, sem tempo (não entra no histórico de notas) */
@@ -681,7 +679,7 @@ function examRunScreen(){
   const wrap = document.createElement('div');
   if(!sess || sess.kind!=='exam' || sess.submitted){ setTimeout(()=>go('arena'), 0); return wrap; }
   const leave = ()=> showConfirm({icon:'📝', title:'Abandonar o simulado?', message:'As respostas desta prova serão perdidas.', ok:'Abandonar', cancel:'Continuar a prova', danger:true}).then(ok=>{ if(ok){ sess.submitted = true; replaceHistoryState(); go('arena'); } });
-  const bar = topbar(sess.redo ? 'Refazendo as erradas' : (sess.title || 'Simulado'), true, leave);
+  const bar = topbar(sess.redo ? 'Refazendo as erradas' : 'Simulado', true, leave);
   const clock = h(`<span class="ar-clock" role="timer" aria-live="off"></span>`);
   bar.appendChild(clock);
   wrap.appendChild(bar);
@@ -731,7 +729,7 @@ function examRunScreen(){
     if(at < sess.Q.length-1) setTimeout(()=>{ if(state.session===sess && !sess.submitted && sess.cur===at && state.screen==='examRun'){ sess.cur++; render(); } }, 420);
   };
   q.opts.forEach((o,i)=>{
-    const b = h(`<button type="button" class="mc-opt ${q.pick===i?'sel':''}" aria-pressed="${q.pick===i}"><span class="key">${'ABCDE'[i]}</span><span class="lbl ${pvLblClass(o.label)}"></span></button>`);
+    const b = h(`<button type="button" class="mc-opt ${q.pick===i?'sel':''}" aria-pressed="${q.pick===i}"><span class="key">${'ABCD'[i]}</span><span class="lbl mono"></span></button>`);
     b.querySelector('.lbl').textContent = o.label;
     b.onclick = ()=> pickOpt(i);
     opts.appendChild(b);
@@ -760,13 +758,13 @@ function examRunScreen(){
       .then(ok=>{ if(ok) examSubmit(sess, false); });
   };
   c.appendChild(sub);
-  if(window.matchMedia && matchMedia('(pointer:fine)').matches) c.appendChild(h(`<p class="exr-keys">Atalhos: A, B, C, D, E (ou 1–5) respondem · ← → trocam de questão · R marca pra revisar</p>`));
+  if(window.matchMedia && matchMedia('(pointer:fine)').matches) c.appendChild(h(`<p class="exr-keys">Atalhos: A, B, C, D (ou 1–4) respondem · ← → trocam de questão · R marca pra revisar</p>`));
   // teclado do computador
   if(_examKeys) document.removeEventListener('keydown', _examKeys);
   _examKeys = e=>{
     if(state.screen!=='examRun' || state.session!==sess || sess.submitted || document.querySelector('.gm-modal-bg')){ return; }
     if(/^(INPUT|TEXTAREA|SELECT)$/.test((e.target||{}).tagName||'') || e.ctrlKey || e.metaKey || e.altKey) return;
-    const k = e.key.toLowerCase(), idx = 'abcde'.indexOf(k) >= 0 ? 'abcde'.indexOf(k) : ['1','2','3','4','5'].indexOf(k);
+    const k = e.key.toLowerCase(), idx = 'abcd'.indexOf(k) >= 0 ? 'abcd'.indexOf(k) : ['1','2','3','4'].indexOf(k);
     if(idx>=0 && idx < sess.Q[sess.cur].opts.length){ e.preventDefault(); const qq = sess.Q[sess.cur]; qq.pick = idx; playTones([520], 0.03, 'sine', 0.05); const at = sess.cur; render(); if(at < sess.Q.length-1) setTimeout(()=>{ if(state.session===sess && !sess.submitted && sess.cur===at && state.screen==='examRun'){ sess.cur++; render(); } }, 420); }
     else if(e.key==='ArrowLeft'){ e.preventDefault(); if(sess.cur>0){ sess.cur--; render(); } }
     else if(e.key==='ArrowRight'){ e.preventDefault(); if(sess.cur<sess.Q.length-1){ sess.cur++; render(); } }
@@ -871,7 +869,7 @@ function examResultScreen(){
     const ob = it.querySelector('.ar-rv-opts');
     q.opts.forEach((o,j)=>{
       const cls = j===ci ? 'right' : j===q.pick ? 'wrong' : '';
-      const d = h(`<div class="rv-opt ${cls}"><span class="k">${'ABCDE'[j]}</span><span class="l ${pvLblClass(o.label)}"></span>${j===q.pick ? '<small>sua resposta</small>' : j===ci && !q.right ? '<small>correta</small>' : ''}</div>`);
+      const d = h(`<div class="rv-opt ${cls}"><span class="k">${'ABCD'[j]}</span><span class="l mono"></span>${j===q.pick ? '<small>sua resposta</small>' : j===ci && !q.right ? '<small>correta</small>' : ''}</div>`);
       d.querySelector('.l').textContent = o.label;
       ob.appendChild(d);
     });

@@ -114,7 +114,6 @@ function answerLabel(ex){
   return ex.displayAnswer!==undefined ? String(ex.displayAnswer) : fmt(ex.answer);
 }
 function buildOptions(ex){
-  if(ex.mcOptions) return ex.mcOptions.map(o=>({label:o.label, ok:o.ok})); // questões de prova já vêm com as alternativas
   const correct = answerLabel(ex);
   const cands = [];
   if(ex.type==='pair'){

@@ -3830,33 +3830,3 @@ button.gl-res:active{transform:scale(.99);}
   background:color-mix(in srgb, var(--c) 10%, transparent); color:var(--ink); font:700 12px 'Inter',sans-serif; cursor:pointer;}
 .pv-ci-l button i{font-style:normal; min-width:22px; height:22px; padding:0 4px; border-radius:99px; display:grid; place-items:center; font:800 10.5px 'JetBrains Mono',monospace; color:#fff; background:var(--c);}
 .pv-ci-l button:active{transform:scale(.95);}
-.lr-hero-sym.long{font-size:15px; letter-spacing:-.04em;}
-
-/* questões no estilo das provas (área de Provas): texto corrido, tabelas, gráficos e cartões */
-.pv-qtext{font:500 15px/1.6 'Inter',sans-serif !important; text-align:left; color:var(--ink); margin-bottom:10px;}
-.pv-qtext b{color:var(--ink);}
-.mc-opt .lbl.long{font:600 14px/1.45 'Inter',sans-serif; text-align:left;}
-.rv-opt .l.long{font:600 13.5px/1.45 'Inter',sans-serif;}
-.pv-cards{display:grid; grid-template-columns:1fr 1fr; gap:6px; margin:4px 0 8px; text-align:center;}
-.pv-card{display:flex; flex-direction:column; gap:3px; padding:9px 8px; border-radius:10px; font:500 12px/1.35 'Inter',sans-serif; color:#14142a;}
-.pv-card b{font-size:13px;}
-.pv-card:last-child{grid-column:1/-1; justify-self:center; width:60%;}
-.pv-c0{background:#8fd3f4;} .pv-c1{background:#9fe0b5;} .pv-c2{background:#c3c0f2;} .pv-c3{background:#f7b9a1;} .pv-c4{background:#fbe78d;}
-.pv-tbl{width:100%; border-collapse:collapse; margin:6px 0 10px; font:500 13px 'Inter',sans-serif; color:var(--ink);}
-.pv-tbl th{font-size:11.5px; text-transform:uppercase; letter-spacing:.03em; color:var(--ink-soft); border-bottom:2px solid var(--border); padding:6px 4px;}
-.pv-tbl td{border-bottom:1px solid var(--border); padding:7px 4px; text-align:center;}
-.pv-chart{max-width:380px !important;}
-.pv-ch-t{fill:var(--ink); font:800 12px 'Inter',sans-serif;}
-.pv-ch-l, .pv-ch-l2{fill:var(--ink-soft); font:700 11px 'Inter',sans-serif;}
-.pv-ch-v{fill:#fff; font:800 11px 'Inter',sans-serif;}
-.pv-ch-v2{fill:var(--ink); font:800 11px 'Inter',sans-serif;}
-.pv-ch-bar{fill:#6B8CFF;}
-.pv-ch-ax{stroke:var(--ink-soft); stroke-width:1.5;}
-.pv-ch-line{fill:none; stroke:#4C7DFF; stroke-width:3.5; stroke-linecap:round;}
-.pv-ch-dash{stroke:var(--ink-soft); stroke-width:1; stroke-dasharray:4 4;}
-.pv-fence{fill:none; stroke:var(--ink-soft); stroke-width:1.5;}
-.pv-fence2{fill:rgba(107,140,255,.18); stroke:var(--ink-soft); stroke-width:1;}
-.pv-base{fill:rgba(150,150,170,.45);}
-.pv-post{fill:var(--ink-soft);}
-.pv-act-style{border-color:color-mix(in srgb, var(--c) 50%, transparent) !important;}
-.question-card .geo-lbl.pv-lbl{font-size:13px;}

@@ -39,14 +39,7 @@ function startExamTraining(e){
 function startExamSimulado(e){
   const ids = examTopicIds(e, ['muito','bastante']);
   // assuntos que caem muito entram duas vezes no sorteio: aparecem mais no simulado
-  // 4 das 20 questões são no estilo da própria prova (enunciado, figura e alternativas como na prova)
-  const style = examStyleQuestions(e.id, 4);
-  startExam({subjects: examTopicIds(e, ['muito']).concat(ids), n:20-style.length, mins:40, diff:'misturada', extraQ:style, title:`Simulado ${e.name}`});
-}
-/* só questões no estilo da prova: enunciados longos, figuras, tabelas e as alternativas da prova */
-function startExamStyle(e){
-  const n = 10, Q = examStyleQuestions(e.id, n);
-  startExam({subjects:[], n:0, mins: n*3, diff:'misturada', extraQ:Q, title:`Questões estilo ${e.name}`});
+  startExam({subjects: examTopicIds(e, ['muito']).concat(ids), n:20, mins:40, diff:'misturada'});
 }
 
 function examTabBody(e, c){
@@ -69,11 +62,9 @@ function examTabBody(e, c){
   const acts = h(`<div class="pv-acts"></div>`);
   const tr = h(`<button type="button" class="pv-act main"><span>🎯</span><b>Treinar o que mais cai</b><small>15 questões, dificuldade que se ajusta, mais dos seus pontos fracos</small></button>`);
   tr.onclick = ()=> startExamTraining(e);
-  const sim = h(`<button type="button" class="pv-act"><span>📝</span><b>Simulado ${e.name}</b><small>20 questões em 40 minutos (4 no estilo da prova), nota de 0 a 10</small></button>`);
+  const sim = h(`<button type="button" class="pv-act"><span>📝</span><b>Simulado ${e.name}</b><small>20 questões em 40 minutos, nota de 0 a 10</small></button>`);
   sim.onclick = ()=> startExamSimulado(e);
-  const sty = h(`<button type="button" class="pv-act pv-act-style"><span>📄</span><b>Questões no estilo ${e.name}</b><small>10 questões como as da prova: textos, gráficos e ${e.id==='unicamp'?'4 alternativas (a–d)':'5 alternativas (A–E)'} · 30 min</small></button>`);
-  sty.onclick = ()=> startExamStyle(e);
-  acts.appendChild(tr); acts.appendChild(sty); acts.appendChild(sim);
+  acts.appendChild(tr); acts.appendChild(sim);
   c.appendChild(acts);
 
   c.appendChild(h(`<div class="pv-info">

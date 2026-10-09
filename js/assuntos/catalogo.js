@@ -8,16 +8,15 @@
    Simulado, Treino e Trilha usam esta mesma ordem. */
 const SUBJECT_GROUPS = [
   {id:'f1', level:'fund', name:'1º ao 5º ano', ids:['adicao','subtracao','multiplicacao','divisao','dinheiro']},
-  {id:'f2', level:'fund', name:'6º e 7º ano', ids:['fracoes','decimais','porcentagem','geometria','angulos','unidades','mmcmdc','primos','restos','potenciacao','expressoes','estatistica','regra3','regra3comp','eq1']},
-  {id:'f3', level:'fund', name:'8º e 9º ano', ids:['sistemas','prodnotaveis','eq2','pitagoras','semelhanca','func1grau','casapombos','logica']},
-  {id:'em-alg',  level:'em', name:'Álgebra e Funções', ids:['conjuntos','funcquad','inequacoes','modular','exponencial','logaritmo','functrig']},
+  {id:'f2', level:'fund', name:'6º e 7º ano', ids:['fracoes','decimais','porcentagem','geometria','mmcmdc','potenciacao','expressoes','estatistica','regra3','eq1']},
+  {id:'f3', level:'fund', name:'8º e 9º ano', ids:['sistemas','eq2','func1grau']},
+  {id:'em-alg',  level:'em', name:'Álgebra e Funções', ids:['conjuntos','funcquad','modular','exponencial','logaritmo','functrig']},
   {id:'em-seq',  level:'em', name:'Progressões e Sequências', ids:['pa','pg']},
-  {id:'em-geo',  level:'em', name:'Geometria', ids:['espacial','analitica','circunferencia','conicas']},
+  {id:'em-geo',  level:'em', name:'Geometria', ids:['espacial','analitica']},
   {id:'em-trig', level:'em', name:'Trigonometria', ids:['trigret','ciclo','identidades','leis']},
-  {id:'em-est',  level:'em', name:'Estatística e Probabilidade', ids:['combinatoria','probabilidade','probcond','dispersao','graficos']},
-  {id:'em-fin',  level:'em', name:'Matemática Financeira', ids:['juros','parcelamento','descontos','inflacao']},
+  {id:'em-est',  level:'em', name:'Estatística e Probabilidade', ids:['combinatoria','probabilidade','dispersao','graficos']},
+  {id:'em-fin',  level:'em', name:'Matemática Financeira', ids:['juros','descontos','inflacao']},
   {id:'em-mat',  level:'em', name:'Matrizes e Determinantes', ids:['matrizes','determinantes']},
-  {id:'em-pol',  level:'em', name:'Polinômios e Complexos', ids:['polinomios','complexos']},
 ];
 const SUBJECT_LEVELS = [
   {id:'fund', name:'Ensino Fundamental', ico:'📘'},
@@ -37,11 +36,7 @@ const BNCC_ANO = {adicao:'1º ao 5º ano', subtracao:'1º ao 5º ano', multiplic
   functrig:'2º do EM', pa:'1º do EM', pg:'1º do EM', espacial:'2º do EM', analitica:'3º do EM', trigret:'9º ano e 1º do EM',
   ciclo:'2º do EM', identidades:'2º do EM', leis:'2º do EM', combinatoria:'2º do EM', probabilidade:'2º do EM',
   dispersao:'3º do EM', graficos:'6º ano ao EM', juros:'1º do EM', descontos:'1º do EM', inflacao:'1º do EM',
-  matrizes:'2º do EM', determinantes:'2º do EM',
-  primos:'6º ano', unidades:'5º ao 7º ano', prodnotaveis:'8º ano', pitagoras:'9º ano', semelhanca:'9º ano', casapombos:'6º ao 9º ano (OBMEP)',
-  inequacoes:'1º do EM', circunferencia:'3º do EM', polinomios:'3º do EM', complexos:'3º do EM',
-  restos:'6º ao 9º ano (OBMEP)', angulos:'6º ao 8º ano', regra3comp:'7º ao 9º ano', logica:'6º ao 9º ano (OBMEP)',
-  conicas:'3º do EM', probcond:'2º do EM', parcelamento:'1º do EM'};
+  matrizes:'2º do EM', determinantes:'2º do EM'};
 
 /* lista de assuntos com títulos (nível → grupo), igual em todas as telas que listam assuntos.
    makeRow(subject, index) devolve o elemento de cada assunto; index é a posição em SUBJECTS (dá a cor). */
