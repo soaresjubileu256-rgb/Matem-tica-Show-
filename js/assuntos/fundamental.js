@@ -92,7 +92,7 @@ const SUBJECTS = [
     gen:{
       facil:()=>{ const b=randInt(2,9), q=randInt(2,9), a=b*q; return mkSingle(`${a} ÷ ${b} = ?`, q, divisaoNarrativa(a,b), null, divisaoChave(a,b,false), divisaoChave(a,b,true)); },
       medio:()=>{ const b=randInt(3,12), q=randInt(6,20), a=b*q; return mkSingle(`${a} ÷ ${b} = ?`, q, divisaoNarrativa(a,b), null, divisaoChave(a,b,false), divisaoChave(a,b,true)); },
-      dificil:()=>{ const b=randInt(4,16); const q=randInt(4,25)+randInt(1,3)/4; const a=Math.round(b*q); const real=a/b; return mkSingle(`${a} ÷ ${b} = ? (arredonde para 2 casas)`, Math.round(real*100)/100, [`${a} ÷ ${b} não é exato.`, `Resultado aproximado: ${fmt(Math.round(real*100)/100)}`]); },
+      dificil:()=>{ const b=randInt(4,16); const q=randInt(4,25)+randInt(1,3)/4; const a=Math.round(b*q); const {steps, answer} = divDecimalSteps(a,b); return mkSingle(`${a} ÷ ${b} = ? (arredonde para 2 casas)`, answer, steps); },
     }
   },
   {
@@ -165,9 +165,9 @@ const SUBJECTS = [
       {title:'Exemplo 3 (desconto)', text:'Um produto de R$ 200 com 15% de desconto sai por R$ 170', qVisual: fracRow([{n:15,d:100}, '×', 200, '=', 30]), steps:['Calcule os 15%: 200 × 15 ÷ 100 = 30', 'Como é desconto, subtraia do preço original: 200 − 30 = 170']},
     ],
     gen:{
-      facil:()=>{ const p=pick([10,20,25,50]); const base=pick([20,40,60,80,100,200]); const r=base*p/100; return mkSingle(`${p}% de ${base} = ?`, r, [`${p}% = ${p}/100`, `${base} × ${p} ÷ 100 = ${r}`], null, fracRow([{n:p,d:100}, '×', base, '=', '?']), fracRow([{n:p,d:100}, '×', base, '=', fmt(r)])); },
-      medio:()=>{ const p=randInt(5,60); const base=randInt(50,400); const r=Math.round(base*p/100*100)/100; return mkSingle(`${p}% de ${base} = ?`, r, [`Multiplique ${base} por ${p} e divida por 100.`, `${base} × ${p} ÷ 100 = ${fmt(r)}`], null, fracRow([{n:p,d:100}, '×', base, '=', '?']), fracRow([{n:p,d:100}, '×', base, '=', fmt(r)])); },
-      dificil:()=>{ const base=randInt(80,500); const p=randInt(5,40); const aumento=Math.round(base*p/100*100)/100; const r=Math.round(base*(1+p/100)*100)/100; return mkSingle(`Um produto de R$ ${base} teve aumento de ${p}%. Qual o novo preço?`, r, [`Aumento: ${base} × ${p} ÷ 100 = ${fmt(aumento)}`, `Novo preço: ${base} + ${fmt(aumento)} = ${fmt(r)}`], null, fracRow([{n:p,d:100}, '×', base, '=', '?']), stepChain([`${fmt(p)}% × ${base} = ${fmt(aumento)}`, `${base} + ${fmt(aumento)} = ${fmt(r)}`])); },
+      facil:()=>{ const p=pick([10,20,25,50]); const base=pick([20,40,60,80,100,200]); const r=base*p/100; return mkSingle(`${p}% de ${base} = ?`, r, [`${p}% quer dizer ${p} de cada 100, ou seja, ${p}/100 de ${base}.`, ({10:`Atalho: 10% é dividir por 10 → ${base} ÷ 10 = ${r}`, 20:`Atalho: 10% de ${base} é ${base/10}; 20% é o dobro: ${base/10} × 2 = ${r}`, 25:`Atalho: 25% é a quarta parte → ${base} ÷ 4 = ${r}`, 50:`Atalho: 50% é a metade → ${base} ÷ 2 = ${r}`})[p], `Pela regra geral: ${base} × ${p} = ${base*p}; ${base*p} ÷ 100 = ${r}`], null, fracRow([{n:p,d:100}, '×', base, '=', '?']), fracRow([{n:p,d:100}, '×', base, '=', fmt(r)])); },
+      medio:()=>{ const p=randInt(5,60); const base=randInt(50,400); const r=Math.round(base*p/100*100)/100; return mkSingle(`${p}% de ${base} = ?`, r, [`${p}% de ${base} é ${p}/100 de ${base}: multiplique por ${p} e divida por 100.`, `${base} × ${p} = ${base*p}`, `Dividir por 100 é andar com a vírgula 2 casas para a esquerda: ${base*p} ÷ 100 = ${fmt(r)}`], null, fracRow([{n:p,d:100}, '×', base, '=', '?']), fracRow([{n:p,d:100}, '×', base, '=', fmt(r)])); },
+      dificil:()=>{ const base=randInt(80,500); const p=randInt(5,40); const aumento=Math.round(base*p/100*100)/100; const r=Math.round(base*(1+p/100)*100)/100; return mkSingle(`Um produto de R$ ${base} teve aumento de ${p}%. Qual o novo preço?`, r, [`Primeiro o valor do aumento: ${p}% de ${base} = ${base} × ${p} ÷ 100 = ${base*p} ÷ 100 = ${fmt(aumento)}`, `Some o aumento ao preço: ${base} + ${fmt(aumento)} = ${fmt(r)}`, `Jeito rápido: aumentar ${p}% é multiplicar por ${fmt(1+p/100)} → ${base} × ${fmt(1+p/100)} = ${fmt(r)}`], null, fracRow([{n:p,d:100}, '×', base, '=', '?']), stepChain([`${fmt(p)}% × ${base} = ${fmt(aumento)}`, `${base} + ${fmt(aumento)} = ${fmt(r)}`])); },
     }
   },
   {
@@ -209,9 +209,9 @@ const SUBJECTS = [
       {title:'Exemplo 3 (raiz)', text:'√16 = 4, pois 4² = 16', qVisual: potStage(potRow([{root:true,n:16,e:2},'=',4])), steps:['Pergunta: que número × ele mesmo dá 16?', 'Testando: 4 × 4 = 16 — achou! Logo √16 = 4']},
     ],
     gen:{
-      facil:()=>{ const b=randInt(2,9), e=2; const r=Math.pow(b,e); return mkSingle(`${b}² = ?`, r, [`${b}² = ${b} × ${b}`, `Resultado: ${r}`], null, potRow([{b,e},'=','?']), potStage(potRow([{b,e},'=',r])) + potStage(chainRow([b,'×',b,'=',r]))); },
-      medio:()=>{ const roots=[4,9,16,25,36,49,64,81,100,121,144]; const r=pick(roots); const raiz=Math.sqrt(r); return mkSingle(`√${r} = ?`, raiz, [`Pergunte: que número multiplicado por ele mesmo dá ${r}?`, `√${r} = ${raiz}`], null, potRow([{root:true,n:r,e:2},'=','?']), potStage(potRow([{root:true,n:r,e:2},'=',raiz])) + potStage(chainRow([raiz,'×',raiz,'=',r]))); },
-      dificil:()=>{ const b=randInt(2,6), e=3; const r=Math.pow(b,e); return mkSingle(`${b}³ = ?`, r, [`${b}³ = ${b} × ${b} × ${b}`, `${b} × ${b} = ${b*b}`, `${b*b} × ${b} = ${r}`], null, potRow([{b,e},'=','?']), potStage(potRow([{b,e},'=',r])) + potStage(chainRow([b,'×',b,'×',b,'=',r]))); },
+      facil:()=>{ const b=randInt(2,9), e=2; const r=Math.pow(b,e); return mkSingle(`${b}² = ?`, r, [`O ² quer dizer: multiplique o ${b} por ele mesmo, 2 vezes.`, `${b}² = ${b} × ${b} = ${r}`], null, potRow([{b,e},'=','?']), potStage(potRow([{b,e},'=',r])) + potStage(chainRow([b,'×',b,'=',r]))); },
+      medio:()=>{ const roots=[4,9,16,25,36,49,64,81,100,121,144]; const r=pick(roots); const raiz=Math.sqrt(r); return mkSingle(`√${r} = ?`, raiz, [`A raiz quadrada pergunta: que número, multiplicado por ele mesmo, dá ${r}?`, `Teste: ${raiz} × ${raiz} = ${r} ✓`, `Então √${r} = ${raiz}`], null, potRow([{root:true,n:r,e:2},'=','?']), potStage(potRow([{root:true,n:r,e:2},'=',raiz])) + potStage(chainRow([raiz,'×',raiz,'=',r]))); },
+      dificil:()=>{ const b=randInt(2,6), e=3; const r=Math.pow(b,e); return mkSingle(`${b}³ = ?`, r, [`O ³ quer dizer: multiplique o ${b} por ele mesmo, 3 vezes: ${b} × ${b} × ${b}`, `Faça por partes: ${b} × ${b} = ${b*b}`, `Depois: ${b*b} × ${b} = ${r}`], null, potRow([{b,e},'=','?']), potStage(potRow([{b,e},'=',r])) + potStage(chainRow([b,'×',b,'×',b,'=',r]))); },
     }
   },
   {
@@ -250,8 +250,8 @@ const SUBJECTS = [
       {title:'Exemplo 3 (x nos dois lados)', text:'3x + 2 = x + 10 → 2x = 8 → x = 4', qVisual: stepChain(['3x + 2 = x + 10', '2x = 8', 'x = 4']), steps:['Passe o x da direita pra esquerda (troca de sinal): 3x − x + 2 = 10', 'Junte os x: 2x + 2 = 10, e o +2 vira −2: 2x = 8', 'Divida por 2: x = 4']},
     ],
     gen:{
-      facil:()=>{ const x=randInt(1,10), a=randInt(2,5), b=randInt(1,10); const c=a*x+b; const eqText=`${a}x + ${b} = ${c}`; return mkSingle(eqText, x, [`Isole o termo com x: ${a}x = ${c} − ${b} = ${c-b}`, `Divida por ${a}: x = ${c-b} ÷ ${a}`, `x = ${x}`], null, stepChain([eqText]), stepChain([eqText, `${a}x = ${c-b}`, `x = ${x}`])); },
-      medio:()=>{ const x=randInt(-8,10), a=randInt(2,6), b=randInt(1,15); const c=a*x-b; const eqText=`${a}x − ${b} = ${c}`; return mkSingle(eqText, x, [`Isole: ${a}x = ${c} + ${b} = ${c+b}`, `Divida por ${a}: x = ${c+b} ÷ ${a}`, `x = ${x}`], null, stepChain([eqText]), stepChain([eqText, `${a}x = ${c+b}`, `x = ${x}`])); },
+      facil:()=>{ const x=randInt(1,10), a=randInt(2,5), b=randInt(1,10); const c=a*x+b; const eqText=`${a}x + ${b} = ${c}`; return mkSingle(eqText, x, [`Queremos o x sozinho. O + ${b} está somando, então passa para o outro lado subtraindo: ${a}x = ${c} − ${b}`, `${a}x = ${c-b}`, `O ${a} está multiplicando o x, então passa dividindo: x = ${c-b} ÷ ${a} = ${x}`, `Conferindo: ${a} × ${x} + ${b} = ${c} ✓`], null, stepChain([eqText]), stepChain([eqText, `${a}x = ${c-b}`, `x = ${x}`])); },
+      medio:()=>{ const x=randInt(-8,10), a=randInt(2,6), b=randInt(1,15); const c=a*x-b; const eqText=`${a}x − ${b} = ${nm(c)}`; return mkSingle(eqText, x, [`Queremos o x sozinho. O − ${b} está subtraindo, então passa para o outro lado somando: ${a}x = ${nm(c)} + ${b}`, `${a}x = ${nm(c+b)}`, `O ${a} está multiplicando o x, então passa dividindo: x = ${nm(c+b)} ÷ ${a} = ${nm(x)}`, `Conferindo: ${a} × ${np(x)} − ${b} = ${nm(c)} ✓`], null, stepChain([eqText]), stepChain([eqText, `${a}x = ${c+b}`, `x = ${x}`])); },
       dificil:()=>{
         const x=randInt(-6,8);
         let a=randInt(2,5), d=randInt(2,5);
@@ -260,7 +260,7 @@ const SUBJECTS = [
         const e=(a-d)*x+b;
         const eqText = `${a}x + ${b} = ${d}x ${fmtSigned(e)}`;
         return mkSingle(eqText, x,
-          [`Passe os termos com x para um lado: (${a} − ${d})x = ${e} − ${b}`, `${a-d}x = ${e-b}`, `x = ${e-b} ÷ ${a-d} = ${x}`],
+          [`Junte os termos com x do lado esquerdo e os números do direito. O ${d}x passa subtraindo e o + ${b} passa subtraindo: ${a}x − ${d}x = ${nm(e)} − ${b}`, `${nm(a-d)}x = ${nm(e-b)}`, `O ${nm(a-d)} passa dividindo: x = ${nm(e-b)} ÷ ${np(a-d)} = ${nm(x)}`, `Conferindo: ${a} × ${np(x)} + ${b} = ${nm(a*x+b)} e ${d} × ${np(x)} ${fmtSigned(e)} = ${nm(d*x+e)} ✓`],
           null,
           stepChain([eqText]),
           stepChain([eqText, `(${a} − ${d})x = ${e} − ${b}`, `${a-d}x = ${e-b}`, `x = ${x}`])
@@ -311,9 +311,9 @@ const SUBJECTS = [
       {title:'Exemplo 3 (com coeficientes)', text:'3x − y = 5,  x + y = 7  →  x = 3, y = 4', qVisual: sistemaArmado([{x:'3x',y:'− y',c:'5'},{x:'x',y:'+ y',c:'7'}], {x:'4x',y:'',c:'12'}), steps:['O y já tem sinais opostos (−y e +y) — soma direto', 'Somando: 4x = 12, então x = 3', 'Substituindo na 2ª equação: 3 + y = 7, então y = 4']},
     ],
     gen:{
-      facil:()=>{ const x=randInt(1,10), y=randInt(1,10); const a1=x+y, a2=x-y; const rows=[{x:'x',y:'+ y',c:`${a1}`},{x:'x',y:'− y',c:`${a2}`}]; const sum={x:'2x',y:'',c:`${a1+a2}`}; return mkXY(`x + y = ${a1}\nx − y = ${a2}`, x, y, [`Some as duas equações: 2x = ${a1+a2}`, `x = ${a1+a2}/2 = ${x}`, `Substitua na 1ª: y = ${a1} − ${x} = ${y}`], sistemaArmado(rows), sistemaArmado(rows, sum)); },
-      medio:()=>{ const x=randInt(1,8), y=randInt(1,8); const a=randInt(2,3), b=randInt(2,3); const e1=a*x+y, e2=x+b*y; const rows=[{x:`${a}x`,y:'+ y',c:`${e1}`},{x:'x',y:`+ ${b}y`,c:`${e2}`}]; return mkXY(`${a}x + y = ${e1}\nx + ${b}y = ${e2}`, x, y, [`Isole y na 1ª: y = ${e1} − ${a}x`, `Substitua na 2ª: x + ${b}(${e1} − ${a}x) = ${e2}`, `Resolvendo: x = ${x}`, `y = ${e1} − ${a}×${x} = ${y}`], sistemaArmado(rows), sistemaArmado(rows)); },
-      dificil:()=>{ const x=randInt(-5,8), y=randInt(-5,8); const a=randInt(2,4), b=randInt(2,4), c=randInt(1,3), d=randInt(1,3); const e1=a*x+c*y, e2=b*x-d*y; const rows=[{x:`${a}x`,y:`+ ${c}y`,c:`${e1}`},{x:`${b}x`,y:`− ${d}y`,c:`${e2}`}]; return mkXY(`${a}x + ${c}y = ${e1}\n${b}x − ${d}y = ${e2}`, x, y, [`Multiplique as equações para igualar coeficientes de uma variável.`, `Some/subtraia para eliminar essa variável.`, `x = ${x}`, `y = ${y}`], sistemaArmado(rows), sistemaArmado(rows)); },
+      facil:()=>{ const x=randInt(1,10), y=randInt(1,10); const a1=x+y, a2=x-y; const rows=[{x:'x',y:'+ y',c:`${a1}`},{x:'x',y:'− y',c:`${nm(a2)}`}]; const sum={x:'2x',y:'',c:`${a1+a2}`}; return mkXY(`x + y = ${a1}\nx − y = ${nm(a2)}`, x, y, [`Repare: numa equação tem + y e na outra − y. Somando as duas, o y some!`, `(x + x) + (y − y) = ${a1} + ${np(a2)} → 2x = ${a1+a2}`, `x = ${a1+a2} ÷ 2 = ${x}`, `Volte na 1ª: ${x} + y = ${a1} → y = ${a1} − ${x} = ${y}`], sistemaArmado(rows), sistemaArmado(rows, sum)); },
+      medio:()=>{ const x=randInt(1,8), y=randInt(1,8); const a=randInt(2,3), b=randInt(2,3); const e1=a*x+y, e2=x+b*y; const rows=[{x:`${a}x`,y:'+ y',c:`${e1}`},{x:'x',y:`+ ${b}y`,c:`${e2}`}]; return mkXY(`${a}x + y = ${e1}\nx + ${b}y = ${e2}`, x, y, [`Na 1ª, o y está quase sozinho. Isole: y = ${e1} − ${a}x`, `Troque o y na 2ª por (${e1} − ${a}x): x + ${b}·(${e1} − ${a}x) = ${e2}`, `Distribua: x + ${b*e1} − ${a*b}x = ${e2}`, `Junte: ${nm(1-a*b)}x = ${e2} − ${b*e1} = ${nm(e2-b*e1)}`, `x = ${nm(e2-b*e1)} ÷ ${np(1-a*b)} = ${x}`, `Volte no y: y = ${e1} − ${a} × ${x} = ${y}`], sistemaArmado(rows), sistemaArmado(rows)); },
+      dificil:()=>{ const x=randInt(-5,8), y=randInt(-5,8); const a=randInt(2,4), b=randInt(2,4), c=randInt(1,3), d=randInt(1,3); const e1=a*x+c*y, e2=b*x-d*y; const rows=[{x:`${a}x`,y:`+ ${c}y`,c:`${nm(e1)}`},{x:`${b}x`,y:`− ${d}y`,c:`${nm(e2)}`}]; return mkXY(`${a}x + ${c}y = ${nm(e1)}\n${b}x − ${d}y = ${nm(e2)}`, x, y, [`Vamos fazer o y sumir. Na 1ª tem + ${c}y e na 2ª − ${d}y.`, `Multiplique a 1ª por ${d} e a 2ª por ${c}: ${a*d}x + ${c*d}y = ${nm(e1*d)} e ${b*c}x − ${c*d}y = ${nm(e2*c)}`, `Some as duas (o y some): ${a*d+b*c}x = ${nm(e1*d+e2*c)}`, `x = ${nm(e1*d+e2*c)} ÷ ${a*d+b*c} = ${nm(x)}`, `Volte na 1ª: ${a} × ${np(x)} + ${c}y = ${nm(e1)} → ${c}y = ${nm(e1)} − ${np(a*x)} = ${nm(e1-a*x)}`, `y = ${nm(e1-a*x)} ÷ ${c} = ${nm(y)}`], sistemaArmado(rows), sistemaArmado(rows)); },
     }
   },
   {
