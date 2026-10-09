@@ -503,7 +503,25 @@ function reviewErrorsSessionScreen(){
   }
   c.appendChild(qcard);
 
-  if(!sess.checked){
+  if(!sess.checked && ex.mcOptions){
+    // questão de prova (com alternativas): responde tocando na alternativa
+    const opts = h(`<div class="mc-opts"></div>`);
+    ex.mcOptions.forEach((o,i)=>{
+      const b = h(`<button type="button" class="mc-opt"><span class="key">${'ABCDE'[i]}</span><span class="lbl ${pvLblClass(o.label)}"></span></button>`);
+      b.querySelector('.lbl').textContent = o.label;
+      b.onclick = async ()=>{
+        const correct = !!o.ok;
+        sess.checked = true; sess.wasCorrect = correct;
+        giveAnswerFeedback(correct);
+        sess.results.push(correct);
+        if(correct) sess.correct++; else sess.wrong++;
+        await recordReviewAnswer(item, correct);
+        render();
+      };
+      opts.appendChild(b);
+    });
+    c.appendChild(opts);
+  } else if(!sess.checked){
     const form = h(`<div class="answer-form"></div>`);
     if(ex.type==='single'){
       form.appendChild(h(`<div><label>Resposta</label>${answerInputHTML('ans1','Digite o valor')}</div>`));
