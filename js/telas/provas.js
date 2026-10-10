@@ -74,7 +74,12 @@ function examTabBody(e, c){
   </div>`));
 
   if(e.content && e.content.length){
-    c.appendChild(h(`<div class="pv-content"><b>📚 Conteúdos da prova</b><ul>${e.content.map(x=>`<li>${escHTML(x)}</li>`).join('')}</ul></div>`));
+    // o que está entre parênteses ou depois de ":" aparece mais clarinho, como detalhe
+    const fmt = x=> escHTML(x).replace(/\(([^)]*)\)/g, '<small>($1)</small>').replace(/^([^:]+):\s*(.+)$/, '$1: <small>$2</small>');
+    c.appendChild(h(`<div class="pv-content" style="--c:${e.color}; --c2:${e.color2}">
+      <div class="pv-content-h"><span>📚</span><div><b>Conteúdos da prova</b><small>${e.content.length} blocos de estudo de Matemática</small></div></div>
+      <ol>${e.content.map((x,i)=>`<li><i>${i+1}</i><p>${fmt(x)}</p></li>`).join('')}</ol>
+    </div>`));
   }
 
   c.appendChild(h(`<h3 class="ar-label">O que cai de Matemática</h3>`));

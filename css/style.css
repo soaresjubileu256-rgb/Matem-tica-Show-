@@ -3462,10 +3462,21 @@ section.block h3::before, .rp-sec::before, .hq-head span::before{content:''; wid
 .pv-row-t b{font-family:'Fraunces',serif; font-size:14px; color:var(--ink);}
 .pv-btn{flex:none; border:1px solid var(--border); background:var(--surface-2); color:var(--ink); border-radius:999px; padding:7px 10px; font:800 12.5px 'Inter',sans-serif; cursor:pointer;}
 .pv-btn.go{background:linear-gradient(135deg,#4C7DFF,#B23FE0); color:#fff; border:none; padding:7px 13px;}
-.pv-content{margin:12px 0 4px; padding:12px 14px; border-radius:var(--radius-card); background:var(--white); border:1px solid var(--border);}
-.pv-content b{font-size:13.5px; color:var(--ink);}
-.pv-content ul{margin:8px 0 0; padding-left:18px; display:flex; flex-direction:column; gap:5px;}
-.pv-content li{font-size:13px; line-height:1.4; color:var(--ink);}
+.pv-content{--c:#4C7DFF; --c2:#2F55D4; position:relative; overflow:hidden; margin:0 0 12px; padding:14px; border-radius:var(--radius-card); border:1px solid color-mix(in srgb, var(--c) 30%, var(--border));
+  background:linear-gradient(160deg, color-mix(in srgb, var(--c) 12%, var(--white)) 0%, var(--white) 55%); box-shadow:var(--shadow-soft);}
+.pv-content::before{content:''; position:absolute; left:0; top:0; bottom:0; width:4px; background:linear-gradient(180deg, var(--c), var(--c2));}
+.pv-content-h{display:flex; align-items:center; gap:10px; margin-bottom:10px;}
+.pv-content-h > span{flex:none; display:grid; place-items:center; width:38px; height:38px; border-radius:12px; font-size:19px;
+  background:linear-gradient(135deg, var(--c), var(--c2)); box-shadow:0 4px 12px color-mix(in srgb, var(--c) 35%, transparent);}
+.pv-content-h b{display:block; font-family:'Fraunces',serif; font-size:17px; color:var(--ink);}
+.pv-content-h small{display:block; font-size:11.5px; font-weight:700; color:var(--ink-soft); margin-top:1px;}
+.pv-content ol{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px;}
+.pv-content li{display:flex; align-items:flex-start; gap:10px; padding:9px 10px; border-radius:12px; background:color-mix(in srgb, var(--c) 6%, var(--surface-2));
+  border:1px solid color-mix(in srgb, var(--c) 14%, transparent);}
+.pv-content li i{flex:none; display:grid; place-items:center; width:24px; height:24px; border-radius:50%; font-style:normal; font-size:12px; font-weight:900; color:#fff;
+  background:linear-gradient(135deg, var(--c), var(--c2));}
+.pv-content li p{margin:2px 0 0; font-size:13.5px; font-weight:600; line-height:1.4; color:var(--ink);}
+.pv-content li small{font-size:12.5px; font-weight:500; color:var(--ink-soft);}
 .pv-extra{margin-top:12px; padding:12px 14px; border-radius:var(--radius-card); background:var(--white); border:1px dashed var(--border);}
 .pv-extra b{font-size:13.5px; color:var(--ink);} .pv-extra p{margin:3px 0 8px; font-size:12px; color:var(--ink-soft);}
 .pv-extra div{display:flex; flex-wrap:wrap; gap:6px;}
