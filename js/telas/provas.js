@@ -73,6 +73,15 @@ function examTabBody(e, c){
     <div><span>💡</span><div><b>Dica</b><p>${escHTML(e.tip)}</p></div></div>
   </div>`));
 
+  if(e.content && e.content.length){
+    // o que está entre parênteses ou depois de ":" aparece mais clarinho, como detalhe
+    const fmt = x=> escHTML(x).replace(/\(([^)]*)\)/g, '<small>($1)</small>').replace(/^([^:]+):\s*(.+)$/, '$1: <small>$2</small>');
+    c.appendChild(h(`<div class="pv-content" style="--c:${e.color}; --c2:${e.color2}">
+      <div class="pv-content-h"><span>📚</span><div><b>Conteúdos da prova</b><small>${e.content.length} blocos de estudo de Matemática</small></div></div>
+      <ol>${e.content.map((x,i)=>`<li><i>${i+1}</i><p>${fmt(x)}</p></li>`).join('')}</ol>
+    </div>`));
+  }
+
   c.appendChild(h(`<h3 class="ar-label">O que cai de Matemática</h3>`));
   EXAM_LEVELS.forEach(L=>{
     const ids = examTopicIds(e, [L.id]);
