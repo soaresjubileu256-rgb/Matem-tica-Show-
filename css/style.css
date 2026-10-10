@@ -3462,6 +3462,10 @@ section.block h3::before, .rp-sec::before, .hq-head span::before{content:''; wid
 .pv-row-t b{font-family:'Fraunces',serif; font-size:14px; color:var(--ink);}
 .pv-btn{flex:none; border:1px solid var(--border); background:var(--surface-2); color:var(--ink); border-radius:999px; padding:7px 10px; font:800 12.5px 'Inter',sans-serif; cursor:pointer;}
 .pv-btn.go{background:linear-gradient(135deg,#4C7DFF,#B23FE0); color:#fff; border:none; padding:7px 13px;}
+.pv-content{margin:12px 0 4px; padding:12px 14px; border-radius:var(--radius-card); background:var(--white); border:1px solid var(--border);}
+.pv-content b{font-size:13.5px; color:var(--ink);}
+.pv-content ul{margin:8px 0 0; padding-left:18px; display:flex; flex-direction:column; gap:5px;}
+.pv-content li{font-size:13px; line-height:1.4; color:var(--ink);}
 .pv-extra{margin-top:12px; padding:12px 14px; border-radius:var(--radius-card); background:var(--white); border:1px dashed var(--border);}
 .pv-extra b{font-size:13.5px; color:var(--ink);} .pv-extra p{margin:3px 0 8px; font-size:12px; color:var(--ink-soft);}
 .pv-extra div{display:flex; flex-wrap:wrap; gap:6px;}

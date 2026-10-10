@@ -4,6 +4,7 @@
      muito    🔥 cai muito (quase toda edição)
      bastante ⭐ cai bastante
      vezes    ✓ às vezes cai
+   "content": resumo dos conteúdos de Matemática cobrados na prova (aparece na aba da prova);
    e "extra": temas que caem mas ainda não têm assunto próprio no app.
    Fonte: levantamentos de provas anteriores publicados por cursinhos e sites de educação
    (ex.: Professor Ferretto, Aprova Total, Estratégia, Passaporte ETEC, CNN Brasil).
@@ -20,6 +21,13 @@ const EXAMS = [
     who:'Quem está terminando ou já terminou o Ensino Médio. A nota abre portas pro SISU, ProUni e Fies.',
     format:'45 questões de Matemática no 2º dia, todas com texto de apoio e 5 alternativas. A nota é calculada pela TRI: errar questões fáceis e acertar difíceis pesa contra.',
     tip:'Quase toda questão traz uma situação real com gráfico, tabela ou figura. Leia com calma, sublinhe os dados e confira as unidades. Porcentagem aparece dentro de muitas questões.',
+    content:[
+      'Matemática financeira (juros compostos, parcelamento), exponencial e logaritmo',
+      'Funções (afim, quadrática, exponencial), leitura de gráficos e tabelas',
+      'Estatística (média, mediana, desvio padrão), probabilidade condicional',
+      'Geometria espacial (volumes, capacidade), escalas, grandezas e unidades',
+      'PA/PG, trigonometria no triângulo retângulo, análise combinatória',
+    ],
     topics:{
       muito:['porcentagem','regra3','estatistica','graficos','espacial','geometria','fracoes'],
       bastante:['decimais','eq1','func1grau','funcquad','probabilidade','combinatoria','juros','dispersao'],
@@ -30,6 +38,12 @@ const EXAMS = [
     who:'Quem está no 9º ano ou já terminou o Ensino Fundamental e quer fazer o Ensino Médio integrado ao técnico.',
     format:'Prova de 50 questões de várias matérias, com 5 alternativas. As questões misturam assuntos e trazem textos, gráficos e tabelas.',
     tip:'A Matemática da ETEC se repete muito: porcentagem, regra de três, frações e leitura de gráficos aparecem quase todo ano. Treine fazer as contas sem calculadora.',
+    content:[
+      'Equações e sistemas, produtos notáveis, fatoração',
+      'Razão, proporção, porcentagem, regra de três composta',
+      'Teorema de Pitágoras, semelhança e Tales, áreas e volumes',
+      'Estatística e probabilidade básicas',
+    ],
     topics:{
       muito:['porcentagem','regra3','fracoes','decimais','estatistica','geometria','eq1'],
       bastante:['graficos','dinheiro','mmcmdc','potenciacao','expressoes'],
@@ -40,6 +54,13 @@ const EXAMS = [
     who:'Quem quer entrar na USP (Universidade de São Paulo).',
     format:'1ª fase com questões de todas as matérias e 5 alternativas. 2ª fase com questões escritas (dissertativas), em que conta o raciocínio.',
     tip:'Matemática básica (porcentagem, proporção, equações) ainda é o que mais cai, mas a Fuvest cobra bem geometria espacial, funções e trigonometria. Na 2ª fase, mostre todas as contas.',
+    content:[
+      'Funções (modular, exponencial, logarítmica), inequações',
+      'Trigonometria completa (equações, identidades, lei dos senos e cossenos)',
+      'Geometria analítica (reta, circunferência, cônicas), geometria espacial avançada',
+      'Polinômios, números complexos, matrizes, determinantes e sistemas lineares',
+      'Combinatória, probabilidade, PA/PG',
+    ],
     topics:{
       muito:['porcentagem','regra3','eq1','func1grau','funcquad','espacial','geometria','trigret'],
       bastante:['ciclo','leis','probabilidade','combinatoria','analitica','pa','pg','logaritmo','exponencial'],
@@ -50,6 +71,11 @@ const EXAMS = [
     who:'Quem quer entrar na Unicamp (Universidade Estadual de Campinas).',
     format:'1ª fase com questões objetivas de todas as matérias. 2ª fase com questões escritas por área.',
     tip:'Geometria plana, funções e geometria espacial lideram. Geometria analítica e matrizes aparecem mais aqui do que no ENEM.',
+    content:[
+      'Mesmos tópicos da Fuvest, com enunciados longos e contextualizados',
+      'Muita combinatória e probabilidade, sequências, geometria plana e espacial',
+      'Raciocínio e justificativa, não só cálculo',
+    ],
     topics:{
       muito:['geometria','func1grau','funcquad','espacial','analitica'],
       bastante:['eq2','sistemas','matrizes','determinantes','probabilidade','pa','pg'],
@@ -60,6 +86,11 @@ const EXAMS = [
     who:'Quem quer entrar na Unesp (Universidade Estadual Paulista).',
     format:'1ª fase de conhecimentos gerais com questões objetivas. 2ª fase com questões escritas.',
     tip:'Proporcionalidade (razão, proporção e regra de três) é o tema campeão. Depois vêm geometria e funções.',
+    content:[
+      'Funções, trigonometria, geometria plana, espacial e analítica',
+      'Combinatória, probabilidade, complexos, polinômios, matrizes',
+      '2ª fase dissertativa: é preciso mostrar o desenvolvimento',
+    ],
     topics:{
       muito:['regra3','porcentagem','geometria','espacial','func1grau'],
       bastante:['funcquad','trigret','probabilidade','combinatoria','estatistica','pa','pg'],
@@ -70,6 +101,12 @@ const EXAMS = [
     who:'Alunos do 6º ano ao Ensino Médio. Nível 1 (6º e 7º ano), Nível 2 (8º e 9º ano) e Nível 3 (Ensino Médio).',
     format:'1ª fase com 20 questões de 5 alternativas. 2ª fase com questões discursivas pra quem passa.',
     tip:'A OBMEP cobra raciocínio mais do que fórmula: desenhe, teste casos pequenos e procure padrões. Frações, MMC/MDC, contagem e áreas aparecem muito.',
+    content:[
+      'Teoria dos números (divisores, primos, MMC/MDC, paridade, congruências simples)',
+      'Contagem, princípio da casa dos pombos, lógica e jogos',
+      'Geometria (áreas, ângulos, construções), sequências e padrões',
+      'Álgebra criativa, mais engenhosidade do que fórmulas',
+    ],
     topics:{
       muito:['fracoes','mmcmdc','geometria','combinatoria','eq1','porcentagem'],
       bastante:['decimais','regra3','sistemas','potenciacao','probabilidade','expressoes'],

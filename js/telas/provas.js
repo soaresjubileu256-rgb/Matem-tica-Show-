@@ -73,6 +73,10 @@ function examTabBody(e, c){
     <div><span>💡</span><div><b>Dica</b><p>${escHTML(e.tip)}</p></div></div>
   </div>`));
 
+  if(e.content && e.content.length){
+    c.appendChild(h(`<div class="pv-content"><b>📚 Conteúdos da prova</b><ul>${e.content.map(x=>`<li>${escHTML(x)}</li>`).join('')}</ul></div>`));
+  }
+
   c.appendChild(h(`<h3 class="ar-label">O que cai de Matemática</h3>`));
   EXAM_LEVELS.forEach(L=>{
     const ids = examTopicIds(e, [L.id]);
