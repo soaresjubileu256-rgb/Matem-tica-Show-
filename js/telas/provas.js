@@ -1,7 +1,7 @@
 /* =========================================================
    TELAS DE PROVAS (ENEM, ETEC, Fuvest, Unicamp, Unesp, OBMEP)
    - Provas: lista com o quanto você já domina do que cai em cada uma.
-   - Prova: como é, quem faz, dica, o que cai (🔥 / ⭐ / ✓), treino e simulado só desses assuntos.
+   - Prova: como é, quem faz, dica, conteúdos da prova, treino e simulado só desses assuntos.
    - "Minha prova": a escolhida aparece no Início, em "Pra fazer hoje".
    Os dados ficam em js/assuntos/provas.js.
    ========================================================= */
@@ -82,23 +82,6 @@ function examTabBody(e, c){
     </div>`));
   }
 
-  c.appendChild(h(`<h3 class="ar-label">O que cai de Matemática</h3>`));
-  EXAM_LEVELS.forEach(L=>{
-    const ids = examTopicIds(e, [L.id]);
-    if(!ids.length) return;
-    c.appendChild(h(`<div class="pv-lvl ${L.id}"><span>${L.ico} ${L.name}</span><small>${L.sub}</small></div>`));
-    ids.forEach(id=>{
-      const s = SUBJECTS.find(x=>x.id===id), m = masterySync(id);
-      const row = h(`<div class="pv-row ${L.id}">
-        <span class="ar-sym">${s.sym}</span>
-        <button type="button" class="pv-row-t" data-a="learn" aria-label="Estudar ${escHTML(s.name)}"><b>${escHTML(s.name)}</b>${masteryChip(m)}</button>
-        <button type="button" class="pv-btn go" data-a="train">Treinar</button>
-      </div>`);
-      row.querySelector('[data-a=learn]').onclick = ()=> go('subjectDetail', {subjectId:id});
-      row.querySelector('[data-a=train]').onclick = ()=> startSession(id, adaptiveDifficultyFor(progressSync(), id));
-      c.appendChild(row);
-    });
-  });
   if(e.extra && e.extra.length){
     c.appendChild(h(`<div class="pv-extra"><b>📌 Também cai</b><p>Temas que aparecem nessa prova e você pode revisar no caderno ou no livro:</p><div>${e.extra.map(x=>`<span>${escHTML(x)}</span>`).join('')}</div></div>`));
   }
