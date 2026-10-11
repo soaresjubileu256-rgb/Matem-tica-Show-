@@ -8,7 +8,7 @@
 /* recordes por assunto+dificuldade, último treino e quantidade escolhida (por conta) */
 const EXB_KEY_BASE = 'mathstudy-exbest-v1';
 function exbData(){ try{ const d = JSON.parse(localStorage.getItem(`${EXB_KEY_BASE}:${currentUserId()}`)||'{}'); d.best = d.best||{}; return d; }catch(e){ return {best:{}}; } }
-function saveExb(d){ try{ localStorage.setItem(`${EXB_KEY_BASE}:${currentUserId()}`, JSON.stringify(d)); }catch(e){} }
+function saveExb(d){ return storeSetJSON(`${EXB_KEY_BASE}:${currentUserId()}`, d); }
 const EX_DIFFS = [
   ['facil','Fácil','🟢','Pra aquecer','Números menores, poucos passos'],
   ['medio','Médio','🟡','O desafio certo','Números maiores, mais passos'],
@@ -231,6 +231,8 @@ function parseUserNumber(str){
 
 function exerciseSessionScreen(){
   const sess = state.session;
+  // sem sessão (ex.: histórico do navegador restaurado sem ela): volta pra lista em vez de tela branca
+  if(!sess || !sess.subjectId){ setTimeout(()=>go('exercisesSubjects'), 0); return document.createElement('div'); }
   const si = Math.max(0, SUBJECTS.findIndex(x=>x.id===sess.subjectId));
   const s = SUBJECTS[si];
   const wrap = document.createElement('div');
@@ -561,7 +563,7 @@ const CH_POOLS = [['all','🌎','Todos'], ['fund','📘','Fundamental'], ['em','
 const CH_DIFFS = [['facil','Fácil','🟢','Pra aquecer'], ['medio','Médio','🟡','O desafio certo'], ['dificil','Difícil','🔴','Pra quem é fera']];
 const CH_SIZES = [5,10,15];
 function chData(){ try{ const d = JSON.parse(localStorage.getItem(`${CH_KEY_BASE}:${currentUserId()}`)||'{}'); d.best = d.best||{}; d.cfg = d.cfg||{pool:'all', n:10}; d.plays = d.plays||0; return d; }catch(e){ return {best:{}, cfg:{pool:'all', n:10}, plays:0}; } }
-function saveChData(d){ try{ localStorage.setItem(`${CH_KEY_BASE}:${currentUserId()}`, JSON.stringify(d)); }catch(e){} }
+function saveChData(d){ return storeSetJSON(`${CH_KEY_BASE}:${currentUserId()}`, d); }
 const chKey = (pool, diff, n)=> `${pool}:${diff}:${n}`;
 function chPickSubject(sess){
   const ids = sess.pool && sess.pool!=='all' ? levelIds(sess.pool) : SUBJECTS.map(x=>x.id);
@@ -667,6 +669,7 @@ function challengeEnd(c, sess){
 }
 function challengeSessionScreen(){
   const sess = state.session;
+  if(!sess || typeof sess.index!=='number'){ setTimeout(()=>go('challengeDifficulty'), 0); return document.createElement('div'); }
   const wrap = document.createElement('div');
   wrap.appendChild(topbar('🏆 Desafio', true, ()=>go('challengeDifficulty')));
   const c = h(`<div class="content"></div>`);
@@ -1072,6 +1075,7 @@ function ptBreakdown(sess){
 
 function personalizedSessionScreen(){
   const sess = state.session;
+  if(!sess || !sess.config){ setTimeout(()=>go('personalizedSetup'), 0); return document.createElement('div'); }
   const wrap = document.createElement('div');
   // sair no meio do treino pede confirmação, pra não perder o progresso sem querer
   const ptBack = sess.config.isMix ? 'home' : sess.config.examId ? 'examDetail' : 'personalizedSetup';

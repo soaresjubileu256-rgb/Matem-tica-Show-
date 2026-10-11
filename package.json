@@ -1,0 +1,15 @@
+{
+  "name": "matematica-show",
+  "private": true,
+  "description": "Matemática Show — app de matemática (PWA estático, sem build). Este arquivo só serve para rodar os testes.",
+  "type": "module",
+  "scripts": {
+    "test": "npm run test:unidade && npm run test:navegador",
+    "test:unidade": "node --test tests/unidade/*.test.mjs",
+    "test:navegador": "node tests/navegador/rodar-todos.mjs",
+    "servir": "python3 -m http.server 8000"
+  },
+  "devDependencies": {
+    "playwright": "^1.47.0"
+  }
+}

@@ -78,13 +78,13 @@ function tokenize(s){
     const c=s[i];
     if(/\s/.test(c)){ i++; continue; }
     if(/[0-9.]/.test(c)){ let j=i; while(j<s.length && /[0-9.]/.test(s[j])) j++; toks.push({t:'num', v:parseFloat(s.slice(i,j))}); i=j; continue; }
-    if('+-*/^()'.includes(c)){ toks.push({t:c}); i++; continue; }
+    if('+-*/^()|'.includes(c)){ toks.push({t:c}); i++; continue; }
     i++; // skip unknown char
   }
   return toks;
 }
 function parseExprTokens(toks){
-  let pos=0;
+  let pos=0, absDepth=0; // absDepth: dentro de |...|, a próxima barra fecha o módulo
   function peek(){ return toks[pos]; }
   function next(){ return toks[pos++]; }
   function parseAdd(){
@@ -96,26 +96,30 @@ function parseExprTokens(toks){
     return node;
   }
   function parseMul(){
-    let node = parsePow();
-    while(peek() && (peek().t==='*' || peek().t==='/' || peek().t==='(' || peek().t==='num')){
-      let op = '*';
-      if(peek().t==='*' || peek().t==='/'){ op = next().t; }
-      const right = parsePow();
+    let node = parseUnary();
+    // multiplicação implícita: 2(3), 2x depois de substituir, 2|x| (barra que ABRE um módulo)
+    while(peek() && (peek().t==='*' || peek().t==='/' || peek().t==='(' || peek().t==='num' || (peek().t==='|' && absDepth===0))){
+      let op = '*', implicit = true;
+      if(peek().t==='*' || peek().t==='/'){ op = next().t; implicit = false; }
+      const right = implicit ? parsePow() : parseUnary(); // explícito aceita sinal: 6 / -2
       node = {op, l:node, r:right};
     }
     return node;
   }
-  function parsePow(){
-    let node = parseUnary();
-    if(peek() && peek().t==='^'){ next(); const right = parsePow(); node = {op:'^', l:node, r:right}; }
-    return node;
-  }
+  // o sinal de menos vale MENOS que a potência: −3² = −(3²) = −9 (convenção da matemática)
   function parseUnary(){
     if(peek() && peek().t==='-'){ next(); const n = parseUnary(); return {op:'neg', l:n}; }
-    return parsePrimary();
+    if(peek() && peek().t==='+'){ next(); return parseUnary(); }
+    return parsePow();
+  }
+  function parsePow(){
+    let node = parsePrimary();
+    if(peek() && peek().t==='^'){ next(); const right = parseUnary(); node = {op:'^', l:node, r:right}; }
+    return node;
   }
   function parsePrimary(){
     if(peek() && peek().t==='('){ next(); const n = parseAdd(); if(peek() && peek().t===')') next(); return n; }
+    if(peek() && peek().t==='|'){ next(); absDepth++; const n = parseAdd(); absDepth--; if(peek() && peek().t==='|') next(); return {op:'abs', l:n}; }
     if(peek() && peek().t==='num'){ return {op:'num', v: next().v}; }
     return {op:'num', v:0};
   }
@@ -125,6 +129,7 @@ function nodeText(node, parentPrec){
   parentPrec = parentPrec || 0;
   if(node.op==='num') return fmt(node.v);
   if(node.op==='neg') return `-${nodeText(node.l, 4)}`;
+  if(node.op==='abs') return `|${nodeText(node.l, 0)}|`;
   const prec = {'+':1,'-':1,'*':2,'/':2,'^':3}[node.op];
   const sym = {'+':'+','-':'−','*':'×','/':'÷','^':'^'}[node.op];
   const txt = `${nodeText(node.l, prec)} ${sym} ${nodeText(node.r, prec+1)}`;
@@ -133,6 +138,7 @@ function nodeText(node, parentPrec){
 function evalNode(node, steps){
   if(node.op==='num') return node.v;
   if(node.op==='neg'){ const v=-evalNode(node.l, steps); return v; }
+  if(node.op==='abs'){ const v0 = evalNode(node.l, steps), v = Math.abs(v0); steps.push(`|${fmt(v0)}| = ${fmt(v)}`); return v; }
   const l = evalNode(node.l, steps);
   const r = evalNode(node.r, steps);
   let v;
@@ -158,7 +164,7 @@ function evalArithmeticWithSteps(exprStr){
 function cloneReplaceNode(node, target, value){
   if(node === target) return {op:'num', v:value};
   if(node.op==='num') return node;
-  if(node.op==='neg') return {op:'neg', l:cloneReplaceNode(node.l, target, value)};
+  if(node.op==='neg' || node.op==='abs') return {op:node.op, l:cloneReplaceNode(node.l, target, value)};
   return {op:node.op, l:cloneReplaceNode(node.l, target, value), r:cloneReplaceNode(node.r, target, value)};
 }
 function evalArithmeticWithStages(exprStr){
@@ -169,6 +175,13 @@ function evalArithmeticWithStages(exprStr){
   function evalRec(node){
     if(node.op==='num') return node.v;
     if(node.op==='neg'){ return -evalRec(node.l); }
+    if(node.op==='abs'){
+      const v0 = evalRec(node.l), v = Math.abs(v0);
+      steps.push(`|${fmt(v0)}| = ${fmt(v)}`);
+      const reduced = nodeText(cloneReplaceNode(root, node, v));
+      if(stages[stages.length-1] !== reduced) stages.push(reduced);
+      return v;
+    }
     const l = evalRec(node.l), r = evalRec(node.r);
     let v;
     if(node.op==='+') v=l+r;

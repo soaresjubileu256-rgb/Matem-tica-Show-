@@ -179,9 +179,15 @@ async function settingsScreen(){
     const file = importInput.files[0];
     importInput.value = '';
     if(!file) return;
-    const ok = await showConfirm({icon:'📥', title:'Restaurar a cópia?', message:'Isso vai substituir seu progresso, histórico e configurações atuais pelos dados desse arquivo.', ok:'Restaurar', cancel:'Cancelar', danger:true});
+    const rd = await readBackupFile(file);
+    if(!rd.ok){ stMsg(importMsgBox, false, rd.error); return; }
+    const from = rd.data.account, when = rd.data.exportedAt ? new Date(rd.data.exportedAt).toLocaleDateString('pt-BR') : null;
+    const other = from && currentUser && userIdFromName(from)!==currentUser.id;
+    const ok = await showConfirm({icon:'📥', title:'Restaurar a cópia?',
+      message:`${from ? `Cópia da conta "${from}"${when ? ` de ${when}` : ''}. ` : ''}${other ? `Atenção: ela é de OUTRA conta e vai entrar no lugar dos dados de "${currentUser.name}". ` : ''}O progresso atual será substituído, mas antes guardamos uma cópia de segurança: dá para desfazer aqui mesmo.`,
+      ok:'Restaurar', cancel:'Cancelar', danger:true});
     if(!ok) return;
-    const res = await importProgressData(file);
+    const res = await importProgressData(rd.data);
     if(!res.ok){ stMsg(importMsgBox, false, res.error); }
     else {
       stMsg(importMsgBox, true, 'Progresso restaurado! Atualizando…');
@@ -191,10 +197,25 @@ async function settingsScreen(){
   const acts = h(`<div class="st-acts"></div>`);
   acts.appendChild(exportBtn); acts.appendChild(importBtn);
   dt.appendChild(acts); dt.appendChild(importInput); dt.appendChild(importMsgBox);
+  // desfazer a última restauração (ponto de restauração guardado antes de importar)
+  const rp = restorePointInfo(currentUserId());
+  if(rp){
+    const undo = h(`<button type="button" class="st-act st-undo"><span>↩️</span><b>Desfazer a última restauração</b><small>Volta seus dados para como estavam em ${new Date(rp.ts).toLocaleString('pt-BR', {dateStyle:'short', timeStyle:'short'})}</small></button>`);
+    undo.onclick = async ()=>{
+      if(!await showConfirm({icon:'↩️', title:'Desfazer a restauração?', message:'Seus dados voltam a ser os de antes da última restauração.', ok:'Desfazer', cancel:'Cancelar'})) return;
+      const r = await undoLastRestoreForCurrentUser();
+      if(!r.ok) stMsg(importMsgBox, false, r.error);
+      else { stMsg(importMsgBox, true, 'Pronto! Seus dados voltaram. Atualizando…'); setTimeout(()=>{ if(state.screen==='settings') go('profile'); }, 900); }
+    };
+    dt.appendChild(undo);
+  }
+  // espaço usado (o navegador costuma dar ~5 MB por site para este tipo de armazenamento)
+  const kb = Math.round(storageUsageBytes()/1024);
+  dt.appendChild(h(`<p class="st-usage">Espaço usado neste aparelho: <b>${kb < 1024 ? kb + ' KB' : (kb/1024).toFixed(1).replace('.', ',') + ' MB'}</b> de cerca de 5 MB${kb > 3500 ? ' · <b class="warn">quase cheio: apague páginas antigas do Caderno</b>' : ''}.</p>`));
   c.appendChild(dt);
 
   // ---------- Zona de perigo ----------
-  const dz = h(`<section class="st-card st-danger"><div class="st-card-h"><span class="st-card-ico">🧨</span><div><b>Começar do zero</b><small>Apaga questões, histórico, XP, conquistas e trilha desta conta. Seu nome, senha, avatar e configurações continuam.</small></div></div></section>`);
+  const dz = h(`<section class="st-card st-danger"><div class="st-card-h"><span class="st-card-ico">🧨</span><div><b>Começar do zero</b><small>Apaga questões, histórico, XP, conquistas, trilha, aulas lidas, tabuada e recordes desta conta. Seu nome, senha, avatar, configurações e o Caderno continuam.</small></div></div></section>`);
   const resetBtn = h(`<button type="button" class="st-reset">Apagar meu progresso</button>`);
   resetBtn.onclick = async ()=>{
     const ok = await showConfirm({icon:'🧨', title:'Apagar todo o progresso?', message:'Isso não dá pra desfazer. Se quiser guardar, salve uma cópia antes.', ok:'Apagar tudo', cancel:'Cancelar', danger:true});
@@ -204,6 +225,21 @@ async function settingsScreen(){
     resetBtn.disabled = true;
   };
   dz.appendChild(resetBtn);
+  // excluir a conta inteira (pede a senha)
+  const del = h(`<details class="st-del"><summary>Excluir esta conta do aparelho</summary>
+      <p>Apaga a conta e <b>todos</b> os dados dela neste aparelho, inclusive o Caderno. Não dá para desfazer: salve uma cópia antes, se quiser.</p>
+      <div class="auth-field"><label for="stDelPass">Digite sua senha para confirmar</label><input id="stDelPass" type="password" autocomplete="current-password"></div>
+      <div class="authErrorBox"></div>
+      <button type="button" class="st-reset">Excluir conta</button></details>`);
+  del.querySelector('.st-reset').onclick = async ()=>{
+    const box = del.querySelector('.authErrorBox'), pass = del.querySelector('input').value;
+    if(!pass){ stMsg(box, false, 'Digite sua senha.'); return; }
+    if(!await showConfirm({icon:'🗑️', title:'Excluir a conta?', message:`A conta "${currentUser.name}" e tudo dela serão apagados deste aparelho.`, ok:'Excluir', cancel:'Cancelar', danger:true})) return;
+    const r = await deleteCurrentUser(pass);
+    if(!r.ok){ stMsg(box, false, r.error); return; }
+    doLogout();
+  };
+  dz.appendChild(del);
   c.appendChild(dz);
   c.appendChild(h(`<p class="pf-foot">🎬 Matemática Show · as mudanças são salvas na hora</p>`));
 

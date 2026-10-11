@@ -33,7 +33,7 @@ const NB_ICONS = {
 function nbIcon(id){ return `<svg class="nb-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${NB_ICONS[id]||''}</svg>`; }
 
 function notesIndex(){ try{ return JSON.parse(localStorage.getItem(`${NOTES_KEY_BASE}:${currentUserId()}`)||'[]'); }catch(e){ return []; } }
-function saveNotesIndex(list){ localStorage.setItem(`${NOTES_KEY_BASE}:${currentUserId()}`, JSON.stringify(list)); }
+function saveNotesIndex(list){ if(!storeSetJSON(`${NOTES_KEY_BASE}:${currentUserId()}`, list, {quiet:true})) throw new Error('armazenamento cheio'); }
 function loadNotePage(id){
   const meta = notesIndex().find(n=>n.id===id);
   if(!meta) return null;
@@ -57,8 +57,9 @@ function saveNotePage(page){
   }
 }
 function deleteNotePage(id){
-  try{ localStorage.removeItem(`${NOTE_KEY_BASE}:${currentUserId()}:${id}`); }catch(e){}
-  saveNotesIndex(notesIndex().filter(n=>n.id!==id));
+  // tira do índice primeiro (sempre cabe: a lista fica menor) e depois apaga os traços
+  try{ saveNotesIndex(notesIndex().filter(n=>n.id!==id)); }catch(e){ notifyStorageProblem('cheio'); return; }
+  storeRemove(`${NOTE_KEY_BASE}:${currentUserId()}:${id}`);
 }
 function newNotePage(opts){
   opts = opts || {};
@@ -75,13 +76,18 @@ function exportNotes(){
   index.forEach(n=>{ try{ pages[n.id] = JSON.parse(localStorage.getItem(`${NOTE_KEY_BASE}:${currentUserId()}:${n.id}`)||'[]'); }catch(e){} });
   return {index, pages};
 }
+/* restaura as anotações de um backup antigo (formato 1). Grava as páginas novas ANTES de apagar as atuais. */
 function importNotes(data){
-  if(!data || !Array.isArray(data.index)) return;
-  notesIndex().forEach(n=>{ try{ localStorage.removeItem(`${NOTE_KEY_BASE}:${currentUserId()}:${n.id}`); }catch(e){} });
-  try{
-    saveNotesIndex(data.index);
-    data.index.forEach(n=>{ localStorage.setItem(`${NOTE_KEY_BASE}:${currentUserId()}:${n.id}`, JSON.stringify((data.pages||{})[n.id]||[])); });
-  }catch(e){}
+  if(!data || !Array.isArray(data.index)) return true;
+  const uid = currentUserId(), old = notesIndex();
+  const index = data.index.filter(n=> n && /^[\w-]{1,40}$/.test(String(n.id)));
+  for(const n of index){
+    if(!storeSetJSON(`${NOTE_KEY_BASE}:${uid}:${n.id}`, (data.pages||{})[n.id]||[], {quiet:true})) return false;
+  }
+  try{ saveNotesIndex(index); }catch(e){ return false; }
+  const keep = new Set(index.map(n=>n.id));
+  old.forEach(n=>{ if(!keep.has(n.id)) storeRemove(`${NOTE_KEY_BASE}:${uid}:${n.id}`); });
+  return true;
 }
 
 /* ---------- desenho ---------- */

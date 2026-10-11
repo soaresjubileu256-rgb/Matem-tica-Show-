@@ -10,6 +10,14 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
+  {v:16, date:'2026-10-11', title:'Seus dados mais seguros e simulados que continuam depois', items:[
+    {ico:'💾', t:'Cópia completa e "Desfazer"', d:'A cópia de segurança agora leva tudo: Caderno, tabuada, aulas lidas, desafios e recordes. Antes de restaurar uma cópia, o app guarda como estava e você pode desfazer em Configurações.', go:'settings'},
+    {ico:'⚠️', t:'Aviso de armazenamento cheio', d:'Se o espaço do aparelho acabar, o app avisa na hora (antes, o progresso podia deixar de ser salvo sem ninguém saber). Em Configurações você vê quanto espaço está usando.', go:'settings'},
+    {ico:'⏸️', t:'Simulados com pausa', d:'Saiu no meio de um simulado das provas? Suas respostas ficam guardadas e o tempo pausa. Toque em "Continuar o simulado" na aba da prova.', go:'exams'},
+    {ico:'🔐', t:'Senhas guardadas com mais proteção', d:'As senhas agora são guardadas de um jeito muito mais difícil de descobrir. Não muda nada pra você: é só entrar normalmente. Também dá pra excluir uma conta em Configurações.', go:'settings'},
+    {ico:'👑', t:'Dominado de verdade', d:'Para chegar a "Dominado" num assunto, agora é preciso acertar em pelo menos dois dias diferentes. Assim o app confirma que você não esqueceu.', go:'progress'},
+    {ico:'🧮', t:'Resolver questão corrigido', d:'Contas como −3² (que dá −9) e com módulo, como |4x − 15|, agora saem certas.', go:'solve'},
+  ]},
   {v:15, date:'2026-10-05', title:'Abas, provas e vestibulares e novos modos de estudo', items:[
     {ico:'🗂️', t:'Menu novo e abas', d:'O menu de baixo ficou com 5 botões: Aprender e Exercícios agora moram juntos em "Estudar". Dentro de cada parte, abas no topo levam direto a cada página.', go:'content'},
     {ico:'🎓', t:'Provas e vestibulares', d:'Veja o que mais cai de Matemática no ENEM, na ETEC, na Fuvest, na Unicamp, na Unesp e na OBMEP, cada uma na sua aba, e treine ou faça um simulado só com esses assuntos. Marque a sua prova e ela aparece no Início.', go:'exams'},

@@ -16,15 +16,13 @@ let settingsCache = null, settingsCacheUid = null;
 async function loadSettings(){
   const uid = currentUserId();
   if(settingsCache && settingsCacheUid===uid) return settingsCache;
-  try{
-    const raw = localStorage.getItem(`${SETTINGS_KEY_BASE}:${uid}`);
-    settingsCache = raw ? Object.assign({}, DEFAULT_SETTINGS, JSON.parse(raw)) : Object.assign({}, DEFAULT_SETTINGS);
-  }catch(e){ settingsCache = Object.assign({}, DEFAULT_SETTINGS); }
+  const saved = storeGetJSON(`${SETTINGS_KEY_BASE}:${uid}`, null);
+  settingsCache = Object.assign({}, DEFAULT_SETTINGS, saved && typeof saved==='object' ? saved : {});
   settingsCacheUid = uid;
   return settingsCache;
 }
 async function saveSettings(){
-  try{ localStorage.setItem(`${SETTINGS_KEY_BASE}:${settingsCacheUid}`, JSON.stringify(settingsCache)); }catch(e){}
+  return storeSetJSON(`${SETTINGS_KEY_BASE}:${settingsCacheUid}`, settingsCache);
 }
 /* leitura síncrona pra usar dentro de handlers de clique (nas sessões de exercício), sem precisar
    de await ali; settings já foram carregadas no boot/login, então o cache está pronto. */

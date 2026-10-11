@@ -71,7 +71,8 @@ function loadGame(){
   const uid = currentUserId();
   if(gameCache && gameCacheUid===uid) return gameCache;
   let g = null;
-  try{ const raw = localStorage.getItem(`${GAME_KEY_BASE}:${uid}`); g = raw ? JSON.parse(raw) : null; }catch(e){}
+  g = storeGetJSON(`${GAME_KEY_BASE}:${uid}`, null);
+  if(!g || typeof g !== 'object') g = null;
   gameCache = Object.assign({xp:0, streak:0, lastDay:null, bestCombo:0, hits:0, hardHits:0, fixed:0, boltBest:0, subjectsHit:{}, ach:{}, today:null}, g||{});
   gameCacheUid = uid;
   gameEnsureToday();
@@ -79,7 +80,7 @@ function loadGame(){
   return gameCache;
 }
 function saveGame(){
-  try{ localStorage.setItem(`${GAME_KEY_BASE}:${gameCacheUid}`, JSON.stringify(gameCache)); }catch(e){}
+  return storeSetJSON(`${GAME_KEY_BASE}:${gameCacheUid}`, gameCache);
 }
 function gameEnsureToday(){
   const g = gameCache, k = dayKey();

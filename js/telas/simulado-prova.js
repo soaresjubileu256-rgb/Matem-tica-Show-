@@ -4,6 +4,8 @@
    resolução comentada. As questões ficam em js/assuntos/provas-questoes.js.
    - A ordem das questões e das alternativas é fixa: as resoluções citam as letras.
    - Notas guardadas em loadGame().bankExams[idDaProva] (últimas 20).
+   - Simulado em andamento fica em loadGame().bankActive: dá para sair e continuar depois.
+     O cronômetro PAUSA enquanto o app está fechado/em segundo plano (guarda o tempo já usado).
    ========================================================= */
 const BANK_EXAM_MINS = {enem:30, etec:25, fuvest:40, unicamp:40, unesp:35, obmep:30};
 const BANK_DIFF_CLS = {'fácil':'facil', 'média':'medio', 'difícil':'dificil'};
@@ -21,6 +23,19 @@ function bankExamCardHTML(e){
   if(!qs.length) return null;
   const hist = bankExamHistory(e.id);
   const best = hist.length ? Math.max(...hist.map(x=>x.grade)) : null;
+  const act = bankActive(e.id);
+  if(act){
+    const done = act.Q.filter(q=>q.pick>=0).length, left = Math.max(0, act.limit - act.elapsed);
+    const box = h(`<div class="bq-resume" style="--c:${e.color}; --c2:${e.color2}">
+        <button type="button" class="bq-card"><span class="bq-card-i">⏸️</span>
+          <span class="bq-card-t"><b>Continuar o simulado ${escHTML(e.name)}</b><small>${done} de ${act.Q.length} respondidas · ${mmssA(left)} restantes (o tempo ficou pausado)</small></span>
+          <span class="bq-card-g">Continuar ▶</span></button>
+        <button type="button" class="bq-restart">Recomeçar do zero</button></div>`);
+    box.querySelector('.bq-card').onclick = ()=> startBankExam(e.id, {resume:true});
+    box.querySelector('.bq-restart').onclick = ()=> showConfirm({icon:'🔁', title:'Recomeçar o simulado?', message:'As respostas que você já marcou serão descartadas.', ok:'Recomeçar', cancel:'Cancelar', danger:true})
+      .then(ok=>{ if(ok){ clearBankActive(); startBankExam(e.id); } });
+    return box;
+  }
   const card = h(`<button type="button" class="bq-card" style="--c:${e.color}; --c2:${e.color2}">
       <span class="bq-card-i">📘</span>
       <span class="bq-card-t"><b>Simulado ${escHTML(e.name)} · questões inéditas</b>
@@ -32,10 +47,45 @@ function bankExamCardHTML(e){
   return card;
 }
 
-function startBankExam(examId){
+/* ---------- simulado em andamento: salvar e continuar ---------- */
+function bankActive(examId){
+  const a = loadGame().bankActive;
+  const qs = bankExamQuestions(a && a.examId);
+  if(!a || !Array.isArray(a.Q) || a.Q.length !== qs.length) return null;   // banco mudou: descarta
+  return (!examId || a.examId===examId) ? a : null;
+}
+function clearBankActive(){ const g = loadGame(); if(g.bankActive){ delete g.bankActive; saveGame(); } }
+function bankSaveActive(sess){
+  if(!sess || sess.kind!=='bankExam' || sess.submitted) return;
+  const g = loadGame();
+  g.bankActive = {examId:sess.examId, Q:sess.Q.map(q=>({pick:q.pick, flag:q.flag})), cur:sess.cur, limit:sess.limit,
+    elapsed: Math.min(sess.limit, (Date.now()-sess.T0)/1000), warned: sess.warned || {}, ts: Date.now()};
+  saveGame();
+}
+// app foi para o segundo plano / aba fechando: guarda o tempo usado (o relógio pausa até voltar)
+document.addEventListener('visibilitychange', ()=>{
+  const sess = typeof state!=='undefined' && state.session;
+  if(!sess || sess.kind!=='bankExam' || sess.submitted) return;
+  if(document.visibilityState==='hidden'){ bankSaveActive(sess); sess._hiddenAt = Date.now(); }
+  else if(sess._hiddenAt){ sess.T0 += Date.now() - sess._hiddenAt; sess._hiddenAt = 0; } // não conta o tempo fora do app
+});
+
+async function startBankExam(examId, opts){
   const qs = bankExamQuestions(examId);
   if(!qs.length) return;
-  state.session = {kind:'bankExam', examId, Q: qs.map(()=>({pick:-1, flag:false})), cur:0, T0:Date.now(), limit:(BANK_EXAM_MINS[examId]||30)*60};
+  const limit = (BANK_EXAM_MINS[examId]||30)*60;
+  const act = bankActive();
+  if(opts && opts.resume && act && act.examId===examId){
+    state.session = {kind:'bankExam', examId, Q: act.Q.map(q=>({pick:q.pick, flag:q.flag})), cur: act.cur||0, T0: Date.now() - act.elapsed*1000, limit: act.limit||limit, warned: act.warned||{}};
+  } else {
+    if(act && act.examId!==examId){
+      const other = examById(act.examId);
+      const ok = await showConfirm({icon:'📝', title:'Começar outro simulado?', message:`Você tem um simulado ${other ? other.name : ''} pela metade. Começar este vai descartar aquele.`, ok:'Começar este', cancel:'Cancelar'});
+      if(!ok) return;
+    }
+    state.session = {kind:'bankExam', examId, Q: qs.map(()=>({pick:-1, flag:false})), cur:0, T0:Date.now(), limit};
+  }
+  bankSaveActive(state.session);
   go('bankExamRun');
 }
 
@@ -45,8 +95,9 @@ function bankExamRunScreen(){
   const wrap = document.createElement('div');
   if(!sess || sess.kind!=='bankExam' || sess.submitted){ setTimeout(()=>go('exams'), 0); return wrap; }
   const e = examById(sess.examId), qs = bankExamQuestions(sess.examId), N = qs.length, L = 'ABCDE';
-  const leave = ()=> showConfirm({icon:'📝', title:'Abandonar o simulado?', message:'As respostas desta prova serão perdidas.', ok:'Abandonar', cancel:'Continuar a prova', danger:true})
-    .then(ok=>{ if(ok){ sess.submitted = true; replaceHistoryState(); state.examId = sess.examId; go('exams'); } });
+  bankSaveActive(sess); // cada resposta, marcação ou troca de questão fica salva
+  const leave = ()=> showConfirm({icon:'📝', title:'Sair do simulado?', message:'Suas respostas ficam guardadas e o tempo pausa. Para continuar, toque em "Continuar o simulado" na aba da prova.', ok:'Sair e continuar depois', cancel:'Voltar à prova'})
+    .then(ok=>{ if(ok){ bankSaveActive(sess); sess.submitted = true; replaceHistoryState(); state.examId = sess.examId; go('exams'); } });
   const bar = topbar(`📘 Simulado ${e.name}`, true, leave);
   const clock = h(`<span class="ar-clock" role="timer" aria-live="off"></span>`);
   bar.appendChild(clock);
@@ -141,6 +192,7 @@ function bankExamRunScreen(){
 function bankExamSubmit(sess, timeUp){
   if(sess.submitted) return;
   sess.submitted = true;
+  clearBankActive();
   replaceHistoryState(); // voltar no navegador não reabre a prova
   const qs = bankExamQuestions(sess.examId);
   const secs = Math.round(Math.min(sess.limit, (Date.now()-sess.T0)/1000));

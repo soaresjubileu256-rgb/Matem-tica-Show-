@@ -24,6 +24,11 @@ img/                logo e ícones do app
 
 docs/
   RELATORIO-FUSAO.md  histórico das mudanças (fusão, Ensino Médio, Desafio do Dia)
+  AUDITORIA.md        auditoria técnica: problemas (P0–P3), correções, testes e plano
+  questoes-ineditas.md + gerar-banco-questoes.py   fonte das 60 questões inéditas
+
+tests/              testes automáticos (veja "Como testar")
+package.json        só para rodar os testes (o app não precisa de npm)
 
 js/
   base/
@@ -41,9 +46,10 @@ js/
     provas-questoes.js     60 questões inéditas (10 por prova) — GERADO a partir de docs/questoes-ineditas.md
     provas-figuras.js      figuras e gráficos em SVG dessas questões + contas armadas das resoluções
   dados/
+    armazenamento.js  porta única do localStorage: chaves de cada conta, aviso de espaço cheio, backup e "desfazer"
     progresso.js      acertos, histórico, caderno de erros e revisão espaçada
     configuracoes.js  configurações salvas (tema, som, volume, meta, nível)
-    contas.js         várias contas no aparelho, senha, backup e lembrete de backup
+    contas.js         várias contas no aparelho, senha (PBKDF2), backup, restaurar/desfazer e excluir conta
   jogo/
     xp-e-conquistas.js  XP, níveis, ofensiva, missões, conquistas e efeitos
     trilha.js           Trilha do Show, vidas, moedas, mascote Pi e motor do Quiz
@@ -71,6 +77,7 @@ js/
     feedback.js       "Fale com a gente": nota e Formulário Google (link em FEEDBACK_FORM_URL)
     novidades.js      Novidades: janela depois de cada atualização, sininho no Início e aviso de versão nova
   iniciar.js          lista de telas e início do app (sempre o último)
+  registrar-sw.js     registra o service worker (fora do index.html por causa da política de segurança)
 ```
 
 ## Onde fica cada coisa no app
@@ -90,7 +97,8 @@ Os assuntos aparecem sempre na mesma ordem e nos mesmos grupos (1º ao 5º ano, 
 ## Regras importantes
 
 - **Ordem dos scripts:** os arquivos de `js/` dividem as mesmas variáveis e funções. Eles precisam ser carregados na ordem do `index.html`, e o `iniciar.js` é sempre o último.
-- **Arquivo novo:** coloque o `<script>` no `index.html` e o caminho na lista `APP_SHELL` do `sw.js`.
+- **Arquivo novo:** coloque o `<script>` no `index.html` e o caminho na lista `APP_SHELL` do `sw.js`. Não use `<script>` embutido nem `onclick="..."` no HTML: a política de segurança (CSP) do `index.html` bloqueia.
+- **Guardar dados:** use `storeSetJSON` / `storeGetJSON` (`js/dados/armazenamento.js`), não `localStorage` direto. Chave nova de uma conta (`algo:${currentUserId()}`)? Acrescente a base em `USER_KEY_BASES`, senão ela não entra no backup nem ao renomear ou excluir a conta (um teste avisa).
 - **Lançou algo novo pras pessoas verem?** Acrescente uma entrada no topo de `NEWS` em `js/telas/novidades.js` (com um `v` maior que o anterior). Quem já usa o app vê a janela "Novidades" ao abrir o Início.
 - **Depois de qualquer mudança:** aumente o `CACHE_VERSION` no `sw.js` (ex.: `mat-show-v67` → `mat-show-v68`). Assim quem já instalou recebe a versão nova.
 
@@ -115,4 +123,41 @@ Blocos especiais no .md:
 
 São questões criadas pelo Matemática Show no estilo de cada prova, e o app avisa que não são oficiais.
 Mude `CACHE_VERSION` em `sw.js` depois de alterar arquivos, para quem já instalou o app receber a versão nova.
+
+## Como testar
+
+Precisa do Node.js 18 ou mais novo. Na pasta do projeto:
+
+    npm install          # instala só o Playwright (para os testes de navegador)
+    npx playwright install chromium   # se o navegador do Playwright ainda não estiver instalado
+    npm test             # roda tudo
+
+- `npm run test:unidade`: contas, senha, backup, armazenamento cheio, nível de domínio, "Resolver questão" e **todos os geradores de questões** (18 mil questões conferidas, 6 mil também pelo resolvedor). Não precisa de navegador.
+- `npm run test:navegador`: abre o app num navegador sem janela, num perfil novo (**nunca usa seus dados reais**), e testa todas as telas, contas e backup, segurança e offline, e os simulados.
+
+O resultado da última execução está em `docs/AUDITORIA.md`.
+
+## Backup e recuperação dos dados
+
+- **Fazer backup:** Perfil → Configurações → "Salvar uma cópia". Baixa (ou compartilha, no celular) um `.json` com **tudo** da conta: progresso, histórico, caderno de erros, Caderno, tabuada, aulas lidas, desafios, recordes, XP e configurações.
+- **Restaurar:** Configurações → "Restaurar uma cópia". A confirmação mostra de qual conta e de qual data é o arquivo. Antes de restaurar, o app guarda como estava.
+- **Desfazer uma restauração:** Configurações → "Desfazer a última restauração".
+- **Armazenamento cheio:** o app avisa. Configurações mostra o espaço usado (o navegador dá cerca de 5 MB). O que mais ocupa são as páginas do Caderno.
+- **Dado corrompido:** o app guarda o texto original em `<chave>::corrompido` (no `localStorage`) e continua funcionando. Dá para recuperar esse texto pelas ferramentas de desenvolvedor do navegador.
+- **Trocar de celular:** salve uma cópia no aparelho antigo, crie a conta no novo e restaure.
+
+## Como atualizar o app publicado
+
+1. Troque os arquivos na hospedagem.
+2. Aumente `CACHE_VERSION` no `sw.js` (ex.: `mat-show-v80` → `mat-show-v81`).
+3. Quem tem o app instalado recebe a versão nova ao abrir (o app busca a rede primeiro e usa a cópia guardada se a rede falhar ou demorar mais de 4 s).
+
+Os dados das contas não são apagados numa atualização.
+
+## Limitações conhecidas
+
+- **Contas só no aparelho:** não há servidor nem sincronização. A senha separa os perfis de quem divide o aparelho, mas **não criptografa** os dados. Ao abrir, o app entra direto na última conta usada.
+- **Limpar os dados do navegador apaga as contas.** Só o backup traz de volta.
+- **Questões dos simulados das provas:** são inéditas, criadas no estilo de cada prova, e não são questões oficiais.
+- Veja a lista completa de pendências e o plano em `docs/AUDITORIA.md`.
 

@@ -2,7 +2,11 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<!-- sem maximum-scale: quem precisa pode ampliar a tela com os dedos (acessibilidade) -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<!-- Política de segurança: só roda scripts do próprio app (nada de scripts injetados por dados importados);
+     estilos inline são usados pelo app; fontes vêm do Google Fonts; o feedback abre o Formulário Google numa aba. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <title>Matemática Show</title>
 
 <!-- PWA: manifest + cor do tema + ícones -->
@@ -36,6 +40,7 @@
 <script src="js/assuntos/provas-questoes.js"></script>
 <script src="js/assuntos/provas-figuras.js"></script>
 <script src="js/base/resolvedor.js"></script>
+<script src="js/dados/armazenamento.js"></script>
 <script src="js/dados/progresso.js"></script>
 <script src="js/dados/configuracoes.js"></script>
 <script src="js/dados/contas.js"></script>
@@ -66,15 +71,6 @@
 <script src="js/telas/feedback.js"></script>
 <script src="js/iniciar.js"></script>
 
-<script>
-// registra o service worker (funcionamento offline + instalação como app). Se o navegador
-// não suportar, ou se estiver rodando fora de um servidor (ex: abrindo o arquivo direto),
-// simplesmente não faz nada — o app continua funcionando normal, só sem o modo offline.
-if('serviceWorker' in navigator){
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
-  });
-}
-</script>
+<script src="js/registrar-sw.js"></script>
 </body>
 </html>

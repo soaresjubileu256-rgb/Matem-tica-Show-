@@ -16,43 +16,37 @@ let errorsCache = null, errorsCacheUid = null;
 async function loadProgress(){
   const uid = currentUserId();
   if(progressCache && progressCacheUid===uid) return progressCache;
-  try{
-    const raw = localStorage.getItem(`${PROGRESS_KEY_BASE}:${uid}`);
-    progressCache = raw ? JSON.parse(raw) : {};
-  }catch(e){ progressCache = {}; }
+  progressCache = storeGetJSON(`${PROGRESS_KEY_BASE}:${uid}`, {});
+  if(!progressCache || typeof progressCache !== 'object') progressCache = {};
   progressCacheUid = uid;
   return progressCache;
 }
 async function saveProgress(){
-  try{ localStorage.setItem(`${PROGRESS_KEY_BASE}:${progressCacheUid}`, JSON.stringify(progressCache)); }catch(e){}
+  return storeSetJSON(`${PROGRESS_KEY_BASE}:${progressCacheUid}`, progressCache);
 }
 
 async function loadHistory(){
   const uid = currentUserId();
   if(historyCache && historyCacheUid===uid) return historyCache;
-  try{
-    const raw = localStorage.getItem(`${HISTORY_KEY_BASE}:${uid}`);
-    historyCache = raw ? JSON.parse(raw) : [];
-  }catch(e){ historyCache = []; }
+  historyCache = storeGetJSON(`${HISTORY_KEY_BASE}:${uid}`, []);
+  if(!historyCache || typeof historyCache !== 'object') historyCache = [];
   historyCacheUid = uid;
   return historyCache;
 }
 async function saveHistory(){
-  try{ localStorage.setItem(`${HISTORY_KEY_BASE}:${historyCacheUid}`, JSON.stringify(historyCache)); }catch(e){}
+  return storeSetJSON(`${HISTORY_KEY_BASE}:${historyCacheUid}`, historyCache);
 }
 
 async function loadErrors(){
   const uid = currentUserId();
   if(errorsCache && errorsCacheUid===uid) return errorsCache;
-  try{
-    const raw = localStorage.getItem(`${ERRORS_KEY_BASE}:${uid}`);
-    errorsCache = raw ? JSON.parse(raw) : [];
-  }catch(e){ errorsCache = []; }
+  errorsCache = storeGetJSON(`${ERRORS_KEY_BASE}:${uid}`, []);
+  if(!errorsCache || typeof errorsCache !== 'object') errorsCache = [];
   errorsCacheUid = uid;
   return errorsCache;
 }
 async function saveErrors(){
-  try{ localStorage.setItem(`${ERRORS_KEY_BASE}:${errorsCacheUid}`, JSON.stringify(errorsCache)); }catch(e){}
+  return storeSetJSON(`${ERRORS_KEY_BASE}:${errorsCacheUid}`, errorsCache);
 }
 
 /* retrato leve e serializável da questão, pra poder mostrar de novo depois (histórico / revisão de erros) */
@@ -62,6 +56,7 @@ function snapshotExercise(ex){
 
 /* única forma de somar uma resposta no progresso do assunto (exercícios, trilha, Arena,
    simulado, revisão de erros...): acertos, data da última prática e últimas 10 respostas */
+function localDayNumber(t){ const x = t ? new Date(t) : new Date(); return Math.floor((x.getTime() - x.getTimezoneOffset()*60000) / 864e5); }
 function bumpProgress(p, subjectId, correct, difficulty){
   if(!p[subjectId]) p[subjectId] = {attempted:0, correct:0};
   const d = p[subjectId];
@@ -69,7 +64,8 @@ function bumpProgress(p, subjectId, correct, difficulty){
   if(correct) d.correct++;
   d.last = Date.now(); // usado pela revisão espaçada
   // últimas 10 respostas (ok + se era difícil), usadas no nível de domínio
-  d.recent = (d.recent || []).concat([{ok:!!correct, h:difficulty==='dificil'}]).slice(-10);
+  // dia (número do dia no calendário local): o "Dominado" exige acertos em dias diferentes (retenção)
+  d.recent = (d.recent || []).concat([{ok:!!correct, h:difficulty==='dificil', d:localDayNumber()}]).slice(-10);
   return d;
 }
 async function recordAnswer(subjectId, correct, extra){

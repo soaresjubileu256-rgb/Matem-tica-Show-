@@ -124,12 +124,17 @@ function homeScreen(){
 }
 
 /* ---------- nível de domínio por assunto ----------
-   Olha as últimas 10 respostas (não o histórico inteiro), pra refletir o que a pessoa sabe hoje. */
+   Olha as últimas 10 respostas (não o histórico inteiro), pra refletir o que a pessoa sabe hoje.
+   - menos de 5 respostas → ainda "Aprendendo" (acerto casual não conta como domínio)
+   - Proficiente: ≥ 80% nas últimas respostas (desempenho consistente)
+   - Dominado: ≥ 90% nas últimas 10, ≥ 2 acertos no difícil E acertos em pelo menos 2 DIAS diferentes
+     (retenção: não basta acertar 10 seguidas num dia só). Respostas antigas, sem dia guardado,
+     contam como um dia anterior — quem já era Dominado continua. */
 const MASTERY_LEVELS = [
   {lvl:0, ico:'⚪', name:'Não iniciado', next:'Responda 5 questões pra descobrir seu nível.'},
   {lvl:1, ico:'🌱', name:'Aprendendo',   next:'Chegue a 60% de acerto nas últimas questões.'},
   {lvl:2, ico:'📘', name:'Praticando',   next:'Chegue a 80% de acerto nas últimas questões.'},
-  {lvl:3, ico:'⭐', name:'Proficiente',  next:'Acerte 9 das últimas 10, com pelo menos 2 no difícil.'},
+  {lvl:3, ico:'⭐', name:'Proficiente',  next:'Acerte 9 das últimas 10, com pelo menos 2 no difícil, em dias diferentes.'},
   {lvl:4, ico:'👑', name:'Dominado',     next:'Você domina este assunto! Revise de vez em quando pra não esquecer.'},
 ];
 function masteryOf(d){
@@ -140,7 +145,12 @@ function masteryOf(d){
   if(n < 5) return MASTERY_LEVELS[1];
   const acc = ok/n;
   const hardOk = rec.filter(r=>r.ok && r.h).length;
-  if(rec.length>=10 && acc>=0.9 && hardOk>=2) return MASTERY_LEVELS[4];
+  if(rec.length>=10 && acc>=0.9 && hardOk>=2){
+    const dias = new Set(rec.filter(r=>r.ok).map(r=> r.d===undefined ? -1 : r.d));
+    const semDia = rec.every(r=> r.d===undefined); // só dados de antes desta regra: mantém o nível que já tinham
+    if(semDia || dias.size >= 2) return MASTERY_LEVELS[4];
+    return Object.assign({}, MASTERY_LEVELS[3], {next:'Quase lá! Volte outro dia e acerte de novo: é assim que o app confirma que você não esqueceu.'});
+  }
   if(acc>=0.8) return MASTERY_LEVELS[3];
   if(acc>=0.6) return MASTERY_LEVELS[2];
   return MASTERY_LEVELS[1];

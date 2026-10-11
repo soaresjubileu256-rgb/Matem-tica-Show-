@@ -7,7 +7,7 @@
 /* assuntos já abertos e o último estudado (por conta) */
 const LEARN_KEY_BASE = 'mathstudy-learn-v1';
 function learnData(){ try{ const d = JSON.parse(localStorage.getItem(`${LEARN_KEY_BASE}:${currentUserId()}`)||'{}'); d.read = d.read||{}; return d; }catch(e){ return {read:{}}; } }
-function saveLearnData(d){ try{ localStorage.setItem(`${LEARN_KEY_BASE}:${currentUserId()}`, JSON.stringify(d)); }catch(e){} }
+function saveLearnData(d){ return storeSetJSON(`${LEARN_KEY_BASE}:${currentUserId()}`, d); }
 
 /* ---------------- CONTENT LIST ---------------- */
 function contentScreen(){

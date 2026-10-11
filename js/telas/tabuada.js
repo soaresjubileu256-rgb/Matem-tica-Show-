@@ -25,7 +25,7 @@ function tabData(){
   try{ const d = JSON.parse(localStorage.getItem(`${TAB_KEY_BASE}:${currentUserId()}`)||'{}'); d.facts = d.facts||{}; d.best = d.best||{}; return d; }
   catch(e){ return {facts:{}, best:{}}; }
 }
-function saveTabData(d){ try{ localStorage.setItem(`${TAB_KEY_BASE}:${currentUserId()}`, JSON.stringify(d)); }catch(e){} }
+function saveTabData(d){ return storeSetJSON(`${TAB_KEY_BASE}:${currentUserId()}`, d); }
 /* a conta a×b e b×a contam como o mesmo fato */
 const tabFactKey = (a,b)=> a<=b ? `${a}x${b}` : `${b}x${a}`;
 /* 'ok' = domina, 'bad' = precisa treinar, '' = ainda não treinou */

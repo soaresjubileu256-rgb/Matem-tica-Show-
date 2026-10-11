@@ -20,6 +20,8 @@ function go(screen, extra={}){
 /* volta ao estado inicial (tela Início): a tela Início vira a primeira entrada do histórico,
    então o "voltar" a partir dela sai do app/site direto, sem pergunta. */
 function enterApp(){
+  // pede ao navegador para não apagar os dados do app sozinho quando faltar espaço (se ele permitir)
+  if(typeof requestPersistentStorage==='function') requestPersistentStorage();
   state.screen = 'home';
   replaceHistoryState();
   render();

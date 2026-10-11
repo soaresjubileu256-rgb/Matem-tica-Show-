@@ -165,8 +165,7 @@ function authScreen(mode, users){
     if(f && f.until > Date.now()){ showError(`Muitas tentativas. Espere ${Math.ceil((f.until-Date.now())/1000)} segundos e tente de novo.`); return; }
     const acc = list.find(u=>u.id===id);
     const btn = card.querySelector('.auth-go'); btn.disabled = true; btn.textContent = 'Entrando…';
-    const passHash = await hashPassword(pass);
-    if(!acc || acc.passHash!==passHash){
+    if(!acc || !await verifyPassword(acc, pass)){
       btn.disabled = false; btn.textContent = 'Entrar ▶';
       const rec = _loginFails[id] = _loginFails[id] || {n:0, until:0};
       rec.n++;
@@ -232,6 +231,7 @@ function authScreen(mode, users){
     const hint = card.querySelector('.authHint').value.trim();
     if(!name){ showError('Digite seu nome.'); return; }
     if(name.length < 2){ showError('O nome precisa ter pelo menos 2 letras.'); return; }
+    const badName = accountNameProblem(name); if(badName){ showError(badName); return; }
     if(!pass){ showError('Crie uma senha.'); return; }
     const weak = passwordProblem(pass, name);
     if(weak){ showError(weak); return; }
@@ -241,11 +241,15 @@ function authScreen(mode, users){
     const list = await loadUsers();
     if(list.some(u=>u.id===id)){ showError('Já existe uma conta com esse nome neste aparelho. Escolha outro nome ou entre na conta.'); return; }
     const btn = card.querySelector('.auth-go'); btn.disabled = true; btn.textContent = 'Criando…';
-    const passHash = await hashPassword(pass);
-    const newUser = {id, name, passHash};
+    const newUser = {id, name, pw: await makePasswordRecord(pass)};
     if(hint) newUser.hint = hint;
     list.push(newUser);
-    await saveUsers(list);
+    if(!await saveUsers(list)){
+      list.pop();
+      btn.disabled = false; btn.textContent = 'Criar conta e começar ▶';
+      showError('Não foi possível salvar a conta: o armazenamento do navegador está cheio ou bloqueado (janela anônima?).');
+      return;
+    }
     currentUser = {id, name};
     await setCurrentUserId(id);
     markNewsSeen(); // conta nova: as novidades antigas não fazem sentido pra ela
