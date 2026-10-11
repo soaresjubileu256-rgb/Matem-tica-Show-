@@ -10,6 +10,9 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
+  {v:17, date:'2026-10-11', title:'Plano da aula em cada assunto', items:[
+    {ico:'🎯', t:'Plano da aula', d:'Em cada assunto do Aprender: o objetivo, o que é bom saber antes (com o seu nível em cada um), as habilidades da BNCC e como mostrar que você domina. Se faltar base, o app avisa qual assunto revisar primeiro.', go:'content'},
+  ]},
   {v:16, date:'2026-10-11', title:'Seus dados mais seguros e simulados que continuam depois', items:[
     {ico:'💾', t:'Cópia completa e "Desfazer"', d:'A cópia de segurança agora leva tudo: Caderno, tabuada, aulas lidas, desafios e recordes. Antes de restaurar uma cópia, o app guarda como estava e você pode desfazer em Configurações.', go:'settings'},
     {ico:'⚠️', t:'Aviso de armazenamento cheio', d:'Se o espaço do aparelho acabar, o app avisa na hora (antes, o progresso podia deixar de ser salvo sem ninguém saber). Em Configurações você vê quanto espaço está usando.', go:'settings'},

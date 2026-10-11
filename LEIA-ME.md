@@ -25,6 +25,7 @@ img/                logo e ícones do app
 docs/
   RELATORIO-FUSAO.md  histórico das mudanças (fusão, Ensino Médio, Desafio do Dia)
   AUDITORIA.md        auditoria técnica: problemas (P0–P3), correções, testes e plano
+  BNCC.md             como os códigos da BNCC foram conferidos, fontes e pendências
   questoes-ineditas.md + gerar-banco-questoes.py   fonte das 60 questões inéditas
 
 tests/              testes automáticos (veja "Como testar")
@@ -42,6 +43,7 @@ js/
     ensino-medio-visual.js desenhos e ajudantes usados pelo Ensino Médio
     ensino-medio.js        os 23 assuntos do Ensino Médio
     catalogo.js            GRUPOS DE ASSUNTOS (a ordem única do app), ano (BNCC)
+    curriculo.js           objetivo, pré-requisitos e habilidades da BNCC (conferidas) de cada assunto — veja docs/BNCC.md
     provas.js              o que cai em cada prova (ENEM, ETEC, Fuvest, Unicamp, Unesp, OBMEP)
     provas-questoes.js     60 questões inéditas (10 por prova) — GERADO a partir de docs/questoes-ineditas.md
     provas-figuras.js      figuras e gráficos em SVG dessas questões + contas armadas das resoluções
@@ -106,6 +108,7 @@ Os assuntos aparecem sempre na mesma ordem e nos mesmos grupos (1º ao 5º ano, 
 
 1. Copie um assunto parecido em `js/assuntos/fundamental.js` ou `js/assuntos/ensino-medio.js`. Mude o `id`, o `name`, o `sym`, a explicação (`learn`), os `examples` e os geradores (`gen.facil`, `gen.medio`, `gen.dificil`).
 2. Em `js/assuntos/catalogo.js`, acrescente o `id` no grupo certo de `SUBJECT_GROUPS` (é isso que define a ordem e o lugar dele em todas as telas) e em `BNCC_ANO`.
+3. Em `js/assuntos/curriculo.js`, acrescente o objetivo, os pré-requisitos e os códigos da BNCC **conferidos** (veja `docs/BNCC.md`). Um teste avisa se faltar.
 3. Em `js/telas/exercicios.js`, acrescente uma dica em `HINTS`.
 
 ## Questões inéditas das provas

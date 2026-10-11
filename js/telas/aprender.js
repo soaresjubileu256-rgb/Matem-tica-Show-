@@ -127,6 +127,31 @@ function learnQuickCheck(s){
   draw();
   return box;
 }
+/* "Plano da aula": objetivo, o que é bom saber antes, habilidades da BNCC e como mostrar domínio
+   (dados em js/assuntos/curriculo.js) */
+function lessonPlanCard(s){
+  const cur = curriculoDe(s.id);
+  if(!cur) return null;
+  const pend = prereqsPendentes(s.id);
+  const pre = cur.prereqs.map(id=>{
+    const ps = SUBJECTS.find(x=>x.id===id); if(!ps) return '';
+    const m = masterySync(id);
+    return `<button type="button" class="lp-pre ${pend.includes(id)?'pend':''}" data-s="${id}"><span class="mono">${ps.sym}</span>${escHTML(ps.name)}<small>${m.ico} ${m.name}</small></button>`;
+  }).join('');
+  const bncc = cur.bncc.map(code=>{
+    const hb = BNCC_HABILIDADES[code];
+    return `<details class="lp-bncc"><summary><b>${code}</b> · ${escHTML(hb ? hb.ano : '')}</summary><p>${escHTML(hb ? hb.resumo : '')}</p><small>Resumo do conteúdo. Conferido em: ${escHTML(hb ? hb.fontes.join('; ') : '')}.</small></details>`;
+  }).join('');
+  const card = h(`<section class="lr-card lp-card" aria-label="Plano da aula">
+      <div class="lr-sec-h"><span>🎯</span><b>Plano da aula</b></div>
+      <div class="lp-row"><b>Objetivo</b><p>${escHTML(cur.objetivo)}</p></div>
+      ${cur.prereqs.length ? `<div class="lp-row"><b>É bom saber antes</b>${pend.length ? `<p class="lp-warn">💡 Ainda vale revisar ${pend.length===1?'o assunto marcado':'os assuntos marcados'} antes de praticar este.</p>` : ''}<div class="lp-pres">${pre}</div></div>` : ''}
+      <div class="lp-row"><b>BNCC</b>${bncc || ''}${cur.nota ? `<p class="lp-nota">${escHTML(cur.nota)}</p>` : ''}${!bncc && !cur.nota ? '<p class="lp-nota">Sem habilidade correspondente conferida.</p>' : ''}</div>
+      <div class="lp-row"><b>Como mostrar que domina</b><ul>${CRITERIO_DOMINIO.map(t=>`<li>${escHTML(t)}</li>`).join('')}</ul></div>
+    </section>`);
+  card.querySelectorAll('[data-s]').forEach(b=> b.onclick = ()=> go('subjectDetail', {subjectId:b.dataset.s}));
+  return card;
+}
 function subjectDetailScreen(){
   const si = Math.max(0, SUBJECTS.findIndex(x=>x.id===state.subjectId));
   const s = SUBJECTS[si];
@@ -150,6 +175,7 @@ function subjectDetailScreen(){
   const nav = h(`<div class="lr-nav">${[['lr-explain','📖','Explicação'],['lr-examples','🧩','Exemplos'],hasQuick?['lr-quick','✅','Teste']:null,['lr-practice','🚀','Praticar']].filter(Boolean).map(([id,ico,t])=>`<button type="button" data-to="${id}"><span>${ico}</span>${t}</button>`).join('')}</div>`);
   nav.querySelectorAll('[data-to]').forEach(b=> b.onclick = ()=>{ const el = c.querySelector('#'+b.dataset.to); if(el) el.scrollIntoView({behavior:'smooth', block:'start'}); });
   c.appendChild(nav);
+  { const plano = lessonPlanCard(s); if(plano) c.appendChild(plano); }
   { const ex = examsForSubject(s.id);
     if(ex.length){
       const box = h(`<div class="pv-subj"><div class="pv-subj-h">🎓 Cai nas provas</div><div class="pv-subj-l">${ex.map(x=>`<button type="button" class="pv-chip ${x.lvl}" style="--c:${x.exam.color}" data-e="${x.exam.id}">${x.exam.ico} ${x.exam.name}<small>${x.lvl==='muito'?'🔥 cai muito':x.lvl==='bastante'?'⭐ cai bastante':'✓ às vezes'}</small></button>`).join('')}</div></div>`);

@@ -61,7 +61,7 @@ Cada item diz se é um **defeito confirmado**, um **risco** (pode acontecer, mas
 | # | Tipo | Situação |
 |---|---|---|
 | 21 | Tela inicial | Avaliada com captura de tela, sem redesenho. Ela já prioriza a próxima ação ("Começar o show" continua a trilha) e mostra meta, Desafio do Dia, Mistura e missões. O menu leva a Trilha, Estudar (prática, simulados e provas), Arena (jogos) e Progresso. Redesenhar agora seria só cosmético. Sugestão: o cartão "Continuar" poderia apontar para o assunto que a pessoa estava estudando, não só para a trilha. |
-| 22 | BNCC | O catálogo tem o **ano escolar** de cada assunto (`BNCC_ANO`), mas **não tem códigos de habilidade** (EF06MA…). **Não atribuí códigos sem conferir a BNCC oficial habilidade por habilidade.** Pendente, com revisão humana. |
+| 22 | BNCC | ✅ **Etapa 1 feita** (ver `docs/BNCC.md`). Cada um dos 41 assuntos ganhou objetivo, pré-requisitos e as habilidades da BNCC correspondentes: 38 códigos, cada um conferido em 2 ou mais fontes independentes. 8 assuntos ficaram sem código, com nota explicando. O site do MEC não pôde ser acessado: falta conferir a redação oficial. |
 | 23 | Estrutura da aula | Cada assunto já tem explicação, exemplos, geradores em 3 níveis, passo a passo e dicas. **Faltam campos explícitos:** objetivo de aprendizagem, pré-requisitos e critério de domínio por assunto (hoje o critério é o geral, item 11). Plano na seção 5. |
 | 24 | Jogos e XP | O XP vem da dificuldade da questão e de um bônus de sequência de acertos. Velocidade só conta no Relâmpago, que é opcional. Sugestões: XP extra por **subir de nível de domínio** e por **revisão no dia certo**, e missões ligadas aos assuntos fracos. |
 | 25 | Simulados | Ainda faltam: relatório por assunto das questões inéditas (cada questão tem um assunto só) e filtros por assunto ou dificuldade no banco. Ver plano. |
@@ -111,7 +111,7 @@ Rodar: `npm install` (instala só o Playwright, para os testes de navegador) e d
 
 | Etapa | O que fazer | Depende de | Pronto quando |
 |---|---|---|---|
-| 1 | **Metadados pedagógicos por assunto:** objetivo, pré-requisitos (ids), habilidade BNCC **conferida** e critério de domínio, em `catalogo.js`. | Revisão humana dos códigos BNCC | Cada assunto do Fundamental tem código conferido; um teste garante que todo pré-requisito existe. |
+| 1 ✅ | **(Feito: `js/assuntos/curriculo.js`, `docs/BNCC.md`; falta conferir no PDF do MEC)** **Metadados pedagógicos por assunto:** objetivo, pré-requisitos (ids), habilidade BNCC **conferida** e critério de domínio, em `catalogo.js`. | Revisão humana dos códigos BNCC | Cada assunto do Fundamental tem código conferido; um teste garante que todo pré-requisito existe. |
 | 2 | **Recomendação do próximo passo pelos pré-requisitos:** só sugerir o assunto quando os pré-requisitos estiverem Proficiente; revisar quando o domínio cair. | 1 | Teste de unidade com cenários de aluno. |
 | 3 | **Erros classificados:** registrar o tipo de erro (sinal, ordem das operações, unidade…) nos geradores que já conhecem as alternativas erradas, e explicação dirigida a cada tipo. | — | Cada gerador marca o motivo de cada alternativa errada. |
 | 4 | **XP por domínio e revisão:** bônus ao subir de nível de domínio e ao revisar no dia agendado; limite diário de XP por repetição do mesmo conteúdo. | 2 | Teste de que repetir a mesma questão não rende XP ilimitado. |
