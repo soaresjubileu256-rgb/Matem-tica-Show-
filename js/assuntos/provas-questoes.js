@@ -1,6 +1,8 @@
 /* =========================================================
    QUESTÕES INÉDITAS POR PROVA — 10 por prova, no estilo de cada uma
    Usadas no "Simulado da prova" (js/telas/simulado-prova.js).
+   ARQUIVO GERADO: edite docs/questoes-ineditas.md e rode docs/gerar-banco-questoes.py.
+   Questões INÉDITAS, criadas pelo Matemática Show no estilo de cada prova (não são oficiais).
    Campos: topic (assunto), diff (fácil/média/difícil), html (enunciado),
    opts (alternativas), ans (índice da correta), solHead + sol (resolução).
    ========================================================= */
@@ -20,7 +22,7 @@ const EXAM_BANK = {
    ],
    "ans": 4,
    "solHead": "E (Econômica)",
-   "sol": "<p>Calcule o gasto com 3 frascos em cada loja:</p><ul><li>Bom Preço: 3 × 16,50 = <b>R$ 49,50</b></li><li>Central: 30% de desconto → 18 × 0,70 = 12,60 por unidade; 3 × 12,60 = <b>R$ 37,80</b></li><li>Família: 17 + 8,50 (2ª pela metade) + 17 = <b>R$ 42,50</b></li><li>Kit: <b>R$ 39,90</b></li><li>Econômica: leve 3, pague 2 → 2 × 18 = <b>R$ 36,00</b></li></ul><p>A menor é a da Econômica.<br><i>Erro comum:</i> escolher a Central só porque \"30% de desconto\" parece o maior desconto. \"Leve 3, pague 2\" equivale a 33,3% de desconto.<br>✔️ Verificação: 36,00 &lt; 37,80 &lt; 39,90 &lt; 42,50 &lt; 49,50.</p>"
+   "sol": "<p>Calcule o gasto com 3 frascos em cada loja:</p><ul><li>Bom Preço: 3 × 16,50 = <b>R$ 49,50</b></li><li>Central: 30% de desconto → 18 × 0,70 = 12,60 por unidade; 3 × 12,60 = <b>R$ 37,80</b></li><li>Família: 17 + 8,50 (2ª pela metade) + 17 = <b>R$ 42,50</b></li></ul><div class=\"bq-conta\" data-op=\"+\" data-n=\"17,00|8,50|17,00\"></div><ul><li>Kit: <b>R$ 39,90</b></li><li>Econômica: leve 3, pague 2 → 2 × 18 = <b>R$ 36,00</b></li></ul><p>A menor é a da Econômica.<br><i>Erro comum:</i> escolher a Central só porque \"30% de desconto\" parece o maior desconto. \"Leve 3, pague 2\" equivale a 33,3% de desconto.<br>✔️ Verificação: 36,00 &lt; 37,80 &lt; 39,90 &lt; 42,50 &lt; 49,50.</p>"
   },
   {
    "n": 2,
@@ -42,7 +44,7 @@ const EXAM_BANK = {
    "n": 3,
    "topic": "estatística (média e mediana)",
    "diff": "média",
-   "html": "<p>Um aplicativo de saúde dá um selo de \"Semana Ativa\" quando a <b>mediana</b> dos passos diários da semana é de, no mínimo, <b>8 000 passos</b>. Os passos de um usuário foram:</p><div class=\"bq-tw\"><table class=\"bq-table\"><thead><tr><th>Dia</th><th>Seg</th><th>Ter</th><th>Qua</th><th>Qui</th><th>Sex</th><th>Sáb</th><th>Dom</th></tr></thead><tbody><tr><td>Passos</td><td>7 000</td><td>9 500</td><td>6 500</td><td>12 000</td><td>8 000</td><td>5 500</td><td>7 500</td></tr></tbody></table></div><p>O usuário comemorou, pois calculou que a <b>média</b> foi de exatamente 8 000 passos.</p><p>Qual foi a mediana de passos dessa semana? O selo foi concedido?</p>",
+   "html": "<p>Um aplicativo de saúde dá um selo de \"Semana Ativa\" quando a <b>mediana</b> dos passos diários da semana é de, no mínimo, <b>8 000 passos</b>. Os passos de um usuário foram:</p><div class=\"bq-tw\"><table class=\"bq-table\"><thead><tr><th>Dia</th><th>Passos</th></tr></thead><tbody><tr><td>Segunda</td><td>7 000</td></tr><tr><td>Terça</td><td>9 500</td></tr><tr><td>Quarta</td><td>6 500</td></tr><tr><td>Quinta</td><td>12 000</td></tr><tr><td>Sexta</td><td>8 000</td></tr><tr><td>Sábado</td><td>5 500</td></tr><tr><td>Domingo</td><td>7 500</td></tr></tbody></table></div><p>O usuário comemorou, pois calculou que a <b>média</b> foi de exatamente 8 000 passos.</p><p>Qual foi a mediana de passos dessa semana? O selo foi concedido?</p>",
    "opts": [
     "7 500; não.",
     "7 500; sim.",
@@ -52,13 +54,13 @@ const EXAM_BANK = {
    ],
    "ans": 0,
    "solHead": "A (7 500; não)",
-   "sol": "<ul><li>A mediana é o valor do meio com os dados <b>em ordem</b>: 5 500 · 6 500 · 7 000 · <b>7 500</b> · 8 000 · 9 500 · 12 000.</li><li>Com 7 valores, o do meio é o 4º: <b>7 500</b>. Como 7 500 &lt; 8 000, o selo <b>não</b> foi concedido.</li><li>A média dá mesmo 8 000 (56 000 ÷ 7), mas ela é \"puxada\" pelo dia de 12 000 passos. Por isso o app usa a mediana.</li></ul><p><i>Erros comuns:</i> confundir média com mediana (C, D); pegar o 4º valor da tabela sem ordenar (12 000) ou o valor do meio errado (E).<br>✔️ Verificação: há 3 valores abaixo de 7 500 e 3 acima.</p>"
+   "sol": "<ul><li>A mediana é o valor do meio com os dados <b>em ordem</b>: 5 500 · 6 500 · 7 000 · <b>7 500</b> · 8 000 · 9 500 · 12 000.</li><li>Com 7 valores, o do meio é o 4º: <b>7 500</b>. Como 7 500 &lt; 8 000, o selo <b>não</b> foi concedido.</li></ul><div class=\"bq-conta\" data-op=\"+\" data-n=\"7 000|9 500|6 500|12 000|8 000|5 500|7 500\"></div><ul><li>A média dá mesmo 8 000 (56 000 ÷ 7), mas ela é \"puxada\" pelo dia de 12 000 passos. Por isso o app usa a mediana.</li></ul><p><i>Erros comuns:</i> confundir média com mediana (C, D); pegar o 4º valor da tabela <b>sem ordenar</b> (12 000, que não está entre as alternativas); errar a posição do meio e pegar o 3º valor ordenado, 7 000 (E).<br>✔️ Verificação: há 3 valores abaixo de 7 500 e 3 acima.</p>"
   },
   {
    "n": 4,
    "topic": "geometria espacial (volume e capacidade)",
    "diff": "média",
-   "html": "<p>Uma família de 4 pessoas tem uma caixa-d'água <b>cilíndrica</b>, com <b>1 m de raio</b> e <b>1,5 m de altura</b> internos. Cada pessoa consome, em média, <b>150 litros</b> de água por dia.</p><p><b>Figura (esquema em texto, fora de escala; todas as medidas estão no enunciado):</b></p><pre class=\"bq-fig\">      ___________\n     /     r=1 m \\\n    |‾‾‾‾‾‾‾‾‾‾‾‾‾|\n    |             |  h = 1,5 m\n    |             |\n     \\___________/</pre><p>Use π = 3 e 1 m³ = 1 000 L.</p><p>Com a caixa cheia e sem reabastecimento, por quantos <b>dias completos</b> a família terá água?</p>",
+   "html": "<p>Uma família de 4 pessoas tem uma caixa-d'água <b>cilíndrica</b>, com <b>1 m de raio</b> e <b>1,5 m de altura</b> internos. Cada pessoa consome, em média, <b>150 litros</b> de água por dia.</p><figure class=\"bq-figure\" data-fig=\"enem-cilindro\"></figure><p>Use π = 3 e 1 m³ = 1 000 L.</p><p>Com a caixa cheia e sem reabastecimento, por quantos <b>dias completos</b> a família terá água?</p>",
    "opts": [
     "3",
     "7",
@@ -100,7 +102,7 @@ const EXAM_BANK = {
    ],
    "ans": 3,
    "solHead": "D (11,1%)",
-   "sol": "<ul><li>Na compra a prazo, paga-se R$ 1 000,00 na hora. A dívida que fica é 1 900 − 1 000 = <b>R$ 900,00</b>.</li><li>Um mês depois, devolve-se R$ 1 000,00. Os juros são 1 000 − 900 = <b>R$ 100,00</b>.</li><li>Taxa = 100 ÷ 900 ≈ <b>0,111 = 11,1%</b> ao mês.</li></ul><p><i>Erros comuns:</i> dividir por 2 000 (A), por 1 900 (B) ou por 1 000 (C).<br>✔️ Verificação: 900 × 1,111 ≈ 1 000.</p>"
+   "sol": "<ul><li>Na compra a prazo, paga-se R$ 1 000,00 na hora. A dívida que fica é 1 900 − 1 000 = <b>R$ 900,00</b>.</li></ul><div class=\"bq-conta\" data-op=\"−\" data-n=\"1 900|1 000\"></div><ul><li>Um mês depois, devolve-se R$ 1 000,00. Os juros são 1 000 − 900 = <b>R$ 100,00</b>.</li><li>Taxa = 100 ÷ 900 ≈ <b>0,111 = 11,1%</b> ao mês.</li></ul><p><i>Erros comuns:</i> dividir por 2 000 (A), por 1 900 (B) ou por 1 000 (C).<br>✔️ Verificação: 900 × 1,111 ≈ 1 000.</p>"
   },
   {
    "n": 7,
@@ -148,7 +150,7 @@ const EXAM_BANK = {
    ],
    "ans": 4,
    "solHead": "E (R$ 152,00)",
-   "sol": "<ul><li>Os primeiros 100 kWh custam 100 × 0,80 = <b>R$ 80,00</b>.</li><li>O excedente é 160 − 100 = 60 kWh, que custa 60 × 1,20 = <b>R$ 72,00</b>.</li><li>Total: 80 + 72 = <b>R$ 152,00</b>.</li></ul><p><i>Erros comuns:</i> cobrar só o excedente (A); cobrar tudo a R$ 0,80 (C, R$ 128,00).<br>✔️ Verificação: o valor fica entre 160 × 0,80 = 128 e 160 × 1,20 = 192, como deve ser.</p>"
+   "sol": "<ul><li>Os primeiros 100 kWh custam 100 × 0,80 = <b>R$ 80,00</b>.</li><li>O excedente é 160 − 100 = 60 kWh, que custa 60 × 1,20 = <b>R$ 72,00</b>.</li><li>Total: 80 + 72 = <b>R$ 152,00</b>.</li></ul><div class=\"bq-conta\" data-op=\"+\" data-n=\"80,00|72,00\"></div><p><i>Erros comuns:</i> cobrar só o excedente (A); cobrar tudo a R$ 0,80 (C, R$ 128,00).<br>✔️ Verificação: o valor fica entre 160 × 0,80 = 128 e 160 × 1,20 = 192, como deve ser.</p>"
   },
   {
    "n": 10,
@@ -172,7 +174,7 @@ const EXAM_BANK = {
    "n": 1,
    "topic": "área e medidas",
    "diff": "média",
-   "html": "<p>Paulo vai pintar uma parede retangular de <b>6 m</b> de largura por <b>2,8 m</b> de altura. Nela há uma porta de <b>0,8 m × 2,1 m</b>, que não será pintada. Ele vai dar <b>duas demãos</b> de tinta. Cada litro de tinta cobre <b>12 m²</b> por demão. A tinta é vendida em latas de <b>0,9 L</b>.</p><p><b>Figura (esquema em texto, fora de escala; as medidas estão no enunciado):</b></p><pre class=\"bq-fig\"> ┌──────────────────────────────┐ ─┬─\n │                              │  │\n │        ┌──────┐              │  │\n │        │      │              │  2,8 m\n │        │porta │  2,1 m       │  │\n │        │      │              │  │\n └────────┴──────┴──────────────┘ ─┴─\n          ← 0,8 m →\n ←──────────── 6 m ─────────────→</pre><p>Qual é o menor número de latas que Paulo precisa comprar?</p>",
+   "html": "<p>Paulo vai pintar uma parede retangular de <b>6 m</b> de largura por <b>2,8 m</b> de altura. Nela há uma porta de <b>0,8 m × 2,1 m</b>, que não será pintada. Ele vai dar <b>duas demãos</b> de tinta. Cada litro de tinta cobre <b>12 m²</b> por demão. A tinta é vendida em latas de <b>0,9 L</b>.</p><figure class=\"bq-figure\" data-fig=\"etec-parede\"></figure><p>Qual é o menor número de latas que Paulo precisa comprar?</p>",
    "opts": [
     "2",
     "3",
@@ -182,13 +184,13 @@ const EXAM_BANK = {
    ],
    "ans": 1,
    "solHead": "(B) 3 latas",
-   "sol": "<ul><li>Área da parede: 6 × 2,8 = <b>16,8 m²</b>.</li><li>Área da porta: 0,8 × 2,1 = <b>1,68 m²</b>.</li><li>Área a pintar: 16,8 − 1,68 = <b>15,12 m²</b>. Com duas demãos: 2 × 15,12 = <b>30,24 m²</b>.</li><li>Tinta necessária: 30,24 ÷ 12 = <b>2,52 L</b>.</li><li>Latas: 2,52 ÷ 0,9 = 2,8. Como não se compra lata quebrada, são <b>3 latas</b> (2,7 L).</li></ul><p><i>Erros comuns:</i> esquecer de descontar a porta. Aí são 33,6 m² ÷ 12 = 2,8 L, e 2,8 ÷ 0,9 ≈ 3,1, o que leva a 4 latas (C). Arredondar 2,8 latas para baixo dá (A).<br>✔️ Verificação: 3 latas = 2,7 L ≥ 2,52 L, e 2 latas = 1,8 L não bastam.</p>"
+   "sol": "<ul><li>Área da parede: 6 × 2,8 = <b>16,8 m²</b>.</li><li>Área da porta: 0,8 × 2,1 = <b>1,68 m²</b>.</li><li>Área a pintar: 16,8 − 1,68 = <b>15,12 m²</b>. Repare no zero acrescentado: 16,8 = 16,80, para alinhar vírgula com vírgula.</li></ul><div class=\"bq-conta\" data-op=\"−\" data-n=\"16,80|1,68\"></div><ul><li>Com duas demãos: 15,12 + 15,12 = <b>30,24 m²</b>.</li></ul><div class=\"bq-conta\" data-op=\"+\" data-n=\"15,12|15,12\"></div><ul><li>Tinta necessária: 30,24 ÷ 12 = <b>2,52 L</b>.</li><li>Latas: 2,52 ÷ 0,9 = 2,8. Como não se compra lata quebrada, são <b>3 latas</b> (2,7 L).</li></ul><p><i>Erros comuns:</i> esquecer de descontar a porta. Aí são 33,6 m² ÷ 12 = 2,8 L, e 2,8 ÷ 0,9 ≈ 3,1, o que leva a 4 latas (C). Arredondar 2,8 latas para baixo dá (A).<br>✔️ Verificação: 3 latas = 2,7 L ≥ 2,52 L, e 2 latas = 1,8 L não bastam.</p>"
   },
   {
    "n": 2,
    "topic": "média aritmética (leitura de gráfico de barras)",
    "diff": "fácil",
-   "html": "<p>O gráfico mostra a chuva acumulada, em milímetros, em uma cidade no primeiro semestre:</p><p><b>Gráfico (em texto; os valores de cada barra estão escritos ao lado dela):</b></p><pre class=\"bq-fig\">Chuva (mm)\nJan │██████████████████████████  240\nFev │███████████████████████  210\nMar │████████████████████  180\nAbr │██████████  90\nMai │███████  60\nJun │████  30</pre><p>Qual foi a média mensal de chuva nesse semestre?</p>",
+   "html": "<p>O gráfico mostra a chuva acumulada, em milímetros, em uma cidade no primeiro semestre:</p><figure class=\"bq-figure\" data-fig=\"etec-chuva\"></figure><p>Qual foi a média mensal de chuva nesse semestre?</p>",
    "opts": [
     "105 mm",
     "135 mm",
@@ -198,7 +200,7 @@ const EXAM_BANK = {
    ],
    "ans": 1,
    "solHead": "(B) 135 mm",
-   "sol": "<ul><li>Soma: 240 + 210 + 180 + 90 + 60 + 30 = <b>810 mm</b>.</li><li>Média: 810 ÷ 6 = <b>135 mm</b>.</li></ul><p><i>Erro comum:</i> tirar a média só do maior e do menor valor, (240 + 30) ÷ 2 = 135. Aqui coincide, mas é um método errado. A alternativa (D) vem de dividir por 5 em vez de 6.<br>✔️ Verificação: 135 × 6 = 810.</p>"
+   "sol": "<ul><li>Soma: 240 + 210 + 180 + 90 + 60 + 30 = <b>810 mm</b>.</li></ul><div class=\"bq-conta\" data-op=\"+\" data-n=\"240|210|180|90|60|30\"></div><ul><li>Média: 810 ÷ 6 = <b>135 mm</b>.</li></ul><p><i>Erro comum:</i> dividir por 5 em vez de 6 (são seis meses, de janeiro a junho): 810 ÷ 5 = 162 (D).<br>✔️ Verificação: 135 × 6 = 810.</p>"
   },
   {
    "n": 3,
@@ -220,7 +222,7 @@ const EXAM_BANK = {
    "n": 4,
    "topic": "Teorema de Pitágoras",
    "diff": "fácil",
-   "html": "<p>Uma escada de <b>5 m</b> está apoiada em um muro vertical. O pé da escada fica a <b>1,4 m</b> da base do muro, num chão plano.</p><p><b>Figura (esquema em texto, fora de escala; todas as medidas estão no enunciado):</b></p><pre class=\"bq-fig\">   muro\n    │\\\n    │ \\  escada = 5 m\n  h │  \\\n    │   \\\n    └────\\\n     1,4 m</pre><p>A que altura do chão a escada toca o muro?</p>",
+   "html": "<p>Uma escada de <b>5 m</b> está apoiada em um muro vertical. O pé da escada fica a <b>1,4 m</b> da base do muro, num chão plano.</p><figure class=\"bq-figure\" data-fig=\"etec-escada\"></figure><p>A que altura do chão a escada toca o muro?</p>",
    "opts": [
     "3,6 m",
     "4,2 m",
@@ -268,7 +270,7 @@ const EXAM_BANK = {
    "n": 7,
    "topic": "produtos notáveis e fatoração",
    "diff": "média",
-   "html": "<p>Dois terrenos quadrados ficam lado a lado: um tem <b>103 m</b> de lado e o outro, <b>97 m</b>. Um corretor quer saber quantos metros quadrados o maior tem a mais que o menor, sem calculadora.</p><p><b>Figura (esquema em texto, fora de escala; todas as medidas estão no enunciado):</b></p><pre class=\"bq-fig\"> ┌─────────────┐ ┌───────────┐\n │             │ │           │\n │   103 m     │ │   97 m    │\n │             │ │           │\n └─────────────┘ └───────────┘</pre><p>A diferença entre as áreas dos dois terrenos é</p>",
+   "html": "<p>Dois terrenos quadrados ficam lado a lado: um tem <b>103 m</b> de lado e o outro, <b>97 m</b>. Um corretor quer saber quantos metros quadrados o maior tem a mais que o menor, sem calculadora.</p><figure class=\"bq-figure\" data-fig=\"etec-terrenos\"></figure><p>A diferença entre as áreas dos dois terrenos é</p>",
    "opts": [
     "6 m².",
     "36 m².",
@@ -278,13 +280,13 @@ const EXAM_BANK = {
    ],
    "ans": 4,
    "solHead": "(E) 1 200 m²",
-   "sol": "<p>Use a diferença de quadrados: a² − b² = (a + b)(a − b).</p><ul><li>103² − 97² = (103 + 97)(103 − 97) = 200 × 6 = <b>1 200 m²</b>.</li></ul><p><i>Erro comum:</i> fazer (103 − 97)² = 36 (B), o que é errado porque a² − b² ≠ (a − b)².<br>✔️ Verificação: 103² = 10 609 e 97² = 9 409; a diferença é 1 200.</p>"
+   "sol": "<p>Use a diferença de quadrados: a² − b² = (a + b)(a − b).</p><ul><li>103² − 97² = (103 + 97)(103 − 97) = 200 × 6 = <b>1 200 m²</b>.</li></ul><p><i>Erro comum:</i> fazer (103 − 97)² = 36 (B), o que é errado porque a² − b² ≠ (a − b)².<br>✔️ Verificação: 103² = 10 609 e 97² = 9 409; a diferença é 1 200.</p><div class=\"bq-conta\" data-op=\"−\" data-n=\"10 609|9 409\"></div>"
   },
   {
    "n": 8,
    "topic": "semelhança de triângulos",
    "diff": "fácil",
-   "html": "<p>Num fim de tarde, um poste vertical projeta uma sombra de <b>6 m</b> no chão plano. No mesmo instante, uma pessoa de <b>1,6 m</b> de altura, em pé ao lado do poste, projeta uma sombra de <b>1,2 m</b>.</p><p><b>Figura (esquema em texto, fora de escala; todas as medidas estão no enunciado):</b></p><pre class=\"bq-fig\">  │                    \n  │ poste ?            \n  │                     │ 1,6 m\n  │                     │\n  └──────────── 6 m     └──── 1,2 m</pre><p>Qual é a altura do poste?</p>",
+   "html": "<p>Num fim de tarde, um poste vertical projeta uma sombra de <b>6 m</b> no chão plano. No mesmo instante, uma pessoa de <b>1,6 m</b> de altura, em pé ao lado do poste, projeta uma sombra de <b>1,2 m</b>.</p><figure class=\"bq-figure\" data-fig=\"etec-sombra\"></figure><p>Qual é a altura do poste?</p>",
    "opts": [
     "2,25 m",
     "4,5 m",
@@ -350,7 +352,7 @@ const EXAM_BANK = {
    "n": 2,
    "topic": "funções e escala logarítmica",
    "diff": "difícil",
-   "html": "<p>Em um gráfico, <b>os dois eixos estão em escala logarítmica de base 10</b>: as marcas 1, 10, 100, 1 000, … ficam igualmente espaçadas. Os pontos que relacionam duas grandezas positivas x e y ficam todos sobre <b>uma mesma reta</b> nesse gráfico. Dois desses pontos são:</p><ul><li>x = 100, y = 50</li><li>x = 10 000, y = 5</li></ul><p><b>Figura (esquema em texto, fora de escala; use as coordenadas dadas):</b></p><pre class=\"bq-fig\"> y (escala log)\n 100 ┤\n     │  ● A(100 ; 50)\n     │     ╲\n  10 ┤        ╲\n     │           ╲\n     │              ● B(10 000 ; 5)\n   1 ┤\n     └──┬───────────┬──────────► x (escala log)\n       100        10 000</pre><p>Na figura, A fica entre as marcas 10 e 100 do eixo y, e B entre as marcas 1 e 10.</p><p>Mantida essa relação, qual o valor de y quando x = 400?</p>",
+   "html": "<p>Em um gráfico, <b>os dois eixos estão em escala logarítmica de base 10</b>: as marcas 1, 10, 100, 1 000, … ficam igualmente espaçadas. Os pontos que relacionam duas grandezas positivas x e y ficam todos sobre <b>uma mesma reta</b> nesse gráfico. Dois desses pontos são:</p><ul><li>x = 100, y = 50</li><li>x = 10 000, y = 5</li></ul><figure class=\"bq-figure\" data-fig=\"fuvest-loglog\"></figure><p>Na figura, A fica entre as marcas 10 e 100 do eixo y, e B entre as marcas 1 e 10.</p><p>Mantida essa relação, qual o valor de y quando x = 400?</p>",
    "opts": [
     "12,5",
     "20",
@@ -446,7 +448,7 @@ const EXAM_BANK = {
    "n": 8,
    "topic": "sistemas lineares e determinantes",
    "diff": "média",
-   "html": "<p>Considere o sistema, em que a e b são reais:</p><pre class=\"bq-fig\">⎧  x +  y +  z = 6\n⎨  x + 2y + 3z = 14\n⎩ 2x +  y + az = b</pre><p>O sistema <b>não</b> é possível e determinado (não tem solução única) exatamente quando</p>",
+   "html": "<p>Considere o sistema, em que a e b são reais:</p><div class=\"bq-sys\" role=\"math\"><span>x + y + z = 6</span><span>x + 2y + 3z = 14</span><span>2x + y + az = b</span></div><p>O sistema <b>não</b> é possível e determinado (não tem solução única) exatamente quando</p>",
    "opts": [
     "a = 0",
     "a = 1",
@@ -456,7 +458,7 @@ const EXAM_BANK = {
    ],
    "ans": 0,
    "solHead": "(A) a = 0",
-   "sol": "<p>O sistema tem solução única exatamente quando o determinante dos coeficientes é diferente de zero:</p><pre class=\"bq-fig\">| 1  1  1 |\n| 1  2  3 | = 1(2a − 3) − 1(a − 6) + 1(1 − 4) = a\n| 2  1  a |</pre><p>Então det = <b>a</b>. Com a ≠ 0 há solução única; com <b>a = 0</b>, o sistema é impossível ou indeterminado (depende de b).<br>✔️ Verificação: com a = 0, os coeficientes da 3ª linha (2, 1, 0) são 3 × (1, 1, 1) − (1, 2, 3). A 3ª equação é uma combinação das outras duas, e por isso não há solução única. Se b = 3·6 − 14 = 4, o sistema é indeterminado; se b ≠ 4, é impossível.</p>"
+   "sol": "<p>O sistema tem solução única exatamente quando o determinante dos coeficientes é diferente de zero:</p><div class=\"bq-mat-row\" role=\"math\"><span class=\"bq-mat det\"><table class=\"bq-mat-t\"><tr><td>1</td><td>1</td><td>1</td></tr><tr><td>1</td><td>2</td><td>3</td></tr><tr><td>2</td><td>1</td><td>a</td></tr></table></span><span class=\"bq-mat-tail\">= 1(2a − 3) − 1(a − 6) + 1(1 − 4) = a</span></div><p>Então det = <b>a</b>. Com a ≠ 0 há solução única; com <b>a = 0</b>, o sistema é impossível ou indeterminado (depende de b).<br>✔️ Verificação: com a = 0, os coeficientes da 3ª linha (2, 1, 0) são 3 × (1, 1, 1) − (1, 2, 3). A 3ª equação é uma combinação das outras duas, e por isso não há solução única. Se b = 3·6 − 14 = 4, o sistema é indeterminado; se b ≠ 4, é impossível.</p>"
   },
   {
    "n": 9,
@@ -496,7 +498,7 @@ const EXAM_BANK = {
    "n": 1,
    "topic": "semelhança e porcentagem (razão entre áreas)",
    "diff": "fácil",
-   "html": "<p>Um fabricante lançou um novo modelo de televisor. A tela nova é um retângulo <b>semelhante</b> à tela do modelo antigo (mesma proporção entre largura e altura), mas a sua <b>diagonal é 20% maior</b>.</p><p><b>Figura:</b> não é necessária. Todos os dados estão no texto.</p><p>Em relação à tela antiga, a área da tela nova é maior em</p>",
+   "html": "<p>Um fabricante lançou um novo modelo de televisor. A tela nova é um retângulo <b>semelhante</b> à tela do modelo antigo (mesma proporção entre largura e altura), mas a sua <b>diagonal é 20% maior</b>.</p><p>Em relação à tela antiga, a área da tela nova é maior em</p>",
    "opts": [
     "exatamente 20%.",
     "entre 20% e 40%.",
@@ -526,7 +528,7 @@ const EXAM_BANK = {
    "n": 3,
    "topic": "trigonometria no triângulo retângulo",
    "diff": "média",
-   "html": "<p>Uma pessoa avista o topo de uma torre vertical sob um ângulo de <b>30°</b> com a horizontal. Ela caminha <b>20 m</b> em linha reta em direção à base da torre e passa a ver o topo sob um ângulo de <b>60°</b>. Despreze a altura da pessoa.</p><p><b>Figura (esquema em texto, fora de escala; todas as medidas estão no enunciado):</b></p><pre class=\"bq-fig\">                         ● topo\n                       ╱╱│\n                    ╱╱   │\n                 ╱╱      │ h\n              ╱╱  ╱      │\n           ╱╱30° ╱60°    │\n          ●─────●────────┘\n          ← 20 m→</pre><p>A altura da torre é</p>",
+   "html": "<p>Uma pessoa avista o topo de uma torre vertical sob um ângulo de <b>30°</b> com a horizontal. Ela caminha <b>20 m</b> em linha reta em direção à base da torre e passa a ver o topo sob um ângulo de <b>60°</b>. Despreze a altura da pessoa.</p><figure class=\"bq-figure\" data-fig=\"unicamp-torre\"></figure><p>A altura da torre é</p>",
    "opts": [
     "10 m.",
     "15 m.",
@@ -586,7 +588,7 @@ const EXAM_BANK = {
    "n": 7,
    "topic": "geometria espacial (semelhança de sólidos)",
    "diff": "média",
-   "html": "<p>Uma taça tem a forma de um <b>cone</b> com o vértice para baixo. Ela foi enchida até a <b>metade da altura</b> e contém <b>50 mL</b> de bebida.</p><p><b>Figura (esquema em texto, fora de escala; todas as medidas estão no enunciado):</b></p><pre class=\"bq-fig\">   \\‾‾‾‾‾‾‾‾‾‾‾/\n    \\         /\n     \\~~~~~~~/   ← metade da altura\n      \\░░░░░/\n       \\░░░/\n        \\░/\n         V</pre><p>Quantos mililitros ainda cabem na taça?</p>",
+   "html": "<p>Uma taça tem a forma de um <b>cone</b> com o vértice para baixo. Ela foi enchida até a <b>metade da altura</b> e contém <b>50 mL</b> de bebida.</p><figure class=\"bq-figure\" data-fig=\"unicamp-cone\"></figure><p>Quantos mililitros ainda cabem na taça?</p>",
    "opts": [
     "50 mL",
     "200 mL",
@@ -640,7 +642,7 @@ const EXAM_BANK = {
    ],
    "ans": 3,
    "solHead": "d) 9,0",
-   "sol": "<ul><li>Soma das notas dos 20 alunos: 20 × 6,5 = <b>130</b>.</li><li>Soma das notas dos 25 alunos: 25 × 7,0 = <b>175</b>.</li><li>Soma dos 5 novos: 175 − 130 = 45. Média: 45 / 5 = <b>9,0</b>.</li></ul><p><i>Argumento qualitativo:</i> para \"puxar\" a média de 6,5 para 7,0, os novos precisam estar bem acima de 7. Isso já descarta (a).<br>✔️ Verificação: (130 + 45) / 25 = 7 ✓.</p>"
+   "sol": "<ul><li>Soma das notas dos 20 alunos: 20 × 6,5 = <b>130</b>.</li><li>Soma das notas dos 25 alunos: 25 × 7,0 = <b>175</b>.</li><li>Soma dos 5 novos: 175 − 130 = 45.</li></ul><div class=\"bq-conta\" data-op=\"−\" data-n=\"175|130\"></div><ul><li>Média: 45 / 5 = <b>9,0</b>.</li></ul><p><i>Argumento qualitativo:</i> para \"puxar\" a média de 6,5 para 7,0, os novos precisam estar bem acima de 7. Isso já descarta (a).<br>✔️ Verificação: (130 + 45) / 25 = 7 ✓.</p>"
   }
  ],
  "unesp": [
@@ -664,7 +666,7 @@ const EXAM_BANK = {
    "n": 2,
    "topic": "área de figuras planas (círculo)",
    "diff": "fácil",
-   "html": "<p>Uma placa quadrada de <b>12 cm</b> de lado teve os quatro cantos arredondados: de cada canto foi retirado um <b>quarto de círculo de raio 3 cm</b>, com centro no vértice do quadrado.</p><p><b>Figura (esquema em texto, fora de escala; todas as medidas estão no enunciado):</b></p><pre class=\"bq-fig\">   ╭───────────────╮\n  ╱                 ╲      ← cada canto: ¼ de círculo\n │                   │       de raio 3 cm retirado\n │       12 cm       │\n │                   │\n  ╲                 ╱\n   ╰───────────────╯</pre><p>Usando π = 3, a área da placa que restou é</p>",
+   "html": "<p>Uma placa quadrada de <b>12 cm</b> de lado teve os quatro cantos arredondados: de cada canto foi retirado um <b>quarto de círculo de raio 3 cm</b>, com centro no vértice do quadrado.</p><figure class=\"bq-figure\" data-fig=\"unesp-placa\"></figure><p>Usando π = 3, a área da placa que restou é</p>",
    "opts": [
     "108 cm².",
     "117 cm².",
@@ -674,7 +676,7 @@ const EXAM_BANK = {
    ],
    "ans": 1,
    "solHead": "(B) 117 cm²",
-   "sol": "<ul><li>Os quatro quartos de círculo formam <b>um círculo inteiro</b> de raio 3: área π · 3² = 3 · 9 = 27 cm².</li><li>Restou: 12² − 27 = 144 − 27 = <b>117 cm²</b>.</li></ul><p><i>Erro comum:</i> tirar só um quarto de círculo, 144 − 6,75 (não aparece), ou tirar 4 círculos inteiros, 144 − 108 = 36.<br>✔️ Verificação: 27 cm² é menos de 1/5 da placa, então a área restante deve ficar perto de 115 ✓.</p>"
+   "sol": "<ul><li>Os quatro quartos de círculo formam <b>um círculo inteiro</b> de raio 3: área π · 3² = 3 · 9 = 27 cm².</li><li>Restou: 12² − 27 = 144 − 27 = <b>117 cm²</b>.</li></ul><div class=\"bq-conta\" data-op=\"−\" data-n=\"144|27\"></div><p><i>Erros comuns:</i> esquecer o π e subtrair 4 × 3² = 36, chegando a 108 (A); descontar só um quarto de círculo, 144 − 6,75 = 137,25 (não está entre as alternativas).<br>✔️ Verificação: 27 cm² é menos de 1/5 da placa, então a área restante deve ficar perto de 115 ✓.</p>"
   },
   {
    "n": 3,
@@ -690,7 +692,7 @@ const EXAM_BANK = {
    ],
    "ans": 0,
    "solHead": "(A) 2,04; 2; 2",
-   "sol": "<ul><li><b>Média:</b> (0·3 + 1·5 + 2·8 + 3·6 + 4·3) / 25 = (0 + 5 + 16 + 18 + 12) / 25 = 51/25 = <b>2,04</b>.</li><li><b>Mediana:</b> com 25 dados, é o 13º. As posições acumuladas são: 0 livros → 1ª a 3ª; 1 livro → 4ª a 8ª; 2 livros → 9ª a 16ª. O 13º é <b>2</b>.</li><li><b>Moda:</b> o valor mais frequente, 2 livros (8 alunos), ou seja, <b>2</b>.</li></ul><p><i>Erro comum:</i> dar a frequência 8 como moda (D). A moda é o <b>valor</b>, não quantas vezes ele aparece.<br>✔️ Verificação: 3 + 5 + 8 + 6 + 3 = 25 alunos ✓.</p>"
+   "sol": "<ul><li><b>Média:</b> (0·3 + 1·5 + 2·8 + 3·6 + 4·3) / 25 = (0 + 5 + 16 + 18 + 12) / 25 = 51/25 = <b>2,04</b>.</li></ul><div class=\"bq-conta\" data-op=\"+\" data-n=\"0|5|16|18|12\"></div><ul><li><b>Mediana:</b> com 25 dados, é o 13º. As posições acumuladas são: 0 livros → 1ª a 3ª; 1 livro → 4ª a 8ª; 2 livros → 9ª a 16ª. O 13º é <b>2</b>.</li><li><b>Moda:</b> o valor mais frequente, 2 livros (8 alunos), ou seja, <b>2</b>.</li></ul><p><i>Erro comum:</i> dar a frequência 8 como moda (D). A moda é o <b>valor</b>, não quantas vezes ele aparece.<br>✔️ Verificação: 3 + 5 + 8 + 6 + 3 = 25 alunos ✓.</p>"
   },
   {
    "n": 4,
@@ -744,7 +746,7 @@ const EXAM_BANK = {
    "n": 7,
    "topic": "matrizes e determinantes",
    "diff": "média",
-   "html": "<p>Seja A a matriz</p><pre class=\"bq-fig\">A = ⎡ 2  1 ⎤\n    ⎣ 3  4 ⎦</pre><p>e Aᵀ a sua transposta. O determinante da matriz 2A · Aᵀ é</p>",
+   "html": "<p>Seja A a matriz</p><div class=\"bq-mat-row\" role=\"math\"><span class=\"bq-mat-name\">A =</span><span class=\"bq-mat matriz\"><table class=\"bq-mat-t\"><tr><td>2</td><td>1</td></tr><tr><td>3</td><td>4</td></tr></table></span></div><p>e Aᵀ a sua transposta. O determinante da matriz 2A · Aᵀ é</p>",
    "opts": [
     "20",
     "25",
@@ -776,7 +778,7 @@ const EXAM_BANK = {
    "n": 9,
    "topic": "polinômios (forma fatorada e raízes)",
    "diff": "média",
-   "html": "<p>O gráfico de um polinômio P(x) de <b>grau 3</b>, com coeficientes reais, corta o eixo x <b>exatamente</b> nos pontos de abscissas <b>−1</b>, <b>2</b> e <b>4</b>. Ele corta o eixo y no ponto <b>(0, 16)</b>.</p><p><b>Figura (descrição em texto):</b> da esquerda para a direita, o gráfico vem de baixo e cruza o eixo x em x = −1. Ele fica <b>acima</b> do eixo x entre −1 e 2, passando pelo ponto (0, 16). Cruza o eixo x em x = 2 e fica <b>abaixo</b> do eixo entre 2 e 4. Cruza de novo em x = 4 e depois sobe. Não é preciso medir nada no gráfico: os dados necessários estão no texto.</p><p>O valor de P(1) é</p>",
+   "html": "<p>O gráfico de um polinômio P(x) de <b>grau 3</b>, com coeficientes reais, corta o eixo x <b>exatamente</b> nos pontos de abscissas <b>−1</b>, <b>2</b> e <b>4</b>. Ele corta o eixo y no ponto <b>(0, 16)</b>.</p><figure class=\"bq-figure\" data-fig=\"unesp-polinomio\"></figure><p>O valor de P(1) é</p>",
    "opts": [
     "4",
     "6",
@@ -810,7 +812,7 @@ const EXAM_BANK = {
    "n": 1,
    "topic": "padrões e sequências",
    "diff": "fácil",
-   "html": "<p>Lia monta figuras com palitos de fósforo, formando hexágonos lado a lado em fila. Hexágonos vizinhos <b>dividem um lado</b>.</p><p><b>Figura (esquema em texto):</b> cada hexágono tem 6 palitos (2 em cima, 2 nas laterais e 2 embaixo). Dois hexágonos vizinhos dividem o palito vertical entre eles.</p><pre class=\"bq-fig\">Figura 1    Figura 2         Figura 3\n  /\\          /\\   /\\          /\\   /\\   /\\\n /  \\        /  \\ /  \\        /  \\ /  \\ /  \\\n|    |      |    |    |      |    |    |    |\n \\  /        \\  / \\  /        \\  / \\  / \\  /\n  \\/          \\/   \\/          \\/   \\/   \\/\n6 palitos   11 palitos       16 palitos</pre><p>Quantos palitos ela usará na <b>Figura 20</b>?</p>",
+   "html": "<p>Lia monta figuras com palitos de fósforo, formando hexágonos lado a lado em fila. Hexágonos vizinhos <b>dividem um lado</b>.</p><figure class=\"bq-figure\" data-fig=\"obmep-hexagonos\"></figure><p>Quantos palitos ela usará na <b>Figura 20</b>?</p>",
    "opts": [
     "101",
     "106",
@@ -890,7 +892,7 @@ const EXAM_BANK = {
    "n": 6,
    "topic": "geometria (áreas)",
    "diff": "média",
-   "html": "<p>Rui desenhou um quadrado de <b>8 cm</b> de lado. Ligando os <b>pontos médios</b> dos lados, desenhou um quadrado menor dentro dele. Depois repetiu o procedimento no quadrado menor, e de novo no seguinte. Ao todo, fez esse procedimento <b>três vezes</b>, sempre no quadrado mais recente.</p><p><b>Figura (esquema em texto, fora de escala; todas as medidas estão no enunciado):</b></p><pre class=\"bq-fig\"> ┌───────◆───────┐\n │     ╱   ╲     │\n │   ╱  ┌─┐  ╲   │\n ◆  ╱   │◇│   ╲  ◆      (só os primeiros passos)\n │   ╲  └─┘  ╱   │\n │     ╲   ╱     │\n └───────◆───────┘</pre><p>Qual a área do <b>último</b> quadrado desenhado?</p>",
+   "html": "<p>Rui desenhou um quadrado de <b>8 cm</b> de lado. Ligando os <b>pontos médios</b> dos lados, desenhou um quadrado menor dentro dele. Depois repetiu o procedimento no quadrado menor, e de novo no seguinte. Ao todo, fez esse procedimento <b>três vezes</b>, sempre no quadrado mais recente.</p><figure class=\"bq-figure\" data-fig=\"obmep-quadrados\"></figure><p>Qual a área do <b>último</b> quadrado desenhado?</p>",
    "opts": [
     "8 cm²",
     "12 cm²",
@@ -916,13 +918,13 @@ const EXAM_BANK = {
    ],
    "ans": 3,
    "solHead": "(D) R$ 72,00",
-   "sol": "<p>Pensando \"de trás para frente\":</p><ul><li>Depois do lanche ficou 3/4 do que havia sobrado. Se 3/4 valem R$ 36, o que sobrou do livro era 36 ÷ 3 × 4 = <b>R$ 48</b>.</li><li>Depois do livro ficou 2/3 do total. Se 2/3 valem R$ 48, o total era 48 ÷ 2 × 3 = <b>R$ 72</b>.</li></ul><p><i>Erro comum:</i> somar as frações (1/3 + 1/4 = 7/12) como se as duas fossem do total. Isso daria 36 ÷ (5/12) = 86,40.<br>✔️ Verificação: 72 − 24 (livro) = 48; 48 − 12 (lanche) = 36 ✓.</p>"
+   "sol": "<p>Pensando \"de trás para frente\":</p><ul><li>Depois do lanche ficou 3/4 do que havia sobrado. Se 3/4 valem R$ 36, o que sobrou do livro era 36 ÷ 3 × 4 = <b>R$ 48</b>.</li><li>Depois do livro ficou 2/3 do total. Se 2/3 valem R$ 48, o total era 48 ÷ 2 × 3 = <b>R$ 72</b>.</li></ul><p><i>Erro comum:</i> somar as frações (1/3 + 1/4 = 7/12) como se as duas fossem do total. Isso daria 36 ÷ (5/12) = 86,40.<br>✔️ Verificação: 72 − 24 (livro) = 48; 48 − 12 (lanche) = 36 ✓.</p><div class=\"bq-conta\" data-op=\"−\" data-n=\"72|24\"></div><div class=\"bq-conta\" data-op=\"−\" data-n=\"48|12\"></div>"
   },
   {
    "n": 8,
    "topic": "ângulos (relógio)",
    "diff": "média",
-   "html": "<p>Qual é o <b>menor</b> ângulo formado pelos ponteiros de um relógio às <b>5 h 10 min</b>?</p><p><b>Figura:</b> não é necessária. Considere um relógio analógico comum, de 12 horas, em que os <b>dois ponteiros andam sem parar</b> (o das horas também se move entre um número e outro).</p>",
+   "html": "<p>Qual é o <b>menor</b> ângulo formado pelos ponteiros de um relógio às <b>5 h 10 min</b>?</p><p>Considere um relógio analógico comum, de 12 horas, em que os <b>dois ponteiros andam sem parar</b> (o das horas também se move entre um número e outro).</p><figure class=\"bq-figure\" data-fig=\"obmep-relogio\"></figure>",
    "opts": [
     "90°",
     "95°",

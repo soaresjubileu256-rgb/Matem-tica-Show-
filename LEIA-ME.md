@@ -38,6 +38,8 @@ js/
     ensino-medio.js        os 23 assuntos do Ensino Médio
     catalogo.js            GRUPOS DE ASSUNTOS (a ordem única do app), ano (BNCC)
     provas.js              o que cai em cada prova (ENEM, ETEC, Fuvest, Unicamp, Unesp, OBMEP)
+    provas-questoes.js     60 questões inéditas (10 por prova) — GERADO a partir de docs/questoes-ineditas.md
+    provas-figuras.js      figuras e gráficos em SVG dessas questões + contas armadas das resoluções
   dados/
     progresso.js      acertos, histórico, caderno de erros e revisão espaçada
     configuracoes.js  configurações salvas (tema, som, volume, meta, nível)
@@ -55,6 +57,7 @@ js/
     exercicios.js     aba Exercícios: modos de treino, sessões, dicas, Desafios, Treino personalizado
     modos-estudo.js   Qual o próximo passo? e Mistura do dia
     provas.js         Provas e vestibulares: lista, tela de cada prova e "minha prova"
+    simulado-prova.js Simulado com as questões inéditas: cronômetro, revisão, nota, gabarito e resolução
     tabuada.js        Tabuada (Estudar, Quadro e Treinar)
     estudo.js         nivelamento, plano de estudos, cartões de revisão e Caderno de erros
     ferramentas.js    Resolver questão e Calculadora (com parênteses, ordem das operações e histórico)
@@ -96,3 +99,20 @@ Os assuntos aparecem sempre na mesma ordem e nos mesmos grupos (1º ao 5º ano, 
 1. Copie um assunto parecido em `js/assuntos/fundamental.js` ou `js/assuntos/ensino-medio.js`. Mude o `id`, o `name`, o `sym`, a explicação (`learn`), os `examples` e os geradores (`gen.facil`, `gen.medio`, `gen.dificil`).
 2. Em `js/assuntos/catalogo.js`, acrescente o `id` no grupo certo de `SUBJECT_GROUPS` (é isso que define a ordem e o lugar dele em todas as telas) e em `BNCC_ANO`.
 3. Em `js/telas/exercicios.js`, acrescente uma dica em `HINTS`.
+
+## Questões inéditas das provas
+
+As 60 questões do "Simulado · questões inéditas" (aba de cada prova) são escritas em
+`docs/questoes-ineditas.md`, que é a fonte única com enunciados, alternativas, gabarito e resoluções.
+Depois de editar, gere o arquivo do app (precisa de Python 3):
+
+    python3 docs/gerar-banco-questoes.py docs/questoes-ineditas.md js/assuntos/provas-questoes.js
+
+Blocos especiais no .md:
+- ` ```fig ID ``` ` → figura SVG (desenhada em `js/assuntos/provas-figuras.js`)
+- ` ```conta + ``` ` com um número por linha → conta armada; o resultado é calculado pelo app
+- ` ```sistema ``` `, ` ```matriz A ``` `, ` ```det ``` ` → notação matemática
+
+São questões criadas pelo Matemática Show no estilo de cada prova, e o app avisa que não são oficiais.
+Mude `CACHE_VERSION` em `sw.js` depois de alterar arquivos, para quem já instalou o app receber a versão nova.
+

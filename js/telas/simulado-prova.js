@@ -24,7 +24,8 @@ function bankExamCardHTML(e){
   const card = h(`<button type="button" class="bq-card" style="--c:${e.color}; --c2:${e.color2}">
       <span class="bq-card-i">📘</span>
       <span class="bq-card-t"><b>Simulado ${escHTML(e.name)} · questões inéditas</b>
-        <small>${qs.length} questões no estilo da prova · ${BANK_EXAM_MINS[e.id]||30} min · ${qs[0].opts.length} alternativas · resolução comentada</small></span>
+        <small>${qs.length} questões no estilo da prova · ${BANK_EXAM_MINS[e.id]||30} min · ${qs[0].opts.length} alternativas · resolução comentada</small>
+        <small class="bq-card-note">Criadas pelo Matemática Show, não são questões oficiais da prova.</small></span>
       <span class="bq-card-g">${best===null ? 'Começar ▶' : `<b>${fmt(best)}</b><small>melhor nota</small>`}</span>
     </button>`);
   card.onclick = ()=> startBankExam(e.id);
@@ -83,7 +84,7 @@ function bankExamRunScreen(){
   c.appendChild(grid);
 
   const q = sess.Q[sess.cur], bq = qs[sess.cur];
-  c.appendChild(h(`<div class="question-card exr-card bq-q"><div class="exr-qh"><span class="exr-n">${sess.cur+1}</span><span class="exr-s">${escHTML(bq.topic)}</span><span class="exr-d d-${BANK_DIFF_CLS[bq.diff]||'medio'}">${escHTML(bq.diff)}</span></div><div class="bq-text">${bq.html}</div></div>`));
+  c.appendChild(h(`<div class="question-card exr-card bq-q"><div class="exr-qh"><span class="exr-n">${sess.cur+1}</span><span class="exr-s">${escHTML(bq.topic)}</span><span class="exr-d d-${BANK_DIFF_CLS[bq.diff]||'medio'}">${escHTML(bq.diff)}</span></div><div class="bq-origin">Questão inédita · estilo ${escHTML(e.name)}</div><div class="bq-text">${bq.html}</div></div>`));
 
   const pickOpt = i=>{
     q.pick = i; playTones([520], 0.03, 'sine', 0.05);
@@ -120,6 +121,7 @@ function bankExamRunScreen(){
       .then(ok=>{ if(ok) bankExamSubmit(sess, false); });
   };
   c.appendChild(sub);
+  renderBankFigures(c);
   if(window.matchMedia && matchMedia('(pointer:fine)').matches) c.appendChild(h(`<p class="exr-keys">Atalhos: ${L.slice(0, bq.opts.length).split('').join(', ')} respondem · ← → trocam de questão · R marca pra revisar</p>`));
   // teclado do computador
   if(_bankKeys) document.removeEventListener('keydown', _bankKeys);
@@ -208,19 +210,20 @@ function bankExamResultScreen(){
     const ok = right(i), pick = r.picks[i];
     if(r.filter==='ok' && !ok) return;
     if(r.filter==='bad' && ok) return;
-    const it = h(`<div class="card ar-review ${ok?'ok':'bad'}" id="bqrv${i}"><div class="ar-rv-h"><span><b class="rv-n">${i+1}</b> ${escHTML(q.topic)} · ${escHTML(q.diff)}</span><b class="${ok?'ok':'bad'}">${ok?'✓ Certa':pick<0?'⬜ Em branco':'✗ Errada'}</b></div>
+    const it = h(`<div class="card ar-review bq-review ${ok?'ok':'bad'}" id="bqrv${i}"><div class="ar-rv-h"><span><b class="rv-n">${i+1}</b> ${escHTML(q.topic)} · ${escHTML(q.diff)}</span><b class="${ok?'ok':'bad'}">${ok?'✓ Certa':pick<0?'⬜ Em branco':'✗ Errada'}</b></div>
       <div class="bq-text">${q.html}</div>
       <div class="ar-rv-opts"></div>
       <details class="ar-sol bq-sol" ${ok?'':'open'}><summary>Resolução comentada</summary><div class="bq-sol-h">Resposta: ${q.solHead}</div><div class="bq-text">${q.sol}</div></details></div>`);
     const ob = it.querySelector('.ar-rv-opts');
     q.opts.forEach((o,j)=>{
       const cls = j===q.ans ? 'right' : j===pick ? 'wrong' : '';
-      ob.appendChild(h(`<div class="rv-opt ${cls}"><span class="k">${L[j]}</span><span class="l">${o}</span>${j===pick ? '<small>sua resposta</small>' : j===q.ans && !ok ? '<small>correta</small>' : ''}</div>`));
+      ob.appendChild(h(`<div class="rv-opt ${cls}"><span class="k">${L[j]}</span><span class="l">${o}</span>${j===pick ? `<small>${ok ? '✓' : '✗'} sua resposta</small>` : j===q.ans && !ok ? '<small>✓ correta</small>' : ''}</div>`));
     });
     c.appendChild(it);
   });
   const foot = h(`<div class="cta-row" style="margin-top:16px"><button type="button" class="btn secondary">Voltar para ${escHTML(e.name)}</button></div>`);
   foot.querySelector('button').onclick = back;
   c.appendChild(foot);
+  renderBankFigures(c);
   return wrap;
 }
