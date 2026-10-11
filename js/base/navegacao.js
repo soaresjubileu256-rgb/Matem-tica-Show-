@@ -33,6 +33,7 @@ function sessionInProgress(){
   if(['exerciseSession','challengeSession','personalizedSession','reviewErrorsSession'].includes(state.screen))
     return s.index < s.total && (s.index>0 || s.checked);
   if(state.screen==='examRun') return s.kind==='exam' && !s.submitted;
+  if(state.screen==='bankExamRun') return s.kind==='bankExam' && !s.submitted;
   return false;
 }
 window.addEventListener('beforeunload', (e)=>{
@@ -109,7 +110,7 @@ const SECTION_TABS = [
   {id:'study', tabs:[
     {screen:'content', ico:'📖', label:'Aprender'},
     {screen:'exercisesSubjects', ico:'✎', label:'Exercícios'},
-    {screen:'exams', ico:'🎓', label:'Provas', match:['exams','examDetail']},
+    {screen:'exams', ico:'🎓', label:'Provas', match:['exams','examDetail','bankExamRun','bankExamResult']},
     {screen:'personalizedSetup', ico:'🎯', label:'Treino'},
     {screen:'challengeDifficulty', ico:'🏆', label:'Desafios'},
     {screen:'stepSetup', ico:'🪜', label:'Passo a passo'},
@@ -173,7 +174,7 @@ const BN_ICONS = {
   arena:'<path d="M8 3.5h8v5.5a4 4 0 0 1-8 0z"/><path d="M8 5.5H5.5a2.5 2.5 0 0 0 2.6 4.4M16 5.5h2.5a2.5 2.5 0 0 1-2.6 4.4M12 13v3.5M8.5 20.5h7M10 16.5h4"/>',
   progress:'<path d="M3.5 20.5h17"/><path d="M6.5 20.5v-6M11.5 20.5V6M16.5 20.5v-9.5"/><path d="m5 10.5 5-5 4 3 5.5-5"/>',
 };
-const STUDY_SCREENS = ['content','subjectDetail','geoLab','cardsDeck','exercisesSubjects','exerciseDifficulty','exerciseSession','personalizedSetup','personalizedSession','challengeDifficulty','challengeSession','tabuada','errors','reviewErrorsSession','stepSetup','stepGuide','exams','examDetail'];
+const STUDY_SCREENS = ['content','subjectDetail','geoLab','cardsDeck','exercisesSubjects','exerciseDifficulty','exerciseSession','personalizedSetup','personalizedSession','challengeDifficulty','challengeSession','tabuada','errors','reviewErrorsSession','stepSetup','stepGuide','exams','examDetail','bankExamRun','bankExamResult'];
 const BOTTOM_NAV_ITEMS = [
   {id:'home', screen:'home', label:'Início', group:['home','calculator','solve','notebook','notePage','help','news','profile','settings','placement','plan']},
   {id:'path', screen:'path', label:'Trilha', group:['path']},

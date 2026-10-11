@@ -1,7 +1,8 @@
 /* =========================================================
    TELAS DE PROVAS (ENEM, ETEC, Fuvest, Unicamp, Unesp, OBMEP)
    - Provas: lista com o quanto você já domina do que cai em cada uma.
-   - Prova: como é, quem faz, dica, conteúdos da prova, treino e simulado só desses assuntos.
+   - Prova: como é, quem faz, dica, conteúdos da prova, treino e simulado só desses assuntos,
+     e o simulado com questões inéditas no estilo da prova (js/telas/simulado-prova.js).
    - "Minha prova": a escolhida aparece no Início, em "Pra fazer hoje".
    Os dados ficam em js/assuntos/provas.js.
    ========================================================= */
@@ -66,6 +67,9 @@ function examTabBody(e, c){
   sim.onclick = ()=> startExamSimulado(e);
   acts.appendChild(tr); acts.appendChild(sim);
   c.appendChild(acts);
+  // simulado com as 10 questões inéditas no estilo da prova (js/telas/simulado-prova.js)
+  const bank = bankExamCardHTML(e);
+  if(bank) c.appendChild(bank);
 
   c.appendChild(h(`<div class="pv-info">
     <div><span>👥</span><div><b>Quem faz</b><p>${escHTML(e.who)}</p></div></div>

@@ -42,6 +42,8 @@ const SCREENS = {
   examSetup: examSetupScreen,
   examRun: examRunScreen,
   examResult: examResultScreen,
+  bankExamRun: bankExamRunScreen,
+  bankExamResult: bankExamResultScreen,
   placement: placementScreen,
   plan: planScreen,
   cardsDeck: cardsDeckScreen,
