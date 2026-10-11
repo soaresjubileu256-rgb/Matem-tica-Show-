@@ -191,7 +191,7 @@ async function settingsScreen(){
     if(!res.ok){ stMsg(importMsgBox, false, res.error); }
     else {
       stMsg(importMsgBox, true, 'Progresso restaurado! Atualizando…');
-      setTimeout(()=>{ if(state.screen==='settings') go('profile'); }, 900); // só se a pessoa ainda estiver aqui
+      setTimeout(()=>{ if(importMsgBox.isConnected) go('profile'); }, 900); // só se a pessoa ainda estiver NESTA tela (não numa reaberta depois)
     }
   };
   const acts = h(`<div class="st-acts"></div>`);
@@ -205,7 +205,7 @@ async function settingsScreen(){
       if(!await showConfirm({icon:'↩️', title:'Desfazer a restauração?', message:'Seus dados voltam a ser os de antes da última restauração.', ok:'Desfazer', cancel:'Cancelar'})) return;
       const r = await undoLastRestoreForCurrentUser();
       if(!r.ok) stMsg(importMsgBox, false, r.error);
-      else { stMsg(importMsgBox, true, 'Pronto! Seus dados voltaram. Atualizando…'); setTimeout(()=>{ if(state.screen==='settings') go('profile'); }, 900); }
+      else { stMsg(importMsgBox, true, 'Pronto! Seus dados voltaram. Atualizando…'); setTimeout(()=>{ if(importMsgBox.isConnected) go('profile'); }, 900); }
     };
     dt.appendChild(undo);
   }

@@ -53,6 +53,7 @@ Cada item diz se é um **defeito confirmado**, um **risco** (pode acontecer, mas
 | 17 | Risco (por desenho) | Ao abrir, o app **entra direto na última conta, sem pedir senha**. A senha só protege a troca de conta. | 📝 Documentado. Sugestão: opção "pedir senha ao abrir". |
 | 18 | Arquitetura | 40 scripts no mesmo escopo global; a ordem do `index.html` importa; nomes podem colidir. | 📝 Plano (seção 5). Não migrei para módulos ES agora: a mudança é grande e arriscada, e o ganho imediato é pequeno. Os testes novos são a rede de segurança para essa migração. |
 | 19 | Código repetido | `iniciar.js` repetia o mesmo bloco 6 vezes. | ✅ Um único `ASYNC_SCREENS`. |
+| 20a | Defeito | Configurações: depois de restaurar ou desfazer, um temporizador de 0,9 s levava ao Perfil "se a pessoa ainda estivesse em Configurações". Se ela saísse e voltasse nesse intervalo, era **tirada da tela no meio de outra ação** (achado no teste de exclusão de conta). | ✅ O temporizador só age se a mesma tela ainda estiver aberta. |
 | 20 | Baixo impacto | Gravações de preferências do aparelho (nomes do Duelo, filtros) continuam silenciosas. | Deixado como está: não são progresso. |
 
 ### P3 — refinamentos e conteúdo
