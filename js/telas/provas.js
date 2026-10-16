@@ -43,29 +43,42 @@ const EXAM_CONTENTS = [
   ]},
 ];
 
+// o que está entre parênteses ou depois de ":" aparece mais clarinho, como detalhe
+function examContentHTML(e){
+  const fmt = x=> escHTML(x).replace(/\(([^)]*)\)/g, '<small>($1)</small>').replace(/^([^:]+):\s*(.+)$/, '$1: <small>$2</small>');
+  return `<div class="pv-content" style="--c:${e.color}; --c2:${e.color2}">
+    <div class="pv-content-h"><span>${e.ico}</span><div><b>${e.name}</b><small>${escHTML(e.full)}</small></div></div>
+    <ol>${e.items.map((x,i)=>`<li><i>${i+1}</i><p>${fmt(x)}</p></li>`).join('')}</ol>
+  </div>`;
+}
+
 function examsScreen(){
   const wrap = document.createElement('div');
   wrap.appendChild(topbar('🎓 Conteúdos por prova', true, ()=>go('content')));
   const e = EXAM_CONTENTS.find(x=>x.id===state.examId) || EXAM_CONTENTS[0];
   state.examId = e.id;
   const tabs = h(`<div class="pv-tabs" role="tablist"></div>`);
+  const c = h(`<div class="content pv-screen">
+    <div class="pv-body">${examContentHTML(e)}</div>
+    <p class="pv-note">📌 É uma orientação de estudo. Confira sempre o edital da sua prova.</p>
+  </div>`);
+  // trocar de prova muda só o cartão e a aba acesa: redesenhar a tela inteira
+  // fazia as barras de abas voltarem pro começo e piscarem
   EXAM_CONTENTS.forEach(x=>{
     const t = h(`<button type="button" role="tab" class="pv-tab ${x.id===e.id?'on':''}" aria-selected="${x.id===e.id}" style="--c:${x.color}"><span>${x.ico}</span><b>${x.name}</b></button>`);
-    t.onclick = ()=>{ if(state.examId===x.id) return; state.examId = x.id; render(); };
+    t.onclick = ()=>{
+      if(state.examId===x.id) return;
+      state.examId = x.id;
+      replaceHistoryState();
+      tabs.querySelectorAll('.pv-tab').forEach(b=>{ const on = b===t; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
+      c.querySelector('.pv-body').innerHTML = examContentHTML(x);
+      tabs.scrollTo({left: t.offsetLeft - (tabs.clientWidth - t.offsetWidth)/2, behavior:'smooth'});
+    };
     tabs.appendChild(t);
   });
   wrap.appendChild(tabs);
-  // o que está entre parênteses ou depois de ":" aparece mais clarinho, como detalhe
-  const fmt = x=> escHTML(x).replace(/\(([^)]*)\)/g, '<small>($1)</small>').replace(/^([^:]+):\s*(.+)$/, '$1: <small>$2</small>');
-  const c = h(`<div class="content pv-screen">
-    <div class="pv-content" style="--c:${e.color}; --c2:${e.color2}">
-      <div class="pv-content-h"><span>${e.ico}</span><div><b>${e.name}</b><small>${escHTML(e.full)}</small></div></div>
-      <ol>${e.items.map((x,i)=>`<li><i>${i+1}</i><p>${fmt(x)}</p></li>`).join('')}</ol>
-    </div>
-    <p class="pv-note">📌 É uma orientação de estudo. Confira sempre o edital da sua prova.</p>
-  </div>`);
   wrap.appendChild(c);
-  // deixa a aba escolhida visível na barra
+  // deixa a aba escolhida visível na barra ao abrir a tela
   setTimeout(()=>{ const on = tabs.querySelector('.pv-tab.on'); if(on) tabs.scrollLeft = on.offsetLeft - (tabs.clientWidth - on.offsetWidth)/2; }, 0);
   return wrap;
 }
