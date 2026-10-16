@@ -10,6 +10,54 @@
 /* R$ com duas casas quando tem centavos: 62,5 → 62,50 */
 function reais2(v){ return Number.isInteger(v) ? String(v) : v.toFixed(2).replace('.', ','); }
 
+/* ---------- figuras da geometria espacial avançada ---------- */
+/* icosaedro (12 vértices, 30 arestas, 20 faces) girado e desenhado em perspectiva simples:
+   arestas de trás tracejadas, faces da frente pintadas */
+function icosahedronSVG(){
+  const W = 320, H = 230, f = (1+Math.sqrt(5))/2;
+  const P = [[-1,f,0],[1,f,0],[-1,-f,0],[1,-f,0],[0,-1,f],[0,1,f],[0,-1,-f],[0,1,-f],[f,0,-1],[f,0,1],[-f,0,-1],[-f,0,1]];
+  const ay = 0.45, ax = 0.35;
+  const R = P.map(([x,y,z])=>{ const x1 = x*Math.cos(ay)+z*Math.sin(ay), z1 = -x*Math.sin(ay)+z*Math.cos(ay); return [x1, y*Math.cos(ax)-z1*Math.sin(ax), y*Math.sin(ax)+z1*Math.cos(ax)]; });
+  const k = 52, pt = i=> [W/2 + R[i][0]*k, H/2 - R[i][1]*k];
+  const near = (i,j)=> Math.abs(Math.hypot(...[0,1,2].map(t=>P[i][t]-P[j][t])) - 2) < 1e-6;
+  const faces = [];
+  for(let i=0;i<12;i++) for(let j=i+1;j<12;j++) for(let l=j+1;l<12;l++) if(near(i,j)&&near(j,l)&&near(i,l)) faces.push([i,j,l]);
+  const nz = ([i,j,l])=>{ const a = pt(i), b = pt(j), c = pt(l); return (b[0]-a[0])*(c[1]-a[1]) - (b[1]-a[1])*(c[0]-a[0]); };
+  const front = faces.filter(F=>{ const cz = (R[F[0]][2]+R[F[1]][2]+R[F[2]][2])/3; return cz > 0; });
+  let s = '';
+  for(let i=0;i<12;i++) for(let j=i+1;j<12;j++) if(near(i,j)) s += `<line x1="${pt(i)[0].toFixed(1)}" y1="${pt(i)[1].toFixed(1)}" x2="${pt(j)[0].toFixed(1)}" y2="${pt(j)[1].toFixed(1)}" class="geo-hidden"/>`;
+  front.forEach(F=>{ s += `<polygon points="${F.map(i=>pt(i).map(v=>v.toFixed(1)).join(',')).join(' ')}" class="geo-face front"/>`; });
+  for(let i=0;i<12;i++) if(R[i][2] > -0.2) s += `<circle cx="${pt(i)[0].toFixed(1)}" cy="${pt(i)[1].toFixed(1)}" r="3.5" class="geo-dot"/>`;
+  return `<svg class="geo-fig" viewBox="0 0 ${W} ${H}" role="img" aria-label="Icosaedro">${s}</svg>`;
+}
+/* cubo em perspectiva (x0, y0 = canto da frente embaixo à esquerda; a = aresta em px) */
+function cubeAt(x0, y0, a){
+  const d = a*0.36, F = [[x0,y0-a],[x0+a,y0-a],[x0+a,y0],[x0,y0]], T = F.map(([x,y])=>[x+d,y-d]), p = q=> q.map(v=>v.toFixed(1)).join(',');
+  return `<polygon points="${[F[0],F[1],T[1],T[0]].map(p).join(' ')}" class="geo-face top"/><polygon points="${[F[1],T[1],T[2],F[2]].map(p).join(' ')}" class="geo-face side"/><polygon points="${F.map(p).join(' ')}" class="geo-face front"/>`;
+}
+/* um cubo pequeno e o mesmo cubo com as medidas × k, lado a lado */
+function scaleCubesSVG(k){
+  const W = 320, H = 230, base = 190, big = Math.min(150, 40*k), small = big/k;
+  const txt = (x, y, t, cls)=> `<text x="${x}" y="${y}" text-anchor="middle" class="geo-lbl ${cls||''}">${t}</text>`;
+  return `<svg class="geo-fig" viewBox="0 0 ${W} ${H}" role="img" aria-label="Cubo pequeno e cubo ampliado">
+    ${cubeAt(28, base, small)}${txt(28+small/2, base+22, '1')}
+    ${txt(28+small+38, base-small/2, `× ${k}`, 'geo-lbl-h')}
+    ${cubeAt(W-big-big*0.36-14, base, big)}${txt(W-big/2-big*0.36-14, base+22, String(k))}
+  </svg>`;
+}
+/* esfera encostando nas faces de um cubo */
+function sphereInCubeSVG(a){
+  const W = 320, H = 230, s = 140, d = s*0.36, x0 = (W-s-d)/2, y0 = (H+s+d)/2 - 6, cx = x0+s/2+d/2, cy = y0-s/2-d/2;
+  return `<svg class="geo-fig" viewBox="0 0 ${W} ${H}" role="img" aria-label="Esfera dentro de um cubo">
+    ${cubeAt(x0, y0, s).replace(/geo-face (top|side|front)/g, 'geo-face side')}
+    <circle cx="${cx}" cy="${cy}" r="${s/2-2}" class="geo-face front"/>
+    <path d="M${cx-s/2+2} ${cy} A${s/2-2} ${(s/2-2)*0.28} 0 0 0 ${cx+s/2-2} ${cy}" fill="none" class="geo-face"/>
+    <line x1="${cx}" y1="${cy}" x2="${cx+s/2-2}" y2="${cy}" class="geo-radius"/><circle cx="${cx}" cy="${cy}" r="3" class="geo-dot"/>
+    <text x="${cx+s/4}" y="${cy-8}" text-anchor="middle" class="geo-lbl geo-lbl-h">r</text>
+    <text x="${x0+s/2}" y="${y0+20}" text-anchor="middle" class="geo-lbl">${a} cm</text>
+  </svg>`;
+}
+
 SUBJECTS.push(
   /* =================== FUNDAMENTAL =================== */
   {
@@ -455,15 +503,16 @@ SUBJECTS.push(
     <div class="section-title">6. Um sólido dentro do outro</div>
     <p>Esfera dentro de um cubo, encostando nas faces: o diâmetro da esfera é a aresta → r = a/2. Cilindro dentro de um cubo: r = a/2 e h = a. Sempre faça um desenho e procure qual medida é igual nos dois.</p>`,
     examples:[
-      {title:'Exemplo 1 (diagonal da caixa)', text:'Caixa de 2 × 3 × 6. Qual a diagonal?', qVisual: stepChain(['d = √(2² + 3² + 6²)', '= √(4 + 9 + 36) = √49', 'd = 7']), steps:['Some os quadrados das três medidas: 4 + 9 + 36 = 49.', 'd = √49 = 7.']},
-      {title:'Exemplo 2 (área do cilindro)', text:'Lata de raio 3 cm e altura 10 cm. Quanto de alumínio? (π = 3,14)', qVisual: stepChain(['tampas: 2 × 3,14 × 9 = 56,52', 'lateral: 2 × 3,14 × 3 × 10 = 188,4', 'total = 244,92 cm²']), steps:['Duas tampas: 2πr² = 56,52 cm².', 'Rótulo: 2πr·h = 188,4 cm².', 'Total: 244,92 cm².']},
-      {title:'Exemplo 3 (Euler)', text:'Um poliedro tem 12 vértices e 30 arestas. Quantas faces?', qVisual: stepChain(['V − A + F = 2', '12 − 30 + F = 2', 'F = 20']), steps:['Substitua na relação de Euler.', '−18 + F = 2 → F = 20 (é o icosaedro).']},
-      {title:'Exemplo 4 (crescer)', text:'Uma caixa-d’água tem todas as medidas triplicadas. O volume fica quantas vezes maior?', qVisual: stepChain(['k = 3', 'volume × k³ = 3³', '27 vezes']), steps:['Medidas × 3 → volume × 3³.', '27 vezes maior.']},
+      {title:'Exemplo 1 (diagonal da caixa)', text:'Caixa de 2 × 3 × 6. Qual a diagonal?', qVisual: geoSolid('box',{c:6,l:3,h:2},{diag:true}) + stepChain(['d = √(2² + 3² + 6²)', '= √(4 + 9 + 36) = √49', 'd = 7']), steps:['Some os quadrados das três medidas: 4 + 9 + 36 = 49.', 'd = √49 = 7.']},
+      {title:'Exemplo 2 (área do cilindro)', text:'Lata de raio 3 cm e altura 10 cm. Quanto de alumínio? (π = 3,14)', qVisual: geoSolid('cylinder',{r:3,h:10}) + stepChain(['tampas: 2 × 3,14 × 9 = 56,52', 'lateral: 2 × 3,14 × 3 × 10 = 188,4', 'total = 244,92 cm²']), steps:['Duas tampas: 2πr² = 56,52 cm².', 'Rótulo: 2πr·h = 188,4 cm².', 'Total: 244,92 cm².']},
+      {title:'Exemplo 3 (Euler)', text:'Um poliedro tem 12 vértices e 30 arestas. Quantas faces?', qVisual: icosahedronSVG() + stepChain(['V − A + F = 2', '12 − 30 + F = 2', 'F = 20']), steps:['Substitua na relação de Euler.', '−18 + F = 2 → F = 20 (é o icosaedro).']},
+      {title:'Exemplo 4 (crescer)', text:'Uma caixa-d’água tem todas as medidas triplicadas. O volume fica quantas vezes maior?', qVisual: scaleCubesSVG(3) + stepChain(['k = 3', 'volume × k³ = 3³', '27 vezes']), steps:['Medidas × 3 → volume × 3³.', '27 vezes maior.']},
     ],
     gen:{
       facil:()=>{
         if(Math.random()<0.5){ const a = randInt(2,12);
-          return mkSingle(`Qual é a área total (em cm²) da superfície de um cubo de aresta ${a} cm?`, 6*a*a, ['O cubo tem 6 faces quadradas: A = 6a²', `6 × ${a}² = 6 × ${a*a} = ${6*a*a} cm²`]); }
+          const q = `Qual é a área total (em cm²) da superfície de um cubo de aresta ${a} cm?`, svg = geoSolid('cube',{a});
+          return mkSingle(q, 6*a*a, ['O cubo tem 6 faces quadradas: A = 6a²', `6 × ${a}² = 6 × ${a*a} = ${6*a*a} cm²`], null, geoQ(q, svg), svg); }
         const P = pick([['um cubo',8,6,12],['um prisma de base triangular',6,5,9],['uma pirâmide de base quadrada',5,5,8],['um octaedro',6,8,12],['um prisma de base hexagonal',12,8,18],['um icosaedro',12,20,30],['um dodecaedro',20,12,30],['uma pirâmide de base hexagonal',7,7,12]]);
         const ask = pick(['V','F','A']), [nome,V,F,A] = P;
         if(ask==='A') return mkSingle(`${nome[0].toUpperCase()+nome.slice(1)} tem ${V} vértices e ${F} faces. Quantas arestas ele tem?`, A, ['Relação de Euler: V − A + F = 2', `${V} − A + ${F} = 2 → A = ${V} + ${F} − 2 = ${A}`]);
@@ -471,16 +520,20 @@ SUBJECTS.push(
         return mkSingle(`Um poliedro tem ${F} faces e ${A} arestas. Quantos vértices ele tem?`, V, ['Relação de Euler: V − A + F = 2', `V − ${A} + ${F} = 2 → V = 2 + ${A} − ${F} = ${V}`]); },
       medio:()=>{
         if(Math.random()<0.5){ const t = pick([[2,3,6,7],[1,4,8,9],[2,6,9,11],[4,4,7,9],[1,2,2,3],[2,10,11,15],[6,6,7,11],[3,4,12,13]]);
-          return mkSingle(`Qual é a medida da diagonal de um paralelepípedo (caixa) de dimensões ${t[0]} cm, ${t[1]} cm e ${t[2]} cm?`, t[3], ['d = √(a² + b² + c²)', `= √(${t[0]**2} + ${t[1]**2} + ${t[2]**2}) = √${t[3]**2}`, `d = ${t[3]} cm`]); }
+          const q = `Qual é a medida da diagonal de um paralelepípedo (caixa) de dimensões ${t[0]} cm, ${t[1]} cm e ${t[2]} cm?`;
+          return mkSingle(q, t[3], ['d = √(a² + b² + c²)', `= √(${t[0]**2} + ${t[1]**2} + ${t[2]**2}) = √${t[3]**2}`, `d = ${t[3]} cm`], null, geoQ(q, geoSolid('box',{c:t[2],l:t[1],h:t[0]},{diag:'d = ?'})), geoSolid('box',{c:t[2],l:t[1],h:t[0]},{diag:`d = ${t[3]}`})); }
         const t = pick([[3,4,5],[6,8,10],[5,12,13],[8,15,17],[9,12,15]]), sw = Math.random()<0.5, r = sw?t[1]:t[0], hh = sw?t[0]:t[1];
-        return mkSingle(`Um cone tem raio da base ${r} cm e altura ${hh} cm. Quanto mede a geratriz?`, t[2], ['A geratriz forma um triângulo retângulo com o raio e a altura: g² = r² + h²', `g² = ${r*r} + ${hh*hh} = ${t[2]**2}`, `g = ${t[2]} cm`]); },
+        const q = `Um cone tem raio da base ${r} cm e altura ${hh} cm. Quanto mede a geratriz?`;
+        return mkSingle(q, t[2], ['A geratriz forma um triângulo retângulo com o raio e a altura: g² = r² + h²', `g² = ${r*r} + ${hh*hh} = ${t[2]**2}`, `g = ${t[2]} cm`], null, geoQ(q, geoSolid('cone',{r,h:hh},{g:'g = ?'})), geoSolid('cone',{r,h:hh},{g:`g = ${t[2]}`})); },
       dificil:()=>{ const t = Math.random();
         if(t<0.35){ const k = pick([2,3,4,5]), what = pick(['volume','área da superfície']), f = what==='volume' ? k**3 : k**2;
           return mkSingle(`Todas as medidas de um sólido foram multiplicadas por ${k}. A ${what} ficou quantas vezes maior?`, f, ['Medidas × k → área × k² e volume × k³.', `k = ${k} → ${what==='volume'?`${k}³`:`${k}²`} = ${f}`]); }
         if(t<0.7){ const r = randInt(1,6), hh = randInt(2,12), A = round2(2*3.14*r*r + 2*3.14*r*hh);
-          return mkSingle(`Qual é a área total (em cm²) de um cilindro de raio ${r} cm e altura ${hh} cm? Use π = 3,14.`, A, [`Duas tampas: 2 × 3,14 × ${r*r} = ${fmt(round2(2*3.14*r*r))}`, `Lateral (o "rótulo"): 2 × 3,14 × ${r} × ${hh} = ${fmt(round2(2*3.14*r*hh))}`, `Total: ${fmt(A)} cm²`]); }
+          const q = `Qual é a área total (em cm²) de um cilindro de raio ${r} cm e altura ${hh} cm? Use π = 3,14.`, svg = geoSolid('cylinder',{r,h:hh});
+          return mkSingle(q, A, [`Duas tampas: 2 × 3,14 × ${r*r} = ${fmt(round2(2*3.14*r*r))}`, `Lateral (o "rótulo"): 2 × 3,14 × ${r} × ${hh} = ${fmt(round2(2*3.14*r*hh))}`, `Total: ${fmt(A)} cm²`], null, geoQ(q, svg), svg); }
         const a = pick([2,4,6,8,10]), r = a/2, V = round2(4*3.14*r**3/3);
-        return mkSingle(`Uma esfera está dentro de um cubo de aresta ${a} cm, encostando em todas as faces. Qual é o volume da esfera (em cm³)? Use π = 3,14.`, V, [`O diâmetro da esfera é a aresta do cubo: r = ${a} ÷ 2 = ${r}`, `V = 4 × 3,14 × ${r}³ ÷ 3 = 4 × 3,14 × ${r**3} ÷ 3`, `V = ${fmt(V)} cm³`]); },
+        const q = `Uma esfera está dentro de um cubo de aresta ${a} cm, encostando em todas as faces. Qual é o volume da esfera (em cm³)? Use π = 3,14.`, svg = sphereInCubeSVG(a);
+        return mkSingle(q, V, [`O diâmetro da esfera é a aresta do cubo: r = ${a} ÷ 2 = ${r}`, `V = 4 × 3,14 × ${r}³ ÷ 3 = 4 × 3,14 × ${r**3} ÷ 3`, `V = ${fmt(V)} cm³`], null, geoQ(q, svg), svg); },
     }
   },
   {
