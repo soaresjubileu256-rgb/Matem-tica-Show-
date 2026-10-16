@@ -13,7 +13,7 @@ function go(screen, extra={}){
   Object.assign(state, {screen}, extra);
   pushHistoryState();
   render();
-  try{ const f = app.firstElementChild; if(f && !['lesson','exerciseSession','challengeSession','personalizedSession','reviewErrorsSession','notePage'].includes(screen)) f.classList.add('screen-in'); }catch(e){}
+  try{ const f = app.firstElementChild; if(f && !(typeof ASYNC_SCREENS!=='undefined' && ASYNC_SCREENS[screen]) && !['lesson','exerciseSession','challengeSession','personalizedSession','reviewErrorsSession','notePage'].includes(screen)) f.classList.add('screen-in'); }catch(e){}
   window.scrollTo(0,0);
 }
 
@@ -141,6 +141,7 @@ function sectionOf(screen){
   for(const sec of SECTION_TABS){ const t = sec.tabs.find(t=> (t.match||[t.screen]).includes(screen)); if(t) return {sec, tab:t}; }
   return null;
 }
+const secTabsScroll = {}; // posição de cada barra de abas, pra não voltar pro começo ao trocar de aba
 function sectionTabsEl(){
   const found = sectionOf(state.screen);
   if(!found) return null;
@@ -151,9 +152,27 @@ function sectionTabsEl(){
     b.onclick = ()=>{ if(!on) go(t.screen, t.extra||{}); };
     bar.appendChild(b);
   });
-  setTimeout(()=>{ const o = bar.querySelector('.sec-tab.on'); if(o && bar.scrollWidth > bar.clientWidth) bar.scrollLeft = o.offsetLeft - (bar.clientWidth - o.offsetWidth)/2; }, 0);
+  // a barra nova abre na mesma posição da anterior (da mesma seção) e só anda se a aba acesa
+  // ficar escondida; a posição é aplicada antes de a tela ser pintada, então nada pula
+  const memo = secTabsScroll[found.sec.id];
+  let settled = false;
+  bar._settle = ()=>{
+    if(settled || !bar.isConnected) return;
+    settled = true;
+    if(memo != null) bar.scrollLeft = memo;
+    const o = bar.querySelector('.sec-tab.on');
+    if(o && bar.scrollWidth > bar.clientWidth && (o.offsetLeft < bar.scrollLeft || o.offsetLeft + o.offsetWidth > bar.scrollLeft + bar.clientWidth)){
+      const to = o.offsetLeft - (bar.clientWidth - o.offsetWidth)/2;
+      if(memo != null) bar.scrollTo({left:to, behavior:'smooth'}); else bar.scrollLeft = to;
+    }
+    secTabsScroll[found.sec.id] = bar.scrollLeft;
+    bar.addEventListener('scroll', ()=>{ secTabsScroll[found.sec.id] = bar.scrollLeft; }, {passive:true});
+  };
+  requestAnimationFrame(bar._settle); // reserva: render() já chama _settle logo depois de pôr a tela
   return bar;
 }
+/* acerta a posição das barras de abas logo depois de a tela entrar na página */
+function settleTabs(){ app.querySelectorAll('.sec-tabs').forEach(b=> b._settle && b._settle()); }
 /* coloca as abas logo depois da barra de título da tela */
 function withSectionTabs(el){
   const bar = sectionTabsEl();
