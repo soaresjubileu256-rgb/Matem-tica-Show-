@@ -75,9 +75,9 @@ SUBJECTS.push(
     <div class="section-title">Escala de mapa</div>
     <p>Escala <b>1 : 100 000</b> quer dizer: 1 cm no mapa vale 100 000 cm na vida real. Pra ler em quilômetros, corte 5 zeros: 100 000 cm = 1 km. Então 4 cm no mapa = 4 km de verdade.</p>`,
     examples:[
-      {title:'Exemplo 1 (comprimento)', text:'Quantos centímetros tem 2,4 m?', qVisual: stepChain(['m → cm: 2 degraus pra baixo', '× 10 × 10 = × 100', '2,4 × 100 = 240 cm']), steps:['De m pra cm são 2 degraus pra baixo: × 100.', '2,4 × 100 = 240 cm.']},
-      {title:'Exemplo 2 (volume em litros)', text:'Uma piscina tem 12 m³. Quantos litros cabem nela?', qVisual: stepChain(['1 m³ = 1000 L', '12 × 1000 = 12 000 L']), steps:['Cada m³ guarda 1000 litros.', '12 × 1000 = 12 000 litros.']},
-      {title:'Exemplo 3 (escala)', text:'Num mapa de escala 1 : 50 000, duas cidades estão a 6 cm. Qual a distância real?', qVisual: stepChain(['6 cm × 50 000 = 300 000 cm', '300 000 cm ÷ 100 000 = 3 km']), steps:['Cada cm do mapa vale 50 000 cm de verdade: 6 × 50 000 = 300 000 cm.', 'Pra virar km, divida por 100 000: 3 km.']},
+      {title:'Exemplo 1 (comprimento)', text:'Quantos centímetros tem 2,4 m?', qVisual: unitStairsSVG('m','cm') + stepChain(['m → cm: 2 degraus pra baixo', '× 10 × 10 = × 100', '2,4 × 100 = 240 cm']), steps:['De m pra cm são 2 degraus pra baixo: × 100.', '2,4 × 100 = 240 cm.']},
+      {title:'Exemplo 2 (volume em litros)', text:'Uma piscina tem 12 m³. Quantos litros cabem nela?', qVisual: poolSVG(4,3,1) + stepChain(['1 m³ = 1000 L', '12 × 1000 = 12 000 L']), steps:['Cada m³ guarda 1000 litros.', '12 × 1000 = 12 000 litros.']},
+      {title:'Exemplo 3 (escala)', text:'Num mapa de escala 1 : 50 000, duas cidades estão a 6 cm. Qual a distância real?', qVisual: mapScaleSVG(6, 50000) + stepChain(['6 cm × 50 000 = 300 000 cm', '300 000 cm ÷ 100 000 = 3 km']), steps:['Cada cm do mapa vale 50 000 cm de verdade: 6 × 50 000 = 300 000 cm.', 'Pra virar km, divida por 100 000: 3 km.']},
     ],
     gen:{
       facil:()=>{
@@ -115,8 +115,8 @@ SUBJECTS.push(
     <div class="section-title">Quando é inversa?</div>
     <p>Quando uma sobe e a outra desce. Ex.: mais máquinas → <b>menos</b> horas pra fazer o mesmo serviço. Mais horas trabalhadas por dia → <b>menos</b> dias.</p>`,
     examples:[
-      {title:'Exemplo 1 (tudo direto)', text:'3 costureiras, em 2 dias, fazem 12 camisas. Quantas camisas 6 costureiras fazem em 4 dias?', qVisual: stepChain(['Mais costureiras → mais camisas (direta): 6/3', 'Mais dias → mais camisas (direta): 4/2', 'x = 12 × 6/3 × 4/2 = 12 × 2 × 2 = 48']), steps:['Compare cada grandeza com "camisas": as duas são diretas.', 'x = 12 × (6/3) × (4/2) = 48 camisas.']},
-      {title:'Exemplo 2 (uma inversa)', text:'4 máquinas fazem 100 peças em 6 horas. Em quantas horas 8 máquinas fazem 200 peças?', qVisual: stepChain(['Mais máquinas → menos horas (inversa): 4/8', 'Mais peças → mais horas (direta): 200/100', 'x = 6 × 4/8 × 200/100 = 6 × 0,5 × 2 = 6 horas']), steps:['A coluna do x é "horas".', 'Máquinas: inversa → 4/8. Peças: direta → 200/100.', 'x = 6 × 0,5 × 2 = 6 horas.']},
+      {title:'Exemplo 1 (tudo direto)', text:'3 costureiras, em 2 dias, fazem 12 camisas. Quantas camisas 6 costureiras fazem em 4 dias?', qVisual: compTableHTML(['Costureiras','Dias','Camisas'], [3,2,12], [6,4,'x'], ['direta','direta','x']) + stepChain(['Mais costureiras → mais camisas (direta): 6/3', 'Mais dias → mais camisas (direta): 4/2', 'x = 12 × 6/3 × 4/2 = 12 × 2 × 2 = 48']), steps:['Compare cada grandeza com "camisas": as duas são diretas.', 'x = 12 × (6/3) × (4/2) = 48 camisas.']},
+      {title:'Exemplo 2 (uma inversa)', text:'4 máquinas fazem 100 peças em 6 horas. Em quantas horas 8 máquinas fazem 200 peças?', qVisual: compTableHTML(['Máquinas','Peças','Horas'], [4,100,6], [8,200,'x'], ['inversa','direta','x']) + stepChain(['Mais máquinas → menos horas (inversa): 4/8', 'Mais peças → mais horas (direta): 200/100', 'x = 6 × 4/8 × 200/100 = 6 × 0,5 × 2 = 6 horas']), steps:['A coluna do x é "horas".', 'Máquinas: inversa → 4/8. Peças: direta → 200/100.', 'x = 6 × 0,5 × 2 = 6 horas.']},
     ],
     gen:{
       facil:()=>{ const a = pick([2,3,4,5]), d = pick([2,3,4,5]), k = pick([2,3,4]), p = a*d*k, b = a*pick([1,2,3]), e = d*pick([1,2]);
@@ -154,9 +154,9 @@ SUBJECTS.push(
     <div class="section-title">Restos andam em círculo (como o relógio)</div>
     <p>O resto de uma divisão por 4 só pode ser 0, 1, 2 ou 3, e depois volta pro 0 — igual ao relógio, que depois do 12 volta pro 1. Isso ajuda a achar, por exemplo, o <b>último algarismo</b> de uma potência enorme: as potências de 3 terminam em 3, 9, 7, 1, 3, 9, 7, 1… (repete de 4 em 4). Pra 3²⁰²⁶, divida 2026 por 4: resto 2 → termina igual a 3², em <b>9</b>.</p>`,
     examples:[
-      {title:'Exemplo 1 (critério do 3)', text:'O número 4 512 é divisível por 3?', qVisual: stepChain(['4 + 5 + 1 + 2 = 12', '12 está na tabuada do 3 → sim!']), steps:['Some os algarismos: 4 + 5 + 1 + 2 = 12.', '12 é múltiplo de 3, então 4 512 também é.']},
-      {title:'Exemplo 2 (quantos divisores)', text:'Quantos divisores tem 18?', qVisual: stepChain(['18 = 2¹ × 3²', '(1+1) × (2+1) = 2 × 3 = 6']), steps:['Decomponha: 18 = 2 × 3 × 3 = 2¹ × 3².', 'Some 1 em cada expoente e multiplique: 2 × 3 = 6 divisores (1, 2, 3, 6, 9, 18).']},
-      {title:'Exemplo 3 (último algarismo)', text:'Em que algarismo termina 7¹⁰³?', qVisual: stepChain(['7, 49, 343, 2401 → terminam em 7, 9, 3, 1', '103 ÷ 4 = 25, resto 3', 'termina igual a 7³ → 3']), steps:['As potências de 7 terminam em 7, 9, 3, 1 e repetem de 4 em 4.', '103 dividido por 4 deixa resto 3, então termina igual à 3ª da lista: 3.']},
+      {title:'Exemplo 1 (critério do 3)', text:'O número 4 512 é divisível por 3?', qVisual: digitChipsHTML(4512, 3) + stepChain(['4 + 5 + 1 + 2 = 12', '12 está na tabuada do 3 → sim!']), steps:['Some os algarismos: 4 + 5 + 1 + 2 = 12.', '12 é múltiplo de 3, então 4 512 também é.']},
+      {title:'Exemplo 2 (quantos divisores)', text:'Quantos divisores tem 18?', qVisual: divisorRectsSVG(18) + stepChain(['18 = 2¹ × 3²', '(1+1) × (2+1) = 2 × 3 = 6']), steps:['Decomponha: 18 = 2 × 3 × 3 = 2¹ × 3².', 'Some 1 em cada expoente e multiplique: 2 × 3 = 6 divisores (1, 2, 3, 6, 9, 18).']},
+      {title:'Exemplo 3 (último algarismo)', text:'Em que algarismo termina 7¹⁰³?', qVisual: cycleSVG([7,9,3,1], 2, 7) + stepChain(['7, 49, 343, 2401 → terminam em 7, 9, 3, 1', '103 ÷ 4 = 25, resto 3', 'termina igual a 7³ → 3']), steps:['As potências de 7 terminam em 7, 9, 3, 1 e repetem de 4 em 4.', '103 dividido por 4 deixa resto 3, então termina igual à 3ª da lista: 3.']},
     ],
     gen:{
       facil:()=>{ const b = randInt(3,9), q = randInt(5,30), r = randInt(1,b-1), a = b*q+r;
@@ -184,9 +184,9 @@ SUBJECTS.push(
     <div class="section-title">Dica</div>
     <p>Se a diferença entre os termos não é sempre igual, olhe as <b>diferenças das diferenças</b>: 1, 4, 9, 16 (diferenças 3, 5, 7 → sobem de 2 em 2): são os quadrados 1², 2², 3², 4².</p>`,
     examples:[
-      {title:'Exemplo 1 (passo constante)', text:'Qual é o 15º termo de 4, 9, 14, 19, …?', qVisual: stepChain(['passo: +5', '15º = 4 + 14 × 5', '= 4 + 70 = 74']), steps:['De um termo pro outro soma 5.', 'Do 1º ao 15º são 14 passos: 4 + 14 × 5 = 74.']},
-      {title:'Exemplo 2 (repetição)', text:'Na sequência 🔴🟢🔵🟡🔴🟢🔵🟡…, qual a cor da posição 50?', qVisual: stepChain(['o bloco tem 4 cores', '50 ÷ 4 = 12, resto 2', '2ª cor do bloco: 🟢']), steps:['O padrão repete de 4 em 4.', '50 ÷ 4 sobra 2 → é a 2ª cor: verde.']},
-      {title:'Exemplo 3 (palitos)', text:'Quantos palitos formam 10 quadradinhos em fila?', qVisual: stepChain(['1 → 4, 2 → 7, 3 → 10', 'cada quadrado novo: +3', '3 × 10 + 1 = 31']), steps:['O primeiro quadrado usa 4 palitos e cada novo usa mais 3.', 'Com n quadrados: 3n + 1 = 31 palitos.']},
+      {title:'Exemplo 1 (passo constante)', text:'Qual é o 15º termo de 4, 9, 14, 19, …?', qVisual: jumpsSVG(4, 5, 5) + stepChain(['passo: +5', '15º = 4 + 14 × 5', '= 4 + 70 = 74']), steps:['De um termo pro outro soma 5.', 'Do 1º ao 15º são 14 passos: 4 + 14 × 5 = 74.']},
+      {title:'Exemplo 2 (repetição)', text:'Na sequência 🔴🟢🔵🟡🔴🟢🔵🟡…, qual a cor da posição 50?', qVisual: colorPatternSVG(['#FF5C7A','#12B886','#4C7DFF','#FFB800'], 52, 50) + stepChain(['o bloco tem 4 cores', '50 ÷ 4 = 12, resto 2', '2ª cor do bloco: 🟢']), steps:['O padrão repete de 4 em 4.', '50 ÷ 4 sobra 2 → é a 2ª cor: verde.']},
+      {title:'Exemplo 3 (palitos)', text:'Quantos palitos formam 10 quadradinhos em fila?', qVisual: matchSquaresSVG() + stepChain(['1 → 4, 2 → 7, 3 → 10', 'cada quadrado novo: +3', '3 × 10 + 1 = 31']), steps:['O primeiro quadrado usa 4 palitos e cada novo usa mais 3.', 'Com n quadrados: 3n + 1 = 31 palitos.']},
     ],
     gen:{
       facil:()=>{ const a = randInt(1,20), r = randInt(2,9), seq = [0,1,2,3].map(i=>a+i*r);
@@ -217,9 +217,9 @@ SUBJECTS.push(
     <div class="section-title">Retas paralelas</div>
     <p>Uma reta cortando duas paralelas forma ângulos que se repetem: os que estão "na mesma posição" em cada cruzamento são iguais.</p>`,
     examples:[
-      {title:'Exemplo 1 (suplemento)', text:'Qual o suplemento de 35°?', qVisual: stepChain(['suplementares somam 180°', '180 − 35 = 145°']), steps:['Suplementares somam 180°.', '180 − 35 = 145°.']},
-      {title:'Exemplo 2 (triângulo)', text:'Um triângulo tem ângulos de 40° e 75°. Quanto mede o terceiro?', qVisual: stepChain(['soma no triângulo = 180°', '180 − 40 − 75 = 65°']), steps:['Os três somam 180°.', '180 − 40 − 75 = 65°.']},
-      {title:'Exemplo 3 (polígono regular)', text:'Quanto mede cada ângulo interno de um hexágono regular?', qVisual: stepChain(['soma = (6 − 2) × 180 = 720°', '720 ÷ 6 = 120°']), steps:['Soma: (n − 2) × 180 = 4 × 180 = 720°.', 'São 6 ângulos iguais: 720 ÷ 6 = 120°.']},
+      {title:'Exemplo 1 (suplemento)', text:'Qual o suplemento de 35°?', qVisual: supplementSVG(35) + stepChain(['suplementares somam 180°', '180 − 35 = 145°']), steps:['Suplementares somam 180°.', '180 − 35 = 145°.']},
+      {title:'Exemplo 2 (triângulo)', text:'Um triângulo tem ângulos de 40° e 75°. Quanto mede o terceiro?', qVisual: triangleAnglesSVG(40, 75, ['40°','75°','?']) + stepChain(['soma no triângulo = 180°', '180 − 40 − 75 = 65°']), steps:['Os três somam 180°.', '180 − 40 − 75 = 65°.']},
+      {title:'Exemplo 3 (polígono regular)', text:'Quanto mede cada ângulo interno de um hexágono regular?', qVisual: polygonSplitSVG(6, '120°') + stepChain(['soma = (6 − 2) × 180 = 720°', '720 ÷ 6 = 120°']), steps:['Soma: (n − 2) × 180 = 4 × 180 = 720°.', 'São 6 ângulos iguais: 720 ÷ 6 = 120°.']},
     ],
     gen:{
       facil:()=>{ const a = randInt(10,80);
@@ -254,9 +254,9 @@ SUBJECTS.push(
       <li><b>Trinômio quadrado perfeito:</b> x² + 10x + 25 = (x + 5)².</li>
     </ul>`,
     examples:[
-      {title:'Exemplo 1 (desenvolver)', text:'Desenvolva (x + 4)²', qVisual: stepChain(['a = x, b = 4', 'x² + 2·x·4 + 4²', 'x² + 8x + 16']), steps:['Use a² + 2ab + b² com a = x e b = 4.', 'x² + 8x + 16.']},
-      {title:'Exemplo 2 (conta de cabeça)', text:'Quanto é 31 × 29?', qVisual: stepChain(['(30 + 1)(30 − 1)', '30² − 1²', '900 − 1 = 899']), steps:['31 = 30 + 1 e 29 = 30 − 1.', 'Soma vezes diferença: 30² − 1² = 899.']},
-      {title:'Exemplo 3 (fatorar)', text:'Fatore x² − 49', qVisual: stepChain(['x² − 7²', '(x + 7)(x − 7)']), steps:['49 = 7², então é diferença de quadrados.', 'x² − 49 = (x + 7)(x − 7).']},
+      {title:'Exemplo 1 (desenvolver)', text:'Desenvolva (x + 4)²', qVisual: squareOfSumSVG('x', '4', 7, 4) + stepChain(['a = x, b = 4', 'x² + 2·x·4 + 4²', 'x² + 8x + 16']), steps:['Use a² + 2ab + b² com a = x e b = 4.', 'x² + 8x + 16.']},
+      {title:'Exemplo 2 (conta de cabeça)', text:'Quanto é 31 × 29?', qVisual: diffSquaresSVG('30', '1', 30, 6) + stepChain(['(30 + 1)(30 − 1)', '30² − 1²', '900 − 1 = 899']), steps:['31 = 30 + 1 e 29 = 30 − 1.', 'Soma vezes diferença: 30² − 1² = 899.']},
+      {title:'Exemplo 3 (fatorar)', text:'Fatore x² − 49', qVisual: diffSquaresSVG('x', '7', 10, 4) + stepChain(['x² − 7²', '(x + 7)(x − 7)']), steps:['49 = 7², então é diferença de quadrados.', 'x² − 49 = (x + 7)(x − 7).']},
     ],
     gen:{
       facil:()=>{ const a = randInt(2,12);
@@ -280,9 +280,9 @@ SUBJECTS.push(
     <div class="section-title">3. Teorema de Tales</div>
     <p>Quando várias retas <b>paralelas</b> cortam duas retas transversais, os pedaços ficam proporcionais. Se numa transversal os pedaços são 2 e 3, e na outra são 4 e x, então 2/3 = 4/x → x = 6.</p>`,
     examples:[
-      {title:'Exemplo 1 (Pitágoras)', text:'Catetos de 6 e 8. Qual a hipotenusa?', qVisual: stepChain(['h² = 6² + 8²', 'h² = 36 + 64 = 100', 'h = 10']), steps:['h² = 36 + 64 = 100.', 'h = √100 = 10.']},
-      {title:'Exemplo 2 (sombra)', text:'Um menino de 1,5 m faz sombra de 2 m. Uma árvore faz sombra de 8 m. Qual a altura dela?', qVisual: fracRow([{n:'x',d:8}, '=', {n:'1,5',d:2}]) + stepChain(['2x = 8 × 1,5 = 12', 'x = 6 m']), steps:['Os triângulos são semelhantes: altura/sombra é igual nos dois.', 'x/8 = 1,5/2 → x = 6 m.']},
-      {title:'Exemplo 3 (Tales)', text:'Paralelas cortam duas retas. Numa, os pedaços medem 3 e 5; na outra, 6 e x.', qVisual: fracRow([{n:3,d:5}, '=', {n:6,d:'x'}]) + stepChain(['3x = 30', 'x = 10']), steps:['Pedaços proporcionais: 3/5 = 6/x.', '3x = 30 → x = 10.']},
+      {title:'Exemplo 1 (Pitágoras)', text:'Catetos de 6 e 8. Qual a hipotenusa?', qVisual: rightTriangleSVG(6, 8, 'h = ?', ['6','8','h = ?']) + stepChain(['h² = 6² + 8²', 'h² = 36 + 64 = 100', 'h = 10']), steps:['h² = 36 + 64 = 100.', 'h = √100 = 10.']},
+      {title:'Exemplo 2 (sombra)', text:'Um menino de 1,5 m faz sombra de 2 m. Uma árvore faz sombra de 8 m. Qual a altura dela?', qVisual: shadowSVG(1.5, 2, 8, 'x') + fracRow([{n:'x',d:8}, '=', {n:'1,5',d:2}]) + stepChain(['2x = 8 × 1,5 = 12', 'x = 6 m']), steps:['Os triângulos são semelhantes: altura/sombra é igual nos dois.', 'x/8 = 1,5/2 → x = 6 m.']},
+      {title:'Exemplo 3 (Tales)', text:'Paralelas cortam duas retas. Numa, os pedaços medem 3 e 5; na outra, 6 e x.', qVisual: talesSVG(3, 5, 6, 'x') + fracRow([{n:3,d:5}, '=', {n:6,d:'x'}]) + stepChain(['3x = 30', 'x = 10']), steps:['Pedaços proporcionais: 3/5 = 6/x.', '3x = 30 → x = 10.']},
     ],
     gen:{
       facil:()=>{ const t = pick([[3,4,5],[6,8,10],[5,12,13],[8,15,17],[9,12,15],[12,16,20]]);
@@ -309,9 +309,9 @@ SUBJECTS.push(
     <div class="section-title">5. Lógica</div>
     <p>Em questões de "quem está mentindo", teste uma hipótese de cada vez ("e se o João mente?") e veja se dá contradição. Se der, aquela hipótese está errada.</p>`,
     examples:[
-      {title:'Exemplo 1 (multiplicar escolhas)', text:'Um lanche tem 4 tipos de pão, 3 recheios e 2 sucos. Quantos combos diferentes?', qVisual: stepChain(['4 × 3 × 2', '= 24 combos']), steps:['Cada escolha é independente: multiplique.', '4 × 3 × 2 = 24.']},
-      {title:'Exemplo 2 (pior caso)', text:'Uma gaveta tem 10 meias pretas e 10 brancas. Quantas tirar no escuro pra garantir duas da mesma cor?', qVisual: stepChain(['pior caso: 1 preta, 1 branca', 'a próxima repete', '2 + 1 = 3']), steps:['No pior caso, as 2 primeiras são de cores diferentes.', 'A 3ª com certeza forma par: 3 meias.']},
-      {title:'Exemplo 3 (jogo)', text:'Há 15 palitos; cada um tira 1, 2 ou 3; quem pega o último ganha. Quantos você tira primeiro?', qVisual: stepChain(['deixe um múltiplo de 4', '15 − 12 = 3']), steps:['Você quer deixar 12 (múltiplo de 4).', 'Tire 3 palitos. Depois, sempre complete 4 com o adversário.']},
+      {title:'Exemplo 1 (multiplicar escolhas)', text:'Um lanche tem 4 tipos de pão, 3 recheios e 2 sucos. Quantos combos diferentes?', qVisual: comboHTML([['🍞',4,'pães'],['🧀',3,'recheios'],['🧃',2,'sucos']]) + stepChain(['4 × 3 × 2', '= 24 combos']), steps:['Cada escolha é independente: multiplique.', '4 × 3 × 2 = 24.']},
+      {title:'Exemplo 2 (pior caso)', text:'Uma gaveta tem 10 meias pretas e 10 brancas. Quantas tirar no escuro pra garantir duas da mesma cor?', qVisual: socksSVG(['#2B2F45','#F2F2F7']) + stepChain(['pior caso: 1 preta, 1 branca', 'a próxima repete', '2 + 1 = 3']), steps:['No pior caso, as 2 primeiras são de cores diferentes.', 'A 3ª com certeza forma par: 3 meias.']},
+      {title:'Exemplo 3 (jogo)', text:'Há 15 palitos; cada um tira 1, 2 ou 3; quem pega o último ganha. Quantos você tira primeiro?', qVisual: sticksSVG(15, 3) + stepChain(['deixe um múltiplo de 4', '15 − 12 = 3']), steps:['Você quer deixar 12 (múltiplo de 4).', 'Tire 3 palitos. Depois, sempre complete 4 com o adversário.']},
     ],
     gen:{
       facil:()=>{ const a = randInt(2,6), b = randInt(2,5), c = randInt(2,4);
@@ -341,9 +341,9 @@ SUBJECTS.push(
     <div class="section-title">Inequação do 2º grau</div>
     <p>Ex.: x² − 5x + 6 &lt; 0. Ache as raízes (onde dá zero): 2 e 3. Desenhe a parábola: com o x² positivo ela é uma "boca pra cima" — fica <b>negativa entre as raízes</b> e positiva fora delas. Então a resposta é 2 &lt; x &lt; 3.</p>`,
     examples:[
-      {title:'Exemplo 1 (1º grau)', text:'Resolva 3x − 4 ≥ 11', qVisual: stepChain(['3x ≥ 15', 'x ≥ 5']), steps:['Some 4 dos dois lados: 3x ≥ 15.', 'Divida por 3 (positivo, não vira): x ≥ 5.']},
-      {title:'Exemplo 2 (vira o sinal)', text:'Resolva 10 − 2x > 4', qVisual: stepChain(['−2x > −6', 'x < 3 (dividiu por −2: virou)']), steps:['Tire 10 dos dois lados: −2x > −6.', 'Divida por −2 e vire o sinal: x < 3.']},
-      {title:'Exemplo 3 (2º grau)', text:'Resolva x² − 4 < 0', qVisual: stepChain(['raízes: −2 e 2', 'boca pra cima: negativa entre as raízes', '−2 < x < 2']), steps:['x² − 4 = 0 → x = −2 ou x = 2.', 'A parábola é negativa entre as raízes: −2 < x < 2.']},
+      {title:'Exemplo 1 (1º grau)', text:'Resolva 3x − 4 ≥ 11', qVisual: numberLineSVG('ge', 5) + stepChain(['3x ≥ 15', 'x ≥ 5']), steps:['Some 4 dos dois lados: 3x ≥ 15.', 'Divida por 3 (positivo, não vira): x ≥ 5.']},
+      {title:'Exemplo 2 (vira o sinal)', text:'Resolva 10 − 2x > 4', qVisual: numberLineSVG('lt', 3) + stepChain(['−2x > −6', 'x < 3 (dividiu por −2: virou)']), steps:['Tire 10 dos dois lados: −2x > −6.', 'Divida por −2 e vire o sinal: x < 3.']},
+      {title:'Exemplo 3 (2º grau)', text:'Resolva x² − 4 < 0', qVisual: parabolaSignSVG(-2, 2) + stepChain(['raízes: −2 e 2', 'boca pra cima: negativa entre as raízes', '−2 < x < 2']), steps:['x² − 4 = 0 → x = −2 ou x = 2.', 'A parábola é negativa entre as raízes: −2 < x < 2.']},
     ],
     gen:{
       facil:()=>{ const a = randInt(2,6), x0 = randInt(1,10), b = randInt(1,15), c = a*x0+b;
@@ -368,9 +368,9 @@ SUBJECTS.push(
     <div class="section-title">Soma e produto das raízes (Girard)</div>
     <p>Pra ax² + bx + c: soma = −b/a e produto = c/a. Pra ax³ + bx² + cx + d: soma = −b/a e produto = −d/a.</p>`,
     examples:[
-      {title:'Exemplo 1 (valor numérico)', text:'P(x) = x² − 3x + 4. Quanto é P(5)?', qVisual: stepChain(['5² − 3·5 + 4', '25 − 15 + 4 = 14']), steps:['Troque x por 5.', '25 − 15 + 4 = 14.']},
-      {title:'Exemplo 2 (resto)', text:'Resto de x³ − 2x + 1 dividido por (x + 1)?', qVisual: stepChain(['x + 1 = x − (−1) → a = −1', 'P(−1) = −1 + 2 + 1 = 2']), steps:['x + 1 = x − (−1), então use a = −1.', 'P(−1) = (−1)³ − 2(−1) + 1 = 2.']},
-      {title:'Exemplo 3 (soma das raízes)', text:'Soma das raízes de 2x³ − 8x² + x − 3', qVisual: stepChain(['soma = −b/a', '= −(−8)/2 = 4']), steps:['Soma = −b/a, com a = 2 e b = −8.', '8/2 = 4.']},
+      {title:'Exemplo 1 (valor numérico)', text:'P(x) = x² − 3x + 4. Quanto é P(5)?', qVisual: machineSVG('x = 5', 'P(x)', '14') + stepChain(['5² − 3·5 + 4', '25 − 15 + 4 = 14']), steps:['Troque x por 5.', '25 − 15 + 4 = 14.']},
+      {title:'Exemplo 2 (resto)', text:'Resto de x³ − 2x + 1 dividido por (x + 1)?', qVisual: machineSVG('x = −1', 'P(x)', 'resto 2') + stepChain(['x + 1 = x − (−1) → a = −1', 'P(−1) = −1 + 2 + 1 = 2']), steps:['x + 1 = x − (−1), então use a = −1.', 'P(−1) = (−1)³ − 2(−1) + 1 = 2.']},
+      {title:'Exemplo 3 (soma das raízes)', text:'Soma das raízes de 2x³ − 8x² + x − 3', qVisual: coefChipsHTML(['2x³','−8x²','+x','−3'], [0,1], 'a = 2 e b = −8 → soma = −b/a = 4') + stepChain(['soma = −b/a', '= −(−8)/2 = 4']), steps:['Soma = −b/a, com a = 2 e b = −8.', '8/2 = 4.']},
     ],
     gen:{
       facil:()=>{ const a = randInt(1,3), b = randInt(-6,6) || 1, c = randInt(-9,9) || 2, k = randInt(-3,4), v = a*k*k+b*k+c;
@@ -399,9 +399,9 @@ SUBJECTS.push(
     <div class="section-title">Módulo e conjugado</div>
     <p>Desenhe a + bi como o ponto (a, b). O <b>módulo</b> |z| é a distância até a origem — Pitágoras! |3 + 4i| = √(9 + 16) = 5. O <b>conjugado</b> troca o sinal da parte imaginária: o de 3 + 4i é 3 − 4i.</p>`,
     examples:[
-      {title:'Exemplo 1 (somar)', text:'(5 − 2i) + (−1 + 6i)', qVisual: stepChain(['real: 5 + (−1) = 4', 'imaginária: −2 + 6 = 4', '4 + 4i']), steps:['Some as partes reais: 4.', 'Some as imaginárias: 4i. Resultado: 4 + 4i.']},
-      {title:'Exemplo 2 (multiplicar)', text:'(1 + 2i)(3 − i)', qVisual: stepChain(['3 − i + 6i − 2i²', '3 + 5i − 2(−1)', '5 + 5i']), steps:['Distribua: 3 − i + 6i − 2i².', 'Como i² = −1: 3 + 5i + 2 = 5 + 5i.']},
-      {title:'Exemplo 3 (módulo)', text:'|6 + 8i|', qVisual: stepChain(['√(6² + 8²)', '√(36 + 64) = √100 = 10']), steps:['Módulo = √(a² + b²).', '√100 = 10.']},
+      {title:'Exemplo 1 (somar)', text:'(5 − 2i) + (−1 + 6i)', qVisual: complexPlaneSVG([{a:5,b:-2,label:'5 − 2i'},{a:-1,b:6,label:'−1 + 6i'},{a:4,b:4,label:'4 + 4i',hi:true}]) + stepChain(['real: 5 + (−1) = 4', 'imaginária: −2 + 6 = 4', '4 + 4i']), steps:['Some as partes reais: 4.', 'Some as imaginárias: 4i. Resultado: 4 + 4i.']},
+      {title:'Exemplo 2 (multiplicar)', text:'(1 + 2i)(3 − i)', qVisual: complexPlaneSVG([{a:1,b:2,label:'1 + 2i'},{a:3,b:-1,label:'3 − i'},{a:5,b:5,label:'5 + 5i',hi:true}]) + stepChain(['3 − i + 6i − 2i²', '3 + 5i − 2(−1)', '5 + 5i']), steps:['Distribua: 3 − i + 6i − 2i².', 'Como i² = −1: 3 + 5i + 2 = 5 + 5i.']},
+      {title:'Exemplo 3 (módulo)', text:'|6 + 8i|', qVisual: complexPlaneSVG([{a:6,b:8,label:'|z| = 10',hi:true}], {tri:true}) + stepChain(['√(6² + 8²)', '√(36 + 64) = √100 = 10']), steps:['Módulo = √(a² + b²).', '√100 = 10.']},
     ],
     gen:{
       facil:()=>{ const a = randInt(-9,9) || 3, b = randInt(-9,9) || 2, c = randInt(-9,9) || -1, d = randInt(-9,9) || 4, real = Math.random()<0.5;
@@ -433,8 +433,8 @@ SUBJECTS.push(
     </ul>
     <p>Atalho: se o determinante dos coeficientes é diferente de 0, o sistema é SPD.</p>`,
     examples:[
-      {title:'Exemplo 1 (escada)', text:'z = 2 · y + z = 5 · x + y + z = 9', qVisual: stepChain(['z = 2', 'y = 5 − 2 = 3', 'x = 9 − 3 − 2 = 4']), steps:['Comece de baixo: z = 2.', 'y + 2 = 5 → y = 3.', 'x + 3 + 2 = 9 → x = 4.']},
-      {title:'Exemplo 2 (somando equações)', text:'x + y = 7 · y + z = 9 · x + z = 8. Quanto é x + y + z?', qVisual: stepChain(['somando tudo: 2x + 2y + 2z = 24', 'x + y + z = 12']), steps:['Somando as três: cada letra aparece 2 vezes.', '2(x + y + z) = 24 → x + y + z = 12.']},
+      {title:'Exemplo 1 (escada)', text:'z = 2 · y + z = 5 · x + y + z = 9', qVisual: stairEqHTML(['x + y + z = 9','y + z = 5','z = 2'], ['3º: x = 4','2º: y = 3','1º: z = 2']) + stepChain(['z = 2', 'y = 5 − 2 = 3', 'x = 9 − 3 − 2 = 4']), steps:['Comece de baixo: z = 2.', 'y + 2 = 5 → y = 3.', 'x + 3 + 2 = 9 → x = 4.']},
+      {title:'Exemplo 2 (somando equações)', text:'x + y = 7 · y + z = 9 · x + z = 8. Quanto é x + y + z?', qVisual: sumEqHTML(['x + y     = 7','    y + z = 9','x     + z = 8'], '2x + 2y + 2z = 24') + stepChain(['somando tudo: 2x + 2y + 2z = 24', 'x + y + z = 12']), steps:['Somando as três: cada letra aparece 2 vezes.', '2(x + y + z) = 24 → x + y + z = 12.']},
     ],
     gen:{
       facil:()=>{ const x = randInt(-5,9), y = randInt(-5,9), z = randInt(-5,9);
@@ -463,9 +463,9 @@ SUBJECTS.push(
     <div class="section-title">Como reconhecer pela equação</div>
     <p>x² e y² com sinais <b>iguais</b> e números diferentes embaixo → elipse. Sinais <b>diferentes</b> → hipérbole. Só um deles ao quadrado → parábola.</p>`,
     examples:[
-      {title:'Exemplo 1 (eixo maior)', text:'Elipse x²/25 + y²/9 = 1. Qual o eixo maior?', qVisual: stepChain(['a² = 25 → a = 5', 'eixo maior = 2a = 10']), steps:['O maior número embaixo é a² = 25, então a = 5.', 'Eixo maior = 2a = 10.']},
-      {title:'Exemplo 2 (focos da elipse)', text:'Na mesma elipse, qual a distância focal?', qVisual: stepChain(['a² = b² + c² → 25 = 9 + c²', 'c² = 16 → c = 4', '2c = 8']), steps:['25 = 9 + c² → c = 4.', 'Distância entre os focos = 2c = 8.']},
-      {title:'Exemplo 3 (hipérbole)', text:'Hipérbole x²/9 − y²/16 = 1. Qual o c?', qVisual: stepChain(['c² = a² + b² = 9 + 16 = 25', 'c = 5']), steps:['Na hipérbole, c² = a² + b².', 'c² = 25 → c = 5.']},
+      {title:'Exemplo 1 (eixo maior)', text:'Elipse x²/25 + y²/9 = 1. Qual o eixo maior?', qVisual: ellipseSVG(5, 3) + stepChain(['a² = 25 → a = 5', 'eixo maior = 2a = 10']), steps:['O maior número embaixo é a² = 25, então a = 5.', 'Eixo maior = 2a = 10.']},
+      {title:'Exemplo 2 (focos da elipse)', text:'Na mesma elipse, qual a distância focal?', qVisual: ellipseSVG(5, 3, {foci:true}) + stepChain(['a² = b² + c² → 25 = 9 + c²', 'c² = 16 → c = 4', '2c = 8']), steps:['25 = 9 + c² → c = 4.', 'Distância entre os focos = 2c = 8.']},
+      {title:'Exemplo 3 (hipérbole)', text:'Hipérbole x²/9 − y²/16 = 1. Qual o c?', qVisual: hyperbolaSVG(3, 4) + stepChain(['c² = a² + b² = 9 + 16 = 25', 'c = 5']), steps:['Na hipérbole, c² = a² + b².', 'c² = 25 → c = 5.']},
     ],
     gen:{
       facil:()=>{ const a = randInt(3,12); let b; do{ b = randInt(2,11); }while(b>=a);
@@ -547,8 +547,8 @@ SUBJECTS.push(
     <div class="section-title">Cuidado</div>
     <p>"Chance de ser menina, sabendo que usa óculos" (5/8) é diferente de "chance de usar óculos, sabendo que é menina" (5/12). Sempre pergunte: <b>quem é o novo universo?</b> É o que vem depois do "sabendo que".</p>`,
     examples:[
-      {title:'Exemplo 1 (dado)', text:'Saiu número ímpar num dado. Qual a chance de ser maior que 2?', qVisual: stepChain(['universo: 1, 3, 5', 'maiores que 2: 3, 5', 'P = 2/3']), steps:['Sabendo que é ímpar, sobram 1, 3 e 5.', 'Desses, 3 e 5 são maiores que 2: 2/3.']},
-      {title:'Exemplo 2 (tabela)', text:'Num grupo, 40 pessoas gostam de futebol: 25 homens e 15 mulheres. Sorteando um fã de futebol, chance de ser mulher?', qVisual: stepChain(['universo: 40 fãs', 'mulheres: 15', '15/40 = 3/8']), steps:['O novo universo são os 40 fãs.', '15 são mulheres: 15/40 = 3/8.']},
+      {title:'Exemplo 1 (dado)', text:'Saiu número ímpar num dado. Qual a chance de ser maior que 2?', qVisual: diceUniverseSVG([1,3,5], [3,5]) + stepChain(['universo: 1, 3, 5', 'maiores que 2: 3, 5', 'P = 2/3']), steps:['Sabendo que é ímpar, sobram 1, 3 e 5.', 'Desses, 3 e 5 são maiores que 2: 2/3.']},
+      {title:'Exemplo 2 (tabela)', text:'Num grupo, 40 pessoas gostam de futebol: 25 homens e 15 mulheres. Sorteando um fã de futebol, chance de ser mulher?', qVisual: splitBarHTML([['homens',25],['mulheres',15]], 1) + stepChain(['universo: 40 fãs', 'mulheres: 15', '15/40 = 3/8']), steps:['O novo universo são os 40 fãs.', '15 são mulheres: 15/40 = 3/8.']},
     ],
     gen:{
       facil:()=>{
@@ -588,8 +588,8 @@ SUBJECTS.push(
     <div class="section-title">Passo a passo</div>
     <p>1) Ache o ângulo "base" no 1º quadrante usando a tabela. 2) Use o espelho certo pra achar o outro. 3) Se pedir todas as voltas, some 360° quantas vezes quiser.</p>`,
     examples:[
-      {title:'Exemplo 1 (seno)', text:'sen x = √2/2, com 0° ≤ x < 360°', qVisual: stepChain(['base: 45°', 'espelho do seno: 180° − 45° = 135°', 'x = 45° ou 135°']), steps:['Na tabela, sen 45° = √2/2.', 'O outro é 180° − 45° = 135°.']},
-      {title:'Exemplo 2 (cosseno negativo)', text:'cos x = −√3/2, com 0° ≤ x < 360°', qVisual: stepChain(['base: cos 30° = √3/2', 'negativo: 2º e 3º quadrantes', '180 − 30 = 150° e 180 + 30 = 210°']), steps:['O ângulo base é 30°.', 'Cosseno negativo: 150° e 210°.']},
+      {title:'Exemplo 1 (seno)', text:'sen x = √2/2, com 0° ≤ x < 360°', qVisual: trigCircleSVG('sen', Math.SQRT2/2, '√2/2', [45,135]) + stepChain(['base: 45°', 'espelho do seno: 180° − 45° = 135°', 'x = 45° ou 135°']), steps:['Na tabela, sen 45° = √2/2.', 'O outro é 180° − 45° = 135°.']},
+      {title:'Exemplo 2 (cosseno negativo)', text:'cos x = −√3/2, com 0° ≤ x < 360°', qVisual: trigCircleSVG('cos', -Math.sqrt(3)/2, '−√3/2', [150,210]) + stepChain(['base: cos 30° = √3/2', 'negativo: 2º e 3º quadrantes', '180 − 30 = 150° e 180 + 30 = 210°']), steps:['O ângulo base é 30°.', 'Cosseno negativo: 150° e 210°.']},
     ],
     gen:{
       facil:()=>{ const t = pick([['sen','1/2',30],['sen','√2/2',45],['sen','√3/2',60],['cos','1/2',60],['cos','√2/2',45],['cos','√3/2',30],['tg','1',45],['tg','√3',60]]);
@@ -620,8 +620,8 @@ SUBJECTS.push(
     <div class="example-box mono">parcela = valor × i ÷ (1 − (1 + i)⁻ⁿ)</div>
     <p>Não se assuste: nas provas ela costuma vir pronta no enunciado, e o que importa é saber que <b>quanto mais parcelas, mais juros você paga no total</b>.</p>`,
     examples:[
-      {title:'Exemplo 1 (quanto de juros)', text:'TV: R$ 2 000 à vista ou 10 × R$ 230. Quanto se paga de juros?', qVisual: stepChain(['10 × 230 = 2 300', '2 300 − 2 000 = R$ 300']), steps:['Total a prazo: 10 × 230 = R$ 2 300.', 'Juros: 2 300 − 2 000 = R$ 300 (15% a mais).']},
-      {title:'Exemplo 2 (taxa mensal)', text:'À vista R$ 400, ou R$ 220 agora + R$ 198 daqui a 1 mês. Qual a taxa?', qVisual: stepChain(['dívida: 400 − 220 = 180', 'juros: 198 − 180 = 18', '18 ÷ 180 = 10% ao mês']), steps:['Depois da 1ª parcela você deve R$ 180.', 'Paga 198 por ela: juros de 18, que é 10% de 180.']},
+      {title:'Exemplo 1 (quanto de juros)', text:'TV: R$ 2 000 à vista ou 10 × R$ 230. Quanto se paga de juros?', qVisual: priceBarsSVG(2000, 2300, '10 × R$ 230') + stepChain(['10 × 230 = 2 300', '2 300 − 2 000 = R$ 300']), steps:['Total a prazo: 10 × 230 = R$ 2 300.', 'Juros: 2 300 − 2 000 = R$ 300 (15% a mais).']},
+      {title:'Exemplo 2 (taxa mensal)', text:'À vista R$ 400, ou R$ 220 agora + R$ 198 daqui a 1 mês. Qual a taxa?', qVisual: payTimelineSVG(400, 220, 198) + stepChain(['dívida: 400 − 220 = 180', 'juros: 198 − 180 = 18', '18 ÷ 180 = 10% ao mês']), steps:['Depois da 1ª parcela você deve R$ 180.', 'Paga 198 por ela: juros de 18, que é 10% de 180.']},
     ],
     gen:{
       facil:()=>{ const n = pick([3,4,5,6,10,12]), v = pick([600,800,1000,1200,1500,2000,2400,3000]), j = pick([5,10,15,20,25])*v/100, p = (v+j)/n;
