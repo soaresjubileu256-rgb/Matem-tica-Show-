@@ -12,7 +12,7 @@ const TOUR_STEPS = [
   {sel:'.missions', title:'Hoje 📋',
    text:'Aqui fica o seu dia: a <b>meta</b> de questões, o <b>Desafio do Dia</b>, a <b>Mistura do dia</b> e as revisões. Embaixo, as <b>Missões do dia</b>: quando completar uma, toque em <b>Pegar</b> pra ganhar XP extra!'},
   {sel:'.bottom-nav', title:'Menu principal',
-   text:'<b>Trilha</b> leva direto pros episódios. <b>Estudar</b> tem a explicação de cada assunto, os exercícios e as provas, em abas. Na <b>Arena</b> ficam os jogos, e o <b>Progresso</b> mostra como você está indo.'},
+   text:'<b>Trilha</b> leva direto pros episódios. <b>Estudar</b> tem a explicação de cada assunto, e os exercícios, em abas. Na <b>Arena</b> ficam os jogos, e o <b>Progresso</b> mostra como você está indo.'},
   {sel:'.profile-btn-avatar', title:'Seu perfil 👤',
    text:'Toque na sua foto pra abrir o <b>Perfil</b>. Lá ficam as abas <b>Configurações</b>, <b>Novidades</b> e <b>Ajuda</b>, onde você pode rever este tour.'},
   {sel:null, mood:'joy', title:'Tudo pronto! 🌟', final:true,
