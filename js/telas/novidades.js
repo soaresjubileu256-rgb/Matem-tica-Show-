@@ -10,6 +10,10 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
+  {v:16, date:'2026-10-16', title:'Conteúdos por prova e 16 assuntos novos', items:[
+    {ico:'🎓', t:'Conteúdos por prova', d:'Na aba Provas de Estudar, veja o que estudar de Matemática pro ENEM, ETEC, Fuvest, Unicamp, Unesp e OBMEP.', go:'exams'},
+    {ico:'📖', t:'16 assuntos novos em Aprender', d:'Grandezas e escalas, regra de três composta, divisores e primos, sequências, ângulos, produtos notáveis, semelhança e Tales, lógica e casa dos pombos, inequações, polinômios, números complexos, sistemas lineares, cônicas, probabilidade condicional, equações trigonométricas e parcelamento. Todos com explicação do zero, exemplos e exercícios.', go:'content'},
+  ]},
   {v:15, date:'2026-10-05', title:'Abas e novos modos de estudo', items:[
     {ico:'🗂️', t:'Menu novo e abas', d:'O menu de baixo ficou com 5 botões: Aprender e Exercícios agora moram juntos em "Estudar". Dentro de cada parte, abas no topo levam direto a cada página.', go:'content'},
     {ico:'🪜', t:'Qual o próximo passo?', d:'O Pi resolve um exemplo com você, mas antes de cada passo você tenta adivinhar qual vem. Depois é sua vez de resolver uma parecida.', go:'stepSetup'},
