@@ -232,7 +232,8 @@ SUBJECTS.push(
     <div class="example-box mono" style="margin-top:8px">V = área da base × altura ÷ 3</div>
     <p>Um cone cabe exatamente 3 vezes dentro do cilindro de mesma base e altura!</p>
     <div class="section-title">Esfera</div>
-    <div class="example-box mono" style="margin-top:8px">V = 4 · π · r³ ÷ 3      Área = 4 · π · r²</div>`,
+    <div class="example-box mono" style="margin-top:8px">V = 4 · π · r³ ÷ 3      Área = 4 · π · r²</div>
+    <p style="margin-top:10px">🧊 Depois de dominar os volumes, continue em <b>Geometria espacial avançada</b>: área da superfície, diagonais, geratriz do cone, relação de Euler e o que acontece quando um sólido cresce.</p>`,
     examples:[
       {title:'Exemplo 1 (paralelepípedo)', text:'5 cm × 4 cm × 3 cm → 60 cm³', qVisual: geoSolid('box',{c:5,l:4,h:3}), steps:['V = comprimento × largura × altura', '5 × 4 × 3 = 60 cm³']},
       {title:'Exemplo 2 (cilindro)', text:'r = 2 cm, h = 10 cm → 125,6 cm³', qVisual: geoSolid('cylinder',{r:2,h:10}), steps:['Área da base: π × r² = 3,14 × 4 = 12,56', 'V = base × altura = 12,56 × 10 = 125,6 cm³']},

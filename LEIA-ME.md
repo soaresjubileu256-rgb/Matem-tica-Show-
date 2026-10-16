@@ -36,7 +36,7 @@ js/
     fundamental.js         os 18 assuntos do Ensino Fundamental
     ensino-medio-visual.js desenhos e ajudantes usados pelo Ensino Médio
     ensino-medio.js        os 23 assuntos do Ensino Médio
-    complementares.js      16 assuntos que caem nas provas (escalas, polinômios, complexos, cônicas...)
+    complementares.js      17 assuntos que caem nas provas (escalas, polinômios, complexos, cônicas...)
     catalogo.js            GRUPOS DE ASSUNTOS (a ordem única do app), ano (BNCC)
   dados/
     progresso.js      acertos, histórico, caderno de erros e revisão espaçada
