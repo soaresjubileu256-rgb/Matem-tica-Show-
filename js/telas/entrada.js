@@ -79,20 +79,24 @@ function authScreen(mode, users){
     if(box) box.innerHTML = `<div class="auth-error">${msg}</div>`;
     card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
   }
+  /* olho desenhado (o emoji 👁 sai colorido e grande no Android/APK) */
+  const EYE = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+  const EYE_OFF = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.4 10.4 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.1M6.6 6.6C3.9 8.4 2 12 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
   function wirePassToggles(){
     card.querySelectorAll('.pass-toggle').forEach(btn=>{
       btn.onclick = ()=>{
         const input = btn.previousElementSibling;
         const showing = input.type === 'text';
         input.type = showing ? 'password' : 'text';
-        btn.textContent = showing ? '👁' : '🙈';
+        btn.innerHTML = showing ? EYE : EYE_OFF;
+        btn.setAttribute('aria-label', showing ? 'Mostrar senha' : 'Esconder senha');
       };
     });
   }
   function wireEnter(fn){
     card.querySelectorAll('input').forEach(inp=> inp.addEventListener('keydown', e=>{ if(e.key==='Enter') fn(); }));
   }
-  const passField = (cls, label, ac, ph)=> `<div class="auth-field"><label>${label}</label><div class="pass-wrap"><input type="password" class="${cls}" placeholder="${ph}" autocomplete="${ac}"><button type="button" class="pass-toggle" aria-label="Mostrar senha">👁</button></div><div class="caps-note" hidden>⇪ O Caps Lock está ligado</div></div>`;
+  const passField = (cls, label, ac, ph)=> `<div class="auth-field"><label>${label}</label><div class="pass-wrap"><input type="password" class="${cls}" placeholder="${ph}" autocomplete="${ac}"><button type="button" class="pass-toggle" aria-label="Mostrar senha">${EYE}</button></div><div class="caps-note" hidden>⇪ O Caps Lock está ligado</div></div>`;
   /* avisa quando o Caps Lock está ligado (causa comum de "senha incorreta") */
   function wireCaps(){
     card.querySelectorAll('.pass-wrap input').forEach(inp=>{
