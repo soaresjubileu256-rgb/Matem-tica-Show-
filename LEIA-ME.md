@@ -53,6 +53,7 @@ js/
     aprender.js       aba Aprender
     exercicios.js     aba Exercícios: modos de treino, sessões, dicas, Desafios, Treino personalizado
     modos-estudo.js   Qual o próximo passo? e Mistura do dia
+    provas.js         Conteúdos por prova (ENEM, ETEC, Fuvest, Unicamp, Unesp, OBMEP)
     tabuada.js        Tabuada (Estudar, Quadro e Treinar)
     estudo.js         nivelamento, plano de estudos, cartões de revisão e Caderno de erros
     ferramentas.js    Resolver questão e Calculadora (com parênteses, ordem das operações e histórico)
