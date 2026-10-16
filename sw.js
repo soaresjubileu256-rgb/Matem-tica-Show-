@@ -3,7 +3,7 @@
      versão mais nova, e usa a cópia guardada quando estiver offline
    - fontes do Google: usa a cópia guardada (elas não mudam)
    Mude CACHE_VERSION quando quiser forçar todo mundo a baixar tudo de novo. */
-const CACHE_VERSION = 'mat-show-v78';
+const CACHE_VERSION = 'mat-show-v79';
 const APP_SHELL = [
   './', './index.html', './manifest.json', './css/style.css', './js/base/ferramentas.js', './js/base/sons.js',
   './js/base/geometria.js', './js/assuntos/ensino-medio-visual.js', './js/assuntos/fundamental.js',
@@ -40,7 +40,9 @@ self.addEventListener('fetch', e=>{
   }
   if(url.origin !== location.origin) return;
   e.respondWith(
-    fetch(req).then(res=>saveCopy(req, res))
+    // cache:'no-cache' confere com o servidor em vez de usar a cópia do navegador
+    // (o GitHub Pages deixa os arquivos guardados por 10 minutos e a versão nova demorava a chegar)
+    fetch(req, {cache:'no-cache'}).then(res=>saveCopy(req, res))
       .catch(()=> caches.match(req, {ignoreSearch:true}).then(hit=> hit || (req.mode==='navigate' ? caches.match('./index.html') : undefined)))
   );
 });

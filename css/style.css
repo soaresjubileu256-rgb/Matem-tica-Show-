@@ -3742,7 +3742,6 @@ button.gl-res:active{transform:scale(.99);}
 .pv-tab span{font-size:20px;}
 .pv-tab b{font-size:12.5px; font-weight:800; white-space:nowrap;}
 .pv-tab.on{border-color:var(--c); background:color-mix(in srgb, var(--c) 16%, var(--white)); box-shadow:0 0 0 2px color-mix(in srgb, var(--c) 35%, transparent);}
-.pv-tab:active{transform:scale(.96);}
 @media (min-width:700px){ .pv-tabs{justify-content:center;} }
 @media (max-width:699px){ .pv-tabs{-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent); mask-image:linear-gradient(90deg,#000 88%,transparent);} }
 .pv-content{--c:#4C7DFF; --c2:#2F55D4; position:relative; overflow:hidden; margin:0 0 12px; padding:14px; border-radius:var(--radius-card); border:1px solid color-mix(in srgb, var(--c) 30%, var(--border));
