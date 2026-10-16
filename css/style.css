@@ -3687,7 +3687,7 @@ button.gl-res:active{transform:scale(.99);}
 .lr-ex-body{display:none; margin:0 10px 10px !important; border-radius:16px; padding:14px !important;}
 .lr-ex.open .lr-ex-body{display:block; animation:lr-in .25s ease-out;}
 @keyframes lr-in{from{opacity:0; transform:translateY(-4px);}}
-.lr-ex-vis{display:flex; justify-content:center; overflow-x:auto;}
+.lr-ex-vis{display:flex; flex-direction:column; align-items:safe center; gap:8px; overflow-x:auto;} /* figura em cima, conta embaixo */
 .lr-steps{display:flex; flex-direction:column; gap:8px; margin-top:12px; padding-top:12px; border-top:1px dashed var(--border);}
 .lr-step{display:flex; gap:10px; align-items:flex-start; animation:lr-in .25s ease-out;}
 .lr-step[hidden]{display:none;}
