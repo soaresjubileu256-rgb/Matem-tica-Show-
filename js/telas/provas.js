@@ -79,6 +79,6 @@ function examsScreen(){
   wrap.appendChild(tabs);
   wrap.appendChild(c);
   // deixa a aba escolhida visível na barra ao abrir a tela
-  setTimeout(()=>{ const on = tabs.querySelector('.pv-tab.on'); if(on) tabs.scrollLeft = on.offsetLeft - (tabs.clientWidth - on.offsetWidth)/2; }, 0);
+  requestAnimationFrame(()=>{ const on = tabs.querySelector('.pv-tab.on'); if(on) tabs.scrollLeft = on.offsetLeft - (tabs.clientWidth - on.offsetWidth)/2; });
   return wrap;
 }

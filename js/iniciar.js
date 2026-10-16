@@ -53,51 +53,37 @@ const SCREENS = {
   report: null, // async, handled specially below
 };
 
-// wrap async progress/profile/history screens
+// telas que carregam dados antes de aparecer (progresso, perfil, histórico...)
+const ASYNC_SCREENS = {progress:()=>progressScreen(), profile:()=>profileScreen(), history:()=>historyScreen(),
+  personalizedSetup:()=>personalizedSetupScreen(), report:()=>reportScreen(), settings:()=>settingsScreen()};
+let renderToken = 0;
 function renderAsyncSafe(){
   // guarda o estado atual (ex.: questão já corrigida) na entrada do histórico, senão
   // "voltar" + "avançar" restaurava a questão sem resposta e dava pra ganhar XP de novo
   if(currentUser) replaceHistoryState();
   if(_tourClose && state.screen !== 'home') _tourClose();
+  const token = ++renderToken; // uma tela que termina de carregar depois de outra ter aberto é descartada
+  const load = ASYNC_SCREENS[state.screen];
+  if(load){
+    // a tela de antes continua até a nova ficar pronta (sem piscar "Carregando…" e as abas);
+    // o aviso só aparece se demorar
+    const wait = setTimeout(()=>{
+      if(token !== renderToken) return;
+      app.innerHTML = '';
+      app.appendChild(h(`<div class="content" style="padding-top:40px;text-align:center;color:var(--ink-soft)">Carregando…</div>`));
+    }, 400);
+    load().then(el=>{
+      clearTimeout(wait);
+      if(token !== renderToken) return;
+      el.classList.add('screen-in'); // a animação de entrada vai na tela nova, não na que estava saindo
+      app.innerHTML = ''; app.appendChild(withSectionTabs(el)); app.appendChild(bottomNav()); settleTabs();
+    });
+    return;
+  }
   app.innerHTML = '';
-  if(state.screen === 'progress'){
-    const placeholder = h(`<div class="content" style="padding-top:40px;text-align:center;color:var(--ink-soft)">Carregando…</div>`);
-    app.appendChild(placeholder);
-    progressScreen().then(el=>{ app.innerHTML=''; app.appendChild(withSectionTabs(el)); app.appendChild(bottomNav()); });
-    return;
-  }
-  if(state.screen === 'profile'){
-    const placeholder = h(`<div class="content" style="padding-top:40px;text-align:center;color:var(--ink-soft)">Carregando…</div>`);
-    app.appendChild(placeholder);
-    profileScreen().then(el=>{ app.innerHTML=''; app.appendChild(withSectionTabs(el)); app.appendChild(bottomNav()); });
-    return;
-  }
-  if(state.screen === 'history'){
-    const placeholder = h(`<div class="content" style="padding-top:40px;text-align:center;color:var(--ink-soft)">Carregando…</div>`);
-    app.appendChild(placeholder);
-    historyScreen().then(el=>{ app.innerHTML=''; app.appendChild(withSectionTabs(el)); app.appendChild(bottomNav()); });
-    return;
-  }
-  if(state.screen === 'personalizedSetup'){
-    const placeholder = h(`<div class="content" style="padding-top:40px;text-align:center;color:var(--ink-soft)">Carregando…</div>`);
-    app.appendChild(placeholder);
-    personalizedSetupScreen().then(el=>{ app.innerHTML=''; app.appendChild(withSectionTabs(el)); app.appendChild(bottomNav()); });
-    return;
-  }
-  if(state.screen === 'report'){
-    const placeholder = h(`<div class="content" style="padding-top:40px;text-align:center;color:var(--ink-soft)">Carregando…</div>`);
-    app.appendChild(placeholder);
-    reportScreen().then(el=>{ app.innerHTML=''; app.appendChild(withSectionTabs(el)); app.appendChild(bottomNav()); });
-    return;
-  }
-  if(state.screen === 'settings'){
-    const placeholder = h(`<div class="content" style="padding-top:40px;text-align:center;color:var(--ink-soft)">Carregando…</div>`);
-    app.appendChild(placeholder);
-    settingsScreen().then(el=>{ app.innerHTML=''; app.appendChild(withSectionTabs(el)); app.appendChild(bottomNav()); });
-    return;
-  }
   const fn = SCREENS[state.screen] || homeScreen;
   app.appendChild(withSectionTabs(fn()));
+  settleTabs();
   if(!['lesson','notePage','examRun'].includes(state.screen)) app.appendChild(bottomNav());
 }
 render = renderAsyncSafe;
