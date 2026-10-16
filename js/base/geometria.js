@@ -108,6 +108,9 @@ function geoSolid(kind, d, o){
       for(let j=1;j<b;j++){ const t = j/b; s += ln(x0+t*dx, y0-t*dy, x0+a*k+t*dx, y0-t*dy) + ln(x0+a*k+t*dx, y0-t*dy, x0+a*k+t*dx, y0+c*k-t*dy); }
     }
     s += `<polyline points="${[F[3],T[3],T[2]].join(' ')}" class="geo-hidden"/><line x1="${T[3][0]}" y1="${T[3][1]}" x2="${T[0][0]}" y2="${T[0][1]}" class="geo-hidden"/>`;
+    // o.diag: diagonal da caixa, do canto da frente embaixo ao canto de trás em cima
+    if(o.diag){ s += `<line x1="${F[3][0].toFixed(1)}" y1="${F[3][1].toFixed(1)}" x2="${T[1][0].toFixed(1)}" y2="${T[1][1].toFixed(1)}" class="geo-height"/><circle cx="${F[3][0].toFixed(1)}" cy="${F[3][1].toFixed(1)}" r="3" class="geo-dot"/><circle cx="${T[1][0].toFixed(1)}" cy="${T[1][1].toFixed(1)}" r="3" class="geo-dot"/>`;
+      s += `<text x="${((F[3][0]+T[1][0])/2-6).toFixed(1)}" y="${((F[3][1]+T[1][1])/2-6).toFixed(1)}" text-anchor="end" class="geo-lbl geo-lbl-h">${o.diag===true?'d':o.diag}</text>`; }
     s += txt(x0+a*k/2, y0+c*k+20, `${geoNum(a)} cm`);
     s += txt(x0-8, y0+c*k/2+5, `${geoNum(c)} cm`, 'end');
     s += txt(F[2][0]+dx/2+8, F[2][1]-dy/2+14, `${geoNum(b)} cm`, 'start');
@@ -127,8 +130,11 @@ function geoSolid(kind, d, o){
     s += `<path d="M${cx-R} ${by} A${R} ${ry} 0 0 1 ${cx+R} ${by}" class="geo-hidden"/>`;
     s += `<line x1="${cx}" y1="${top}" x2="${cx}" y2="${by}" class="geo-height"/>`;
     s += `<line x1="${cx}" y1="${by}" x2="${cx+R}" y2="${by}" class="geo-radius"/><circle cx="${cx}" cy="${by}" r="2.5" class="geo-dot"/>`;
-    s += txt(cx+R/2, by+ry+18, `r = ${geoNum(d.r)} cm`);
-    s += txt(cx+6, top+Hh*0.55, `h = ${geoNum(d.h)} cm`, 'start');
+    // o.g: destaca a geratriz (da ponta até a borda da base). Com ela, só as letras ficam na figura
+    // e os valores de r e h vão embaixo, pra nenhum texto cruzar as linhas
+    if(o.g){ s += txt(cx, by+ry+20, `r = ${geoNum(d.r)} cm · h = ${geoNum(d.h)} cm`); s += `<text x="${cx-7}" y="${(top+Hh*0.62).toFixed(1)}" text-anchor="end" class="geo-lbl geo-lbl-h">h</text><text x="${cx+R/2}" y="${by-7}" text-anchor="middle" class="geo-lbl geo-lbl-h">r</text>`; }
+    else { s += txt(cx+R/2, by+ry+18, `r = ${geoNum(d.r)} cm`); s += txt(cx+6, top+Hh*0.55, `h = ${geoNum(d.h)} cm`, 'start'); }
+    if(o.g){ s += `<line x1="${cx}" y1="${top}" x2="${cx+R}" y2="${by}" class="geo-radius"/>`; s += `<text x="${(cx+R*0.45+12).toFixed(1)}" y="${(top+Hh*0.4).toFixed(1)}" text-anchor="start" class="geo-lbl geo-lbl-h">${o.g===true?'g':o.g}</text>`; }
   } else if(kind==='sphere'){
     const R = Math.min(W-100, H-50)/2, cx = W/2, cy = H/2, ry = R*0.28;
     s += `<circle cx="${cx}" cy="${cy}" r="${R}" class="geo-face front"/>`;
