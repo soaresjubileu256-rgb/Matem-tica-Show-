@@ -12,7 +12,7 @@ const SUBJECT_GROUPS = [
   {id:'f3', level:'fund', name:'8º e 9º ano', ids:['produtos','sistemas','eq2','semelhanca','func1grau','logica']},
   {id:'em-alg',  level:'em', name:'Álgebra e Funções', ids:['conjuntos','inequacoes','funcquad','modular','exponencial','logaritmo','functrig','polinomios','complexos']},
   {id:'em-seq',  level:'em', name:'Progressões e Sequências', ids:['pa','pg']},
-  {id:'em-geo',  level:'em', name:'Geometria', ids:['espacial','analitica','conicas']},
+  {id:'em-geo',  level:'em', name:'Geometria', ids:['espacial','espacial2','analitica','conicas']},
   {id:'em-trig', level:'em', name:'Trigonometria', ids:['trigret','ciclo','eqtrig','identidades','leis']},
   {id:'em-est',  level:'em', name:'Estatística e Probabilidade', ids:['combinatoria','probabilidade','condicional','dispersao','graficos']},
   {id:'em-fin',  level:'em', name:'Matemática Financeira', ids:['juros','parcelamento','descontos','inflacao']},
@@ -40,7 +40,7 @@ const BNCC_ANO = {adicao:'1º ao 5º ano', subtracao:'1º ao 5º ano', multiplic
   unidades:'5º ao 7º ano', angulos:'6º e 7º ano', divisores:'6º ano', regra3comp:'7º ano', padroes:'6º e 7º ano',
   produtos:'8º ano', semelhanca:'9º ano', logica:'6º ao 9º ano',
   inequacoes:'1º do EM', polinomios:'3º do EM', complexos:'3º do EM', conicas:'3º do EM', eqtrig:'2º do EM',
-  condicional:'2º do EM', parcelamento:'1º do EM', sistlin:'2º do EM'};
+  condicional:'2º do EM', espacial2:'2º e 3º do EM', parcelamento:'1º do EM', sistlin:'2º do EM'};
 
 /* lista de assuntos com títulos (nível → grupo), igual em todas as telas que listam assuntos.
    makeRow(subject, index) devolve o elemento de cada assunto; index é a posição em SUBJECTS (dá a cor). */

@@ -128,6 +128,7 @@ const HINTS = {
   polinomios: 'P(a) = troque x por a. Resto da divisão por (x − a) = P(a). Raiz: P(r) = 0.',
   complexos: 'i² = −1. Some real com real e imaginário com imaginário. Multiplique distribuindo e troque i² por −1. Módulo: √(a² + b²).',
   sistlin: 'Some ou subtraia equações pra uma letra sumir. Em escada, resolva de baixo pra cima.',
+  espacial2: 'Área = soma das partes planificadas (cubo 6a², cilindro 2πr² + 2πrh). Diagonal da caixa: √(a² + b² + c²). Cone: g² = r² + h². Euler: V − A + F = 2. Medidas × k → área × k², volume × k³.',
   conicas: 'Elipse: a² = b² + c² (a é o maior). Hipérbole: c² = a² + b². Eixo maior = 2a, distância focal = 2c.',
   condicional: 'O que vem depois do "sabendo que" é o novo universo. P = casos favoráveis dentro dele ÷ total dele.',
   eqtrig: 'Ache o ângulo base na tabela. Seno: o outro é 180° − x. Cosseno: 360° − x. Negativos: seno embaixo (3º e 4º), cosseno à esquerda (2º e 3º).',

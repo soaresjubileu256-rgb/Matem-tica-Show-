@@ -10,8 +10,9 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
-  {v:16, date:'2026-10-16', title:'Conteúdos por prova e 16 assuntos novos', items:[
+  {v:16, date:'2026-10-16', title:'Conteúdos por prova e 17 assuntos novos', items:[
     {ico:'🎓', t:'Conteúdos por prova', d:'Na aba Provas de Estudar, veja o que estudar de Matemática pro ENEM, ETEC, Fuvest, Unicamp, Unesp e OBMEP.', go:'exams'},
+    {ico:'🧊', t:'Geometria espacial avançada', d:'Área da superfície, diagonais, geratriz do cone, relação de Euler, o que acontece quando um sólido cresce e sólidos um dentro do outro.', go:'content'},
     {ico:'📖', t:'16 assuntos novos em Aprender', d:'Grandezas e escalas, regra de três composta, divisores e primos, sequências, ângulos, produtos notáveis, semelhança e Tales, lógica e casa dos pombos, inequações, polinômios, números complexos, sistemas lineares, cônicas, probabilidade condicional, equações trigonométricas e parcelamento. Todos com explicação do zero, exemplos e exercícios.', go:'content'},
   ]},
   {v:15, date:'2026-10-05', title:'Abas e novos modos de estudo', items:[

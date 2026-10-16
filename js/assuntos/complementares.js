@@ -1,5 +1,5 @@
 /* =========================================================
-   ASSUNTOS QUE CAEM NAS PROVAS (16)
+   ASSUNTOS QUE CAEM NAS PROVAS (17)
    Conteúdos da área "Conteúdos por prova" que ainda não tinham página em Aprender.
    A explicação é pensada pra quem nunca viu o assunto: começa do zero, com exemplos
    do dia a dia, e só depois mostra a fórmula.
@@ -428,6 +428,59 @@ SUBJECTS.push(
       dificil:()=>{ const t = pick([[3,4,5],[6,8,10],[5,12,13],[8,15,17],[9,12,15]]);
         return mkSingle(`Qual é a distância focal da hipérbole x²/${t[0]**2} − y²/${t[1]**2} = 1?`, 2*t[2],
           [`Na hipérbole: c² = a² + b² = ${t[0]**2} + ${t[1]**2} = ${t[2]**2}`, `c = ${t[2]}`, `Distância focal = 2c = ${2*t[2]}`]); },
+    }
+  },
+  {
+    id:'espacial2', name:'Geometria espacial avançada', sym:'V²',
+    learn:`<p>Na página de <b>Geometria espacial</b> você viu como calcular o <b>volume</b> (quanto cabe dentro). Aqui vem o resto do que os vestibulares cobram: a <b>área da superfície</b> (quanto material cobre o sólido), as <b>diagonais</b>, a <b>relação de Euler</b> e o que acontece quando um sólido <b>cresce</b>.</p>
+    <div class="section-title">1. Área da superfície = "desmontar" o sólido</div>
+    <p>Imagine abrir uma caixa de papelão e deixá-la plana na mesa: isso é a <b>planificação</b>. A área total é a soma das áreas de todas as partes.</p>
+    <ul style="margin:0 0 10px; padding-left:20px; line-height:1.7;">
+      <li><b>Cubo de aresta a:</b> 6 quadrados → A = 6a².</li>
+      <li><b>Caixa a × b × c:</b> 3 pares de retângulos → A = 2(ab + ac + bc).</li>
+      <li><b>Cilindro:</b> duas tampas redondas + um retângulo enrolado (o rótulo da lata) → A = 2πr² + 2πr·h.</li>
+      <li><b>Esfera:</b> A = 4πr².</li>
+    </ul>
+    <div class="section-title">2. Diagonal: Pitágoras duas vezes</div>
+    <p>A diagonal de uma caixa vai de um canto de baixo até o canto oposto de cima, atravessando o meio. Primeiro faça Pitágoras no chão da caixa, depois de novo subindo. O resultado junta tudo:</p>
+    <div class="example-box mono">diagonal da caixa = √(a² + b² + c²) · do cubo = a√3</div>
+    <div class="section-title">3. Cone: a geratriz</div>
+    <p>A <b>geratriz</b> (g) é a "lateral" do cone, da ponta até a borda da base. Ela forma um triângulo retângulo com o raio e a altura: <b>g² = r² + h²</b>. A área lateral do cone é π·r·g.</p>
+    <div class="section-title">4. Relação de Euler</div>
+    <p>Em todo poliedro "comum" (sem buracos), contando vértices (V, os cantos), faces (F, os lados planos) e arestas (A, as quinas):</p>
+    <div class="example-box mono">V − A + F = 2</div>
+    <p>Teste no cubo: 8 − 12 + 6 = 2 ✓. Se souber dois números, ache o terceiro.</p>
+    <div class="section-title">5. Quando o sólido cresce</div>
+    <p>Se você multiplica todas as medidas por <b>k</b> (ex.: dobra, k = 2): o comprimento fica × k, a área fica × <b>k²</b> e o volume fica × <b>k³</b>. Dobrar a aresta de um cubo deixa ele com 4 vezes mais tinta por fora e 8 vezes mais espaço dentro!</p>
+    <div class="section-title">6. Um sólido dentro do outro</div>
+    <p>Esfera dentro de um cubo, encostando nas faces: o diâmetro da esfera é a aresta → r = a/2. Cilindro dentro de um cubo: r = a/2 e h = a. Sempre faça um desenho e procure qual medida é igual nos dois.</p>`,
+    examples:[
+      {title:'Exemplo 1 (diagonal da caixa)', text:'Caixa de 2 × 3 × 6. Qual a diagonal?', qVisual: stepChain(['d = √(2² + 3² + 6²)', '= √(4 + 9 + 36) = √49', 'd = 7']), steps:['Some os quadrados das três medidas: 4 + 9 + 36 = 49.', 'd = √49 = 7.']},
+      {title:'Exemplo 2 (área do cilindro)', text:'Lata de raio 3 cm e altura 10 cm. Quanto de alumínio? (π = 3,14)', qVisual: stepChain(['tampas: 2 × 3,14 × 9 = 56,52', 'lateral: 2 × 3,14 × 3 × 10 = 188,4', 'total = 244,92 cm²']), steps:['Duas tampas: 2πr² = 56,52 cm².', 'Rótulo: 2πr·h = 188,4 cm².', 'Total: 244,92 cm².']},
+      {title:'Exemplo 3 (Euler)', text:'Um poliedro tem 12 vértices e 30 arestas. Quantas faces?', qVisual: stepChain(['V − A + F = 2', '12 − 30 + F = 2', 'F = 20']), steps:['Substitua na relação de Euler.', '−18 + F = 2 → F = 20 (é o icosaedro).']},
+      {title:'Exemplo 4 (crescer)', text:'Uma caixa-d’água tem todas as medidas triplicadas. O volume fica quantas vezes maior?', qVisual: stepChain(['k = 3', 'volume × k³ = 3³', '27 vezes']), steps:['Medidas × 3 → volume × 3³.', '27 vezes maior.']},
+    ],
+    gen:{
+      facil:()=>{
+        if(Math.random()<0.5){ const a = randInt(2,12);
+          return mkSingle(`Qual é a área total (em cm²) da superfície de um cubo de aresta ${a} cm?`, 6*a*a, ['O cubo tem 6 faces quadradas: A = 6a²', `6 × ${a}² = 6 × ${a*a} = ${6*a*a} cm²`]); }
+        const P = pick([['um cubo',8,6,12],['um prisma de base triangular',6,5,9],['uma pirâmide de base quadrada',5,5,8],['um octaedro',6,8,12],['um prisma de base hexagonal',12,8,18],['um icosaedro',12,20,30],['um dodecaedro',20,12,30],['uma pirâmide de base hexagonal',7,7,12]]);
+        const ask = pick(['V','F','A']), [nome,V,F,A] = P;
+        if(ask==='A') return mkSingle(`${nome[0].toUpperCase()+nome.slice(1)} tem ${V} vértices e ${F} faces. Quantas arestas ele tem?`, A, ['Relação de Euler: V − A + F = 2', `${V} − A + ${F} = 2 → A = ${V} + ${F} − 2 = ${A}`]);
+        if(ask==='F') return mkSingle(`Um poliedro tem ${V} vértices e ${A} arestas. Quantas faces ele tem?`, F, ['Relação de Euler: V − A + F = 2', `${V} − ${A} + F = 2 → F = 2 − ${V} + ${A} = ${F}`]);
+        return mkSingle(`Um poliedro tem ${F} faces e ${A} arestas. Quantos vértices ele tem?`, V, ['Relação de Euler: V − A + F = 2', `V − ${A} + ${F} = 2 → V = 2 + ${A} − ${F} = ${V}`]); },
+      medio:()=>{
+        if(Math.random()<0.5){ const t = pick([[2,3,6,7],[1,4,8,9],[2,6,9,11],[4,4,7,9],[1,2,2,3],[2,10,11,15],[6,6,7,11],[3,4,12,13]]);
+          return mkSingle(`Qual é a medida da diagonal de um paralelepípedo (caixa) de dimensões ${t[0]} cm, ${t[1]} cm e ${t[2]} cm?`, t[3], ['d = √(a² + b² + c²)', `= √(${t[0]**2} + ${t[1]**2} + ${t[2]**2}) = √${t[3]**2}`, `d = ${t[3]} cm`]); }
+        const t = pick([[3,4,5],[6,8,10],[5,12,13],[8,15,17],[9,12,15]]), sw = Math.random()<0.5, r = sw?t[1]:t[0], hh = sw?t[0]:t[1];
+        return mkSingle(`Um cone tem raio da base ${r} cm e altura ${hh} cm. Quanto mede a geratriz?`, t[2], ['A geratriz forma um triângulo retângulo com o raio e a altura: g² = r² + h²', `g² = ${r*r} + ${hh*hh} = ${t[2]**2}`, `g = ${t[2]} cm`]); },
+      dificil:()=>{ const t = Math.random();
+        if(t<0.35){ const k = pick([2,3,4,5]), what = pick(['volume','área da superfície']), f = what==='volume' ? k**3 : k**2;
+          return mkSingle(`Todas as medidas de um sólido foram multiplicadas por ${k}. A ${what} ficou quantas vezes maior?`, f, ['Medidas × k → área × k² e volume × k³.', `k = ${k} → ${what==='volume'?`${k}³`:`${k}²`} = ${f}`]); }
+        if(t<0.7){ const r = randInt(1,6), hh = randInt(2,12), A = round2(2*3.14*r*r + 2*3.14*r*hh);
+          return mkSingle(`Qual é a área total (em cm²) de um cilindro de raio ${r} cm e altura ${hh} cm? Use π = 3,14.`, A, [`Duas tampas: 2 × 3,14 × ${r*r} = ${fmt(round2(2*3.14*r*r))}`, `Lateral (o "rótulo"): 2 × 3,14 × ${r} × ${hh} = ${fmt(round2(2*3.14*r*hh))}`, `Total: ${fmt(A)} cm²`]); }
+        const a = pick([2,4,6,8,10]), r = a/2, V = round2(4*3.14*r**3/3);
+        return mkSingle(`Uma esfera está dentro de um cubo de aresta ${a} cm, encostando em todas as faces. Qual é o volume da esfera (em cm³)? Use π = 3,14.`, V, [`O diâmetro da esfera é a aresta do cubo: r = ${a} ÷ 2 = ${r}`, `V = 4 × 3,14 × ${r}³ ÷ 3 = 4 × 3,14 × ${r**3} ÷ 3`, `V = ${fmt(V)} cm³`]); },
     }
   },
   {
