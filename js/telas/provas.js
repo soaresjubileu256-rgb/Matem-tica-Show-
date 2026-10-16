@@ -1,109 +1,71 @@
 /* =========================================================
-   TELAS DE PROVAS (ENEM, ETEC, Fuvest, Unicamp, Unesp, OBMEP)
-   - Provas: lista com o quanto você já domina do que cai em cada uma.
-   - Prova: como é, quem faz, dica, o que cai (🔥 / ⭐ / ✓), treino e simulado só desses assuntos.
-   - "Minha prova": a escolhida aparece no Início, em "Pra fazer hoje".
-   Os dados ficam em js/assuntos/provas.js.
+   CONTEÚDOS POR PROVA (ENEM, ETEC, Fuvest, Unicamp, Unesp, OBMEP)
+   Uma aba por prova com o que estudar de Matemática pra ela.
+   A aba aberta fica em state.examId.
+   Pra mudar os conteúdos, é só editar a lista EXAM_CONTENTS.
    ========================================================= */
-function myExamId(){ return loadGame().targetExam || null; }
+const EXAM_CONTENTS = [
+  {id:'enem', name:'ENEM', full:'Exame Nacional do Ensino Médio', ico:'🎓', color:'#4C7DFF', color2:'#2F55D4', items:[
+    'Matemática financeira (juros compostos, parcelamento), exponencial e logaritmo',
+    'Funções (afim, quadrática, exponencial), leitura de gráficos e tabelas',
+    'Estatística (média, mediana, desvio padrão), probabilidade condicional',
+    'Geometria espacial (volumes, capacidade), escalas, grandezas e unidades',
+    'PA/PG, trigonometria no triângulo retângulo, análise combinatória',
+  ]},
+  {id:'etec', name:'ETEC', full:'Vestibulinho das Etecs (SP)', ico:'🏫', color:'#12B886', color2:'#0B8A64', items:[
+    'Equações e sistemas, produtos notáveis, fatoração',
+    'Razão, proporção, porcentagem, regra de três composta',
+    'Teorema de Pitágoras, semelhança e Tales, áreas e volumes',
+    'Estatística e probabilidade básicas',
+  ]},
+  {id:'fuvest', name:'Fuvest', full:'Vestibular da USP', ico:'🏛️', color:'#B23FE0', color2:'#7B2BB0', items:[
+    'Funções (modular, exponencial, logarítmica), inequações',
+    'Trigonometria completa (equações, identidades, lei dos senos e cossenos)',
+    'Geometria analítica (reta, circunferência, cônicas), geometria espacial avançada',
+    'Polinômios, números complexos, matrizes, determinantes e sistemas lineares',
+    'Combinatória, probabilidade, PA/PG',
+  ]},
+  {id:'unicamp', name:'Unicamp', full:'Vestibular da Unicamp', ico:'🔬', color:'#FF7A00', color2:'#D35400', items:[
+    'Mesmos tópicos da Fuvest, com enunciados longos e contextualizados',
+    'Muita combinatória e probabilidade, sequências, geometria plana e espacial',
+    'Raciocínio e justificativa, não só cálculo',
+  ]},
+  {id:'unesp', name:'Unesp', full:'Vestibular da Unesp', ico:'📐', color:'#F06595', color2:'#C2255C', items:[
+    'Funções, trigonometria, geometria plana, espacial e analítica',
+    'Combinatória, probabilidade, complexos, polinômios, matrizes',
+    '2ª fase dissertativa: é preciso mostrar o desenvolvimento',
+  ]},
+  {id:'obmep', name:'OBMEP', full:'Olimpíada Brasileira de Matemática das Escolas Públicas', ico:'🏅', color:'#FFB800', color2:'#E09A00', items:[
+    'Teoria dos números (divisores, primos, MMC/MDC, paridade, congruências simples)',
+    'Contagem, princípio da casa dos pombos, lógica e jogos',
+    'Geometria (áreas, ângulos, construções), sequências e padrões',
+    'Álgebra criativa, mais engenhosidade do que fórmulas',
+  ]},
+];
 
-/* uma aba por prova: ENEM | ETEC | Fuvest | Unicamp | Unesp | OBMEP.
-   A aba aberta fica em state.examId (a "minha prova" abre primeiro). */
 function examsScreen(){
   const wrap = document.createElement('div');
-  wrap.appendChild(topbar('🎓 Provas e vestibulares', true, ()=>go('exercisesSubjects')));
-  const mine = myExamId();
-  const e = examById(state.examId) || examById(mine) || EXAMS[0];
+  wrap.appendChild(topbar('🎓 Conteúdos por prova', true, ()=>go('content')));
+  const e = EXAM_CONTENTS.find(x=>x.id===state.examId) || EXAM_CONTENTS[0];
   state.examId = e.id;
   const tabs = h(`<div class="pv-tabs" role="tablist"></div>`);
-  EXAMS.forEach(x=>{
-    const r = examReadiness(x);
-    const t = h(`<button type="button" role="tab" class="pv-tab ${x.id===e.id?'on':''}" aria-selected="${x.id===e.id}" style="--c:${x.color}"><span>${x.ico}</span><b>${x.name}${x.id===mine?' ⭐':''}</b><small>${r.pct}%</small></button>`);
+  EXAM_CONTENTS.forEach(x=>{
+    const t = h(`<button type="button" role="tab" class="pv-tab ${x.id===e.id?'on':''}" aria-selected="${x.id===e.id}" style="--c:${x.color}"><span>${x.ico}</span><b>${x.name}</b></button>`);
     t.onclick = ()=>{ if(state.examId===x.id) return; state.examId = x.id; render(); };
     tabs.appendChild(t);
   });
   wrap.appendChild(tabs);
-  const c = h(`<div class="content pv-screen"></div>`);
-  examTabBody(e, c);
+  // o que está entre parênteses ou depois de ":" aparece mais clarinho, como detalhe
+  const fmt = x=> escHTML(x).replace(/\(([^)]*)\)/g, '<small>($1)</small>').replace(/^([^:]+):\s*(.+)$/, '$1: <small>$2</small>');
+  const c = h(`<div class="content pv-screen">
+    <div class="pv-content" style="--c:${e.color}; --c2:${e.color2}">
+      <div class="pv-content-h"><span>${e.ico}</span><div><b>${e.name}</b><small>${escHTML(e.full)}</small></div></div>
+      <ol>${e.items.map((x,i)=>`<li><i>${i+1}</i><p>${fmt(x)}</p></li>`).join('')}</ol>
+    </div>
+    <p class="pv-note">📌 É uma orientação de estudo. Confira sempre o edital da sua prova.</p>
+  </div>`);
   wrap.appendChild(c);
   // deixa a aba escolhida visível na barra
   setTimeout(()=>{ const on = tabs.querySelector('.pv-tab.on'); if(on) tabs.scrollLeft = on.offsetLeft - (tabs.clientWidth - on.offsetWidth)/2; }, 0);
   return wrap;
 }
-
-function startExamTraining(e){
-  loadProgress().then(progress=>{
-    startPersonalizedSession({subjectIds: examTopicIds(e, ['muito','bastante']), difficultyMode:'adaptativa', qty:15, focusWeak:true, progress, examId:e.id, examName:e.name});
-  });
-}
-function startExamSimulado(e){
-  const ids = examTopicIds(e, ['muito','bastante']);
-  // assuntos que caem muito entram duas vezes no sorteio: aparecem mais no simulado
-  startExam({subjects: examTopicIds(e, ['muito']).concat(ids), n:20, mins:40, diff:'misturada'});
-}
-
-function examTabBody(e, c){
-  const r = examReadiness(e), mine = myExamId()===e.id;
-  const R = 34, C = 2*Math.PI*R;
-  const hero = h(`<div class="pv-hero" style="--c:${e.color}; --c2:${e.color2}">
-    <div class="pv-hero-top">
-      <div class="pv-ring" aria-label="${r.pct}% pronto"><svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="${R}" class="bg"/><circle cx="40" cy="40" r="${R}" class="fg" ${r.ready?'':'style="opacity:0"'} stroke-dasharray="${C}" stroke-dashoffset="${C*(1-r.pct/100)}"/></svg><div class="pv-ring-in"><b>${r.pct}%</b><small>pronto</small></div></div>
-      <div class="pv-hero-t"><small>${escHTML(e.full.toUpperCase())}</small><h2>${e.ico} ${e.name}</h2><p>${r.ready} de ${r.total} assuntos importantes com nível Proficiente ou Dominado</p></div>
-    </div>
-    <button type="button" class="pv-mine ${mine?'on':''}">${mine ? '⭐ Esta é a minha prova' : '☆ Marcar como minha prova'}</button>
-  </div>`);
-  hero.querySelector('.pv-mine').onclick = ()=>{
-    const g = loadGame(); g.targetExam = mine ? null : e.id; saveGame();
-    showFloat(mine ? 'Prova desmarcada' : `⭐ ${e.name} vai aparecer no Início`);
-    render();
-  };
-  c.appendChild(hero);
-
-  const acts = h(`<div class="pv-acts"></div>`);
-  const tr = h(`<button type="button" class="pv-act main"><span>🎯</span><b>Treinar o que mais cai</b><small>15 questões, dificuldade que se ajusta, mais dos seus pontos fracos</small></button>`);
-  tr.onclick = ()=> startExamTraining(e);
-  const sim = h(`<button type="button" class="pv-act"><span>📝</span><b>Simulado ${e.name}</b><small>20 questões em 40 minutos, nota de 0 a 10</small></button>`);
-  sim.onclick = ()=> startExamSimulado(e);
-  acts.appendChild(tr); acts.appendChild(sim);
-  c.appendChild(acts);
-
-  c.appendChild(h(`<div class="pv-info">
-    <div><span>👥</span><div><b>Quem faz</b><p>${escHTML(e.who)}</p></div></div>
-    <div><span>📄</span><div><b>Como é a prova</b><p>${escHTML(e.format)}</p></div></div>
-    <div><span>💡</span><div><b>Dica</b><p>${escHTML(e.tip)}</p></div></div>
-  </div>`));
-
-  if(e.content && e.content.length){
-    // o que está entre parênteses ou depois de ":" aparece mais clarinho, como detalhe
-    const fmt = x=> escHTML(x).replace(/\(([^)]*)\)/g, '<small>($1)</small>').replace(/^([^:]+):\s*(.+)$/, '$1: <small>$2</small>');
-    c.appendChild(h(`<div class="pv-content" style="--c:${e.color}; --c2:${e.color2}">
-      <div class="pv-content-h"><span>📚</span><div><b>Conteúdos da prova</b><small>${e.content.length} blocos de estudo de Matemática</small></div></div>
-      <ol>${e.content.map((x,i)=>`<li><i>${i+1}</i><p>${fmt(x)}</p></li>`).join('')}</ol>
-    </div>`));
-  }
-
-  c.appendChild(h(`<h3 class="ar-label">O que cai de Matemática</h3>`));
-  EXAM_LEVELS.forEach(L=>{
-    const ids = examTopicIds(e, [L.id]);
-    if(!ids.length) return;
-    c.appendChild(h(`<div class="pv-lvl ${L.id}"><span>${L.ico} ${L.name}</span><small>${L.sub}</small></div>`));
-    ids.forEach(id=>{
-      const s = SUBJECTS.find(x=>x.id===id), m = masterySync(id);
-      const row = h(`<div class="pv-row ${L.id}">
-        <span class="ar-sym">${s.sym}</span>
-        <button type="button" class="pv-row-t" data-a="learn" aria-label="Estudar ${escHTML(s.name)}"><b>${escHTML(s.name)}</b>${masteryChip(m)}</button>
-        <button type="button" class="pv-btn go" data-a="train">Treinar</button>
-      </div>`);
-      row.querySelector('[data-a=learn]').onclick = ()=> go('subjectDetail', {subjectId:id});
-      row.querySelector('[data-a=train]').onclick = ()=> startSession(id, adaptiveDifficultyFor(progressSync(), id));
-      c.appendChild(row);
-    });
-  });
-  if(e.extra && e.extra.length){
-    c.appendChild(h(`<div class="pv-extra"><b>📌 Também cai</b><p>Temas que aparecem nessa prova e você pode revisar no caderno ou no livro:</p><div>${e.extra.map(x=>`<span>${escHTML(x)}</span>`).join('')}</div></div>`));
-  }
-  c.appendChild(h(`<p class="pv-note">📊 Baseado em levantamentos de provas anteriores. Confira sempre o edital da sua prova.</p>`));
-}
-/* rota antiga (links de "Cai nas provas", botão voltar do treino): abre a aba da prova */
-function examDetailScreen(){ return examsScreen(); }
-

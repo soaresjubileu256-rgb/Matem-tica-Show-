@@ -76,17 +76,11 @@ function homeScreen(){
     if(dueSubj.length){ const r = row('🧠', 'Relembrar assuntos', dueSubj.slice(0,2).map(s=>s.name).join(', ') + (dueSubj.length>2 ? ` e mais ${dueSubj.length-2}` : ''), false, ()=> startSpacedReview()); list.insertBefore(r, list.querySelector('.td-extra')); }
     paintAllSet();
   });
-  // extras de quem usa: plano de estudos e "minha prova"
+  // extra de quem usa: plano de estudos
   const plan = studyData().plan, pt = planToday();
   if(plan){
     const left = Math.round((new Date(plan.examDate+'T12:00') - new Date(dk+'T12:00'))/864e5);
     const r = row('🗺️', left>0 ? `Plano: prova em ${left} dia${left===1?'':'s'}` : left===0 ? 'Plano: a prova é hoje!' : 'Plano de estudos', pt ? 'Hoje: ' + (pt.subjects.map(id=>(SUBJECTS.find(x=>x.id===id)||{}).name).filter(Boolean).join(' + ') || '') + (pt.exam ? (pt.subjects.length?' + ':'')+'simulado' : '') : 'Ver o plano', false, ()=> go('plan'));
-    r.classList.add('td-extra');
-  }
-  const ex = examById(myExamId());
-  if(ex){
-    const rd = examReadiness(ex);
-    const r = row(ex.ico, `Rumo ${ex.id==='enem'?'ao':'à'} ${ex.name}`, `${rd.ready} de ${rd.total} assuntos prontos`, false, ()=> go('examDetail', {examId:ex.id}));
     r.classList.add('td-extra');
   }
   const allSet = h(`<div class="td-allset" style="display:none">✅ Tudo em dia por hoje! Que tal uma fase da Trilha?</div>`);

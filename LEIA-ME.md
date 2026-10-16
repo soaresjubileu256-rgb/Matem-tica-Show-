@@ -37,7 +37,6 @@ js/
     ensino-medio-visual.js desenhos e ajudantes usados pelo Ensino Médio
     ensino-medio.js        os 23 assuntos do Ensino Médio
     catalogo.js            GRUPOS DE ASSUNTOS (a ordem única do app), ano (BNCC)
-    provas.js              o que cai em cada prova (ENEM, ETEC, Fuvest, Unicamp, Unesp, OBMEP)
   dados/
     progresso.js      acertos, histórico, caderno de erros e revisão espaçada
     configuracoes.js  configurações salvas (tema, som, volume, meta, nível)
@@ -54,7 +53,7 @@ js/
     aprender.js       aba Aprender
     exercicios.js     aba Exercícios: modos de treino, sessões, dicas, Desafios, Treino personalizado
     modos-estudo.js   Qual o próximo passo? e Mistura do dia
-    provas.js         Provas e vestibulares: lista, tela de cada prova e "minha prova"
+    provas.js         Conteúdos por prova (ENEM, ETEC, Fuvest, Unicamp, Unesp, OBMEP)
     tabuada.js        Tabuada (Estudar, Quadro e Treinar)
     estudo.js         nivelamento, plano de estudos, cartões de revisão e Caderno de erros
     ferramentas.js    Resolver questão e Calculadora (com parênteses, ordem das operações e histórico)

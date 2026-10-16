@@ -17,7 +17,6 @@ const SCREENS = {
   personalizedSession: personalizedSessionScreen,
   stepSetup: stepSetupScreen,
   exams: examsScreen,
-  examDetail: examDetailScreen,
   stepGuide: stepGuideScreen,
   achievements: achievementsScreen,
   duel: duelScreen,

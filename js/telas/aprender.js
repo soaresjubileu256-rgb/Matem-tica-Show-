@@ -29,7 +29,7 @@ function contentScreen(){
   }
   c.appendChild(h(`<h3 class="home-sec" style="margin:14px 0 8px">Assuntos</h3>`));
   subjectSearchList(c, (s,u)=>{
-    const row = h(`<button class="subject-row ${d.read[s.id]?'lr-read':''}" style="${unitStyle(u)}"><span class="sym">${s.sym}</span><span class="txt"><span class="name">${s.name}${d.read[s.id]?'<em class="lr-done" title="Já estudado">✓</em>':''}</span><span class="subj-meta">${BNCC_ANO[s.id]?`📚 ${BNCC_ANO[s.id]} · `:''}${masteryChip(masterySync(s.id))}${examTagsHTML(s.id, 2)}</span></span><span class="chev">›</span></button>`);
+    const row = h(`<button class="subject-row ${d.read[s.id]?'lr-read':''}" style="${unitStyle(u)}"><span class="sym">${s.sym}</span><span class="txt"><span class="name">${s.name}${d.read[s.id]?'<em class="lr-done" title="Já estudado">✓</em>':''}</span><span class="subj-meta">${BNCC_ANO[s.id]?`📚 ${BNCC_ANO[s.id]} · `:''}${masteryChip(masterySync(s.id))}</span></span><span class="chev">›</span></button>`);
     row.onclick = ()=>go('subjectDetail', {subjectId:s.id});
     return row;
   });
@@ -150,12 +150,6 @@ function subjectDetailScreen(){
   const nav = h(`<div class="lr-nav">${[['lr-explain','📖','Explicação'],['lr-examples','🧩','Exemplos'],hasQuick?['lr-quick','✅','Teste']:null,['lr-practice','🚀','Praticar']].filter(Boolean).map(([id,ico,t])=>`<button type="button" data-to="${id}"><span>${ico}</span>${t}</button>`).join('')}</div>`);
   nav.querySelectorAll('[data-to]').forEach(b=> b.onclick = ()=>{ const el = c.querySelector('#'+b.dataset.to); if(el) el.scrollIntoView({behavior:'smooth', block:'start'}); });
   c.appendChild(nav);
-  { const ex = examsForSubject(s.id);
-    if(ex.length){
-      const box = h(`<div class="pv-subj"><div class="pv-subj-h">🎓 Cai nas provas</div><div class="pv-subj-l">${ex.map(x=>`<button type="button" class="pv-chip ${x.lvl}" style="--c:${x.exam.color}" data-e="${x.exam.id}">${x.exam.ico} ${x.exam.name}<small>${x.lvl==='muito'?'🔥 cai muito':x.lvl==='bastante'?'⭐ cai bastante':'✓ às vezes'}</small></button>`).join('')}</div></div>`);
-      box.querySelectorAll('[data-e]').forEach(b=> b.onclick = ()=> go('examDetail', {examId:b.dataset.e}));
-      c.appendChild(box);
-    } }
   // explicação, com botão de ouvir
   const explain = h(`<section class="lr-card" id="lr-explain"><div class="lr-sec-h"><span>📖</span><b>Explicação</b><button type="button" class="lr-listen">🔊 Ouvir</button></div><div class="explain-card lr-body"></div></section>`);
   explain.querySelector('.lr-body').innerHTML = s.learn;
