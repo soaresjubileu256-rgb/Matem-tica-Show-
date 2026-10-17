@@ -142,45 +142,6 @@ function sectionOf(screen){
   for(const sec of SECTION_TABS){ const t = sec.tabs.find(t=> (t.match||[t.screen]).includes(screen)); if(t) return {sec, tab:t}; }
   return null;
 }
-/* ---------- modos que vão sendo liberados ----------
-   Pra quem chega agora o app mostra só o essencial; os outros modos aparecem nas abas
-   quando a pessoa responde um certo número de questões (ou liga "Mostrar todos os modos").
-   Um modo liberado nunca volta a ficar escondido. */
-const MODE_UNLOCKS = {
-  stepSetup:10, errors:10, lightning:15, personalizedSetup:20, geoLab:30, examSetup:30,
-  challengeDifficulty:40, quizSetup:50, duel:60,
-};
-function modesSeenData(){
-  const g = loadGame();
-  if(!g.modesSeen){ // primeira vez: o que a pessoa já alcançou fica liberado em silêncio
-    const n = totalAnswered(); g.modesSeen = {};
-    Object.entries(MODE_UNLOCKS).forEach(([k,need])=>{ if(n >= need) g.modesSeen[k] = Date.now(); });
-    saveGame();
-  }
-  return g.modesSeen;
-}
-function showAllModes(){ return !!(currentSettingsSync() || {}).showAllModes; }
-function modeUnlocked(screen){
-  const need = MODE_UNLOCKS[screen];
-  if(!need || showAllModes()) return true;
-  return !!modesSeenData()[screen] || totalAnswered() >= need;
-}
-/* chamado depois de cada resposta: avisa quando um modo novo é liberado */
-function checkModeUnlocks(){
-  const seen = modesSeenData(), n = totalAnswered();
-  Object.entries(MODE_UNLOCKS).forEach(([k,need])=>{
-    if(!seen[k] && n >= need){
-      seen[k] = Date.now(); saveGame();
-      const t = SECTION_TABS.flatMap(s=>s.tabs).find(t=>t.screen===k);
-      if(t && !showAllModes()) queueToast('🔓', 'Modo novo liberado!', `${t.ico} ${t.label}`);
-    }
-  });
-}
-function lockedModesList(sec){
-  const n = totalAnswered();
-  return sec.tabs.filter(t=> !modeUnlocked(t.screen)).map(t=>({t, left: MODE_UNLOCKS[t.screen] - n}));
-}
-
 const secTabsScroll = {}; // posição de cada barra de abas, pra não voltar pro começo ao trocar de aba
 function sectionTabsEl(){
   const found = sectionOf(state.screen);
@@ -188,20 +149,10 @@ function sectionTabsEl(){
   const bar = h(`<nav class="sec-tabs" role="tablist" aria-label="Páginas desta seção"></nav>`);
   found.sec.tabs.forEach(t=>{
     const on = t===found.tab;
-    if(!on && !modeUnlocked(t.screen)) return; // ainda não liberado (a aba aberta sempre aparece)
     const b = h(`<button type="button" role="tab" class="sec-tab ${on?'on':''}" aria-selected="${on}"><span>${t.ico}</span>${t.label}</button>`);
     b.onclick = ()=>{ if(!on) go(t.screen, t.extra||{}); };
     bar.appendChild(b);
   });
-  // modos escondidos: um botão com cadeado mostra o que falta pra liberar cada um
-  const locked = lockedModesList(found.sec).filter(x=> x.t !== found.tab);
-  if(locked.length){
-    const b = h(`<button type="button" class="sec-tab sec-lock" aria-label="${locked.length} modos ainda bloqueados"><span>🔒</span>+${locked.length}</button>`);
-    b.onclick = ()=> showConfirm({icon:'🔓', title:'Mais modos vêm aí!',
-      message: 'Eles aparecem aqui conforme você responde questões:\n\n' + locked.sort((a,b)=>a.left-b.left).map(x=>`${x.t.ico} ${x.t.label}: faltam ${x.left} questão${x.left===1?'':'ões'}`.replace('questãoões','questões')).join('\n'),
-      ok:'Continuar estudando', cancel:'Mostrar todos agora', backdropValue:null}).then(ok=>{ if(ok===false){ loadSettings().then(st=>{ st.showAllModes = true; return saveSettings(); }).then(()=>{ queueToast('🔓', 'Todos os modos liberados', 'Dá pra mudar em Configurações'); render(); }); } });
-    bar.appendChild(b);
-  }
   // a barra nova abre na mesma posição da anterior (da mesma seção) e só anda se a aba acesa
   // ficar escondida; a posição é aplicada antes de a tela ser pintada, então nada pula
   const memo = secTabsScroll[found.sec.id];

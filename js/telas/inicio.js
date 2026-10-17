@@ -27,7 +27,7 @@ function homeScreen(){
   wrap.appendChild(mascotBubble(hello, 'happy'));
   showStreakNote();
   wrap.appendChild(playerCard());
-  wrap.appendChild(nextActionCard());
+  wrap.appendChild(pathHero());
 
   // avisos que só aparecem uma vez na vida da conta
   const arenaOld = arenaV2Pending();
@@ -66,6 +66,7 @@ function homeScreen(){
     r.onclick = fn; list.appendChild(r); return r;
   };
   const dk = isoDay(), dailyDone = arenaData().daily[dk], mix = mixToday();
+  if(!studyData().placement && totalAnswered() < 5) row('🧭', 'Descubra seu nível', '10 perguntas pra saber por onde começar', false, ()=> startPlacement());
   row('📅', `Desafio do Dia #${dailyNumber(dk)}`, dailyDone ? `Feito: ${dailyDone.ok}/${dailyDone.n} certas` : `${DAILY_N} perguntas · +${DAILY_BONUS_XP} XP${dailyStreak() ? ` · 🔥 ${dailyStreak()} dias` : ''}`, !!dailyDone, ()=> startDaily());
   row('🔀', 'Mistura do dia', mix ? `Feita: ${mix.ok}/${mix.n} certas` : `${MIX_QTY} questões misturadas · +${MIX_BONUS_XP} XP`, !!mix, ()=> startMix());
   // revisão: erros vencidos e assuntos pra relembrar (só aparece quando tem)
@@ -114,31 +115,6 @@ function homeScreen(){
   // primeiro acesso: tour guiado pelo Pi
   if(!tutorialDone()) setTimeout(()=>{ if(state.screen==='home' && !tutorialDone() && wrap.isConnected) startTour(); }, 700);
   return wrap;
-}
-
-/* ---------- "Faça isto agora" ----------
-   Um único próximo passo bem claro no topo do Início:
-   - conta nova: descobrir o nível (10 perguntas);
-   - depois: continuar a Trilha, que já leva pro assunto e a fase certos.
-   O resto do dia (Desafio, Mistura, revisões, missões) fica no cartão "Hoje", logo abaixo. */
-function needsPlacement(){ return !studyData().placement && totalAnswered() < 5; }
-function nextActionCard(){
-  if(needsPlacement()){
-    const el = h(`<div class="path-hero na-first" style="--uc:#4C7DFF;--uc2:#B23FE0">
-      <div class="ph-body">
-        <div class="ph-k"><span class="ph-now">👉 FAÇA ISTO AGORA</span>COMECE POR AQUI</div>
-        <h2>Descubra seu nível</h2>
-        <p>10 perguntas rápidas. O Pi usa o resultado pra montar o seu caminho.</p>
-        <button class="show-btn light">▶ COMEÇAR</button>
-        <button type="button" class="na-skip">Prefiro começar pela Trilha</button>
-      </div>
-      <div>${mascotSVG('joy', 86)}</div>
-    </div>`);
-    el.querySelector('.show-btn').onclick = ()=> startPlacement();
-    el.querySelector('.na-skip').onclick = ()=> go('path');
-    return el;
-  }
-  return pathHero('👉 FAÇA ISTO AGORA');
 }
 
 /* ---------- nível de domínio por assunto ----------
