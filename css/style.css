@@ -3835,3 +3835,12 @@ html, body{-webkit-tap-highlight-color:transparent; overscroll-behavior-y:none;}
 .iq-tick{fill:var(--ink-soft) !important;}
 .iq-bar{fill:#6B8CFF; fill-opacity:.85;}
 .iq-mesh{stroke:rgba(107,140,255,.45); stroke-width:.8;}
+
+/* ===== Troca de tema suave ===== */
+/* o tema novo se espalha num círculo a partir do botão tocado */
+::view-transition-old(root), ::view-transition-new(root){animation:none; mix-blend-mode:normal;}
+html.theme-vt::view-transition-new(root){animation:theme-reveal .6s cubic-bezier(.4,0,.2,1);}
+@keyframes theme-reveal{from{clip-path:circle(0 at var(--tx,50%) var(--ty,50%));} to{clip-path:circle(150vmax at var(--tx,50%) var(--ty,50%));}}
+/* sem View Transitions: as cores esmaecem */
+html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *::after{
+  transition:background-color .45s ease, color .45s ease, border-color .45s ease, fill .45s ease, stroke .45s ease, box-shadow .45s ease !important;}

@@ -135,7 +135,7 @@ async function settingsScreen(){
   [['dark','🌙 Escuro'],['light','☀️ Claro']].forEach(([id,label])=>{
     const b = h(`<button type="button" role="radio" class="st-theme t-${id}" aria-checked="${settings.theme===id}">
       <span class="st-mock"><i class="m-bar"></i><i class="m-card"></i><i class="m-row"></i><i class="m-row s"></i><i class="m-btn"></i></span><b>${label}</b></button>`);
-    b.onclick = async ()=>{ settings.theme = id; await saveNow(); applyTheme(id); th.querySelectorAll('button').forEach(x=> x.setAttribute('aria-checked', x===b)); refreshSum(); };
+    b.onclick = async ev=>{ if(settings.theme===id) return; settings.theme = id; applyTheme(id, {animate:true, x:ev.clientX, y:ev.clientY}); await saveNow(); th.querySelectorAll('button').forEach(x=> x.setAttribute('aria-checked', x===b)); refreshSum(); };
     th.appendChild(b);
   });
   ap.appendChild(th);
