@@ -3794,9 +3794,11 @@ button.gl-res:active{transform:scale(.99);}
 .cv-sum span{white-space:pre;}
 
 /* ===== App no APK (WebView) ===== */
-/* diz ao Android que o app já tem tema próprio: assim o WebView não escurece nem troca as cores sozinho */
-:root{color-scheme:dark;}
-:root.theme-light{color-scheme:light;}
+/* diz ao Android que o app já tem tema claro E escuro próprios: assim o WebView do APK nunca
+   escurece nem troca as cores sozinho. Declarar só "light" no tema claro fazia o Android, com o
+   celular no modo escuro, escurecer a página por conta própria (o tema Claro aparecia escuro). */
+:root{color-scheme:dark light;}
+:root.theme-light{color-scheme:light dark;}
 /* olho da senha desenhado, na cor do texto */
 .pass-toggle svg{display:block; color:var(--ink-soft);}
 /* sem o destaque azul ao tocar e sem o "puxar e esticar" da página no Android */
