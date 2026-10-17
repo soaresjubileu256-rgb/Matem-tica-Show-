@@ -28,6 +28,18 @@ function homeScreen(){
   showStreakNote();
   wrap.appendChild(playerCard());
   wrap.appendChild(pathHero());
+  // ferramentas sempre a um toque: calculadora, resolver questão e caderno digital
+  const tools = h(`<div class="home-tools"><h3 class="home-sec">🧰 Ferramentas</h3><div class="ht-grid"></div></div>`);
+  [
+    {ico:'🧮', label:'Calculadora', sub:'Contas com histórico', c:'#FFB800', to:'calculator'},
+    {ico:'🔎', label:'Resolver questão', sub:'Passo a passo', c:'#33D2E3', to:'solve'},
+    {ico:'✏️', label:'Caderno digital', sub:'Suas anotações', c:'#94D82D', to:'notebook'},
+  ].forEach(it=>{
+    const b = h(`<button type="button" class="ht-btn" style="--c:${it.c}"><span class="ht-ico">${it.ico}</span><b>${it.label}</b><small>${it.sub}</small></button>`);
+    b.onclick = ()=> go(it.to);
+    tools.querySelector('.ht-grid').appendChild(b);
+  });
+  wrap.appendChild(tools);
 
   // avisos que só aparecem uma vez na vida da conta
   const arenaOld = arenaV2Pending();
