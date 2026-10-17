@@ -131,6 +131,7 @@ function subjectDetailScreen(){
   const si = Math.max(0, SUBJECTS.findIndex(x=>x.id===state.subjectId));
   const s = SUBJECTS[si];
   { const d = learnData(); d.read[s.id] = d.read[s.id] || Date.now(); d.last = s.id; saveLearnData(d); }
+  { const g = loadGame(); gameEnsureToday(); g.today.reads = g.today.reads || {}; if(!g.today.reads[s.id]){ g.today.reads[s.id] = 1; saveGame(); } }
   const wrap = document.createElement('div');
   wrap.appendChild(topbar(s.name, true, ()=>go('content')));
   const c = h(`<div class="content lr"></div>`);
