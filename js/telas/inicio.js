@@ -67,7 +67,7 @@ function homeScreen(){
   };
   const dk = isoDay(), dailyDone = arenaData().daily[dk], mix = mixToday();
   if(!studyData().placement && totalAnswered() < 5) row('🧭', 'Descubra seu nível', '10 perguntas pra saber por onde começar', false, ()=> startPlacement());
-  row('📅', `Desafio do Dia #${dailyNumber(dk)}`, dailyDone ? `Feito: ${dailyDone.ok}/${dailyDone.n} certas` : `${DAILY_N} perguntas · +${DAILY_BONUS_XP} XP${dailyStreak() ? ` · 🔥 ${dailyStreak()} dias` : ''}`, !!dailyDone, ()=> startDaily());
+  row('📅', `Desafio do Dia ${dailyDate(dk)}`, dailyDone ? `Feito: ${dailyDone.ok}/${dailyDone.n} certas` : `${DAILY_N} perguntas · +${DAILY_BONUS_XP} XP${dailyStreak() ? ` · 🔥 ${dailyStreak()} dias` : ''}`, !!dailyDone, ()=> startDaily());
   row('🔀', 'Mistura do dia', mix ? `Feita: ${mix.ok}/${mix.n} certas` : `${MIX_QTY} questões misturadas · +${MIX_BONUS_XP} XP`, !!mix, ()=> startMix());
   // revisão: erros vencidos e assuntos pra relembrar (só aparece quando tem)
   Promise.all([loadErrors(), loadProgress()]).then(([errs, progress])=>{
