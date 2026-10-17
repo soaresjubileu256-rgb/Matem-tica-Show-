@@ -25,7 +25,7 @@ function unitStairsSVG(from, to){
   });
   for(let i=Math.min(i0,i1); i<Math.max(i0,i1); i++){
     const x = x0 + (i+1)*sw, y = y0 + i*sh + 2;
-    s += cvT(x+2, y-4, i0<i1 ? '×10' : '÷10', 'geo-lbl-h', 'middle').replace('class="geo-lbl', 'font-size="11" class="geo-lbl');
+    s += cvT(x+2, y-4, i0<i1 ? '×10' : '÷10', 'geo-lbl-h', 'middle').replace('class="geo-lbl', 'style="font-size:11px" class="geo-lbl');
   }
   return cvSVG(W, H, s, `Escada de unidades de ${from} a ${to}`);
 }
@@ -86,7 +86,7 @@ function cycleSVG(vals, hi, base){
     s += `<path d="M${_f(cx+R*Math.cos(m1))} ${_f(cy+R*Math.sin(m1))} A${R} ${R} 0 0 1 ${_f(cx+R*Math.cos(m2))} ${_f(cy+R*Math.sin(m2))}" fill="none" stroke="#FF8A4C" stroke-width="2" marker-end="url(#${id})"/>`;
     s += `<circle cx="${_f(x)}" cy="${_f(y)}" r="19" class="geo-face ${i===hi?'top':'side'}" ${i===hi?'style="stroke:#FF8A4C;stroke-width:3"':''}/>`;
     s += cvT(x, y+6, v, i===hi?'geo-lbl-h':'');
-    s += cvT(x + (Math.cos(a)>0.3?34:Math.cos(a)<-0.3?-34:0), y + (Math.sin(a)<-0.3?-26:Math.sin(a)>0.3?34:5), `${base}${['¹','²','³','⁴'][i]}`, '', 'middle').replace('class="geo-lbl', 'font-size="12" opacity=".7" class="geo-lbl');
+    s += cvT(x + (Math.cos(a)>0.3?34:Math.cos(a)<-0.3?-34:0), y + (Math.sin(a)<-0.3?-26:Math.sin(a)>0.3?34:5), `${base}${['¹','²','³','⁴'][i]}`, '', 'middle').replace('class="geo-lbl', 'style="font-size:12px" opacity=".7" class="geo-lbl');
   });
   s += cvT(cx, cy+5, 'repete');
   return cvSVG(W, H, s, 'Ciclo dos últimos algarismos');
@@ -176,7 +176,7 @@ function polygonSplitSVG(n, angleLabel){
   for(let i=1;i<n-1;i++) s += `<polygon points="${[P[0],P[i],P[i+1]].map(p=>p.map(_f).join(',')).join(' ')}" class="geo-face ${i%2?'top':'side'}"/>`;
   s += `<polygon points="${P.map(p=>p.map(_f).join(',')).join(' ')}" fill="none" class="geo-face"/>`;
   s += cvDot(P[0][0], P[0][1]);
-  for(let i=1;i<n-1;i++){ const m = [(P[0][0]+P[i][0]+P[i+1][0])/3, (P[0][1]+P[i][1]+P[i+1][1])/3]; s += cvT(m[0], m[1]+5, '180°').replace('class="geo-lbl', 'font-size="12" class="geo-lbl'); }
+  for(let i=1;i<n-1;i++){ const m = [(P[0][0]+P[i][0]+P[i+1][0])/3, (P[0][1]+P[i][1]+P[i+1][1])/3]; s += cvT(m[0], m[1]+5, '180°').replace('class="geo-lbl', 'style="font-size:12px" class="geo-lbl'); }
   if(angleLabel) s += cvT(P[Math.floor(n/2)][0], P[Math.floor(n/2)][1] + (P[Math.floor(n/2)][1]>cy?20:-8), angleLabel, 'geo-lbl-h');
   return cvSVG(W, H, s, `Polígono de ${n} lados dividido em ${n-2} triângulos`);
 }
@@ -202,7 +202,7 @@ function diffSquaresSVG(aL, bL, a, b){
   s += `<rect x="${x0+S-B}" y="${y0+S-B}" width="${B}" height="${B}" class="geo-hidden" style="fill:rgba(255,138,76,.25)"/>`;
   s += cvT(x0+S/2, y0-10, aL) + cvT(x0-10, y0+S/2+5, aL, '', 'end') + cvT(x0+S-B/2, y0+S+20, bL, 'geo-lbl-h') + cvT(x0+S+10, y0+S-B/2+5, bL, 'geo-lbl-h', 'start');
   s += cvT(x0+(S-B)/2, y0+(S-B)/2+6, `${aL}² − ${bL}²`);
-  s += cvT(W/2, H-10, `tira o quadradinho ${bL}² do quadrado ${aL}²`).replace('class="geo-lbl', 'font-size="12" class="geo-lbl');
+  s += cvT(W/2, H-10, `tira o quadradinho ${bL}² do quadrado ${aL}²`).replace('class="geo-lbl', 'style="font-size:12px" class="geo-lbl');
   return cvSVG(W, H, s, 'Diferença de quadrados');
 }
 
@@ -217,7 +217,7 @@ function rightTriangleSVG(a, b, cL, labels){
 }
 /* sombra: uma pessoa e uma árvore com o sol inclinado → triângulos semelhantes */
 function shadowSVG(p, sp, S, tL){
-  const W = 320, H = 200, yb = 172, k = 18, x1 = 30, x2 = 150;
+  const W = 320, H = 200, yb = 172, k = 18, x1 = 52, x2 = 160;
   const ph = p*k*1.3, ps = sp*k*1.3, th = 130, ts = th*sp/p;
   let s = cvL(10, yb, W-10, yb, 'geo-face');
   s += `<polygon points="${x1},${yb} ${x1},${_f(yb-ph)} ${_f(x1+ps)},${yb}" class="geo-face top"/>`;
@@ -238,7 +238,7 @@ function talesSVG(a, b, c, xL){
   ys.forEach(y=>{ s += cvDot(tx(y)[0], y) + cvDot(tx(y)[1], y); });
   s += cvT(tx((ys[0]+ys[1])/2)[0]-12, (ys[0]+ys[1])/2+5, a, '', 'end') + cvT(tx((ys[1]+ys[2])/2)[0]-12, (ys[1]+ys[2])/2+5, b, '', 'end');
   s += cvT(tx((ys[0]+ys[1])/2)[1]+12, (ys[0]+ys[1])/2+5, c, '', 'start') + cvT(tx((ys[1]+ys[2])/2)[1]+12, (ys[1]+ys[2])/2+5, xL, 'geo-lbl-h', 'start');
-  s += cvT(W-20, ys[0]-6, 'paralelas', '', 'end').replace('class="geo-lbl', 'font-size="11" opacity=".7" class="geo-lbl');
+  s += cvT(W-20, ys[0]-6, 'paralelas', '', 'end').replace('class="geo-lbl', 'style="font-size:11px" opacity=".7" class="geo-lbl');
   return cvSVG(W, H, s, 'Teorema de Tales');
 }
 
@@ -278,7 +278,7 @@ function sticksSVG(n, take){
 function numberLineSVG(kind, a, b){
   const W = 320, H = 92, y = 48, lo = (kind==='between' ? a : a) - 4, hi = (kind==='between' ? b : a) + 4, X = v=> 20 + (v-lo)*(W-40)/(hi-lo), id = 'cva'+(++_cvId);
   let s = cvArrowDefs(id) + `<line x1="12" y1="${y}" x2="${W-10}" y2="${y}" class="geo-face" marker-end="url(#${id})"/>`;
-  for(let v=Math.ceil(lo); v<=hi; v++) s += cvL(X(v), y-5, X(v), y+5, 'geo-face') + cvT(X(v), y+24, nm(v)).replace('class="geo-lbl', 'font-size="12" class="geo-lbl');
+  for(let v=Math.ceil(lo); v<=hi; v++) s += cvL(X(v), y-5, X(v), y+5, 'geo-face') + cvT(X(v), y+24, nm(v)).replace('class="geo-lbl', 'style="font-size:12px" class="geo-lbl');
   const seg = (x1, x2)=> `<line x1="${_f(x1)}" y1="${y}" x2="${_f(x2)}" y2="${y}" stroke="#FF8A4C" stroke-width="6" stroke-linecap="round" opacity=".85"/>`;
   const pt = (v, closed)=> `<circle cx="${_f(X(v))}" cy="${y}" r="7" ${closed ? 'fill="#FF8A4C"' : 'class="cv-open"'} stroke="#FF8A4C" stroke-width="3"/>`;
   if(kind==='ge' || kind==='gt') s += seg(X(a), W-16) + pt(a, kind==='ge');
@@ -308,7 +308,7 @@ function machineSVG(inp, name, out){
   s += `<rect x="110" y="26" width="100" height="62" rx="14" class="geo-face top"/>` + cvT(160, 63, name);
   s += `<line x1="40" y1="57" x2="104" y2="57" stroke="#FF8A4C" stroke-width="2.5" marker-end="url(#${id})"/>` + cvT(36, 62, inp, 'geo-lbl-h', 'end');
   s += `<line x1="216" y1="57" x2="278" y2="57" stroke="#FF8A4C" stroke-width="2.5" marker-end="url(#${id})"/>` + cvT(284, 62, out, 'geo-lbl-h', 'start');
-  s += cvT(160, 110, 'troque o x pelo número que entra').replace('class="geo-lbl', 'font-size="11" opacity=".75" class="geo-lbl');
+  s += cvT(160, 110, 'troque o x pelo número que entra').replace('class="geo-lbl', 'style="font-size:11px" opacity=".75" class="geo-lbl');
   return cvSVG(W, H, s, 'Valor numérico do polinômio');
 }
 /* coeficientes em fichas, destacando os que entram na conta */
@@ -325,10 +325,10 @@ function complexPlaneSVG(pts, o){
   let s = `<defs><marker id="${id}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#6B8CFF"/></marker><marker id="${id}h" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#FF8A4C"/></marker></defs>`;
   for(let v=-m+1; v<m; v++){ s += cvL(X(v), Y(-m+1), X(v), Y(m-1), 'geo-unit') + cvL(X(-m+1), Y(v), X(m-1), Y(v), 'geo-unit'); }
   s += cvL(X(-m+0.5), oy, X(m-0.3), oy, 'geo-face') + cvL(ox, Y(-m+0.5), ox, Y(m-0.3), 'geo-face');
-  s += cvT(W-2, oy-6, 'real', '', 'end').replace('class="geo-lbl', 'font-size="11" class="geo-lbl') + cvT(ox+6, 12, 'imag.', '', 'start').replace('class="geo-lbl', 'font-size="11" class="geo-lbl');
+  s += cvT(W-2, oy-6, 'real', '', 'end').replace('class="geo-lbl', 'style="font-size:11px" class="geo-lbl') + cvT(ox+6, 12, 'imag.', '', 'start').replace('class="geo-lbl', 'style="font-size:11px" class="geo-lbl');
   pts.forEach(p=>{
     s += `<line x1="${ox}" y1="${oy}" x2="${_f(X(p.a))}" y2="${_f(Y(p.b))}" stroke="${p.hi?'#FF8A4C':'#6B8CFF'}" stroke-width="2.5" marker-end="url(#${id}${p.hi?'h':''})"/>`;
-    s += cvDot(X(p.a), Y(p.b)) + cvT(X(p.a) + (p.a>=0?8:-8), Y(p.b) + (p.b>=0?-8:18), p.label, p.hi?'geo-lbl-h':'', p.a>=0?'start':'end').replace('class="geo-lbl', 'font-size="12.5" class="geo-lbl');
+    s += cvDot(X(p.a), Y(p.b)) + cvT(X(p.a) + (p.a>=0?8:-8), Y(p.b) + (p.b>=0?-8:18), p.label, p.hi?'geo-lbl-h':'', p.a>=0?'start':'end').replace('class="geo-lbl', 'style="font-size:12.5px" class="geo-lbl');
   });
   if(o.tri){ const p = pts[pts.length-1];
     s += cvL(X(0), oy, X(p.a), oy, 'geo-height') + cvL(X(p.a), oy, X(p.a), Y(p.b), 'geo-height');
@@ -399,13 +399,13 @@ function trigCircleSVG(fn, value, valueLabel, angles){
   s += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" class="geo-face"/>`;
   if(fn==='sen') s += cvL(cx-R-10, cy-value*R, cx+R+10, cy-value*R, 'geo-height');
   else s += cvL(cx+value*R, cy-R-10, cx+value*R, cy+R+10, 'geo-height');
-  s += cvT(cx, H-4, `${fn} x = ${valueLabel} (linha tracejada)`, 'geo-lbl-h').replace('class="geo-lbl', 'font-size="12.5" class="geo-lbl');
+  s += cvT(cx, H-4, `${fn} x = ${valueLabel} (linha tracejada)`, 'geo-lbl-h').replace('class="geo-lbl', 'style="font-size:12.5px" class="geo-lbl');
   angles.forEach(g=>{
     const a = g*Math.PI/180, x = cx+R*Math.cos(a), y = cy-R*Math.sin(a);
     s += cvL(cx, cy, x, y, 'geo-radius') + cvDot(x, y, 5);
     s += cvT(x + Math.cos(a)*24, y - Math.sin(a)*18 + 5, `${g}°`, 'geo-lbl-h');
   });
-  s += cvT(cx+R+6, cy+16, '0°', '', 'start').replace('class="geo-lbl', 'font-size="11" class="geo-lbl') + cvT(cx-R-6, cy+16, '180°', '', 'end').replace('class="geo-lbl', 'font-size="11" class="geo-lbl');
+  s += cvT(cx+R+6, cy+16, '0°', '', 'start').replace('class="geo-lbl', 'style="font-size:11px" class="geo-lbl') + cvT(cx-R-6, cy+16, '180°', '', 'end').replace('class="geo-lbl', 'style="font-size:11px" class="geo-lbl');
   return cvSVG(W, H, s, 'Ciclo trigonométrico');
 }
 
@@ -413,9 +413,9 @@ function trigCircleSVG(fn, value, valueLabel, angles){
 /* barras: à vista × a prazo, com os juros destacados */
 function priceBarsSVG(cash, total, label){
   const W = 320, H = 150, k = 230/total, y1 = 30, y2 = 86;
-  let s = `<rect x="70" y="${y1}" width="${_f(cash*k)}" height="34" rx="6" class="geo-face top"/>` + cvT(64, y1+22, 'à vista', '', 'end').replace('class="geo-lbl', 'font-size="12" class="geo-lbl') + cvT(70+cash*k/2, y1+22, `R$ ${cash}`);
+  let s = `<rect x="70" y="${y1}" width="${_f(cash*k)}" height="34" rx="6" class="geo-face top"/>` + cvT(64, y1+22, 'à vista', '', 'end').replace('class="geo-lbl', 'style="font-size:12px" class="geo-lbl') + cvT(70+cash*k/2, y1+22, `R$ ${cash}`);
   s += `<rect x="70" y="${y2}" width="${_f(cash*k)}" height="34" rx="6" class="geo-face top"/><rect x="${_f(70+cash*k)}" y="${y2}" width="${_f((total-cash)*k)}" height="34" rx="6" style="fill:rgba(255,138,76,.55)"/>`;
-  s += cvT(64, y2+22, 'a prazo', '', 'end').replace('class="geo-lbl', 'font-size="12" class="geo-lbl') + cvT(70+cash*k/2, y2+22, label);
+  s += cvT(64, y2+22, 'a prazo', '', 'end').replace('class="geo-lbl', 'style="font-size:12px" class="geo-lbl') + cvT(70+cash*k/2, y2+22, label);
   s += cvT(70+cash*k+(total-cash)*k/2, y2+56, `juros: R$ ${total-cash}`, 'geo-lbl-h');
   return cvSVG(W, H, s, 'À vista e a prazo');
 }
@@ -426,7 +426,7 @@ function payTimelineSVG(cash, now, later){
   s += cvDot(70, y, 6) + cvDot(250, y, 6) + cvT(70, y+24, 'hoje') + cvT(250, y+24, '1 mês');
   s += cvT(70, y-14, `paga R$ ${now}`) + cvT(250, y-14, `paga R$ ${later}`, 'geo-lbl-h');
   s += `<path d="M78 ${y-34} Q 160 ${y-64} 242 ${y-34}" fill="none" stroke="#FF8A4C" stroke-width="2" stroke-dasharray="5 4"/>`;
-  s += cvT(160, y-54, `deve R$ ${cash-now}`).replace('class="geo-lbl', 'font-size="12" class="geo-lbl');
+  s += cvT(160, y-54, `deve R$ ${cash-now}`).replace('class="geo-lbl', 'style="font-size:12px" class="geo-lbl');
   s += cvT(W/2, H-12, `juros: ${later} − ${cash-now} = R$ ${later-(cash-now)}`, 'geo-lbl-h');
   return cvSVG(W, H, s, 'Linha do tempo das parcelas');
 }

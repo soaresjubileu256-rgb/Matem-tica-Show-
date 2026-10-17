@@ -3825,3 +3825,11 @@ html, body{-webkit-tap-highlight-color:transparent; overscroll-behavior-y:none;}
 .iq-review .rv-opt .l{font-family:'Inter',sans-serif;}
 .iq-why{margin:10px 0 4px; padding:10px 12px; border-radius:12px; font-size:13.5px; line-height:1.5; color:var(--ink); background:rgba(255,92,122,.1); border:1px solid rgba(255,92,122,.35);}
 .iq-steps{margin:8px 0 0; padding-left:20px; line-height:1.6; font-size:14px; color:var(--ink);}
+/* figuras dos simulados: texto em tamanho normal mesmo dentro do cartão da questão */
+.iq-vis .geo-lbl{font-size:13px;}
+.iq-vis .geo-fig{width:100%;}
+.iq-grid{stroke:var(--border); stroke-width:1;}
+.iq-axis{stroke:var(--ink-soft); stroke-width:1.2;}
+.iq-tick{fill:var(--ink-soft) !important;}
+.iq-bar{fill:#6B8CFF; fill-opacity:.85;}
+.iq-mesh{stroke:rgba(107,140,255,.45); stroke-width:.8;}
