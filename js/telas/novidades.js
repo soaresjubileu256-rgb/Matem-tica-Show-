@@ -10,6 +10,10 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
+  {v:18, date:'2026-10-17', title:'Loja do Pi e ajudas com moedas', items:[
+    {ico:'🛍️', t:'Loja do Pi', d:'Use suas moedas pra trocar o chapéu e os acessórios do Pi, a moldura do avatar, o fundo do cartão e a comemoração. Tem até uma coroa de ouro rara!', go:'loja'},
+    {ico:'✂️', t:'Ajudas nas fases', d:'Na Trilha e na Arena: 50/50 tira duas erradas (15 moedas) e +1 vida (20 moedas), com limite por dia.', go:'home'},
+  ]},
   {v:17, date:'2026-10-17', title:'Simulados no estilo de cada prova', items:[
     {ico:'📝', t:'Simulado ENEM, ETEC, Fuvest, Unicamp, Unesp e OBMEP', d:'Na aba Provas, cada prova tem o seu simulado com questões de interpretação no estilo dela: situações do dia a dia, tabelas, gráficos e figuras, com alternativas e tempo. Na correção, cada alternativa errada explica a pegadinha.', go:'exams'},
     {ico:'📜', t:'Missões novas todo dia', d:'Agora são 3 missões sorteadas por dia. Concluiu? Novas só amanhã.', go:'home'},

@@ -95,12 +95,8 @@ function mascotSVG(mood, size){
     ${eyes}
     ${mouth}
     <path d="M40 90 l10 4 l-10 4 Z M60 90 l-10 4 l10 4 Z" fill="#FF5C7A"/><circle cx="50" cy="94" r="3" fill="#FFB800"/>
-    <g transform="rotate(-8 50 30)">
-      <ellipse cx="50" cy="32" rx="25" ry="5" fill="url(#${id}h)"/>
-      <rect x="36" y="6" width="28" height="26" rx="4" fill="url(#${id}h)"/>
-      <rect x="36" y="23" width="28" height="5" fill="#B23FE0"/>
-      <image href="${LOGO_URI}" x="40.5" y="5" width="19" height="19" preserveAspectRatio="xMidYMid meet"/>
-    </g>
+    ${mascotAccSVG()}
+    ${mascotHatSVG(id)}
   </svg>`;
 }
 function mascotBubble(text, mood){
@@ -228,7 +224,7 @@ function lessonAdvance(sess){
   if(sess.cleared >= sess.needed){ sess.finished = true; return; }
   const newLeft = sess.needed - sess.cleared - sess.retry.length;
   if(newLeft > 0){ sess.q = newLessonQuestion(sess); sess.asked++; }
-  else { const q = sess.retry.shift(); q.opts = buildOptions(q.ex); q.retry = true; sess.q = q; }
+  else { const q = sess.retry.shift(); q.opts = buildOptions(q.ex); q.out = []; q.cut = null; q.retry = true; sess.q = q; }
 }
 
 /* ---------- tela da fase / quiz ---------- */
@@ -308,7 +304,7 @@ function lessonScreen(){
   q.opts.forEach((o,i)=>{
     let cls = isQuiz ? 'quiz-opt' : 'mc-opt';
     if(sess.selected===i) cls += ' sel';
-    const isOut = isQuiz ? (q.cut||[]).includes(i) : (q.out||[]).includes(i);
+    const isOut = (q.cut||[]).includes(i) || (!isQuiz && (q.out||[]).includes(i));
     if(isOut) cls += ' out';
     if(sess.checked){ if(o.ok) cls += ' right'; else if(sess.selected===i) cls += ' wrongpick'; else if(!isOut) cls += ' dim'; }
     const b = h(`<button type="button" class="${cls}">${isQuiz ? `<span class="shape">${shapes[i]}</span>` : `<span class="key">${shapes[i]}</span>`}<span class="lbl mono"></span></button>`);
@@ -331,6 +327,7 @@ function lessonScreen(){
     if(tip) c.appendChild(tip);
   }
   c.appendChild(opts);
+  if(paidHelpsAllowed(sess)) c.appendChild(paidHelpsBar(sess));
   if(!isQuiz && sess.tryAgain && !sess.checked){
     const tries = (q.out||[]).length;
     const hintHtml = HINTS[q.subjectId];

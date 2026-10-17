@@ -390,13 +390,19 @@ function launchConfetti(count){
       w: 6+Math.random()*6, h: 8+Math.random()*8, r: Math.random()*6, vr: (Math.random()-.5)*.4,
       c: colors[Math.floor(Math.random()*colors.length)],
     }));
+    // efeito comprado na Loja do Pi: emojis no lugar dos papeizinhos
+    const fx = typeof shopItem==='function' && currentUser ? shopItem(shopEquipped('fx')) : null;
+    const emo = fx && fx.emo;
+    if(emo){ parts.forEach(p=>{ p.e = emo[Math.floor(Math.random()*emo.length)]; p.s = 16+Math.random()*12; p.vr *= .4; }); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; }
     const start = performance.now();
     (function frame(t){
       ctx.clearRect(0,0,innerWidth,innerHeight);
       parts.forEach(p=>{
         p.vy += .35; p.vx *= .99; p.x += p.vx; p.y += p.vy; p.r += p.vr;
         ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.r); ctx.fillStyle = p.c;
-        ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h); ctx.restore();
+        if(p.e){ ctx.font = `${p.s}px sans-serif`; ctx.fillText(p.e, 0, 0); }
+        else ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
+        ctx.restore();
       });
       if(t-start < 3200) requestAnimationFrame(frame); else cv.remove();
     })(start);
@@ -471,13 +477,14 @@ function playerCard(){
       </div>
       <div class="pc-stats four">
         <div class="pc-stat pc-streak ${streak?'':'off'} ${streak && !playedToday()?'warn':''}"><b><span class="flame">🔥</span> ${streak}</b><span>${streak && !playedToday()?'jogue hoje!':'ofensiva'}</span></div>
-        <div class="pc-stat"><b>🪙 ${gemsNow()}</b><span>moedas</span></div>
+        <div class="pc-stat pc-coins"><b>🪙 ${gemsNow()}</b><span>loja</span></div>
         <div class="pc-stat"><b>❤️ ${heartsNow()}</b><span>vidas</span></div>
         <div class="pc-stat"><b>🏅 ${got}</b><span>medalhas</span></div>
       </div>
     </button>`);
   card.onclick = ()=> go('achievements');
   card.querySelector('.pc-streak').onclick = e=>{ e.stopPropagation(); showStreakPanel(); };
+  card.querySelector('.pc-coins').onclick = e=>{ e.stopPropagation(); go('loja'); };
   return card;
 }
 function missionsCard(){
