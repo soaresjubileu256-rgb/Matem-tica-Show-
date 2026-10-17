@@ -45,40 +45,58 @@ function iqMC(correct, wrongs, o){
 function iqTable(head, rows, cls){ return `<table class="mini-table iq-table ${cls||''}"><tr>${head.map(x=>`<th>${x}</th>`).join('')}</tr>${rows.map(r=>`<tr>${r.map(x=>`<td>${x}</td>`).join('')}</tr>`).join('')}</table>`; }
 /* cartões coloridos (como rótulos de produtos) */
 function iqCards(items){ const cols = ['#4C7DFF','#12B886','#B23FE0','#FF7A00','#E0A000','#F06595']; return `<div class="iq-cards">${items.map((it,i)=>`<div style="--c:${cols[i%cols.length]}"><b>${it.t}</b>${it.lines.map(l=>`<span>${l}</span>`).join('')}</div>`).join('')}</div>`; }
-/* gráfico de colunas (vertical) ou de barras (horizontal) */
+/* texto pequeno das figuras (tamanho fixo, mesmo dentro do cartão da questão) */
+function iqT(x, y, t, size, cls, anchor){ return `<text x="${_f(x)}" y="${_f(y)}" text-anchor="${anchor||'middle'}" class="geo-lbl ${cls||''}" style="font-size:${size||12}px">${t}</text>`; }
+/* escala "bonita" pro eixo: 0, passo, 2·passo… até passar do máximo */
+function iqNiceStep(max){ const raw = max/4, p = Math.pow(10, Math.floor(Math.log10(raw))), m = raw/p; return (m<=1?1:m<=2?2:m<=2.5?2.5:m<=5?5:10)*p; }
+/* gráfico de colunas (vertical) ou de barras (horizontal), com grade discreta e valor em cada barra */
 function iqBarsSVG(labels, vals, o){
   o = o || {};
-  const W = 320, max = Math.max(...vals) * 1.15;
+  const W = 320, step = iqNiceStep(Math.max(...vals)), top = Math.ceil(Math.max(...vals)*1.08/step)*step;
+  let s = o.title ? iqT(W/2, 15, o.title, 12.5) : '';
   if(o.horizontal){
-    const rowH = 26, H = 30 + labels.length*rowH + 10, x0 = 54, wMax = W - x0 - 20;
-    let s = o.title ? cvT(W/2, 16, o.title).replace('class="geo-lbl', 'font-size="12" class="geo-lbl') : '';
-    labels.forEach((l,i)=>{ const y = 26 + i*rowH, w = vals[i]/max*wMax;
-      s += cvT(x0-6, y+15, l, '', 'end').replace('class="geo-lbl', 'font-size="12" class="geo-lbl');
-      s += `<rect x="${x0}" y="${y}" width="${_f(w)}" height="${rowH-8}" rx="3" class="geo-face top"/>` + cvT(x0+w-4, y+14, iqNum(vals[i]), '', 'end').replace('class="geo-lbl', 'font-size="11.5" class="geo-lbl'); });
+    const rowH = 25, x0 = 46, x1 = W - 34, y0 = o.title ? 26 : 8, H = y0 + labels.length*rowH + 22, X = v=> x0 + v/top*(x1-x0);
+    for(let v=0; v<=top+1e-9; v+=step){ s += cvL(X(v), y0-2, X(v), y0+labels.length*rowH, 'iq-grid') + iqT(X(v), y0+labels.length*rowH+14, iqNum(v), 10, 'iq-tick'); }
+    labels.forEach((l,i)=>{ const y = y0 + i*rowH + 4, w = X(vals[i]) - x0;
+      s += iqT(x0-6, y+12, l, 11.5, '', 'end');
+      s += `<rect x="${x0}" y="${y}" width="${_f(w)}" height="${rowH-9}" rx="3" class="iq-bar"/>` + iqT(x0+w+4, y+12, iqNum(vals[i]), 11, '', 'start'); });
     return cvSVG(W, H, s, o.title || 'Gráfico de barras');
   }
-  const H = 210, y0 = 170, x0 = 30, n = labels.length, bw = (W - x0 - 14)/n;
-  let s = o.title ? cvT(W/2, 16, o.title).replace('class="geo-lbl', 'font-size="12" class="geo-lbl') : '';
-  s += cvL(x0, y0, W-8, y0) + cvL(x0, 28, x0, y0);
-  vals.forEach((v,i)=>{ const hh = v/max*(y0-34), x = x0 + i*bw + bw*0.18;
-    s += `<rect x="${_f(x)}" y="${_f(y0-hh)}" width="${_f(bw*0.64)}" height="${_f(hh)}" rx="3" class="geo-face top"/>`;
-    s += cvT(x+bw*0.32, y0-hh-5, iqNum(v)).replace('class="geo-lbl', 'font-size="11.5" class="geo-lbl');
-    s += cvT(x+bw*0.32, y0+15, labels[i]).replace('class="geo-lbl', 'font-size="10.5" class="geo-lbl'); });
+  const H = 214, x0 = 34, x1 = W-8, y0 = 176, yT = o.title ? 30 : 12, n = labels.length, bw = (x1 - x0)/n, Y = v=> y0 - v/top*(y0-yT);
+  for(let v=0; v<=top+1e-9; v+=step){ s += cvL(x0, Y(v), x1, Y(v), v ? 'iq-grid' : 'iq-axis') + iqT(x0-5, Y(v)+3.5, iqNum(v), 10, 'iq-tick', 'end'); }
+  vals.forEach((v,i)=>{ const x = x0 + i*bw + bw*0.2, w = bw*0.6;
+    s += `<rect x="${_f(x)}" y="${_f(Y(v))}" width="${_f(w)}" height="${_f(y0-Y(v))}" rx="3" class="iq-bar"/>`;
+    s += iqT(x+w/2, Y(v)-5, iqNum(v), 11);
+    s += iqT(x+w/2, y0+14, labels[i], labels.some(l=>l.length>6) ? 9.5 : 11); });
   return cvSVG(W, H, s, o.title || 'Gráfico de colunas');
 }
-/* gráfico de linha simples (pontos ligados) com rótulos nos eixos */
+/* gráfico de linha com grade discreta */
 function iqLineSVG(xs, ys, o){
   o = o || {};
-  const W = 320, H = 200, x0 = 36, y0 = 166, xm = W-14, ym = 24, maxY = Math.max(...ys)*1.12, minY = Math.min(0, ...ys);
-  const X = i=> x0 + i*(xm-x0)/(xs.length-1), Y = v=> y0 - (v-minY)/(maxY-minY)*(y0-ym);
-  let s = cvL(x0, y0, xm, y0) + cvL(x0, ym-6, x0, y0);
-  s += `<polyline points="${ys.map((v,i)=>`${_f(X(i))},${_f(Y(v))}`).join(' ')}" fill="none" stroke="#FF8A4C" stroke-width="2.5"/>`;
-  ys.forEach((v,i)=>{ s += cvDot(X(i), Y(v), 3.5) + cvT(X(i), y0+15, xs[i]).replace('class="geo-lbl', 'font-size="10.5" class="geo-lbl'); if(o.values) s += cvT(X(i), Y(v)-8, iqNum(v)).replace('class="geo-lbl', 'font-size="10.5" class="geo-lbl'); });
-  if(o.yLabel) s += cvT(x0-4, ym-10, o.yLabel, '', 'start').replace('class="geo-lbl', 'font-size="10.5" class="geo-lbl');
-  if(o.xLabel) s += cvT(xm, y0+30, o.xLabel, '', 'end').replace('class="geo-lbl', 'font-size="10.5" class="geo-lbl');
-  return cvSVG(W, H + (o.xLabel?10:0), s, o.title || 'Gráfico de linha');
+  const W = 320, H = 206, x0 = 38, x1 = W-12, y0 = 168, yT = 22, step = iqNiceStep(Math.max(...ys)), top = Math.ceil(Math.max(...ys)*1.1/step)*step;
+  const X = i=> x0 + i*(x1-x0)/(xs.length-1), Y = v=> y0 - v/top*(y0-yT);
+  let s = '';
+  for(let v=0; v<=top+1e-9; v+=step){ s += cvL(x0, Y(v), x1, Y(v), v ? 'iq-grid' : 'iq-axis') + iqT(x0-5, Y(v)+3.5, iqNum(v), 10, 'iq-tick', 'end'); }
+  s += cvL(x0, yT-6, x0, y0, 'iq-axis');
+  s += `<polyline points="${ys.map((v,i)=>`${_f(X(i))},${_f(Y(v))}`).join(' ')}" fill="none" stroke="#FF8A4C" stroke-width="2.5" stroke-linejoin="round"/>`;
+  ys.forEach((v,i)=>{ s += cvDot(X(i), Y(v), 3.5) + iqT(X(i), y0+14, xs[i], 10.5, 'iq-tick'); });
+  if(o.yLabel) s += iqT(x0-30, 12, o.yLabel, 11, '', 'start');
+  if(o.xLabel) s += iqT(x1, y0+30, o.xLabel, 11, '', 'end');
+  return cvSVG(W, H, s, o.title || 'Gráfico de linha');
 }
-
+/* triângulo no plano cartesiano, com grade e coordenadas nos vértices */
+function iqPlaneTriangleSVG(P, names){
+  const xs = P.map(p=>p[0]), ys = P.map(p=>p[1]);
+  const lo = Math.min(0, ...xs, ...ys) - 1, hi = Math.max(0, ...xs, ...ys) + 1, W = 320, PAD = 52, k = (W-2*PAD)/(hi-lo), X = v=> PAD + (v-lo)*k, Y = v=> W-PAD+10 - (v-lo)*k;
+  let s = '';
+  for(let v=Math.ceil(lo); v<=hi; v++){ s += cvL(X(v), Y(lo), X(v), Y(hi), 'iq-grid') + cvL(X(lo), Y(v), X(hi), Y(v), 'iq-grid'); }
+  s += cvL(X(lo), Y(0), X(hi), Y(0), 'iq-axis') + cvL(X(0), Y(lo), X(0), Y(hi), 'iq-axis') + iqT(X(hi)-2, Y(0)-6, 'x', 12, '', 'end') + iqT(X(0)+6, Y(hi)+12, 'y', 12, '', 'start');
+  s += `<polygon points="${P.map(p=>`${_f(X(p[0]))},${_f(Y(p[1]))}`).join(' ')}" class="geo-face front" style="stroke:#FF8A4C"/>`;
+  const cx = xs.reduce((a,b)=>a+b,0)/3, cy = ys.reduce((a,b)=>a+b,0)/3;
+  P.forEach((p,i)=>{ const dx = p[0]-cx, dy = p[1]-cy, l = Math.hypot(dx,dy)||1;
+    s += cvDot(X(p[0]), Y(p[1]), 4) + iqT(X(p[0]) + dx/l*16, Y(p[1]) - dy/l*14 + 4, `${names[i]}(${nm(p[0])}, ${nm(p[1])})`, 11.5, 'geo-lbl-h', dx>0.3 ? 'start' : dx<-0.3 ? 'end' : 'middle'); });
+  return cvSVG(W, W-30, s, 'Triângulo no plano cartesiano');
+}
 /* =================== ENEM =================== */
 const IQ_ENEM = [
   // custo por quilo (melhor compra)
@@ -187,7 +205,11 @@ const IQ_ETEC = [
     const L = pick([300,400,500,600,800]), h1 = pick([1.2,1.5,1.7,2]), h2 = pick([0.3,0.4,0.5]);
     const area = Math.round(L*(h1+h2));
     return {subj:'geometria', topic:'Área', text:`<p>Para proteger uma reserva, será construída uma cerca reta de ${L} m de comprimento. Cada trecho de cerca tem uma tela de malha grande e, embaixo dela, uma faixa de tela de malha pequena, como no esquema.</p>`,
-      visual: cvSVG(320, 170, `<rect x="40" y="20" width="220" height="${_f(h1*60)}" class="geo-face top"/><rect x="40" y="${_f(20+h1*60)}" width="220" height="${_f(h2*60)}" class="geo-face front"/>${cvT(150, 20+h1*30+5, 'malha grande')}${cvT(150, 20+h1*60+h2*30+5, 'malha pequena').replace('class="geo-lbl','font-size="11" class="geo-lbl')}${cvT(268, 20+h1*30+5, iqNum(h1)+' m', 'geo-lbl-h', 'start')}${cvT(268, 20+h1*60+h2*30+5, iqNum(h2)+' m', 'geo-lbl-h', 'start')}${cvL(30, _f(20+(h1+h2)*60+6), 290, _f(20+(h1+h2)*60+6), 'geo-face')}`, 'Esquema da cerca'),
+      visual: (()=>{ const k = 60, yA = 16, hA = h1*k, hB = h2*k, yb = yA+hA+hB;
+        let g = '';
+        for(let x=34; x<=246; x+=16) g += cvL(x, yA, x, yA+hA, 'iq-mesh'); for(let y=yA; y<=yA+hA; y+=16) g += cvL(30, y, 250, y, 'iq-mesh');
+        for(let x=34; x<=246; x+=8) g += cvL(x, yA+hA, x, yb, 'iq-mesh'); for(let y=yA+hA; y<=yb; y+=8) g += cvL(30, y, 250, y, 'iq-mesh');
+        return cvSVG(320, yb+34, `<rect x="30" y="${yA}" width="220" height="${_f(hA)}" class="geo-face side"/><rect x="30" y="${_f(yA+hA)}" width="220" height="${_f(hB)}" class="geo-face top"/>${g}<rect x="24" y="${yA-6}" width="8" height="${_f(hA+hB+6)}" rx="2" class="geo-face front"/><rect x="248" y="${yA-6}" width="8" height="${_f(hA+hB+6)}" rx="2" class="geo-face front"/>${cvL(10, yb, 270, yb, 'iq-axis')}${iqT(140, yA+hA/2+4, 'malha grande', 12)}${iqT(140, yA+hA+hB/2+4, 'malha pequena', 10.5)}${iqT(264, yA+hA/2+4, iqNum(h1)+' m', 12, 'geo-lbl-h', 'start')}${iqT(264, yA+hA+hB/2+4, iqNum(h2)+' m', 12, 'geo-lbl-h', 'start')}${iqT(140, yb+18, 'cada trecho: tela de malha grande + malha pequena', 10, 'iq-tick')}`, 'Esquema da cerca'); })(),
       ask:'Qual é a área total aproximada de tela usada na cerca?',
       opts: iqMC(area, [[Math.round(L*h1),'Faltou a faixa de malha pequena.'],[Math.round(L*h2),'Usou só a malha pequena.'],[Math.round(2*L*(h1+h2)),'A cerca tem um lado só de tela; não dobre a área.'],[Math.round(L+h1+h2),'Área é comprimento × altura, não soma.']], {fmt:v=>iqNum(v)+' m²'}),
       steps:[`Altura total da tela: ${iqNum(h1)} + ${iqNum(h2)} = ${iqNum(h1+h2)} m`, `Área = comprimento × altura = ${L} × ${iqNum(h1+h2)} = ${iqNum(area)} m²`]};
@@ -253,20 +275,23 @@ const IQ_FUVEST = [
   ()=>{
     const names = shuffle(['País A','País B','País C','País D','País E','País F']);
     const mx = 50, my = 50;
-    const pts = names.map(n=>({n, x:randInt(10,90), y:randInt(10,90)})).filter(p=>Math.abs(p.x-mx)>8 && Math.abs(p.y-my)>8);
+    // cada país num quadrante diferente e longe dos outros, pra nenhum nome ficar em cima de outro
+    const pts = [];
+    for(const n of names){ for(let t=0;t<60;t++){ const p = {n, x:randInt(12,88), y:randInt(12,88)};
+      if(Math.abs(p.x-mx)>9 && Math.abs(p.y-my)>9 && pts.every(q=> Math.abs(q.y-p.y)>13 || Math.abs(q.x-p.x)>34)){ pts.push(p); break; } } }
     if(pts.length<5) return IQ_FUVEST[0]();
     const quad = p=> (p.x>mx?'acima':'abaixo') + '/' + (p.y>my?'acima':'abaixo');
-    const sc = 2.4, X = v=> 30 + v*sc, Y = v=> 190 - v*1.6;
-    let s = cvL(30, 190, 290, 190) + cvL(30, 20, 30, 190) + cvL(X(mx), 24, X(mx), 190, 'geo-hidden') + cvL(30, Y(my), 290, Y(my), 'geo-hidden');
-    s += cvT(X(mx)+4, 30, 'média', '', 'start').replace('class="geo-lbl','font-size="10.5" class="geo-lbl') + cvT(286, Y(my)-5, 'média', '', 'end').replace('class="geo-lbl','font-size="10.5" class="geo-lbl');
-    pts.forEach(p=>{ s += `<circle cx="${_f(X(p.x))}" cy="${_f(Y(p.y))}" r="${randInt(5,11)}" fill="rgba(76,125,255,.35)" stroke="#6B8CFF"/>` + cvT(X(p.x)+12, Y(p.y)+4, p.n, '', 'start').replace('class="geo-lbl','font-size="11" class="geo-lbl'); });
-    s += cvT(160, 208, 'renda por pessoa →').replace('class="geo-lbl','font-size="10.5" class="geo-lbl') + cvT(36, 14, '↑ anos de estudo', '', 'start').replace('class="geo-lbl','font-size="10.5" class="geo-lbl');
+    const X = v=> 34 + v*2.6, Y = v=> 196 - v*1.7;
+    let s = cvL(34, 196, 300, 196, 'iq-axis') + cvL(34, 22, 34, 196, 'iq-axis') + cvL(X(mx), 26, X(mx), 196, 'geo-hidden') + cvL(34, Y(my), 300, Y(my), 'geo-hidden');
+    s += iqT(X(mx)+4, 34, 'média da renda', 10, 'iq-tick', 'start') + iqT(298, Y(my)-5, 'média de estudo', 10, 'iq-tick', 'end');
+    pts.forEach(p=>{ const r = randInt(5,10), right = p.x < 70; s += `<circle cx="${_f(X(p.x))}" cy="${_f(Y(p.y))}" r="${r}" fill="rgba(76,125,255,.35)" stroke="#6B8CFF" stroke-width="1.5"/>` + iqT(X(p.x) + (right ? r+4 : -r-4), Y(p.y)+4, p.n, 11.5, '', right ? 'start' : 'end'); });
+    s += iqT(300, 212, 'renda por pessoa →', 10.5, '', 'end') + iqT(30, 14, '↑ anos de estudo', 10.5, '', 'start');
     const say = p=> `${p.n} tem renda por pessoa ${p.x>mx?'acima':'abaixo'} da média e anos de estudo ${p.y>my?'acima':'abaixo'} da média.`;
     const truth = pick(pts), lies = shuffle(pts.filter(p=>p!==truth)).slice(0,4);
     const flip = p=> `${p.n} tem renda por pessoa ${p.x>mx?'abaixo':'acima'} da média e anos de estudo ${p.y>my?'acima':'abaixo'} da média.`;
     const flip2 = p=> `${p.n} tem renda por pessoa ${p.x>mx?'acima':'abaixo'} da média e anos de estudo ${p.y>my?'abaixo':'acima'} da média.`;
     const opts = shuffle([{label:say(truth), ok:true}, ...lies.map((p,i)=>({label: i%2 ? flip(p) : flip2(p), ok:false, why:`No gráfico, ${p.n} fica ${p.x>mx?'à direita':'à esquerda'} da linha vertical (renda ${p.x>mx?'acima':'abaixo'} da média) e ${p.y>my?'acima':'abaixo'} da linha horizontal.`}))]);
-    return {subj:'graficos', topic:'Leitura de gráfico', text:`<p>O gráfico relaciona a renda por pessoa e a média de anos de estudo da população de alguns países. As linhas tracejadas indicam a média de cada grandeza no grupo; o tamanho de cada círculo é proporcional à população.</p>`, visual: cvSVG(320, 214, s, 'Gráfico de dispersão'),
+    return {subj:'graficos', topic:'Leitura de gráfico', text:`<p>O gráfico relaciona a renda por pessoa e a média de anos de estudo da população de alguns países. As linhas tracejadas indicam a média de cada grandeza no grupo; o tamanho de cada círculo é proporcional à população.</p>`, visual: cvSVG(320, 218, s, 'Gráfico de dispersão'),
       ask:'A partir do gráfico, é correto afirmar que', opts, steps:['Linha vertical tracejada: média da renda. À direita dela, renda acima da média.', 'Linha horizontal tracejada: média dos anos de estudo. Acima dela, estudo acima da média.', `${truth.n} está ${truth.x>mx?'à direita':'à esquerda'} e ${truth.y>my?'acima':'abaixo'}: ${say(truth)}`]};
   },
   // mínimo da quadrática em contexto
@@ -310,7 +335,7 @@ const IQ_FUVEST = [
     const A = [ax,ay], B = [ax+b, ay], C = [ax+randInt(0,b), ay+hh], area = b*hh/2;
     const pts = [{a:A[0],b:A[1],label:'A'},{a:B[0],b:B[1],label:'B'},{a:C[0],b:C[1],label:'C',hi:true}];
     return {subj:'analitica', topic:'Geometria analítica', text:`<p>No plano cartesiano, um terreno triangular tem vértices A(${nm(A[0])}, ${nm(A[1])}), B(${nm(B[0])}, ${nm(B[1])}) e C(${nm(C[0])}, ${nm(C[1])}), com as medidas em quilômetros.</p>`,
-      visual: complexPlaneSVG(pts).replace(/>real</,'>x<').replace(/>imag\.</,'>y<'),
+      visual: iqPlaneTriangleSVG([A, B, C], ['A','B','C']),
       ask:'Qual é a área desse terreno, em km²?',
       opts: iqMC(area, [[b*hh,'Faltou dividir por 2: a área do triângulo é base × altura ÷ 2.'],[(b+hh)/2,'Área é produto, não soma.'],[b*hh/4,'Dividiu por 2 duas vezes.'],[b+hh+Math.round(Math.hypot(b,hh)),'Isso parece um perímetro, não uma área.']], {fmt:v=>iqNum(v)}),
       steps:[`A e B têm o mesmo y: base AB = ${b}`, `Altura = distância de C até a reta AB = ${hh}`, `Área = ${b} × ${hh} ÷ 2 = ${iqNum(area)} km²`]};
@@ -467,10 +492,13 @@ const IQ_OBMEP = [
     const n = randInt(150,300), right = p1 + (n-1)*inc;
     const wrongs = [right+2, right-2, right+4, right-4].filter(v=> (v-p1)%inc!==0);
     const opts = shuffle([{label:`${right} cm`, ok:true}, ...wrongs.slice(0,4).map(v=>({label:`${v} cm`, ok:false, why:`Os perímetros são ${p1}, ${p1+inc}, ${p1+2*inc}, …: deixam resto ${p1%inc} na divisão por ${inc}. ${v} deixa resto ${((v%inc)+inc)%inc}.`}))]).sort((a,b)=>parseInt(a.label)-parseInt(b.label));
-    const u = 14;
-    let s = '', x = 14;
-    [1,2,3].forEach(k=>{ for(let i=0;i<k;i++) s += `<rect x="${x+i*u}" y="${70-i*u}" width="${u*2}" height="${u*2}" class="geo-face top"/>`; s += cvT(x+u*(k+1)/2+u/2, 120, `Figura ${k}`).replace('class="geo-lbl','font-size="11" class="geo-lbl'); x += u*(k+1)+u+30; });
-    return {subj:'padroes', topic:'Sequências e padrões', text:`<p>Pedro desenha figuras encaixando quadrados em degrau. O contorno da Figura 1 mede ${p1} cm, e cada figura nova tem o contorno ${inc} cm maior que a anterior.</p>`, visual: cvSVG(320, 130, s, 'Figuras em degrau'),
+    // degraus: a figura k tem k colunas de quadradinhos (1, 2, …, k), alinhadas embaixo
+    const u = 13, base = 96;
+    let s = '', x = 16;
+    [1,2,3].forEach(k=>{ for(let c=0;c<k;c++) for(let r=0;r<=c;r++) s += `<rect x="${x+c*u}" y="${base-(r+1)*u}" width="${u}" height="${u}" class="geo-face top" style="stroke-width:1.5"/>`;
+      s += iqT(x+k*u/2, base+18, `Figura ${k}`, 11); x += k*u + 46; });
+    s += iqT(x-20, base-10, '…', 16);
+    return {subj:'padroes', topic:'Sequências e padrões', text:`<p>Pedro desenha figuras encaixando quadrados em degrau. O contorno da Figura 1 mede ${p1} cm, e cada figura nova tem o contorno ${inc} cm maior que a anterior.</p>`, visual: cvSVG(320, 122, s, 'Figuras em degrau'),
       ask:'Qual das alternativas pode ser o comprimento do contorno de alguma figura desenhada por Pedro?', opts,
       steps:[`Contorno da figura n: ${p1} + (n − 1) × ${inc}`, `Todos deixam o mesmo resto (${p1%inc}) na divisão por ${inc}.`, `Só ${right} cm tem esse resto (é a figura ${n}).`]};
   },
