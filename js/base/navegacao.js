@@ -101,44 +101,42 @@ function topbar(title, showBack, onBack){
    a aba fica acesa (ex.: o Desafio do Dia tem 3 telas). Telas de jogo/sessão não têm abas. */
 const SECTION_TABS = [
   {id:'progress', tabs:[
-    {screen:'progress', ico:'📈', label:'Resumo', c:'#4C7DFF'},
-    {screen:'achievements', ico:'🏅', label:'Conquistas', c:'#FFB800'},
-    {screen:'certificates', ico:'📜', label:'Certificados', c:'#12B886'},
-    {screen:'report', ico:'📊', label:'Relatório', c:'#B23FE0'},
-    {screen:'history', ico:'🕘', label:'Histórico', c:'#33D2E3'},
+    {screen:'progress', ico:'📈', label:'Resumo'},
+    {screen:'report', ico:'📊', label:'Relatório'},
+    {screen:'history', ico:'🕘', label:'Histórico'},
+    {screen:'achievements', ico:'🏅', label:'Conquistas'},
+    {screen:'certificates', ico:'📜', label:'Certificados'},
   ]},
-  // 1ª linha: aprender; 2ª linha: praticar
   {id:'study', tabs:[
-    {screen:'content', ico:'📖', label:'Aprender', c:'#4C7DFF'},
-    {screen:'stepSetup', ico:'🪜', label:'Passo a passo', short:'Passos', c:'#12B886'},
-    {screen:'geoLab', ico:'🔺', label:'Laboratório', extra:{geoBack:'content'}, c:'#FF7A00'},
-    {screen:'tabuada', ico:'✖️', label:'Tabuada', c:'#33D2E3'},
-    {screen:'exams', ico:'🎓', label:'Provas', c:'#B23FE0'},
-    {screen:'exercisesSubjects', ico:'✍️', label:'Exercícios', c:'#4C7DFF'},
-    {screen:'personalizedSetup', ico:'🎯', label:'Treino', c:'#FF5C7A'},
-    {screen:'challengeDifficulty', ico:'🏆', label:'Desafios', c:'#FFB800'},
-    {screen:'errors', ico:'🔁', label:'Erros', c:'#E0405E'},
+    {screen:'content', ico:'📖', label:'Aprender'},
+    {screen:'exercisesSubjects', ico:'✎', label:'Exercícios'},
+    {screen:'exams', ico:'🎓', label:'Provas'},
+    {screen:'personalizedSetup', ico:'🎯', label:'Treino'},
+    {screen:'challengeDifficulty', ico:'🏆', label:'Desafios'},
+    {screen:'stepSetup', ico:'🪜', label:'Passo a passo'},
+    {screen:'tabuada', ico:'✖️', label:'Tabuada'},
+    {screen:'errors', ico:'🔁', label:'Erros'},
+    {screen:'geoLab', ico:'🔺', label:'Laboratório', extra:{geoBack:'content'}},
   ]},
-  // 1ª linha: competir; 2ª linha: jogos rápidos
   {id:'arena', tabs:[
-    {screen:'arena', ico:'⚔️', label:'Arena', c:'#B23FE0'},
-    {screen:'dailyIntro', ico:'📅', label:'Desafio do Dia', match:['dailyIntro','arenaDaily','dailyReview'], c:'#FF5C7A'},
-    {screen:'examSetup', ico:'📝', label:'Simulado', match:['examSetup','examResult'], c:'#4C7DFF'},
-    {screen:'quizSetup', ico:'🎤', label:'Quiz', c:'#FFB800'},
-    {screen:'lightning', ico:'⚡', label:'Relâmpago', c:'#33D2E3'},
-    {screen:'duel', ico:'🤝', label:'Duelo', c:'#12B886'},
+    {screen:'arena', ico:'⚔️', label:'Arena'},
+    {screen:'dailyIntro', ico:'📅', label:'Desafio do Dia', match:['dailyIntro','arenaDaily','dailyReview']},
+    {screen:'examSetup', ico:'📝', label:'Simulado', match:['examSetup','examResult']},
+    {screen:'lightning', ico:'⚡', label:'Relâmpago'},
+    {screen:'quizSetup', ico:'🎤', label:'Quiz'},
+    {screen:'duel', ico:'🤝', label:'Duelo'},
   ]},
   {id:'tools', tabs:[
-    {screen:'calculator', ico:'🧮', label:'Calculadora', c:'#4C7DFF'},
-    {screen:'solve', ico:'🔎', label:'Resolver', c:'#12B886'},
-    {screen:'notebook', ico:'📓', label:'Caderno', c:'#FFB800'},
+    {screen:'solve', ico:'🔎', label:'Resolver'},
+    {screen:'calculator', ico:'🧮', label:'Calculadora'},
+    {screen:'notebook', ico:'✏️', label:'Caderno'},
   ]},
   {id:'profile', tabs:[
-    {screen:'profile', ico:'👤', label:'Perfil', c:'#4C7DFF'},
-    {screen:'loja', ico:'🛍️', label:'Loja', c:'#FFB800'},
-    {screen:'settings', ico:'⚙️', label:'Ajustes', c:'#9FA6C8'},
-    {screen:'news', ico:'🔔', label:'Novidades', c:'#FF5C7A'},
-    {screen:'help', ico:'📘', label:'Ajuda', c:'#33D2E3'},
+    {screen:'profile', ico:'👤', label:'Perfil'},
+    {screen:'loja', ico:'🛍️', label:'Loja'},
+    {screen:'settings', ico:'⚙️', label:'Configurações'},
+    {screen:'news', ico:'🔔', label:'Novidades'},
+    {screen:'help', ico:'📘', label:'Ajuda'},
   ]},
 ];
 function sectionOf(screen){
@@ -149,12 +147,10 @@ const secTabsScroll = {}; // posição de cada barra de abas, pra não voltar pr
 function sectionTabsEl(){
   const found = sectionOf(state.screen);
   if(!found) return null;
-  // todas as abas à vista, em grade: até 5 numa linha; com mais, duas linhas
-  const n = found.sec.tabs.length, cols = n<=5 ? n : Math.ceil(n/2);
-  const bar = h(`<nav class="sec-tabs ${n>5?'two':''}" role="tablist" aria-label="Páginas desta seção" style="--cols:${cols}"></nav>`);
+  const bar = h(`<nav class="sec-tabs" role="tablist" aria-label="Páginas desta seção"></nav>`);
   found.sec.tabs.forEach(t=>{
     const on = t===found.tab;
-    const b = h(`<button type="button" role="tab" class="sec-tab ${on?'on':''}" aria-selected="${on}" aria-label="${t.label}" style="--tc:${t.c||'#8C7BFF'}"><span class="st-i">${t.ico}</span><span class="st-l">${t.short||t.label}</span></button>`);
+    const b = h(`<button type="button" role="tab" class="sec-tab ${on?'on':''}" aria-selected="${on}"><span>${t.ico}</span>${t.label}</button>`);
     b.onclick = ()=>{ if(!on) go(t.screen, t.extra||{}); };
     bar.appendChild(b);
   });
