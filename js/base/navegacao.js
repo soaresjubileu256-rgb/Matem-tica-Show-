@@ -133,6 +133,7 @@ const SECTION_TABS = [
   ]},
   {id:'profile', tabs:[
     {screen:'profile', ico:'👤', label:'Perfil'},
+    {screen:'loja', ico:'🛍️', label:'Loja'},
     {screen:'settings', ico:'⚙️', label:'Configurações'},
     {screen:'news', ico:'🔔', label:'Novidades'},
     {screen:'help', ico:'📘', label:'Ajuda'},
@@ -195,7 +196,7 @@ const BN_ICONS = {
 };
 const STUDY_SCREENS = ['content','subjectDetail','geoLab','cardsDeck','exercisesSubjects','exerciseDifficulty','exerciseSession','personalizedSetup','personalizedSession','challengeDifficulty','challengeSession','tabuada','errors','reviewErrorsSession','stepSetup','stepGuide','exams'];
 const BOTTOM_NAV_ITEMS = [
-  {id:'home', screen:'home', label:'Início', group:['home','calculator','solve','notebook','notePage','help','news','profile','settings','placement','plan']},
+  {id:'home', screen:'home', label:'Início', group:['home','calculator','solve','notebook','notePage','help','news','profile','loja','settings','placement','plan']},
   {id:'path', screen:'path', label:'Trilha', group:['path']},
   {id:'study', screen:'content', label:'Estudar', group:STUDY_SCREENS},
   {id:'arena', screen:'arena', label:'Arena', group:['arena','arenaDaily','dailyIntro','dailyReview','examSetup','examResult','lightning','quizSetup','duel']},

@@ -145,6 +145,7 @@ async function profileScreen(){
   };
   const group = t=> menu.appendChild(h(`<div class="pm-group">${t}</div>`));
   group('Estudo');
+  item('🛍️', 'Loja do Pi', `Você tem ${gemsNow()} moedas`, ()=> go('loja'), '', '#FFB800');
   item('🧭', 'Teste de nivelamento', studyData().placement ? `Último: ${studyData().placement.ok}/${studyData().placement.n}` : 'Descubra por onde começar', ()=> startPlacement(), '', '#33D2E3');
   item('🗺️', 'Plano de estudos', studyData().plan ? `Prova em ${studyData().plan.examDate.split('-').reverse().join('/')}` : 'Monte um plano até o dia da prova', ()=> go('plan'), '', '#12B886');
   group('Ajuda e conta');

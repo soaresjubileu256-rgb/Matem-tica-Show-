@@ -3842,3 +3842,46 @@ html.theme-switching *:not(.theme-veil), html.theme-switching *::before, html.th
 /* uma camada com a cor do tema antigo esmaece por cima do tema novo */
 .theme-veil{position:fixed; inset:0; z-index:2147483646; pointer-events:none; opacity:1; transition:opacity .36s ease-out; will-change:opacity;}
 .theme-veil.out{opacity:0;}
+
+/* ================= LOJA DO PI ================= */
+.loja-coins{margin-left:auto; padding:6px 12px; border-radius:999px; background:rgba(255,184,0,.15); border:1.5px solid rgba(255,184,0,.45); font:800 14px 'Inter',sans-serif; color:var(--ink); white-space:nowrap;}
+.loja-hero{display:flex; align-items:center; gap:14px; padding:14px 16px; margin:4px 0 14px; border-radius:20px; background:linear-gradient(135deg, rgba(76,125,255,.18), rgba(178,63,224,.18)); border:1px solid rgba(140,123,255,.3);}
+.loja-hero b{display:block; font:700 18px 'Fraunces',serif; color:var(--ink); margin-bottom:4px;}
+.loja-hero small{display:block; font-size:12.5px; line-height:1.45; color:var(--ink-soft);}
+.loja-pi{flex:none;}
+.loja-cats{margin-bottom:12px;}
+.loja-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(104px,1fr)); gap:10px;}
+.loja-item{display:flex; flex-direction:column; align-items:center; gap:5px; padding:14px 8px 12px; border-radius:16px; border:1.5px solid var(--border); background:var(--white); color:var(--ink); cursor:pointer; text-align:center; font-family:'Inter',sans-serif; transition:transform .1s, border-color .15s;}
+.loja-item:active{transform:scale(.96);}
+.loja-item .li-ico{font-size:34px; line-height:1.1;}
+.loja-item b{font-size:12.5px; font-weight:700; line-height:1.25;}
+.loja-item small{font-size:12px; font-weight:800; color:var(--amber-deep, #E09A00);}
+.loja-item.on{border-color:#12B886; background:rgba(18,184,134,.1);}
+.loja-item.on small{color:#12B886;}
+.loja-item.rare{border-color:rgba(255,184,0,.7); background:linear-gradient(160deg, rgba(255,212,92,.16), rgba(178,63,224,.12));}
+.loja-item.poor{opacity:.55;}
+.loja-helps{margin-top:16px; padding:12px 14px; border-radius:14px; background:rgba(255,184,0,.08); border:1px dashed rgba(255,184,0,.5);}
+.loja-helps > b{display:block; font-size:14px; color:var(--ink); margin-bottom:4px;}
+.loja-helps small{font-size:12.5px; line-height:1.5; color:var(--ink-soft);}
+.pc-coins{cursor:pointer;}
+
+/* ajudas pagas nas fases */
+.paid-helps{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:12px 0 4px;}
+.ph{display:grid; grid-template-columns:auto 1fr; grid-template-rows:auto auto; column-gap:8px; align-items:center; text-align:left; padding:8px 12px; border-radius:14px; border:1.5px solid rgba(255,184,0,.45); background:rgba(255,184,0,.1); color:var(--ink); font-family:'Inter',sans-serif; cursor:pointer;}
+.ph span{grid-row:1 / 3; font-size:20px;}
+.ph b{font-size:13.5px; font-weight:800;}
+.ph small{font-size:11px; color:var(--ink-soft); font-weight:600;}
+.ph.off{opacity:.45;}
+.ph:active{transform:scale(.97);}
+
+/* molduras do avatar */
+html[data-frame="frame_ouro"] .profile-btn-avatar, html[data-frame="frame_ouro"] .pf-av{box-shadow:0 0 0 3px #FFD45C, 0 0 0 5px #B07800, 0 0 14px rgba(255,212,92,.6) !important;}
+html[data-frame="frame_neon"] .profile-btn-avatar, html[data-frame="frame_neon"] .pf-av{box-shadow:0 0 0 3px #33D2E3, 0 0 12px #33D2E3, 0 0 22px rgba(178,63,224,.7) !important;}
+html[data-frame="frame_arco"] .profile-btn-avatar, html[data-frame="frame_arco"] .pf-av{box-shadow:0 0 0 2px #FF5C7A, 0 0 0 4px #FFB800, 0 0 0 6px #7CFF6B, 0 0 0 8px #4C7DFF !important;}
+html[data-frame="frame_fogo"] .profile-btn-avatar, html[data-frame="frame_fogo"] .pf-av{box-shadow:0 0 0 3px #FF7A00, 0 0 0 5px #FF3D3D, 0 -4px 18px rgba(255,122,0,.8) !important;}
+
+/* fundo do cartão do jogador */
+html[data-card="card_oceano"] .player-card{background:linear-gradient(135deg, #0B3D6B 0%, #0F6B8A 55%, #12B8A6 100%) !important;}
+html[data-card="card_sol"] .player-card{background:linear-gradient(135deg, #6B1B4A 0%, #B23F3F 55%, #E0861B 100%) !important;}
+html[data-card="card_floresta"] .player-card{background:linear-gradient(135deg, #0F3B2A 0%, #1B6B45 55%, #4C8A1B 100%) !important;}
+html[data-card="card_galaxia"] .player-card{background:radial-gradient(circle at 80% 10%, rgba(255,255,255,.25) 0 1px, transparent 2px), radial-gradient(circle at 20% 70%, rgba(255,255,255,.3) 0 1px, transparent 2px), radial-gradient(circle at 60% 50%, rgba(255,255,255,.2) 0 1px, transparent 2px), linear-gradient(135deg, #0B0726 0%, #3A1B7A 50%, #7A1B6B 100%) !important;}
