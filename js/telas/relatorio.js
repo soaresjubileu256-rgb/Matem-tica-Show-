@@ -172,10 +172,94 @@ async function reportScreen(){
     catch(e){ showConfirm({icon:'📋', title:'Copie o resumo', message:text, ok:'Ok', cancel:'Fechar'}); }
   };
   const printBtn = h(`<button class="btn secondary">🖨️ Imprimir / PDF</button>`);
-  printBtn.onclick = ()=> window.print();
+  printBtn.onclick = ()=> printReport(r, {badge, achs, genAt});
   actions.appendChild(shareBtn); actions.appendChild(printBtn);
   c.appendChild(actions);
 
   wrap.appendChild(c);
   return wrap;
+}
+
+/* ---------- impressão / PDF do relatório ----------
+   Monta uma folha A4 própria (documento limpo, cabe numa página) em #rp-print e imprime só ela,
+   do mesmo jeito que o certificado. */
+function reportPrintHTML(r, o){
+  const name = currentUser ? currentUser.name : '';
+  const lv = levelInfo(loadGame().xp), streak = gameStreakNow();
+  const WD = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  const delta = (cur, before, unit)=>{
+    if(cur===null || before===null || !r.prevTotal) return '<small class="rpp-d same">sem comparação</small>';
+    const d = cur - before;
+    return `<small class="rpp-d ${d>0?'up':d<0?'down':'same'}">${d>0?'▲':d<0?'▼':'='} ${Math.abs(d)}${unit} vs. semana anterior</small>`;
+  };
+  // gráfico de barras: certas (verde) embaixo e erradas (vermelho) em cima
+  const W = 700, H = 150, base = 122, top = 18, max = Math.max(1, ...r.days.map(d=>d.n));
+  const bw = 54, gap = (W - 7*bw) / 7;
+  const bars = r.days.map((d,i)=>{
+    const x = gap/2 + i*(bw+gap), hOk = d.ok/max*(base-top), hBad = (d.n-d.ok)/max*(base-top);
+    return `${d.n ? `<rect x="${x}" y="${base-hOk}" width="${bw}" height="${hOk}" rx="4" fill="#12B886"/>
+        <rect x="${x}" y="${base-hOk-hBad}" width="${bw}" height="${hBad}" rx="4" fill="#FF5C7A"/>
+        <text x="${x+bw/2}" y="${base-hOk-hBad-6}" text-anchor="middle" class="v">${d.n}</text>`
+      : `<rect x="${x}" y="${base-3}" width="${bw}" height="3" rx="1.5" fill="#D9D9E6"/>`}
+      <text x="${x+bw/2}" y="${base+16}" text-anchor="middle" class="l">${WD[d.date.getDay()]}</text>
+      <text x="${x+bw/2}" y="${base+28}" text-anchor="middle" class="s">${fmtDM(d.date)}</text>`;
+  }).join('');
+  const chart = `<svg class="rpp-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet"><line x1="0" y1="${base+.5}" x2="${W}" y2="${base+.5}" stroke="#C9C9D6"/>${bars}</svg>`;
+  const rows = r.subjects.map(s=>{
+    const st = s.pct>=80 ? ['good','Ótimo'] : s.pct>=60 ? ['mid','Bom'] : ['low','Reforçar'];
+    const tr = s.prevPct===null ? '—' : s.pct>s.prevPct ? `<span class="up">▲ ${s.pct-s.prevPct}</span>` : s.pct<s.prevPct ? `<span class="down">▼ ${s.prevPct-s.pct}</span>` : '<span class="same">=</span>';
+    return `<tr><td class="nm"><span class="sym">${s.sym}</span>${escHTML(s.name)}</td><td class="c">${s.n}</td>
+      <td><div class="rpp-bar"><i class="${st[0]}" style="width:${s.pct}%"></i></div></td><td class="c b">${s.pct}%</td><td class="c">${tr}</td><td class="c"><span class="rpp-tag ${st[0]}">${st[1]}</span></td></tr>`;
+  }).join('');
+  return `<div class="rpp">
+    <header class="rpp-head">
+      <div class="rpp-brand"><img src="${LOGO_URI}" alt=""><div><b>Matemática Show</b><small>Relatório semanal de matemática</small></div></div>
+      <div class="rpp-meta"><small>Gerado em</small><b>${o.genAt}</b></div>
+    </header>
+    <section class="rpp-who">
+      <div><small>Aluno(a)</small><h1>${escHTML(name || '—')}</h1><p>Período: <b>${fmtDM(r.start)} a ${fmtDM(r.end)}/${r.end.getFullYear()}</b> · Nível <b>${lv.level}</b> (${escHTML(lv.title)})</p></div>
+      <div class="rpp-badge"><span>${o.badge.ico}</span><div><b>${o.badge.t}</b><small>${o.badge.d}</small></div></div>
+    </section>
+    <section class="rpp-kpis">
+      <div class="rpp-kpi"><small>Dias estudados</small><b>${r.activeDays}<i>/7</i></b><div class="rpp-dots">${r.days.map(d=>`<span class="${d.n?'on':''}"></span>`).join('')}</div></div>
+      <div class="rpp-kpi"><small>Questões respondidas</small><b>${r.total}</b>${delta(r.total, r.prevTotal, '')}</div>
+      <div class="rpp-kpi"><small>Acerto</small><b class="${r.pct===null?'':r.pct>=80?'good':r.pct>=60?'mid':'low'}">${r.pct===null?'—':r.pct+'%'}</b>${delta(r.pct, r.prevPct, ' pts')}</div>
+      <div class="rpp-kpi"><small>Ofensiva</small><b>${streak}<i> dia${streak===1?'':'s'}</i></b><small class="rpp-d same">seguidos estudando</small></div>
+    </section>
+    <h2 class="rpp-h">Questões por dia</h2>
+    <div class="rpp-box">${chart}<div class="rpp-leg"><span><i style="background:#12B886"></i>Certas</span><span><i style="background:#FF5C7A"></i>Erradas</span></div></div>
+    <h2 class="rpp-h">Desempenho por assunto</h2>
+    ${r.subjects.length ? `<table class="rpp-tab"><thead><tr><th>Assunto</th><th class="c">Questões</th><th>Acerto</th><th class="c"></th><th class="c">Semana ant.</th><th class="c">Situação</th></tr></thead><tbody>${rows}</tbody></table>`
+      : '<p class="rpp-empty">Nenhuma questão respondida nesta semana.</p>'}
+    <div class="rpp-cols">
+      <div class="rpp-col"><h2 class="rpp-h">Destaques</h2>
+        <p><b class="good">✓ Pontos fortes:</b> ${r.strong.length ? r.strong.map(s=>escHTML(s.name)).join(', ') : '—'}</p>
+        <p><b class="low">! Precisa de atenção:</b> ${r.weak.length ? r.weak.map(s=>escHTML(s.name)).join(', ') : '—'}</p>
+        ${o.achs.length ? `<p><b>🏅 Conquistas da semana:</b> ${o.achs.map(a=>`${a.ico} ${escHTML(a.name)}`).join(', ')}</p>` : ''}
+      </div>
+      <div class="rpp-col"><h2 class="rpp-h">Sugestão</h2><p>${escHTML(reportTip(r))}</p></div>
+    </div>
+    ${r.partialPrev ? `<p class="rpp-note">A comparação com a semana anterior pode estar incompleta: o app guarda só as últimas ${HISTORY_LIMIT} respostas.</p>` : ''}
+    <footer class="rpp-foot">
+      <div class="rpp-sign"><span></span><small>Assinatura do responsável</small></div>
+      <div class="rpp-sign"><span></span><small>Assinatura do professor(a)</small></div>
+    </footer>
+    <div class="rpp-end">Matemática Show · relatório de ${fmtDM(r.start)} a ${fmtDM(r.end)} · gerado em ${o.genAt}</div>
+  </div>`;
+}
+function printReport(r, o){
+  document.getElementById('rp-print')?.remove();
+  document.getElementById('rp-print-page')?.remove();
+  const root = document.createElement('div');
+  root.id = 'rp-print';
+  root.innerHTML = reportPrintHTML(r, o);
+  document.body.appendChild(root);
+  const st = document.createElement('style');
+  st.id = 'rp-print-page';
+  st.textContent = '@page{size:A4 portrait; margin:10mm 12mm;}';
+  document.head.appendChild(st);
+  document.documentElement.classList.add('rp-printing');
+  const done = ()=>{ document.documentElement.classList.remove('rp-printing'); root.remove(); st.remove(); window.removeEventListener('afterprint', done); };
+  window.addEventListener('afterprint', done);
+  setTimeout(()=> window.print(), 60); // limpeza só no 'afterprint' (no Android a impressão abre depois)
 }
