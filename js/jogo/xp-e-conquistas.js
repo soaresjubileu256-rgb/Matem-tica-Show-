@@ -58,12 +58,40 @@ function gameCheckAchievements(){
   const g = loadGame();
   ACHIEVEMENTS.forEach(a=>{ if(a.check && !g.ach[a.id]){ try{ if(a.check(g)) gameUnlock(a.id); }catch(e){} } });
 }
-const DAILY_MISSIONS = [
-  {id:'lesson', ico:'🗺️', reward:30, title:()=>'Complete 1 fase da trilha', progress:g=>[Math.min(g.today.lessons||0,1), 1]},
-  {id:'goal',  ico:'🎯', reward:40, title:g=>`Responda ${g.goal} questões`,   progress:g=>[g.today.answered, g.goal]},
-  {id:'combo', ico:'🔥', reward:30, title:()=>'Faça um combo de 5 acertos',   progress:g=>[Math.min(g.today.bestCombo,5), 5]},
-  {id:'bolt',  ico:'⚡', reward:30, title:()=>'Jogue uma partida Relâmpago',  progress:g=>[Math.min(g.today.bolts,1), 1]},
+/* MISSÕES DO DIA: todo dia são sorteadas MISSIONS_PER_DAY missões desta lista.
+   O sorteio é fixo pro dia inteiro (fica salvo em g.today.missions): concluir uma missão
+   não troca as outras; as novas só aparecem no dia seguinte.
+   "group": missões do mesmo grupo não caem juntas no mesmo dia (ex.: combo de 5 e de 8). */
+const MISSIONS_PER_DAY = 3;
+const MISSION_POOL = [
+  {id:'lesson',    group:'trilha', ico:'🗺️', reward:30, title:()=>'Complete 1 fase da trilha',          progress:c=>[Math.min(c.today.lessons||0,1), 1]},
+  {id:'lesson2',   group:'trilha', ico:'🗺️', reward:45, title:()=>'Complete 2 fases da trilha',         progress:c=>[Math.min(c.today.lessons||0,2), 2]},
+  {id:'goal',      group:'answer', ico:'🎯', reward:40, title:c=>`Responda ${c.goal} questões`,         progress:c=>[c.today.answered, c.goal]},
+  {id:'correct10', group:'answer', ico:'✅', reward:35, title:()=>'Acerte 10 questões',                 progress:c=>[Math.min(c.today.correct||0,10), 10]},
+  {id:'correct20', group:'answer', ico:'✅', reward:50, title:()=>'Acerte 20 questões',                 progress:c=>[Math.min(c.today.correct||0,20), 20]},
+  {id:'combo',     group:'combo',  ico:'🔥', reward:30, title:()=>'Faça um combo de 5 acertos',         progress:c=>[Math.min(c.today.bestCombo,5), 5]},
+  {id:'combo8',    group:'combo',  ico:'🔥', reward:45, title:()=>'Faça um combo de 8 acertos',         progress:c=>[Math.min(c.today.bestCombo,8), 8]},
+  {id:'bolt',      group:'bolt',   ico:'⚡', reward:30, title:()=>'Jogue uma partida Relâmpago',        progress:c=>[Math.min(c.today.bolts||0,1), 1]},
+  {id:'hard3',     group:'hard',   ico:'💪', reward:40, title:()=>'Acerte 3 questões no difícil',       progress:c=>[Math.min(c.today.hard||0,3), 3]},
+  {id:'subjects3', group:'subj',   ico:'🧭', reward:35, title:()=>'Pratique 3 assuntos diferentes',     progress:c=>[Math.min(Object.keys(c.today.subj||{}).length,3), 3]},
+  {id:'read1',     group:'read',   ico:'📖', reward:25, title:()=>'Estude a explicação de 1 assunto',   progress:c=>[Math.min(Object.keys(c.today.reads||{}).length,1), 1]},
+  {id:'read2',     group:'read',   ico:'📖', reward:35, title:()=>'Estude a explicação de 2 assuntos',  progress:c=>[Math.min(Object.keys(c.today.reads||{}).length,2), 2]},
+  {id:'daily',     group:'daily',  ico:'📅', reward:35, title:()=>'Faça o Desafio do Dia',              progress:()=>[(typeof arenaData==='function' && arenaData().daily && arenaData().daily[isoDay()]) ? 1 : 0, 1]},
 ];
+/* sorteio das missões do dia: mesmo dia + mesma conta = mesmas missões */
+function pickDailyMissions(day){
+  let seed = 0; const str = day + ':' + currentUserId();
+  for(let i=0;i<str.length;i++) seed = (seed*31 + str.charCodeAt(i)) >>> 0;
+  const rnd = ()=>{ seed = (seed*1103515245 + 12345) >>> 0; return seed / 4294967296; };
+  const pool = MISSION_POOL.slice(), out = [], groups = {};
+  while(out.length < MISSIONS_PER_DAY && pool.length){
+    const m = pool.splice(Math.floor(rnd()*pool.length), 1)[0];
+    if(groups[m.group]) continue;
+    groups[m.group] = true; out.push(m.id);
+  }
+  return out;
+}
+function todayMissions(){ return (loadGame().today.missions || []).map(id=> MISSION_POOL.find(m=>m.id===id)).filter(Boolean); }
 
 let gameCache = null, gameCacheUid = null;
 function dayKey(d){ d = d || new Date(); return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`; }
@@ -83,7 +111,8 @@ function saveGame(){
 }
 function gameEnsureToday(){
   const g = gameCache, k = dayKey();
-  if(!g.today || g.today.day !== k) g.today = {day:k, answered:0, bestCombo:0, bolts:0, claimed:{}};
+  if(!g.today || g.today.day !== k) g.today = {day:k, answered:0, correct:0, hard:0, bestCombo:0, bolts:0, lessons:0, subj:{}, reads:{}, claimed:{}};
+  if(!g.today.missions) g.today.missions = pickDailyMissions(k);
 }
 /* ---------- ofensiva (dias seguidos) ----------
    - g.days guarda o histórico recente: 1 = jogou ('f' = dia salvo por protetor, só em dados antigos)
@@ -253,7 +282,10 @@ function gameOnAnswer(subjectId, correct, difficulty, opts){
   let gain = 0;
   if(sess){ sess.combo = correct ? (sess.combo||0)+1 : 0; }
   const combo = sess ? sess.combo : (correct?1:0);
+  g.today.subj = g.today.subj || {}; g.today.subj[subjectId] = 1;
   if(correct){
+    g.today.correct = (g.today.correct||0) + 1;
+    if(difficulty==='dificil') g.today.hard = (g.today.hard||0) + 1;
     g.hits++;
     if(difficulty==='dificil') g.hardHits++;
     g.subjectsHit[subjectId] = true;
@@ -291,7 +323,7 @@ function missionState(){
   const g = loadGame();
   gameEnsureToday();
   const ctx = {today:g.today, goal:(currentSettingsSync().dailyGoal)||10};
-  return DAILY_MISSIONS.map(m=>{
+  return todayMissions().map(m=>{
     const [cur,max] = m.progress(ctx);
     return {m, cur:Math.min(cur,max), max, done:cur>=max, claimed:!!g.today.claimed[m.id], title:m.title(ctx)};
   });
@@ -304,7 +336,7 @@ function claimMission(id){
   gameAddXP(st.m.reward);
   showFloat(`+${st.m.reward} XP 📜`);
   playComboSound(5);
-  if(DAILY_MISSIONS.every(m=>g.today.claimed[m.id])){ gameUnlock('missions'); launchConfetti(); }
+  if(todayMissions().every(m=>g.today.claimed[m.id])){ gameUnlock('missions'); launchConfetti(); }
   saveGame();
 }
 
@@ -470,6 +502,14 @@ function missionsCard(){
       }
       box.appendChild(row);
     });
+    // tudo pego: as próximas só amanhã
+    box.querySelectorAll('.m-next').forEach(n=>n.remove());
+    const ms = missionState();
+    if(ms.length && ms.every(x=>x.claimed)){
+      const t = new Date(); t.setHours(24,0,0,0);
+      const min = Math.max(1, Math.round((t - new Date())/60000)), hh = Math.floor(min/60), mm = min%60;
+      box.appendChild(h(`<div class="m-next">✨ Missões do dia completas! Novas missões amanhã · em ${hh ? `${hh}h ` : ''}${mm}min</div>`));
+    }
   }
   paint();
   return box;
