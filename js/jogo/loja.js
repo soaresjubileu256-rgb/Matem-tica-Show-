@@ -82,8 +82,8 @@ function shopEquip(id){
 }
 
 /* ---------- desenhos dos chapéus e acessórios do Pi ---------- */
-function mascotHatSVG(gid){
-  const hat = shopEquipped('hat');
+function mascotHatSVG(gid, hat){
+  hat = hat || shopEquipped('hat');
   if(hat==='festa') return `<g transform="rotate(-10 50 30)"><path d="M36 33 L50 2 L64 33 Z" fill="#FF5C7A"/><path d="M42 20 L58 20 M39 27 L61 27 M45 13 L55 13" stroke="#FFD45C" stroke-width="3"/><circle cx="50" cy="3" r="4.5" fill="#FFD45C"/></g>`;
   if(hat==='bone') return `<g transform="rotate(-6 50 30)"><path d="M28 32 q22 -30 44 0 Z" fill="#4C7DFF"/><path d="M60 31 q14 -2 24 4 q-12 3 -24 1 Z" fill="#2F55D4"/><circle cx="50" cy="12" r="3" fill="#2F55D4"/><path d="M37 26 q13 -8 26 0" stroke="#FFB800" stroke-width="2.5" fill="none"/></g>`;
   if(hat==='coroa' || hat==='coroa_ouro'){
@@ -101,8 +101,8 @@ function mascotHatSVG(gid){
       <image href="${LOGO_URI}" x="40.5" y="5" width="19" height="19" preserveAspectRatio="xMidYMid meet"/>
     </g>`;
 }
-function mascotAccSVG(){
-  const acc = shopEquipped('acc');
+function mascotAccSVG(acc){
+  acc = acc || shopEquipped('acc');
   if(acc==='oculos') return `<g><rect x="29" y="48" width="19" height="13" rx="5" fill="#1B1E45"/><rect x="52" y="48" width="19" height="13" rx="5" fill="#1B1E45"/><path d="M48 53 h4" stroke="#1B1E45" stroke-width="3"/><path d="M32 51 l5 0" stroke="rgba(255,255,255,.5)" stroke-width="2" stroke-linecap="round"/><path d="M55 51 l5 0" stroke="rgba(255,255,255,.5)" stroke-width="2" stroke-linecap="round"/></g>`;
   if(acc==='oculos_red') return `<g fill="none" stroke="#1B1E45" stroke-width="2.6"><circle cx="39" cy="55" r="9.5"/><circle cx="61" cy="55" r="9.5"/><path d="M48.5 54 h3"/></g>`;
   if(acc==='gravata') return `<path d="M38 88 l12 6 l-12 6 Z M62 88 l-12 6 l12 6 Z" fill="#FFD45C"/><circle cx="50" cy="94" r="3.4" fill="#E09A00"/>`;
@@ -161,39 +161,117 @@ function usePaidHelp(sess, id){
 }
 
 /* ---------- tela da loja ---------- */
+/* raridade pelo preço (só muda a cor e o selo do card) */
+const SHOP_TIERS = [
+  {id:'free',  name:'Grátis',   max:0},
+  {id:'comum', name:'Comum',    max:90},
+  {id:'raro',  name:'Raro',     max:150},
+  {id:'epico', name:'Épico',    max:400},
+  {id:'lenda', name:'Lendário', max:Infinity},
+];
+function shopTier(it){ return it.rare ? SHOP_TIERS[4] : SHOP_TIERS.find(t=> it.price <= t.max); }
+/* fx de comemoração parado, pra prévia do card */
+function shopFxPreview(it){
+  const emo = it.emo || null, cols = ['#FFB800','#FF5C7A','#33D2E3','#4C7DFF','#B23FE0','#7CFF6B'];
+  const spots = [[18,22,-20],[50,12,10],[80,24,25],[28,52,35],[72,54,-15],[50,40,0],[14,78,15],[46,74,-30],[84,80,20]];
+  return `<span class="lp-fx">${spots.map(([x,y,r],i)=> emo
+    ? `<i style="left:${x}%;top:${y}%;transform:translate(-50%,-50%) rotate(${r}deg);font-size:${i===5?30:18}px">${emo[i%emo.length]}</i>`
+    : `<i class="cf" style="left:${x}%;top:${y}%;transform:translate(-50%,-50%) rotate(${r*2}deg);background:${cols[i%cols.length]}"></i>`).join('')}</span>`;
+}
+/* a prévia de cada item: o Pi usando, o avatar com a moldura, o cartão ou a comemoração */
+function shopPreview(it, big){
+  if(it.cat==='hat') return mascotSVG(big?'joy':'happy', big?150:92, {hat:it.id});
+  if(it.cat==='acc') return mascotSVG(big?'joy':'happy', big?150:92, {acc:it.id});
+  if(it.cat==='frame') return `<span class="lp-av-wrap">${avatarHTML(currentUser, `lp-av ${big?'big':''} fr-${it.id}`)}</span>`;
+  if(it.cat==='card'){
+    const lv = levelInfo(loadGame().xp);
+    return `<span class="lp-card cd-${it.id} ${big?'big':''}"><span class="lp-card-lv">${lv.level}</span><span class="lp-card-l"><b>${escHTML(currentUser ? currentUser.name : '')}</b><i><u style="width:${Math.max(12, lv.pct)}%"></u></i></span><span class="lp-card-s"><em></em><em></em><em></em></span></span>`;
+  }
+  return shopFxPreview(it);
+}
 function lojaScreen(){
   const wrap = document.createElement('div');
-  const bar = topbar('🛍️ Loja do Pi', true, ()=> history.length > 1 ? history.back() : go('home'));
-  bar.appendChild(h(`<span class="loja-coins">🪙 ${gemsNow()}</span>`));
-  wrap.appendChild(bar);
+  wrap.appendChild(topbar('Loja do Pi', true, ()=> history.length > 1 ? history.back() : go('home')));
   const c = h(`<div class="content loja"></div>`);
   wrap.appendChild(c);
   const sh = shopData();
-  c.appendChild(h(`<div class="loja-hero"><div class="loja-pi">${mascotSVG('joy', 110)}</div><div><b>Deixe o Pi com a sua cara!</b><small>Os itens são só de visual. Ganhe moedas nas fases da Trilha, nos baús, na Arena e mantendo a ofensiva.</small></div></div>`));
   const cat = state.lojaCat || 'hat';
-  const chips = h(`<div class="ex-chips small loja-cats" role="tablist"></div>`);
-  SHOP_CATS.forEach(ct=>{
-    const b = h(`<button type="button" class="ex-chip ${ct.id===cat?'on':''}">${ct.ico} ${ct.name}</button>`);
-    b.onclick = ()=>{ state.lojaCat = ct.id; render(); };
-    chips.appendChild(b);
-  });
-  c.appendChild(chips);
-  const grid = h(`<div class="loja-grid"></div>`);
-  SHOP_ITEMS.filter(it=>it.cat===cat).forEach(it=>{
+  const items = SHOP_ITEMS.filter(it=>it.cat===cat);
+  // provador: o item tocado aparece no palco antes de comprar
+  let tryId = state.lojaTry && items.some(it=>it.id===state.lojaTry) ? state.lojaTry : sh.equip[cat];
+
+  const stage = h(`<section class="lj-stage" aria-live="polite"></section>`);
+  c.appendChild(stage);
+  function paintStage(){
+    const it = shopItem(tryId), tier = shopTier(it);
     const own = !!sh.owned[it.id], on = sh.equip[it.cat]===it.id, can = gemsNow() >= it.price;
-    const card = h(`<button type="button" class="loja-item ${on?'on':''} ${it.rare?'rare':''} ${!own && !can?'poor':''}">
-        <span class="li-ico li-${it.cat}" data-id="${it.id}">${it.ico}</span><b>${it.name}</b>
-        <small>${on ? '✓ Em uso' : own ? 'Usar' : `🪙 ${it.price}`}</small></button>`);
+    stage.className = `lj-stage t-${tier.id}`;
+    stage.innerHTML = `
+      <div class="lj-top"><span class="lj-coins"><span class="lj-coin">🪙</span><b>${gemsNow()}</b><small>moedas</small></span><span class="lj-tier">${tier.name}</span></div>
+      <div class="lj-spot"></div>
+      <div class="lj-show lj-show-${it.cat}">${shopPreview(it, true)}</div>
+      <div class="lj-floor"></div>
+      <div class="lj-info"><h2></h2><p></p></div>
+      <div class="lj-act"></div>`;
+    stage.querySelector('h2').textContent = it.name;
+    stage.querySelector('p').textContent = on ? 'Em uso agora' : own ? 'Já é seu: toque pra usar' : can ? 'Experimente à vontade antes de comprar' : `Faltam ${it.price - gemsNow()} moedas`;
+    const act = stage.querySelector('.lj-act');
+    const btn = h(`<button type="button" class="lj-btn"></button>`);
+    if(on){ btn.className += ' on'; btn.innerHTML = '✓ Em uso'; btn.disabled = true; }
+    else if(own){ btn.innerHTML = 'Usar este'; btn.onclick = ()=>{ shopEquip(it.id); state.lojaTry = null; render(); }; }
+    else {
+      btn.className += can ? ' buy' : ' poor';
+      btn.innerHTML = `Comprar <span class="lj-price">🪙 ${it.price}</span>`;
+      btn.onclick = ()=>{
+        if(!can){ showFloat(`Faltam ${it.price - gemsNow()} 🪙`, true); return; }
+        showConfirm({icon:it.ico, title:`Comprar ${it.name}?`, message:`Custa ${it.price} moedas. Você tem ${gemsNow()}.`, ok:`Comprar por ${it.price} 🪙`, cancel:'Agora não'})
+          .then(ok=>{ if(ok && shopBuy(it.id)){ state.lojaTry = null; render(); } });
+      };
+    }
+    act.appendChild(btn);
+    if(it.cat==='fx'){
+      const fx = h(`<button type="button" class="lj-btn ghost">▶ Ver efeito</button>`);
+      fx.onclick = ()=> launchConfetti(90, it.id);
+      act.appendChild(fx);
+    }
+  }
+  paintStage();
+
+  const tabs = h(`<div class="lj-tabs" role="tablist"></div>`);
+  SHOP_CATS.forEach(ct=>{
+    const n = SHOP_ITEMS.filter(it=>it.cat===ct.id && it.price && sh.owned[it.id]).length, tot = SHOP_ITEMS.filter(it=>it.cat===ct.id && it.price).length;
+    const b = h(`<button type="button" role="tab" class="lj-tab ${ct.id===cat?'on':''}" aria-selected="${ct.id===cat}"><span class="lj-tab-i">${ct.ico}</span><span class="lj-tab-l">${ct.name.replace(' do Pi','').replace(' do avatar','').replace(' do cartão','')}</span><small>${n}/${tot}</small></button>`);
+    b.onclick = ()=>{ if(ct.id===cat) return; state.lojaCat = ct.id; state.lojaTry = null; render(); };
+    tabs.appendChild(b);
+  });
+  c.appendChild(tabs);
+
+  const grid = h(`<div class="lj-grid"></div>`);
+  items.forEach(it=>{
+    const own = !!sh.owned[it.id], on = sh.equip[it.cat]===it.id, can = gemsNow() >= it.price, tier = shopTier(it);
+    const card = h(`<button type="button" class="lj-item t-${tier.id} ${on?'on':''} ${it.id===tryId?'try':''} ${!own && !can?'poor':''}" aria-label="${it.name}">
+        <span class="lj-prev lj-prev-${it.cat}">${shopPreview(it, false)}</span>
+        ${on ? '<span class="lj-badge on">✓</span>' : own ? '<span class="lj-badge own">Seu</span>' : `<span class="lj-badge tier">${tier.name}</span>`}
+        <span class="lj-name"></span>
+        <span class="lj-foot">${on ? 'Em uso' : own ? 'Usar' : `<span class="lj-price">🪙 ${it.price}</span>`}</span></button>`);
+    card.querySelector('.lj-name').textContent = it.name;
     card.onclick = ()=>{
-      if(on) return;
-      if(own){ shopEquip(it.id); render(); return; }
-      if(!can){ showFloat(`Faltam ${it.price - gemsNow()} 🪙`, true); return; }
-      showConfirm({icon:it.ico, title:`Comprar ${it.name}?`, message:`Custa ${it.price} moedas. Você tem ${gemsNow()}.`, ok:`Comprar por ${it.price} 🪙`, cancel:'Agora não'})
-        .then(ok=>{ if(ok && shopBuy(it.id)) render(); });
+      tryId = it.id; state.lojaTry = it.id;
+      grid.querySelectorAll('.lj-item').forEach(el=> el.classList.toggle('try', el===card));
+      playTones([660], 0.03, 'sine', 0.05);
+      paintStage();
+      void stage.offsetWidth; stage.classList.add('pop');
+      if(stage.getBoundingClientRect().bottom < 120) stage.scrollIntoView({behavior:'smooth', block:'start'});
     };
     grid.appendChild(card);
   });
   c.appendChild(grid);
-  c.appendChild(h(`<div class="loja-helps"><b>💡 Ajudas com moedas</b><small>Nas fases da Trilha e da Arena: <b>✂️ 50/50</b> (${PAID_HELPS.fifty.cost} 🪙, ${PAID_HELPS.fifty.perDay} por dia) tira duas alternativas erradas, e <b>❤️ +1 vida</b> (${PAID_HELPS.life.cost} 🪙, ${PAID_HELPS.life.perDay} por dia) dá uma vida extra.</small></div>`));
+
+  c.appendChild(h(`<div class="lj-helps">
+      <div class="lj-helps-h">💡 Ajudas com moedas <small>nas fases da Trilha e da Arena</small></div>
+      <div class="lj-help"><span>✂️</span><div><b>50/50</b><small>Tira duas alternativas erradas</small></div><em>🪙 ${PAID_HELPS.fifty.cost}<small>${PAID_HELPS.fifty.perDay}x por dia</small></em></div>
+      <div class="lj-help"><span>❤️</span><div><b>+1 vida</b><small>Uma vida extra na hora do aperto</small></div><em>🪙 ${PAID_HELPS.life.cost}<small>${PAID_HELPS.life.perDay}x por dia</small></em></div>
+      <p class="lj-earn">Ganhe moedas nas fases da Trilha, nos baús, na Arena e mantendo a ofensiva. Os itens da loja são só de visual.</p>
+    </div>`));
   return wrap;
 }
