@@ -10,6 +10,10 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
+  {v:17, date:'2026-10-17', title:'Simulados no estilo de cada prova', items:[
+    {ico:'📝', t:'Simulado ENEM, ETEC, Fuvest, Unicamp, Unesp e OBMEP', d:'Na aba Provas, cada prova tem o seu simulado com questões de interpretação no estilo dela: situações do dia a dia, tabelas, gráficos e figuras, com alternativas e tempo. Na correção, cada alternativa errada explica a pegadinha.', go:'exams'},
+    {ico:'📜', t:'Missões novas todo dia', d:'Agora são 3 missões sorteadas por dia. Concluiu? Novas só amanhã.', go:'home'},
+  ]},
   {v:16, date:'2026-10-16', title:'Conteúdos por prova e 17 assuntos novos', items:[
     {ico:'🎓', t:'Conteúdos por prova', d:'Na aba Provas de Estudar, veja o que estudar de Matemática pro ENEM, ETEC, Fuvest, Unicamp, Unesp e OBMEP.', go:'exams'},
     {ico:'🧊', t:'Geometria espacial avançada', d:'Área da superfície, diagonais, geratriz do cone, relação de Euler, o que acontece quando um sólido cresce e sólidos um dentro do outro.', go:'content'},

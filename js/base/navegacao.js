@@ -33,6 +33,7 @@ function sessionInProgress(){
   if(['exerciseSession','challengeSession','personalizedSession','reviewErrorsSession'].includes(state.screen))
     return s.index < s.total && (s.index>0 || s.checked);
   if(state.screen==='examRun') return s.kind==='exam' && !s.submitted;
+  if(state.screen==='provaRun') return s.kind==='provaSim' && !s.submitted;
   return false;
 }
 window.addEventListener('beforeunload', (e)=>{

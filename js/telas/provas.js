@@ -59,9 +59,16 @@ function examsScreen(){
   state.examId = e.id;
   const tabs = h(`<div class="pv-tabs" role="tablist"></div>`);
   const c = h(`<div class="content pv-screen">
-    <div class="pv-body">${examContentHTML(e)}</div>
+    <div class="pv-body"></div>
     <p class="pv-note">📌 É uma orientação de estudo. Confira sempre o edital da sua prova.</p>
   </div>`);
+  // conteúdos + simulado da prova escolhida
+  const paintBody = x=>{
+    const body = c.querySelector('.pv-body');
+    body.innerHTML = examContentHTML(x) + provaSimBlockHTML(x);
+    const go1 = body.querySelector('.iq-go'); if(go1) go1.onclick = ()=> startProvaSim(x.id);
+  };
+  paintBody(e);
   // trocar de prova muda só o cartão e a aba acesa: redesenhar a tela inteira
   // fazia as barras de abas voltarem pro começo e piscarem
   EXAM_CONTENTS.forEach(x=>{
@@ -71,7 +78,7 @@ function examsScreen(){
       state.examId = x.id;
       replaceHistoryState();
       tabs.querySelectorAll('.pv-tab').forEach(b=>{ const on = b===t; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
-      c.querySelector('.pv-body').innerHTML = examContentHTML(x);
+      paintBody(x);
       tabs.scrollTo({left: t.offsetLeft - (tabs.clientWidth - t.offsetWidth)/2, behavior:'smooth'});
     };
     tabs.appendChild(t);

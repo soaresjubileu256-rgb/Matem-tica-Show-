@@ -3803,3 +3803,25 @@ button.gl-res:active{transform:scale(.99);}
 html, body{-webkit-tap-highlight-color:transparent; overscroll-behavior-y:none;}
 .missions .m-next{margin-top:8px; padding:10px 12px; border-radius:14px; text-align:center; font-size:12.5px; font-weight:800; color:#FFD45C; background:rgba(255,184,0,.1); border:1px dashed rgba(255,184,0,.45);}
 :root.theme-light .missions .m-next{color:#9A6B00;}
+
+/* ===== Simulado de cada prova (interpretação) ===== */
+.iq-start{--c:#4C7DFF; --c2:#2F55D4; margin:0 0 12px; padding:14px; border-radius:var(--radius-card); border:1.5px solid color-mix(in srgb, var(--c) 45%, var(--border)); background:linear-gradient(150deg, color-mix(in srgb, var(--c) 16%, var(--white)), var(--white) 70%); display:flex; flex-direction:column; gap:8px;}
+.iq-start-t b{display:block; font-family:'Fraunces',serif; font-size:18px; color:var(--ink);}
+.iq-start-t small, .iq-note{display:block; font-size:12px; font-weight:600; color:var(--ink-soft); line-height:1.4;}
+.iq-start-h{font-size:12.5px; font-weight:700; color:var(--ink-soft);} .iq-start-h b{color:var(--ink);}
+.iq-start .iq-go{width:100%;}
+.iq-q{font:500 15px/1.6 'Inter',sans-serif; color:var(--ink); text-align:left;}
+.iq-q p{margin:0 0 10px;}
+.iq-q .iq-ask{font-weight:700; margin-top:10px;}
+.iq-vis{display:flex; flex-direction:column; align-items:center; gap:8px; margin:6px 0 4px; overflow-x:auto;}
+.iq-vis .geo-fig{max-width:340px;}
+.iq-table{font-family:'Inter',sans-serif; font-size:13.5px;}
+.iq-cards{display:grid; grid-template-columns:1fr 1fr; gap:6px; width:100%;}
+.iq-cards > div{--c:#4C7DFF; display:flex; flex-direction:column; gap:2px; padding:9px 10px; border-radius:12px; text-align:center; background:color-mix(in srgb, var(--c) 18%, transparent); border:1px solid color-mix(in srgb, var(--c) 45%, transparent);}
+.iq-cards b{font-size:13.5px; color:var(--ink);} .iq-cards span{font-size:12.5px; color:var(--ink-soft); font-weight:600;}
+.iq-opts .mc-opt .lbl{font:600 14.5px/1.4 'Inter',sans-serif; text-align:left;}
+.iq-card .exr-s{font-weight:800; letter-spacing:.02em;}
+.iq-review .iq-q{margin:8px 0;}
+.iq-review .rv-opt .l{font-family:'Inter',sans-serif;}
+.iq-why{margin:10px 0 4px; padding:10px 12px; border-radius:12px; font-size:13.5px; line-height:1.5; color:var(--ink); background:rgba(255,92,122,.1); border:1px solid rgba(255,92,122,.35);}
+.iq-steps{margin:8px 0 0; padding-left:20px; line-height:1.6; font-size:14px; color:var(--ink);}

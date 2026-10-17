@@ -17,6 +17,8 @@ const SCREENS = {
   personalizedSession: personalizedSessionScreen,
   stepSetup: stepSetupScreen,
   exams: examsScreen,
+  provaRun: provaRunScreen,
+  provaResult: provaResultScreen,
   stepGuide: stepGuideScreen,
   achievements: achievementsScreen,
   duel: duelScreen,
@@ -84,7 +86,7 @@ function renderAsyncSafe(){
   const fn = SCREENS[state.screen] || homeScreen;
   app.appendChild(withSectionTabs(fn()));
   settleTabs();
-  if(!['lesson','notePage','examRun'].includes(state.screen)) app.appendChild(bottomNav());
+  if(!['lesson','notePage','examRun','provaRun'].includes(state.screen)) app.appendChild(bottomNav());
 }
 render = renderAsyncSafe;
 
