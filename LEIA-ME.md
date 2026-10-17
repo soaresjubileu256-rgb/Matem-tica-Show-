@@ -37,6 +37,7 @@ js/
     ensino-medio-visual.js desenhos e ajudantes usados pelo Ensino Médio
     ensino-medio.js        os 23 assuntos do Ensino Médio
     complementares-visual.js  figuras dos exemplos de complementares.js
+    interpretacao.js       questões de interpretação no estilo de cada prova (simulados)
     complementares.js      17 assuntos que caem nas provas (escalas, polinômios, complexos, cônicas...)
     catalogo.js            GRUPOS DE ASSUNTOS (a ordem única do app), ano (BNCC)
   dados/
@@ -55,6 +56,7 @@ js/
     aprender.js       aba Aprender
     exercicios.js     aba Exercícios: modos de treino, sessões, dicas, Desafios, Treino personalizado
     modos-estudo.js   Qual o próximo passo? e Mistura do dia
+    simulado-provas.js  Simulado de cada prova: prova, nota e correção comentada
     provas.js         Conteúdos por prova (ENEM, ETEC, Fuvest, Unicamp, Unesp, OBMEP)
     tabuada.js        Tabuada (Estudar, Quadro e Treinar)
     estudo.js         nivelamento, plano de estudos, cartões de revisão e Caderno de erros
