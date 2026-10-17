@@ -316,6 +316,7 @@ function gameOnAnswer(subjectId, correct, difficulty, opts){
   if(g.today.answered>=goal) gameUnlock('goal');
   gameCheckAchievements();
   saveGame();
+  if(typeof checkModeUnlocks==='function') checkModeUnlocks();
 }
 
 /* ---------- missões diárias ---------- */

@@ -10,6 +10,10 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
+  {v:18, date:'2026-10-17', title:'Início mais fácil', items:[
+    {ico:'👉', t:'Faça isto agora', d:'O Início mostra sempre um próximo passo: primeiro descobrir o seu nível, depois continuar a Trilha.', go:'home'},
+    {ico:'🔓', t:'Modos que liberam aos poucos', d:'Treino, Desafios, Simulado, Quiz, Duelo e outros aparecem conforme você responde questões. Toque no 🔒 das abas pra ver quanto falta, ou ligue "Mostrar todos os modos" em Configurações.', go:'content'},
+  ]},
   {v:17, date:'2026-10-17', title:'Simulados no estilo de cada prova', items:[
     {ico:'📝', t:'Simulado ENEM, ETEC, Fuvest, Unicamp, Unesp e OBMEP', d:'Na aba Provas, cada prova tem o seu simulado com questões de interpretação no estilo dela: situações do dia a dia, tabelas, gráficos e figuras, com alternativas e tempo. Na correção, cada alternativa errada explica a pegadinha.', go:'exams'},
     {ico:'📜', t:'Missões novas todo dia', d:'Agora são 3 missões sorteadas por dia. Concluiu? Novas só amanhã.', go:'home'},
