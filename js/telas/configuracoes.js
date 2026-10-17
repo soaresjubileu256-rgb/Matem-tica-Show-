@@ -108,7 +108,6 @@ async function settingsScreen(){
   });
   st.appendChild(lv);
   st.appendChild(h(`<small class="st-hint">Usado pra sugerir assuntos e o Desafio do Dia. Você pode estudar qualquer assunto.</small>`));
-  st.appendChild(stRow('🔓', '#7B5CFF', 'Mostrar todos os modos', 'Desligado: os modos aparecem aos poucos, conforme você responde questões', stSwitch(!!settings.showAllModes, 'Mostrar todos os modos', async v=>{ settings.showAllModes = v; await saveNow(); })));
   c.appendChild(st);
 
   // ---------- Som e vibração ----------

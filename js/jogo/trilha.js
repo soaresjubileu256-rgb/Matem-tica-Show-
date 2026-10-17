@@ -550,8 +550,7 @@ function showConfirm(opts){
     const close = v=>{ bg.remove(); resolve(v); };
     bg.querySelector('.gm-confirm-ok').onclick = ()=> close(true);
     bg.querySelector('.gm-confirm-cancel').onclick = ()=> close(false);
-    // tocar fora fecha; quem passa backdropValue distingue "fechou" de "Cancelar"
-    bg.addEventListener('click', e=>{ if(e.target===bg) close(opts.backdropValue !== undefined ? opts.backdropValue : false); });
+    bg.addEventListener('click', e=>{ if(e.target===bg) close(false); });
     document.body.appendChild(bg);
   });
 }
@@ -590,14 +589,14 @@ function statusPills(){
 }
 
 /* ---------- home: continuar trilha + jogos ---------- */
-function pathHero(kicker){
+function pathHero(){
   const all = allPathNodes(), cur = pathCurrentIndex();
   const n = all[Math.min(cur, all.length-1)];
   const color = unitStyle(n.unit);
   const finished = cur>=all.length;
   const el = h(`<div class="path-hero" style="${color}">
     <div class="ph-body">
-      <div class="ph-k">${kicker ? `<span class="ph-now">${kicker}</span>` : ''}${finished ? 'TEMPORADA COMPLETA' : `EPISÓDIO ${n.unit+1} · ${n.idx+1}/${PATH_NODES.length}`}</div>
+      <div class="ph-k">${finished ? 'TEMPORADA COMPLETA' : `EPISÓDIO ${n.unit+1} · ${n.idx+1}/${PATH_NODES.length}`}</div>
       <h2>${finished ? 'Você zerou a trilha! 👑' : n.subject.name}</h2>
       <p>${finished ? 'Continue praticando pra ganhar XP.' : n.label}</p>
       ${finished ? '' : `<div class="ph-prog" aria-label="Fase ${n.idx+1} de ${PATH_NODES.length}">${PATH_NODES.map((_,i)=>`<i class="${i<n.idx?'on':i===n.idx?'cur':''}"></i>`).join('')}</div>`}
