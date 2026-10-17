@@ -373,7 +373,8 @@ function showLevelUp(info){
   playTones([523,659,784,1047,1319], 0.12, 'square', 0.07);
   launchConfetti(160);
 }
-function launchConfetti(count){
+/* fxId: efeito da Loja do Pi (sem ele usa o que está em uso) */
+function launchConfetti(count, fxId){
   try{
     if(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     count = count || 110;
@@ -391,7 +392,7 @@ function launchConfetti(count){
       c: colors[Math.floor(Math.random()*colors.length)],
     }));
     // efeito comprado na Loja do Pi: emojis no lugar dos papeizinhos
-    const fx = typeof shopItem==='function' && currentUser ? shopItem(shopEquipped('fx')) : null;
+    const fx = typeof shopItem==='function' && currentUser ? shopItem(fxId || shopEquipped('fx')) : null;
     const emo = fx && fx.emo;
     if(emo){ parts.forEach(p=>{ p.e = emo[Math.floor(Math.random()*emo.length)]; p.s = 16+Math.random()*12; p.vr *= .4; }); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; }
     const start = performance.now();

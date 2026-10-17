@@ -66,8 +66,9 @@ function fmtMinSec(ms){ const s = Math.ceil(ms/1000); return `${Math.floor(s/60)
 
 /* ---------- mascote: Pi, o apresentador do show (cartola com a logo + gravata-borboleta) ---------- */
 let _mascotSeq = 0;
-function mascotSVG(mood, size){
-  mood = mood || 'happy'; size = size || 88;
+/* look = {hat, acc} mostra o Pi com outros itens (prévia da Loja); sem ele usa os itens em uso */
+function mascotSVG(mood, size, look){
+  mood = mood || 'happy'; size = size || 88; look = look || {};
   const id = 'pi' + (++_mascotSeq);
   const eyes = mood==='sad'
     ? `<ellipse cx="39" cy="56" rx="6" ry="7" fill="#fff"/><ellipse cx="61" cy="56" rx="6" ry="7" fill="#fff"/><circle cx="39" cy="58" r="3.4" fill="#1B1E45"/><circle cx="61" cy="58" r="3.4" fill="#1B1E45"/>
@@ -95,8 +96,8 @@ function mascotSVG(mood, size){
     ${eyes}
     ${mouth}
     <path d="M40 90 l10 4 l-10 4 Z M60 90 l-10 4 l10 4 Z" fill="#FF5C7A"/><circle cx="50" cy="94" r="3" fill="#FFB800"/>
-    ${mascotAccSVG()}
-    ${mascotHatSVG(id)}
+    ${mascotAccSVG(look.acc)}
+    ${mascotHatSVG(id, look.hat)}
   </svg>`;
 }
 function mascotBubble(text, mood){
