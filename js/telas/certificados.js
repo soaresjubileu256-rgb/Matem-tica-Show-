@@ -330,9 +330,15 @@ function certificateScreen(){
 /* imprime só o certificado, numa folha só.
    Copia o certificado pra uma área própria (#cert-print) e pede folha A4 deitada.
    O tamanho na folha é em mm (veja o CSS "impressão do certificado"): nunca corta nem gira. */
+/* tira as folhas de impressão (certificado e relatório). Elas ficam na página até a pessoa trocar de tela:
+   no app do Android o aviso de "terminou de imprimir" chega antes de o PDF ser gerado, e apagar a folha
+   nessa hora fazia o PDF sair com a tela do app em vez do certificado/relatório */
+function clearPrintSheets(){
+  ['cert-print','cert-print-page','rp-print','rp-print-page'].forEach(id=> document.getElementById(id)?.remove());
+  document.documentElement.classList.remove('cert-printing','rp-printing');
+}
 function printCertificate(certEl){
-  document.getElementById('cert-print')?.remove();
-  document.getElementById('cert-print-page')?.remove();
+  clearPrintSheets();
   const root = document.createElement('div');
   root.id = 'cert-print';
   root.appendChild(certEl.cloneNode(true));
@@ -342,9 +348,6 @@ function printCertificate(certEl){
   st.textContent = '@page{size:A4 landscape; margin:0;}';
   document.head.appendChild(st);
   document.documentElement.classList.add('cert-printing');
-  const done = ()=>{ document.documentElement.classList.remove('cert-printing'); root.remove(); st.remove(); window.removeEventListener('afterprint', done); };
-  window.addEventListener('afterprint', done);
-  // a limpeza só acontece no 'afterprint' (no Android a janela de impressão abre depois do print() voltar);
   // fora da impressão o #cert-print fica escondido, então não atrapalha a tela
   setTimeout(()=> window.print(), 60);
 }

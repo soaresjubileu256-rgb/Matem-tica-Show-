@@ -4012,7 +4012,7 @@ html[data-card="card_galaxia"] .player-card, .lp-card.cd-card_galaxia{background
   html.rp-printing body > *:not(#rp-print){display:none !important;}
   html.rp-printing #rp-print{display:block !important;}
 }
-.rpp{--ink:#1B1B2E; --ink-soft:#6B6B85; --border:#DCDCE8; --surface-2:#F6F6FB; font-family:'Inter',sans-serif; color:#1B1B2E; font-size:11pt; line-height:1.4; -webkit-print-color-adjust:exact; print-color-adjust:exact;}
+.rpp{box-sizing:border-box; width:100%; padding:14mm 15mm 10mm; --ink:#1B1B2E; --ink-soft:#6B6B85; --border:#DCDCE8; --surface-2:#F6F6FB; font-family:'Inter',sans-serif; color:#1B1B2E; font-size:11pt; line-height:1.4; -webkit-print-color-adjust:exact; print-color-adjust:exact;}
 .rpp *{box-sizing:border-box;}
 .rpp-head{display:flex; justify-content:space-between; align-items:center; padding-bottom:4mm; border-bottom:1.2mm solid transparent; border-image:linear-gradient(90deg,#4C7DFF,#B23FE0) 1;}
 .rpp-brand{display:flex; align-items:center; gap:3mm;}
