@@ -524,8 +524,8 @@ SUBJECTS.push(
         if(Math.random()<0.3){ const p=pick([10,15,20,25,30,40,45,50]), ang=p*3.6, q=`Num gráfico de setores (pizza), uma fatia tem ${fmt(ang)}°. Que porcentagem do total ela representa?`;
           return mkSingle(q, p, ['O círculo todo tem 360° = 100%.', `${fmt(ang)} ÷ 360 = ${fmt(p/100)}`, `= ${p}%`]); }
         let v1, p; do{ v1=pick([20,40,50,60,80,100]); p=pick([10,20,25,50,75]); }while((v1*p)%100);
-        const v2=v1*(1+p/100), meses=['Jan','Fev','Mar','Abr'], j=randInt(0,2), vals=meses.map(()=>randInt(2,12)*10); vals[j]=v1; vals[j+1]=v2;
-        const svg=barChartSVG('Clientes atendidos', meses, vals), q=`Qual foi o aumento percentual de clientes de ${meses[j]} para ${meses[j+1]}?`;
+        const v2=v1*(100+p)/100, meses=['Jan','Fev','Mar','Abr'], j=randInt(0,2), vals=meses.map(()=>randInt(2,12)*10); vals[j]=v1; vals[j+1]=v2;
+        const svg=barChartSVG('Clientes atendidos', meses, vals), q=`Qual foi o aumento percentual (em %) de clientes de ${meses[j]} para ${meses[j+1]}?`;
         return mkSingle(q, p, [`${meses[j]} = ${v1} · ${meses[j+1]} = ${v2}`, `(${v2} − ${v1}) ÷ ${v1} = ${v2-v1} ÷ ${v1} = ${fmt(p/100)}`, `= ${p}%`], null, geoQ(q, svg), svg); },
     }
   },
