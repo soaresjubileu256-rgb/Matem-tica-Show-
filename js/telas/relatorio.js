@@ -143,18 +143,16 @@ function reportPrintHTML(r, o){
   </div>`;
 }
 function printReport(r, o){
-  document.getElementById('rp-print')?.remove();
-  document.getElementById('rp-print-page')?.remove();
+  clearPrintSheets(); // a folha fica até trocar de tela (veja clearPrintSheets)
   const root = document.createElement('div');
   root.id = 'rp-print';
   root.innerHTML = reportPrintHTML(r, o);
   document.body.appendChild(root);
   const st = document.createElement('style');
   st.id = 'rp-print-page';
-  st.textContent = '@page{size:A4 portrait; margin:10mm 12mm;}';
+  // margem zero na folha e a margem vai dentro do .rpp: alguns celulares ignoram a margem do @page
+  st.textContent = '@page{size:A4 portrait; margin:0;}';
   document.head.appendChild(st);
   document.documentElement.classList.add('rp-printing');
-  const done = ()=>{ document.documentElement.classList.remove('rp-printing'); root.remove(); st.remove(); window.removeEventListener('afterprint', done); };
-  window.addEventListener('afterprint', done);
-  setTimeout(()=> window.print(), 60); // limpeza só no 'afterprint' (no Android a impressão abre depois)
+  setTimeout(()=> window.print(), 60);
 }

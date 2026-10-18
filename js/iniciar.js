@@ -64,6 +64,7 @@ function renderAsyncSafe(){
   // guarda o estado atual (ex.: questão já corrigida) na entrada do histórico, senão
   // "voltar" + "avançar" restaurava a questão sem resposta e dava pra ganhar XP de novo
   if(currentUser){ replaceHistoryState(); applyShopLook(); }
+  clearPrintSheets(); // trocou de tela: as folhas de impressão já não servem
   if(_tourClose && state.screen !== 'home') _tourClose();
   const token = ++renderToken; // uma tela que termina de carregar depois de outra ter aberto é descartada
   const load = ASYNC_SCREENS[state.screen];
