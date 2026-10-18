@@ -37,7 +37,7 @@ function barChartSVG(title, labels, values){
   labels.forEach((l,i)=>{
     const x = 30 + gap + i*(bw+gap), hgt = (values[i]/max) * (base-top), y = base - hgt;
     bars += `<rect x="${x}" y="${y}" width="${bw}" height="${hgt}" rx="5" fill="var(--pine)" opacity=".85"/>
-      <text x="${x+bw/2}" y="${y-5}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--ink)">${values[i]}</text>
+      <text x="${x+bw/2}" y="${y-5}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--ink)">${fmt(round2(values[i]))}</text>
       <text x="${x+bw/2}" y="${base+15}" text-anchor="middle" font-size="11" fill="var(--ink-soft)">${l}</text>`;
   });
   return `<svg class="bar-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${title}">
