@@ -120,6 +120,18 @@ function certificateEl(s, preview, style){
   cert.querySelector('.cert-name').textContent = (currentUser && currentUser.name) || 'Estudante';
   return cert;
 }
+/* mostra o certificado na tela: ele é desenhado sempre com 1000px de largura e reduzido por inteiro
+   (transform), em vez de encolher as letras — no Android, letra muito pequena é aumentada pelo
+   navegador e o texto encavalava nas miniaturas */
+function certFit(cert){
+  const box = document.createElement('div');
+  box.className = 'cert-fit';
+  box.appendChild(cert);
+  const fit = ()=>{ const w = box.clientWidth; if(w) box.style.setProperty('--cs', w/1000); };
+  if(window.ResizeObserver) new ResizeObserver(fit).observe(box);
+  requestAnimationFrame(fit);
+  return box;
+}
 function certificatesScreen(){
   const wrap = document.createElement('div');
   wrap.appendChild(topbar('📜 Certificados', true, ()=>go('progress')));
@@ -166,7 +178,7 @@ function certificatesScreen(){
     const gal = h(`<div class="ct-gallery"></div>`);
     units.slice().sort((a,b)=> (dates[b.id]||0)-(dates[a.id]||0)).forEach(s=>{
       const it = h(`<button type="button" class="ct-item" aria-label="Abrir o certificado de ${escHTML(s.name)}"><div class="ct-thumb"></div><b>${escHTML(s.name)}</b><small>✓ ${new Date(dates[s.id]).toLocaleDateString('pt-BR')}</small></button>`);
-      it.querySelector('.ct-thumb').appendChild(certificateEl(s, false));
+      it.querySelector('.ct-thumb').appendChild(certFit(certificateEl(s, false)));
       it.onclick = ()=> go('certificate', {subjectId:s.id, certPreview:false});
       gal.appendChild(it);
     });
@@ -175,7 +187,7 @@ function certificatesScreen(){
     const nextS = near ? near.s : SUBJECTS[0];
     const box = h(`<div class="cert-preview-box"><div class="cpb-h"><b>👀 Veja como vai ficar</b><small>Prévia do seu certificado de ${escHTML(nextS.name)}</small></div></div>`);
     const mini = h(`<button type="button" class="cert-mini" aria-label="Ver a prévia em tamanho grande"></button>`);
-    mini.appendChild(certificateEl(nextS, true));
+    mini.appendChild(certFit(certificateEl(nextS, true)));
     mini.onclick = ()=> go('certificate', {subjectId:nextS.id, certPreview:true});
     box.appendChild(mini);
     c.appendChild(box);
@@ -246,7 +258,7 @@ function certificateScreen(){
   const draw = ()=>{
     const cur = certStyleFor(s);
     holder.innerHTML = '';
-    holder.appendChild(certificateEl(s, preview, cur));
+    holder.appendChild(certFit(certificateEl(s, preview, cur)));
     picker.querySelectorAll('button').forEach(b=> b.setAttribute('aria-pressed', b.dataset.st===cur));
   };
   CERT_STYLES.forEach(st=>{
