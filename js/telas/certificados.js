@@ -63,18 +63,29 @@ function certWavesSVG(){
   }
   return `<svg class="cert-waves" viewBox="0 0 1000 707" preserveAspectRatio="none" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1">${paths}</g></svg>`;
 }
-/* selo redondo: logo no meio e o texto em volta */
-let _sealSeq = 0;
-function certSealSVG(){
-  const id = 'seal' + (++_sealSeq);
-  return `<svg class="cert-seal" viewBox="0 0 120 120" aria-hidden="true">
-    <defs><path id="${id}" d="M60 60 m-43 0 a43 43 0 1 1 86 0 a43 43 0 1 1 -86 0"/></defs>
-    <circle cx="60" cy="60" r="57" class="seal-out"/>
-    <circle cx="60" cy="60" r="50" class="seal-ring"/>
-    <circle cx="60" cy="60" r="33" class="seal-in"/>
-    <text class="seal-txt"><textPath href="#${id}" startOffset="0">★ MATEMÁTICA SHOW ★ EPISÓDIO CONCLUÍDO</textPath></text>
-    <image href="${LOGO_URI}" x="38" y="38" width="44" height="44"/>
+/* selo redondo: borda serrilhada, logo no meio e o texto em volta, letra por letra.
+   Vai como imagem (<img> com o SVG dentro): desenhado direto na página, o navegador some com as
+   letrinhas quando o certificado é reduzido na tela. Por ser imagem, as cores vêm prontas por versão. */
+const CERT_SEAL_COLORS = {v1:['#2FD68A','#F2C14E','#12392A'], v2:['#A77BFF','#E2D2FF','#2C2148'], v3:['#4FA8FF','#CFE6FF','#162C4D']};
+function certSealSVG(style){
+  const [acc, acc2, ring] = CERT_SEAL_COLORS[style] || CERT_SEAL_COLORS.v1;
+  const txt = '★ MATEMÁTICA SHOW ★ EPISÓDIO CONCLUÍDO ', n = txt.length, rr = 42;
+  let letters = '';
+  [...txt].forEach((ch,i)=>{
+    if(ch===' ') return;
+    const ang = i/n*360 - 90, rad = ang*Math.PI/180, x = 60 + rr*Math.cos(rad), y = 60 + rr*Math.sin(rad);
+    letters += `<text x="${x.toFixed(2)}" y="${y.toFixed(2)}" transform="rotate(${(ang+90).toFixed(1)} ${x.toFixed(2)} ${y.toFixed(2)})" text-anchor="middle" dominant-baseline="central">${ch}</text>`;
+  });
+  const teeth = [];
+  for(let i=0;i<60;i++){ const a2 = i/60*Math.PI*2, r2 = i%2 ? 55 : 59; teeth.push(`${(60+r2*Math.cos(a2)).toFixed(1)},${(60+r2*Math.sin(a2)).toFixed(1)}`); }
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="240" height="240">
+    <polygon points="${teeth.join(' ')}" fill="${acc2}"/>
+    <circle cx="60" cy="60" r="51" fill="${ring}" stroke="${acc2}" stroke-opacity=".7" stroke-width="1"/>
+    <g font-family="Inter, Arial, Helvetica, sans-serif" font-weight="800" font-size="7.2" fill="${acc2}">${letters}</g>
+    <circle cx="60" cy="60" r="33" fill="#0b0b10" stroke="${acc}" stroke-width="1.5"/>
   </svg>`;
+  // o logo vai por cima, fora da imagem (imagem dentro de imagem SVG não carrega)
+  return `<span class="cert-seal"><img alt="" src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}"><img class="cert-seal-logo" alt="" src="${LOGO_URI}"></span>`;
 }
 /* alguns símbolos de matemática bem clarinhos no fundo, só nos espaços vazios
    (texto, posição x/y e tamanho em cqw, giro em graus) */
@@ -100,18 +111,19 @@ function certificateEl(s, preview, style){
         <div class="cert-brand"><img src="${LOGO_URI}" alt="" class="cert-logo"><span>Matemática Show</span></div>
         <div class="cert-date">${dt}</div>
       </div>
-      <div class="cert-num ${num>=10?'two':''}" aria-hidden="true">${num}</div>
+      <div class="cert-num-wrap ${num>=10?'two':''}" aria-hidden="true"><span class="cert-num-l">Episódio</span><div class="cert-num">${num}</div></div>
       <div class="cert-main">
-        <div class="cert-tags"><span class="cert-tag">Certificado</span><span class="cert-k">de conclusão</span></div>
+        <div class="cert-title">Certificado</div><div class="cert-k"><span>de conclusão</span><i></i></div>
         <div class="cert-to">concedido a</div>
         <div class="cert-name"></div>
         <div class="cert-bar" aria-hidden="true"></div>
         <div class="cert-subj">por concluir o <b>Episódio ${num} · ${escHTML(s.name)}</b></div>
         <div class="cert-lvl">${lv ? escHTML(lv.name) : ''}${g ? ` · ${escHTML(g.name)}` : ''}</div>
+        <div class="cert-steps"><span>✓ Fase fácil</span><span>✓ Fase média</span><span>✓ Fase difícil</span><span class="gf">🏆 Grande final</span></div>
       </div>
       <div class="cert-bottom">
-        ${certSealSVG()}
-        <div class="cert-feat">Fases fácil, média e difícil concluídas<br>e Grande final vencida.</div>
+        ${certSealSVG(style)}
+        <div class="cert-feat"><b>Episódio concluído</b>Todas as fases da Trilha vencidas<br>no app Matemática Show.</div>
         <div class="cert-sign"><span class="cert-sig">Matemática Show</span><span class="cert-sig-l">Emitido pelo app Matemática Show</span></div>
       </div>
     </div>
