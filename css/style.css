@@ -4033,3 +4033,11 @@ html[data-card="card_galaxia"] .player-card, .lp-card.cd-card_galaxia{background
 .rpp-note{margin-top:9mm; font-size:14pt; padding:6mm 7mm; border-radius:5mm;}
 .rpp-end{margin-top:12mm; padding-top:3mm; border-top:.3mm solid #EDEDF4; text-align:center; font-size:8pt; color:#9A9AB0;}
 .rpp-box, .rps-nums, .rpp-note{break-inside:avoid;}
+
+/* certificado na tela: desenhado com 1000px e reduzido inteiro (veja certFit) */
+.cert-fit{position:relative; width:100%; aspect-ratio:1000/707; border-radius:14px;}
+.cert-fit > .cert{position:absolute; left:0; top:0; width:1000px; max-width:none; margin:0; transform-origin:0 0; transform:scale(var(--cs, .34));
+  border-radius:calc(14px / var(--cs, .34));}
+.cert-fit > .cert > .cert-in{border-radius:inherit;}
+.ct-thumb .cert-fit, .ct-thumb .cert-fit > .cert{border-radius:8px;}
+.ct-thumb .cert-fit > .cert{border-radius:calc(8px / var(--cs, .3)); box-shadow:none;}
