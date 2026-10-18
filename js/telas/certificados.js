@@ -28,7 +28,7 @@ function syncCertDates(units){
 }
 function fmtCertDate(ts){ const d = new Date(ts); return `${d.getDate()} de ${MESES[d.getMonth()]} de ${d.getFullYear()}`; }
 /* as versões do certificado (verde, roxo e azul): fundo escuro com linhas onduladas e o número do episódio
-   grandão em degradê. Sem escolha salva, o Fundamental usa a 1 e o Ensino Médio a 2. */
+   grandão em degradê. Sem escolha salva, usa a roxa. */
 const CERT_STYLES = [
   {id:'v1', name:'Versão 1 · Verde'},
   {id:'v2', name:'Versão 2 · Roxo'},
@@ -37,8 +37,7 @@ const CERT_STYLES = [
 function certStyleFor(s){
   const st = currentSettingsSync().certStyle;
   if(CERT_STYLES.some(x=>x.id===st)) return st;
-  const g = subjectGroupOf(s.id);
-  return g && g.level==='em' ? 'v2' : 'v1';
+  return 'v2';
 }
 /* linhas onduladas do fundo (tipo curva de nível), em SVG */
 function certWavesSVG(){
@@ -63,26 +62,45 @@ function certWavesSVG(){
   }
   return `<svg class="cert-waves" viewBox="0 0 1000 707" preserveAspectRatio="none" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1">${paths}</g></svg>`;
 }
-/* selo redondo: logo no meio e o texto em volta */
-let _sealSeq = 0;
-function certSealSVG(){
-  const id = 'seal' + (++_sealSeq);
-  return `<svg class="cert-seal" viewBox="0 0 120 120" aria-hidden="true">
-    <defs><path id="${id}" d="M60 60 m-43 0 a43 43 0 1 1 86 0 a43 43 0 1 1 -86 0"/></defs>
-    <circle cx="60" cy="60" r="57" class="seal-out"/>
-    <circle cx="60" cy="60" r="50" class="seal-ring"/>
-    <circle cx="60" cy="60" r="33" class="seal-in"/>
-    <text class="seal-txt"><textPath href="#${id}" startOffset="0">★ MATEMÁTICA SHOW ★ EPISÓDIO CONCLUÍDO</textPath></text>
-    <image href="${LOGO_URI}" x="38" y="38" width="44" height="44"/>
+/* selo redondo: "MATEMÁTICA SHOW" em cima, "CONCLUIU O EPISÓDIO" embaixo, louros dos lados, estrela e o logo.
+   Vai como imagem (<img> com o SVG dentro): desenhado direto na página, o navegador some com as letrinhas
+   quando o certificado é reduzido na tela. Por isso as cores vêm prontas por versão; o logo vai por cima. */
+const CERT_SEAL_COLORS = {v1:['#2FD68A','#BFF5DA'], v2:['#9B6BFF','#E9DEFF'], v3:['#4FA8FF','#DCEEFF']};
+function certArcText(txt, r, from, to, bottom){
+  const n = txt.length; let out = '';
+  [...txt].forEach((ch,i)=>{
+    if(ch===' ') return;
+    const ang = from + (to-from)*(n===1 ? .5 : i/(n-1)), rad = ang*Math.PI/180;
+    const x = 60 + r*Math.cos(rad), y = 60 + r*Math.sin(rad), rot = bottom ? ang-90 : ang+90;
+    out += `<text x="${x.toFixed(2)}" y="${y.toFixed(2)}" transform="rotate(${rot.toFixed(1)} ${x.toFixed(2)} ${y.toFixed(2)})" text-anchor="middle" dominant-baseline="central">${ch}</text>`;
+  });
+  return out;
+}
+function certSealSVG(style){
+  const [acc, soft] = CERT_SEAL_COLORS[style] || CERT_SEAL_COLORS.v2;
+  let laurel = '';
+  [-1,1].forEach(side=>{
+    for(let k=0;k<4;k++){
+      const ang = (180 + side*(-18 + k*13)) * Math.PI/180;
+      const x = 60 + (side<0?-1:1)*Math.abs(37*Math.cos(ang)), y = 60 + 37*Math.sin(ang)*-1 + 2;
+      laurel += `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="1.9" ry="4.2" transform="rotate(${side*(25+k*14)} ${x.toFixed(1)} ${y.toFixed(1)})" fill="${soft}" opacity=".85"/>`;
+    }
+  });
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="240" height="240">
+    <circle cx="60" cy="60" r="57" fill="#0E0B22" stroke="${acc}" stroke-width="2.6"/>
+    <circle cx="60" cy="60" r="31" fill="none" stroke="${acc}" stroke-width="1.6"/>
+    <g font-family="Inter, Arial, Helvetica, sans-serif" font-weight="800" font-size="8.2" fill="${soft}">
+      ${certArcText('MATEMÁTICA SHOW', 44, -160, -20, false)}
+      ${certArcText('CONCLUIU O EPISÓDIO', 44, 155, 25, true)}
+    </g>
+    ${laurel}
+    <path d="M60 86 l1.6 3.3 3.6 .5 -2.6 2.5 .6 3.6 -3.2 -1.7 -3.2 1.7 .6 -3.6 -2.6 -2.5 3.6 -.5 Z" fill="${soft}"/>
   </svg>`;
+  return `<span class="cert-seal"><img alt="" src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}"><img class="cert-seal-logo" alt="" src="${LOGO_URI}"></span>`;
 }
 /* alguns símbolos de matemática bem clarinhos no fundo, só nos espaços vazios
    (texto, posição x/y e tamanho em cqw, giro em graus) */
-const CERT_SYMS = [
-  ['π', 47, 12.5, 4.2, -12], ['√', 62, 9, 3.4, 8], ['∑', 88.5, 9.5, 3.2, -6],
-  ['÷', 57, 33, 2.8, 10], ['∞', 40, 47, 3.6, -8], ['x²', 64, 46, 2.9, 6],
-  ['Δ', 9.5, 41.5, 2.6, -10], ['%', 52.5, 62, 2.6, 12], ['=', 31.5, 7.8, 2.6, 0],
-];
+const CERT_SYMS = [['π', 52.5, 9.5, 4.8, -6], ['√', 68, 15.5, 3.8, 8], ['Σ', 89.5, 13, 3.6, -4]];
 const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 /* o certificado em si (usado no de verdade e na prévia) */
 function certificateEl(s, preview, style){
@@ -90,27 +108,33 @@ function certificateEl(s, preview, style){
   const dt = fmtCertDate(preview ? Date.now() : certEarnedTs(s));
   const num = SUBJECT_ORDER.indexOf(s.id) + 1 || SUBJECTS.indexOf(s) + 1;
   const g = subjectGroupOf(s.id), lv = g && SUBJECT_LEVELS.find(l=>l.id===g.level);
+  const nm = (currentUser && currentUser.name) || 'Estudante';
+  const nameCls = nm.length > 26 ? 'xs' : nm.length > 18 ? 'sm' : ''; // nome comprido: letra menor pra não encostar no selo
   const cert = h(`<div class="cert cert-${style} ${preview?'preview':''}">
     <div class="cert-in">
       ${certWavesSVG()}
       <div class="cert-glow" aria-hidden="true"></div>
       <div class="cert-syms" aria-hidden="true">${CERT_SYMS.map(([t,x,y,sz,r])=>`<span style="left:${x}cqw;top:${y}cqw;font-size:${sz}cqw;transform:rotate(${r}deg)">${t}</span>`).join('')}</div>
       <div class="cert-frame" aria-hidden="true"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i></div>
+      <svg class="cert-streaks" viewBox="0 0 1000 707" preserveAspectRatio="none" aria-hidden="true">
+        <polygon points="0,0 150,0 0,105" class="st1"/><polygon points="0,130 186,0 214,0 0,150" class="st2"/>
+        <polygon points="1000,707 850,707 1000,602" class="st1"/><polygon points="1000,577 1000,557 786,707 814,707" class="st2"/>
+      </svg>
       <div class="cert-top">
-        <div class="cert-brand"><img src="${LOGO_URI}" alt="" class="cert-logo"><span>Matemática Show</span></div>
-        <div class="cert-date">${dt}</div>
+        <div class="cert-brand"><img src="${LOGO_URI}" alt="" class="cert-logo"><div><span>Matemática Show</span><small>Aprender também é uma vitória</small><i></i></div></div>
+        <div class="cert-date"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4M7.5 13.5h2M11 13.5h2M14.5 13.5h2M7.5 16.5h2M11 16.5h2"/></svg>${dt}</div>
       </div>
       <div class="cert-num ${num>=10?'two':''}" aria-hidden="true">${num}</div>
       <div class="cert-main">
         <div class="cert-tags"><span class="cert-tag">Certificado</span><span class="cert-k">de conclusão</span></div>
         <div class="cert-to">concedido a</div>
-        <div class="cert-name"></div>
+        <div class="cert-name ${nameCls}"></div>
         <div class="cert-bar" aria-hidden="true"></div>
-        <div class="cert-subj">por concluir o <b>Episódio ${num} · ${escHTML(s.name)}</b></div>
+        <div class="cert-subj ${s.name.length>18?'long':''}">por concluir o <b>Episódio ${num} · ${escHTML(s.name)}</b></div>
         <div class="cert-lvl">${lv ? escHTML(lv.name) : ''}${g ? ` · ${escHTML(g.name)}` : ''}</div>
       </div>
       <div class="cert-bottom">
-        ${certSealSVG()}
+        ${certSealSVG(style)}
         <div class="cert-feat">Fases fácil, média e difícil concluídas<br>e Grande final vencida.</div>
         <div class="cert-sign"><span class="cert-sig">Matemática Show</span><span class="cert-sig-l">Emitido pelo app Matemática Show</span></div>
       </div>
