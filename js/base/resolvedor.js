@@ -96,23 +96,24 @@ function parseExprTokens(toks){
     return node;
   }
   function parseMul(){
-    let node = parsePow();
+    let node = parseUnary();
     while(peek() && (peek().t==='*' || peek().t==='/' || peek().t==='(' || peek().t==='num')){
       let op = '*';
       if(peek().t==='*' || peek().t==='/'){ op = next().t; }
-      const right = parsePow();
+      const right = parseUnary();
       node = {op, l:node, r:right};
     }
     return node;
   }
-  function parsePow(){
-    let node = parseUnary();
-    if(peek() && peek().t==='^'){ next(); const right = parsePow(); node = {op:'^', l:node, r:right}; }
-    return node;
-  }
+  // o sinal de menos vem depois da potência: -3^2 = -(3^2) = -9; (-3)^2 = 9
   function parseUnary(){
     if(peek() && peek().t==='-'){ next(); const n = parseUnary(); return {op:'neg', l:n}; }
-    return parsePrimary();
+    return parsePow();
+  }
+  function parsePow(){
+    let node = parsePrimary();
+    if(peek() && peek().t==='^'){ next(); const right = parseUnary(); node = {op:'^', l:node, r:right}; }
+    return node;
   }
   function parsePrimary(){
     if(peek() && peek().t==='('){ next(); const n = parseAdd(); if(peek() && peek().t===')') next(); return n; }
@@ -495,7 +496,7 @@ function trySolveArithmetic(text){
       if(op==='/' && b>0){
         const {quotient, remainder} = longDivisionSteps(a,b);
         const steps = divisaoNarrativa(a,b);
-        return { howTo:'Essa é uma divisão. Vamos montar a conta pelo método da chave, perguntando quantas vezes o divisor cabe em cada pedaço do dividendo.', steps, simple:'Veja quantas vezes o divisor cabe no começo do dividendo, multiplique e subtraia; desça o próximo dígito e repita até não sobrarem mais dígitos.', final: remainder>0 ? `${quotient} (resto ${remainder})` : `${quotient}`, visual: divisaoChave(a,b,true) };
+        return { howTo:'Essa é uma divisão. Vamos montar a conta pelo método da chave, perguntando quantas vezes o divisor cabe em cada pedaço do dividendo.', steps, simple:'Veja quantas vezes o divisor cabe no começo do dividendo, multiplique e subtraia; desça o próximo dígito e repita até não sobrarem mais dígitos.', final: remainder>0 ? `${quotient} (resto ${remainder}) · em decimal: ${fmt(a/b)}` : `${quotient}`, visual: divisaoChave(a,b,true) };
       }
     } else {
       // pelo menos um dos números tem casas decimais
