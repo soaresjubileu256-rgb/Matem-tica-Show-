@@ -109,7 +109,7 @@ async function profileScreen(){
     <div class="pf-title">${lv.title}</div>
     <div class="pf-lv"><span class="pf-lv-b">NÍVEL ${lv.level}</span><div class="pf-xp"><i style="width:${lv.pct}%"></i></div><small>${lv.into}/${lv.need} XP</small></div>
     <div class="pf-chips">
-      <span>🔥 ${streak} dia${streak===1?'':'s'}</span><span>💎 ${(g.gems||0).toLocaleString('pt-BR')}</span><span>⚡ ${(g.xp||0).toLocaleString('pt-BR')} XP</span>
+      <span>🔥 ${streak} dia${streak===1?'':'s'}</span><span>🪙 ${(g.gems||0).toLocaleString('pt-BR')}</span><span>⚡ ${(g.xp||0).toLocaleString('pt-BR')} XP</span>
     </div>
   </div>`);
   hero.querySelector('.pf-name').textContent = name;

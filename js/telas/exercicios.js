@@ -201,8 +201,11 @@ function exProgressEl(sess){
   return h(`<div class="ex-prog"><div class="ex-prog-top"><span>Questão <b>${Math.min(sess.index+1, sess.total)}</b> de ${sess.total}</span><span class="ex-dpill ex-dp-${sess.difficulty}">${exDiffName(sess.difficulty)}</span></div><div class="ex-seg">${segs}</div></div>`);
 }
 
+/* aceita arredondar (ex.: 1/3 → 0,33), mas a folga encolhe em respostas pequenas:
+   com folga fixa de 0,02, em "5,04 − 5,01" (0,03) valia responder 0,02 ou 0,04, e em 1/28 valia 0 */
 function checkAnswerValue(userVal, correctVal){
-  return Math.abs(userVal - correctVal) < 0.02;
+  const tol = Math.min(0.02, Math.max(0.0005, Math.abs(correctVal) * 0.05));
+  return Math.abs(userVal - correctVal) < tol;
 }
 /* campo de resposta com um botão "/" do lado, pra quem digita fração e não acha a barra no teclado do celular */
 function answerInputHTML(id, placeholder){
@@ -248,6 +251,8 @@ function parseUserNumber(str){
 
 function exerciseSessionScreen(){
   const sess = state.session;
+  // sem a sessão certa (ex.: voltou pelo histórico ou recarregou o app), volta pra escolha em vez de quebrar
+  if(!sess || !sess.subjectId || !sess.current || sess.kind || sess.config || sess.errorQueue){ setTimeout(()=>go('exercisesSubjects'),0); return document.createElement('div'); }
   const si = Math.max(0, SUBJECTS.findIndex(x=>x.id===sess.subjectId));
   const s = SUBJECTS[si];
   const wrap = document.createElement('div');
@@ -446,6 +451,8 @@ async function recordReviewAnswer(item, correct){
 
 function reviewErrorsSessionScreen(){
   const sess = state.session;
+  // sem a sessão certa (ex.: voltou pelo histórico ou recarregou o app), volta pra escolha em vez de quebrar
+  if(!sess || !sess.errorQueue){ setTimeout(()=>go('errors'),0); return document.createElement('div'); }
   const wrap = document.createElement('div');
   wrap.appendChild(topbar('Revisar erros', true, ()=>go('errors')));
   const c = h(`<div class="content"></div>`);
@@ -684,6 +691,8 @@ function challengeEnd(c, sess){
 }
 function challengeSessionScreen(){
   const sess = state.session;
+  // sem a sessão certa (ex.: voltou pelo histórico ou recarregou o app), volta pra escolha em vez de quebrar
+  if(!sess || sess.kind!=='challenge'){ setTimeout(()=>go('challengeDifficulty'),0); return document.createElement('div'); }
   const wrap = document.createElement('div');
   wrap.appendChild(topbar('🏆 Desafio', true, ()=>go('challengeDifficulty')));
   const c = h(`<div class="content"></div>`);
@@ -1089,6 +1098,8 @@ function ptBreakdown(sess){
 
 function personalizedSessionScreen(){
   const sess = state.session;
+  // sem a sessão certa (ex.: voltou pelo histórico ou recarregou o app), volta pra escolha em vez de quebrar
+  if(!sess || !sess.config || !sess.subjects){ setTimeout(()=>go('personalizedSetup'),0); return document.createElement('div'); }
   const wrap = document.createElement('div');
   // sair no meio do treino pede confirmação, pra não perder o progresso sem querer
   const ptBack = sess.config.isMix ? 'home' : 'personalizedSetup';
