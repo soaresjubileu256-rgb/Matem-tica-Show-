@@ -10,6 +10,10 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
+  {v:19, date:'2026-10-22', title:'Simulados das provas com muito mais questões', items:[
+    {ico:'📝', t:'Quase o triplo de questões', d:'ENEM, ETEC, Fuvest, Unicamp, Unesp e OBMEP ganharam 80 modelos novos de questão, com situações, gráficos e figuras diferentes.', go:'exams'},
+    {ico:'🔄', t:'Sem repetir', d:'O simulado lembra o que você já fez: só repete uma questão depois de passar por todas, e nunca coloca duas parecidas na mesma prova.', go:'exams'},
+  ]},
   {v:18, date:'2026-10-17', title:'Loja do Pi e ajudas com moedas', items:[
     {ico:'🛍️', t:'Loja do Pi', d:'Use suas moedas pra trocar o chapéu e os acessórios do Pi, a moldura do avatar, o fundo do cartão e a comemoração. Tem até uma coroa de ouro rara!', go:'loja'},
     {ico:'✂️', t:'Ajudas nas fases', d:'Na Trilha e na Arena: 50/50 tira duas erradas (15 moedas) e +1 vida (20 moedas), com limite por dia.', go:'home'},
