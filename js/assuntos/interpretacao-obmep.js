@@ -197,7 +197,7 @@ IQ_OBMEP.push(
       : `<polygon points="${_f(x-6.5)},${_f(y)} ${_f(x+6.5)},${_f(y)} ${_f(x)},${_f(y-12)}" fill="#12B886" stroke="#0E9970" stroke-width="1.2"/>`;
     const pile = (kind, cnt, cx, yb)=>{ let g = ''; for(let i=0;i<cnt;i++){ const row = Math.floor(i/3), inRow = Math.min(3, cnt - row*3), col = i%3; g += sh(kind, cx + (col - (inRow-1)/2)*14, yb - row*13); } return g; };
     const bal = (cx, k1, n1, k2, n2)=> cvL(cx, 128, cx, 66, 'geo-face') + `<polygon points="${cx-14},136 ${cx+14},136 ${cx},124" class="geo-face side"/>` + cvL(cx-56, 66, cx+56, 66, 'geo-face')
-      + cvL(cx-56, 66, cx-56, 100, 'iq-grid') + cvL(cx+56, 66, cx+56, 100, 'iq-grid') + cvL(cx-78, 100, cx-34, 100, 'geo-face') + cvL(cx+34, 100, cx+78, 100, 'geo-face')
+      + cvL(cx-56, 66, cx-56, 100, 'geo-hidden') + cvL(cx+56, 66, cx+56, 100, 'geo-hidden') + cvL(cx-78, 100, cx-34, 100, 'geo-face') + cvL(cx+34, 100, cx+78, 100, 'geo-face')
       + pile(k1, n1, cx-56, 98) + pile(k2, n2, cx+56, 98);
     const s = bal(80, 'c', a, 'q', b) + bal(240, 'q', c, 't', d) + iqT(80, 154, 'Balança 1', 11, 'iq-tick') + iqT(240, 154, 'Balança 2', 11, 'iq-tick');
     return {subj:'regra3', topic:'Balanças e proporção', text:`<p>As duas balanças da figura estão em equilíbrio. Na primeira, ${a} bolas equilibram ${b} cubos; na segunda, ${c} cubos equilibram ${d} pirâmides. Objetos de mesma forma têm o mesmo peso.</p>`,

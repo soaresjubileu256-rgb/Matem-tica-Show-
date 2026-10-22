@@ -74,7 +74,7 @@ IQ_ETEC.push(
       visual: cvSVG(320, 200, s, 'Ladrilhos em volta de um vértice'),
       ask:'Qual é a medida do ângulo x de cada um desses ladrilhos iguais?',
       opts: iqMC(x, [[360 - S,`Esse é o espaço que sobra para os ${cfg.k} ladrilhos juntos; falta dividir por ${cfg.k}.`],[(180 - S)/cfg.k,'Usou 180°, mas em volta de um ponto a soma dos ângulos é 360°.'],[Math.round(360/(cfg.known.length+cfg.k)),'Dividiu 360° pelo número de ladrilhos, mas os ladrilhos não têm todos o mesmo ângulo.'],[cfg.known[0][1] !== x ? cfg.known[0][1] : null,`Esse é o ângulo do ${cfg.known[0][0]}, não o dos ladrilhos iguais.`],[(360 + S)/cfg.k,'Os ângulos já conhecidos devem ser subtraídos de 360°, não somados.']], {fmt:v=>iqNum(v)+'°', step:15}),
-      steps:['Em volta de um ponto, os ângulos somam 360°.', `Ângulos conhecidos: ${cfg.known.map(k=>k[1]+'°').join(' + ')} = ${S}°`, `${cfg.k}x = 360° − ${S}° = ${360-S}° → x = ${360-S}° ÷ ${cfg.k} = ${x}°`, `(É o ângulo interno do ${cfg.nome} regular.)`]};
+      steps:['Em volta de um ponto, os ângulos somam 360°.', cfg.known.length>1 ? `Ângulos conhecidos: ${cfg.known.map(k=>k[1]+'°').join(' + ')} = ${S}°` : `Ângulo conhecido: ${S}°`, `${cfg.k}x = 360° − ${S}° = ${360-S}° → x = ${360-S}° ÷ ${cfg.k} = ${x}°`, `(É o ângulo interno do ${cfg.nome}${/quadrado|equilátero/.test(cfg.nome) ? '' : ' regular'}.)`]};
   },
   // área em planta de casa (caixas de piso)
   ()=>{
@@ -131,7 +131,7 @@ IQ_ETEC.push(
     const tipo = pick(['quadrados','triângulos','casinhas']);
     const b = {quadrados:3, triângulos:2, casinhas:5}[tipo], um = {quadrados:4, triângulos:3, casinhas:6}[tipo];
     const f = n=> b*n + 1, N = randInt(12,40), ans = f(N);
-    const u = 18, base = 100;
+    const u = 26, base = 84;
     let s = '', x0 = 14;
     [1,2,3].forEach(n=>{ const E = new Map(), add = (x1,y1,x2,y2)=>{ const key = [[x1,y1],[x2,y2]].map(p=>p.map(v=>v.toFixed(1)).join(',')).sort().join('|'); E.set(key,[x1,y1,x2,y2]); };
       let w;
@@ -147,11 +147,11 @@ IQ_ETEC.push(
       }
       E.forEach(([x1,y1,x2,y2])=>{ s += `<line x1="${_f(x1)}" y1="${_f(y1)}" x2="${_f(x2)}" y2="${_f(y2)}" stroke="#FF8A4C" stroke-width="3" stroke-linecap="round"/>`; });
       s += iqT(x0 + w/2, base+20, `Figura ${n}`, 11) + iqT(x0 + w/2, base+34, `${E.size} palitos`, 10, 'iq-tick');
-      x0 += w + 42; });
+      x0 += w + 34; });
     s += iqT(x0-16, base-8, '…', 16);
     const nome = {quadrados:'quadrados', triângulos:'triângulos', casinhas:'casinhas (um quadrado com um telhado)'}[tipo];
     return {subj:'padroes', topic:'Sequências e padrões', text:`<p>Usando palitos de fósforo, ${iqName()} monta uma sequência de figuras formadas por ${nome} lado a lado. Desenhos vizinhos dividem o palito que fica entre eles. As três primeiras figuras estão desenhadas abaixo.</p>`,
-      visual: cvSVG(320, 144, s, 'Sequência de figuras com palitos'),
+      visual: cvSVG(320, 128, s, 'Sequência de figuras com palitos'),
       ask:`Mantendo o mesmo padrão, quantos palitos serão usados na Figura ${N}?`,
       opts: iqMC(ans, [[um*N,`Contou cada um dos ${N} desenhos com ${um} palitos separados, mas vizinhos dividem um palito.`],[b*N,'Faltou o primeiro palito, que não é dividido com ninguém (o "+1").'],[f(N-1),`Esse é o número de palitos da Figura ${N-1}.`],[(f(3)*N)%3===0 ? f(3)*N/3 : null,'Usou proporção (regra de três) com a Figura 3, mas o padrão tem um palito fixo e não é proporcional.'],[f(N)+b,`Esse é o número de palitos da Figura ${N+1}.`]], {fmt:v=>v+' palitos'}),
       steps:[`Figuras 1, 2 e 3: ${f(1)}, ${f(2)} e ${f(3)} palitos → a cada figura nova entram mais ${b} palitos`, `Figura n: ${b} × n + 1`, `Figura ${N}: ${b} × ${N} + 1 = ${ans} palitos`]};
@@ -174,7 +174,7 @@ IQ_ETEC.push(
     while(d1!==Math.round(d1) || d2!==Math.round(d2));
     const T = t1 + t2, dur = v=> v<60 ? `${v} min` : `${Math.floor(v/60)} h${v%60 ? ` ${v%60} min` : ''}`;
     const hDec = T/60, cents = Math.round((hDec - Math.floor(hDec))*100), lido = cents>0 && cents<60 ? Math.floor(hDec)*60 + cents : null;
-    const media = Math.round((d1+d2)/((v1+v2)/2)*60), soV1 = Math.round((d1+d2)/v1*60);
+    const r5 = v=> Math.round(v/5)*5, media = r5((d1+d2)/((v1+v2)/2)*60), soV1 = r5((d1+d2)/v1*60);
     const dest = pick(['à praia','ao sítio dos avós','ao parque estadual','à casa da tia']);
     let s = cvL(30, 130, 200, 60, 'geo-radius') + cvL(200, 60, 292, 60, 'geo-height');
     s += cvDot(30, 130, 5) + cvDot(200, 60, 5) + cvDot(292, 60, 5);
@@ -184,7 +184,7 @@ IQ_ETEC.push(
     return {subj:'regra3', topic:'Velocidade e tempo', text:`<p>Uma família vai de carro ${dest}. O caminho tem um trecho de estrada, feito a ${v1} km/h, e um trecho dentro da cidade, feito a ${v2} km/h, como no esquema. Considere que o carro mantém essas velocidades o tempo todo.</p>`,
       visual: cvSVG(320, 160, s, 'Esquema do caminho'),
       ask:'Quanto tempo dura a viagem inteira?',
-      opts: iqMC(T, [[lido,`A viagem leva ${iqNum(hDec)} h, mas ${iqNum(hDec - Math.floor(hDec))} h não é ${cents} minutos: 1 h = 60 min.`],[media,'Fez a média das duas velocidades; o tempo de cada trecho precisa ser calculado separadamente.'],[t1,'Faltou o tempo do trecho dentro da cidade.'],[soV1,'Usou a velocidade da estrada no caminho todo.'],[Math.round(60*(d1+d2)/v2),'Usou a velocidade da cidade no caminho todo.']], {fmt:dur, step:15}),
+      opts: iqMC(T, [[lido,`A viagem leva ${iqNum(hDec)} h, mas ${iqNum(hDec - Math.floor(hDec))} h não é ${cents} minutos: 1 h = 60 min.`],[media,'Fez a média das duas velocidades; o tempo de cada trecho precisa ser calculado separadamente.'],[t1,'Faltou o tempo do trecho dentro da cidade.'],[soV1,'Usou a velocidade da estrada no caminho todo.'],[r5(60*(d1+d2)/v2),'Usou a velocidade da cidade no caminho todo.']], {fmt:dur, step:15}),
       steps:[`Tempo = distância ÷ velocidade`, `Estrada: ${d1} ÷ ${v1} = ${iqNum(t1/60)} h = ${t1} min`, `Cidade: ${d2} ÷ ${v2} = ${iqNum(t2/60)} h = ${t2} min`, `Total: ${t1} + ${t2} = ${T} min = ${dur(T)}`]};
   },
   // razão e escala (maquete)
@@ -198,7 +198,7 @@ IQ_ETEC.push(
       visual: cvSVG(320, _f(y0+h+28), s, 'Quadra na maquete'),
       ask:'Qual é a área real da quadra, em metros quadrados?',
       opts: iqMC(area, [[Math.round(a*b*k/10000*100)/100,`A escala vale para cada comprimento; a área real fica ${k} × ${k} vezes maior, não só ${k} vezes.`],[a*b,'Essa é a área da maquete, em cm²; falta usar a escala.'],[2*(A+B),'Esse é o perímetro real da quadra, não a área.'],[a*b*k*k,'Essa área está em cm²; falta converter para m² (1 m² = 10 000 cm²).'],[Math.round(A*B/100*100)/100,'Erro na conversão de centímetro para metro.']], {fmt:v=>iqNum(v)+' m²'}),
-      steps:[`Cada 1 cm da maquete vale ${k} cm reais.`, `Comprimento real: ${a} × ${k} = ${a*k} cm = ${iqNum(A)} m; largura real: ${b} × ${k} = ${b*k} cm = ${iqNum(B)} m`, `Área = ${iqNum(A)} × ${iqNum(B)} = ${iqNum(area)} m²`]};
+      steps:[`Cada 1 cm da maquete vale ${k} cm reais.`, `Comprimento real: ${a} × ${k} = ${iqNum(a*k)} cm = ${iqNum(A)} m; largura real: ${b} × ${k} = ${iqNum(b*k)} cm = ${iqNum(B)} m`, `Área = ${iqNum(A)} × ${iqNum(B)} = ${iqNum(area)} m²`]};
   },
   // probabilidade simples (roleta da festa junina)
   ()=>{
