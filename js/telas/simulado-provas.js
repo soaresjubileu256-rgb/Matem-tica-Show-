@@ -8,11 +8,37 @@
 const IQ_LETTERS = 'ABCDE';
 function provaSimHistory(examId){ const g = loadGame(); g.provaSims = g.provaSims || {}; return g.provaSims[examId] || []; }
 
+/* escolhe os modelos do simulado sem repetir: primeiro os que a pessoa ainda não viu (g.provaSeen guarda,
+   por prova, os modelos já usados, do mais antigo pro mais novo); quando todos já saíram, recomeça pelos
+   mais antigos. No mesmo simulado não entram dois modelos do mesmo tema. */
+function provaPickModels(examId){
+  const cfg = IQ_EXAMS[examId], g = loadGame();
+  g.provaSeen = g.provaSeen || {};
+  const seen = (g.provaSeen[examId] || []).filter(i=> i < cfg.bank.length);
+  const all = cfg.bank.map((_,i)=>i);
+  const fresh = shuffle(all.filter(i=> !seen.includes(i)));
+  const order = fresh.concat(seen.filter((i,k)=> seen.indexOf(i)===k)); // inéditos primeiro, depois os vistos há mais tempo
+  const out = [], topics = new Set(), skipped = [];
+  for(const i of order){
+    if(out.length >= cfg.n) break;
+    const q = iqMake(examId, cfg.bank[i]);
+    if(!q) continue;
+    const t = q.topic || q.subj;
+    if(topics.has(t)){ skipped.push({i, q}); continue; }
+    topics.add(t); out.push({i, q});
+  }
+  // se faltar (banco pequeno), completa mesmo com tema repetido
+  while(out.length < cfg.n && skipped.length) out.push(skipped.shift());
+  const used = out.map(x=>x.i);
+  let next = seen.filter(i=> !used.includes(i)).concat(used);
+  if(all.every(i=> next.includes(i)) && fresh.length <= used.length) next = used.slice(); // ciclo completo: recomeça a contagem
+  g.provaSeen[examId] = next; saveGame();
+  return shuffle(out).map(x=>x.q);
+}
 function startProvaSim(examId){
   const cfg = IQ_EXAMS[examId], exam = EXAM_CONTENTS.find(e=>e.id===examId);
   if(!cfg || !exam) return;
-  const gens = shuffle(cfg.bank.slice()).slice(0, Math.min(cfg.n, cfg.bank.length));
-  const Q = gens.map(gen=> iqMake(examId, gen)).filter(Boolean).map(q=>({q, pick:-1, flag:false}));
+  const Q = provaPickModels(examId).map(q=>({q, pick:-1, flag:false}));
   state.session = {kind:'provaSim', examId, id:`p${Date.now().toString(36)}`, Q, cur:0, T0:Date.now(), limit:cfg.mins*60};
   go('provaRun');
 }
