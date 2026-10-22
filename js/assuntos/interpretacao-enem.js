@@ -38,12 +38,12 @@ IQ_ENEM.push(
     const soma = f.reduce((a,c,k)=>a+c*k,0), media = Math.round(soma/n*100)/100;
     const fs = [...f].sort((a,b)=>a-b), medF = (fs[2]+fs[3])/2;
     let acc = 0; const cum = f.map((c,k)=>{ acc += c; return `até ${k}: ${acc}`; });
-    const pos = n%2 ? `${(n+1)/2}º valor` : `média do ${n/2}º e do ${n/2+1}º valores`;
+    const pos = n%2 ? `o ${(n+1)/2}º valor` : `a média do ${n/2}º e do ${n/2+1}º valores`;
     return {subj:'estatistica', topic:'Mediana', text:`<p>${ctx.intro} O gráfico mostra ${ctx.q} ${ctx.who} tiveram cada quantidade de ${ctx.un} (eixo horizontal: número de ${ctx.what}; altura da coluna: número de ${ctx.who}).</p>`,
       visual: iqBarsSVG(['0','1','2','3','4','5'], f, {title:`Número de ${ctx.who} por quantidade de ${ctx.un}`}),
       ask:`A mediana do número de ${ctx.what} é`,
       opts: iqMC(med, [[moda, `Esse é o valor mais frequente (a moda), não o valor do meio da lista ordenada.`],[media, 'Essa é a média, não a mediana.'],[medF, 'Calculou a mediana das alturas das colunas (as frequências), não dos valores do eixo horizontal.'],[2.5, 'Pegou o meio do eixo horizontal; a mediana depende de quantos dados há em cada coluna.']], {fmt:v=>iqNum(v), step:0.5}),
-      steps:[`Total de dados: ${f.join(' + ')} = ${n}`, `Com ${n} valores em ordem, a mediana é o ${pos}.`, `Frequências acumuladas: ${cum.join(' · ')}`, `Mediana = ${iqNum(med)}`]};
+      steps:[`Total de dados: ${f.join(' + ')} = ${n}`, `Com ${n} valores em ordem, a mediana é ${pos}.`, `Frequências acumuladas: ${cum.join(' · ')}`, `Mediana = ${iqNum(med)}`]};
   },
   // gráfico de setores: material reciclável e quanto rende a venda
   ()=>{
@@ -78,8 +78,8 @@ IQ_ENEM.push(
   },
   // área: piso de um quarto e caixas de porcelanato
   ()=>{
-    const s = pick([40,50,60]), nC = randInt(6,12), nL = randInt(5,10), C = Math.round(nC*s)/100, L = Math.round(nL*s)/100, cnt = nC*nL;
-    let k; do{ k = pick([6,8,10,12,15]); } while(cnt%k===0);
+    let nC, nL, cnt, k; do{ nC = randInt(6,12); nL = randInt(5,10); cnt = nC*nL; k = pick([6,8,10,12,15]); } while(cnt%k===0);
+    const s = pick([40,50,60]), C = Math.round(nC*s)/100, L = Math.round(nL*s)/100;
     const cx = Math.ceil(cnt/k), nome = iqName(), aP = Math.round(s*s/100)/100;
     const sc = Math.min(230/C, 130/L), w = C*sc, hh = L*sc, t = s/100*sc;
     const vis = cvSVG(320, hh+56, `<rect x="40" y="16" width="${_f(w)}" height="${_f(hh)}" class="geo-face side"/><rect x="40" y="16" width="${_f(t)}" height="${_f(t)}" class="geo-face top"/>${iqT(40+w/2, hh+34, iqNum(C)+' m', 12, 'geo-lbl-h')}${iqT(46+w, 16+hh/2+4, iqNum(L)+' m', 12, 'geo-lbl-h', 'start')}${iqT(40+t+6, 16+t/2+4, `peça ${s} cm × ${s} cm`, 10.5, 'iq-tick', 'start')}`, 'Planta do quarto');
@@ -145,7 +145,7 @@ IQ_ENEM.push(
     const c = pick([['pedreiros','dias','construir o muro de uma escola'],['máquinas colheitadeiras','dias','colher toda a plantação de uma fazenda'],['funcionários','horas','separar o material de um galpão de reciclagem'],['torneiras iguais','minutos','encher o tanque de uma lavanderia']]);
     let P, Q, D; do{ P = randInt(2,8); Q = randInt(2,12); D = randInt(4,30); } while(P===Q || (P*D)%Q || (D*Q)%P);
     const x = P*D/Q;
-    return {subj:'regra3', topic:'Regra de três inversa', text:`<p>Trabalhando no mesmo ritmo, ${P} ${c[0]} levam ${D} ${c[1]} para ${c[2]}. ${Q>P ? 'Para adiantar o serviço' : 'Por causa de um imprevisto'}, a tarefa será feita por ${Q} ${c[0]}, todos com o mesmo ritmo dos anteriores.</p>`, visual:'',
+    return {subj:'regra3', topic:'Regra de três inversa', text:`<p>Trabalhando no mesmo ritmo, ${P} ${c[0]} levam ${D} ${c[1]} para ${c[2]}. ${Q>P ? 'Para adiantar o serviço' : 'Por causa de um imprevisto'}, a tarefa será feita por ${Q} ${c[0]}, mantendo o mesmo ritmo de trabalho.</p>`, visual:'',
       ask:`Em quantos ${c[1]} a tarefa ficará pronta?`,
       opts: iqMC(x, [[D*Q/P, `Usou proporção direta, mas as grandezas são inversas: com ${Q>P?'mais':'menos'} ${c[0]}, o tempo ${Q>P?'diminui':'aumenta'}.`],[P*D, `Esse é o total de trabalho (${c[0]} × ${c[1]}); falta dividir por ${Q}.`],[D-(Q-P), `Somar ou subtrair a diferença de ${c[0]} não mantém a proporção.`]], {fmt:v=>iqNum(v)+' '+c[1]}),
       steps:[`Grandezas inversamente proporcionais: ${c[0]} × tempo é constante.`, `${P} × ${D} = ${P*D}`, `${P*D} ÷ ${Q} = ${iqNum(x)} ${c[1]}`]};
@@ -171,16 +171,16 @@ IQ_ENEM.push(
   },
   // dispersão: maior amplitude térmica numa tabela
   ()=>{
-    const cid = shuffle(['Curitiba','Porto Alegre','São Joaquim','Brasília','Cuiabá','Goiânia','Belo Horizonte','Campos do Jordão','Teresina','Campo Grande']).slice(0,5);
+    const cid = shuffle(['Curitiba','Porto Alegre','Brasília','Cuiabá','Goiânia','Belo Horizonte','Campo Grande','Londrina','Uberlândia','Pelotas']).slice(0,5);
     let mn, mx, amp, best, hot, cold;
     for(;;){
-      mn = cid.map(()=> randInt(-4,20)); mx = mn.map(v=> v + randInt(5,17)); amp = mx.map((v,i)=> v-mn[i]);
+      mn = cid.map(()=> randInt(-2,18)); mx = mn.map(v=> v + randInt(5,17)); amp = mx.map((v,i)=> v-mn[i]);
       const A = Math.max(...amp); if(amp.filter(v=>v===A).length>1) continue;
       best = amp.indexOf(A); hot = mx.indexOf(Math.max(...mx)); cold = mn.indexOf(Math.min(...mn));
       if(hot!==best && cold!==best && hot!==cold && mx.filter(v=>v===mx[hot]).length===1 && mn.filter(v=>v===mn[cold]).length===1) break;
     }
     const opts = shuffle(cid.map((c,i)=>({label:c, ok:i===best, why: i===hot ? `${c} teve a maior temperatura máxima, mas amplitude é máxima − mínima: lá foi ${amp[i]} °C.` : i===cold ? `${c} teve a menor temperatura mínima, mas amplitude é máxima − mínima: lá foi ${amp[i]} °C.` : `Em ${c}, a amplitude foi ${nm(mx[i])} − ${np(mn[i])} = ${amp[i]} °C, menor que ${amp[best]} °C.`})));
-    return {subj:'dispersao', topic:'Amplitude', text:`<p>Amplitude térmica é a diferença entre a temperatura máxima e a temperatura mínima registradas em um mesmo dia. A tabela mostra as temperaturas de algumas cidades em um dia de inverno.</p>`,
+    return {subj:'dispersao', topic:'Amplitude', text:`<p>Amplitude térmica é a diferença entre a temperatura máxima e a temperatura mínima registradas em um mesmo dia. A tabela mostra as temperaturas de algumas cidades em um mesmo dia de julho.</p>`,
       visual: iqTable(['Cidade','Mínima','Máxima'], cid.map((c,i)=>[c, nm(mn[i])+' °C', nm(mx[i])+' °C'])),
       ask:'Qual cidade teve a maior amplitude térmica nesse dia?', opts,
       steps:[`Amplitude = máxima − mínima: ${cid.map((c,i)=>`${c}: ${nm(mx[i])} − ${np(mn[i])} = ${amp[i]} °C`).join(' · ')}`, `A maior é a de ${cid[best]}: ${amp[best]} °C.`]};
