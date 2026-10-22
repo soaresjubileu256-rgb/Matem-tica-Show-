@@ -48,10 +48,10 @@ IQ_UNICAMP.push(
   ()=>{
     const T = pick([15,20,30,40]), N0 = pick([1000,1500,2000,2500,3000,5000]), k = randInt(3,8), N = N0*Math.pow(2,k), t = k*T;
     const f = v=> v.toLocaleString('pt-BR');
-    return {subj:'exponencial', topic:'Função exponencial', text:`<p>Na fabricação de iogurte, uma cultura de bactérias é mantida a 42 °C. Nessas condições, o número de bactérias em uma amostra é dado por N(t) = N₀ · 2^(t/${T}), em que N₀ é o número inicial de bactérias e t é o tempo em minutos.</p>`, visual:'',
+    return {subj:'exponencial', topic:'Função exponencial', text:`<p>Na fabricação de iogurte, uma cultura de bactérias é mantida a 42 °C. Nessas condições, o número de bactérias em uma amostra é dado por N(t) = N₀ · 2<sup>t/${T}</sup>, em que N₀ é o número inicial de bactérias e t é o tempo em minutos.</p>`, visual:'',
       ask:`Uma amostra começou com ${f(N0)} bactérias. Depois de quantos minutos ela terá ${f(N)} bactérias?`,
       opts: iqMC(t, [[k,`Esse é o valor de t/${T}; falta multiplicar por ${T}.`],[N/N0*T,`A razão ${f(N/N0)} é uma potência de 2: o expoente é ${k}, não ${f(N/N0)}.`],[(k+1)*T,'Contou uma duplicação a mais.'],[(k-1)*T,'Contou uma duplicação a menos.']], {n:4, fmt:v=>f(v)+' minutos'}),
-      steps:[`${f(N)} = ${f(N0)} · 2^(t/${T}) → 2^(t/${T}) = ${f(N)} ÷ ${f(N0)} = ${f(N/N0)}`, `${f(N/N0)} = 2^${k} → t/${T} = ${k}`, `t = ${k} × ${T} = ${t} minutos`]};
+      steps:[`${f(N)} = ${f(N0)} · 2<sup>t/${T}</sup> → 2<sup>t/${T}</sup> = ${f(N)} ÷ ${f(N0)} = ${f(N/N0)}`, `${f(N/N0)} = 2<sup>${k}</sup> → t/${T} = ${k}`, `t = ${k} × ${T} = ${t} minutos`]};
   },
   // logaritmo: escala de pH
   ()=>{

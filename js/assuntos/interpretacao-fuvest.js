@@ -130,7 +130,7 @@ IQ_FUVEST.push(
     let x, y, z, s; do{ x = randInt(14,30); y = randInt(5,12); z = randInt(8,18); s = x+y+z; } while(s%3!==0 || x===y || y===z || x===z);
     const A = 2*x+y+z, B = x+2*y+z, Cc = x+y+2*z, T = A+B+Cc;
     return {subj:'sistlin', topic:'Sistema linear', text:`<p>Uma lanchonete vende sanduíches, sucos e sobremesas, cada item sempre pelo mesmo preço. O quadro mostra três pedidos feitos num mesmo dia.</p>`,
-      visual: iqTable(['Pedido','Sanduíches','Sucos','Sobremesas','Total'], [['1', 2, 1, 1, iqMoney(A)], ['2', 1, 2, 1, iqMoney(B)], ['3', 1, 1, 2, iqMoney(Cc)]]),
+      visual: iqTable(['Pedido','Sand.','Sucos','Sobrem.','Total'], [['1', 2, 1, 1, iqMoney(A)], ['2', 1, 2, 1, iqMoney(B)], ['3', 1, 1, 2, iqMoney(Cc)]]),
       ask:'Quanto custa um pedido com um sanduíche, um suco e uma sobremesa?',
       opts: iqMC(s, [[T/3,'Somou os três pedidos e dividiu por 3, mas na soma cada item aparece 4 vezes.'],[T/2,'Na soma dos três pedidos, cada item aparece 4 vezes, não 2.'],[T,'Essa é a soma dos três pedidos.'],[x,'Esse é o preço de um sanduíche só.']], {fmt:iqMoney}),
       steps:[`Com x, y e z os preços: 2x + y + z = ${A}; x + 2y + z = ${B}; x + y + 2z = ${Cc}`, `Somando as três equações: 4x + 4y + 4z = ${T}`, `x + y + z = ${T} ÷ 4 = ${iqMoney(s)}`]};
