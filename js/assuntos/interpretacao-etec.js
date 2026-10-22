@@ -24,7 +24,7 @@ IQ_ETEC.push(
     const start = randInt(5,8)*60 + pick([0,15,30]), m = lcm(a,b), g = gcd(a,b);
     const hm = v=> `${Math.floor(v/60)}h${String(v%60).padStart(2,'0')}`;
     const mult = x=> [...Array(Math.min(6, m/x + 1))].map((_,i)=> (i+1)*x).join(', ');
-    return {subj:'mmc', topic:'MMC', text:`<p>Num terminal, os ônibus da Linha Azul saem a cada ${a} minutos e os da Linha Verde saem a cada ${b} minutos. Às ${hm(start)}, um ônibus de cada linha saiu ao mesmo tempo.</p>`,
+    return {subj:'mmcmdc', topic:'MMC', text:`<p>Num terminal, os ônibus da Linha Azul saem a cada ${a} minutos e os da Linha Verde saem a cada ${b} minutos. Às ${hm(start)}, um ônibus de cada linha saiu ao mesmo tempo.</p>`,
       visual: iqCards([{t:'Linha Azul', lines:[`sai a cada ${a} min`]}, {t:'Linha Verde', lines:[`sai a cada ${b} min`]}, {t:'Saída juntos', lines:[hm(start)]}]),
       ask:'A que horas os ônibus das duas linhas voltarão a sair juntos pela primeira vez?',
       opts: iqMC(start + m, [[start + a*b,'Multiplicou os intervalos: o produto é um múltiplo comum, mas não o menor.'],[start + a + b,'Somou os intervalos; o certo é achar o menor múltiplo comum (MMC).'],[start + g,`Usou o MDC (${g}); os horários coincidem no MMC.`],[start + 2*m,'Esse é o segundo encontro; a pergunta pede o primeiro.'],[start + Math.max(a,b),'Essa é só a próxima saída da linha mais demorada.']], {fmt:hm, step:5}),
@@ -138,7 +138,7 @@ IQ_ETEC.push(
       if(tipo==='triângulos'){ const hh = u*0.87, B = i=>[x0+i*u, base], Tp = i=>[x0+u/2+i*u, base-hh];
         for(let k=0;k<n;k++){ const tri = k%2===0 ? [B(k/2), B(k/2+1), Tp(k/2)] : [Tp((k-1)/2), Tp((k+1)/2), B((k+1)/2)];
           for(let e=0;e<3;e++) add(...tri[e], ...tri[(e+1)%3]); }
-        w = (Math.floor(n/2)+1)*u + (n%2===0 ? u/2 : 0);
+        w = (n+1)/2*u;
       } else {
         const top = base - u;
         for(let k=0;k<n;k++){ const a = x0+k*u; add(a,base,a+u,base); add(a+u,base,a+u,top); add(a+u,top,a,top); add(a,top,a,base);
@@ -150,7 +150,7 @@ IQ_ETEC.push(
       x0 += w + 42; });
     s += iqT(x0-16, base-8, '…', 16);
     const nome = {quadrados:'quadrados', triângulos:'triângulos', casinhas:'casinhas (um quadrado com um telhado)'}[tipo];
-    return {subj:'padroes', topic:'Sequências e padrões', text:`<p>Usando palitos de fósforo, ${iqName()} monta uma sequência de figuras formadas por ${nome} lado a lado. Figuras vizinhas na mesma figura dividem o palito do meio. As três primeiras figuras estão desenhadas abaixo.</p>`,
+    return {subj:'padroes', topic:'Sequências e padrões', text:`<p>Usando palitos de fósforo, ${iqName()} monta uma sequência de figuras formadas por ${nome} lado a lado. Desenhos vizinhos dividem o palito que fica entre eles. As três primeiras figuras estão desenhadas abaixo.</p>`,
       visual: cvSVG(320, 144, s, 'Sequência de figuras com palitos'),
       ask:`Mantendo o mesmo padrão, quantos palitos serão usados na Figura ${N}?`,
       opts: iqMC(ans, [[um*N,`Contou cada um dos ${N} desenhos com ${um} palitos separados, mas vizinhos dividem um palito.`],[b*N,'Faltou o primeiro palito, que não é dividido com ninguém (o "+1").'],[f(N-1),`Esse é o número de palitos da Figura ${N-1}.`],[(f(3)*N)%3===0 ? f(3)*N/3 : null,'Usou proporção (regra de três) com a Figura 3, mas o padrão tem um palito fixo e não é proporcional.'],[f(N)+b,`Esse é o número de palitos da Figura ${N+1}.`]], {fmt:v=>v+' palitos'}),
@@ -176,15 +176,15 @@ IQ_ETEC.push(
     const hDec = T/60, cents = Math.round((hDec - Math.floor(hDec))*100), lido = cents>0 && cents<60 ? Math.floor(hDec)*60 + cents : null;
     const media = Math.round((d1+d2)/((v1+v2)/2)*60), soV1 = Math.round((d1+d2)/v1*60);
     const dest = pick(['à praia','ao sítio dos avós','ao parque estadual','à casa da tia']);
-    let s = cvL(30, 130, 200, 60, 'geo-radius') + cvL(200, 60, 292, 112, 'geo-height');
-    s += cvDot(30, 130, 5) + cvDot(200, 60, 5) + cvDot(292, 112, 5);
-    s += iqT(30, 150, 'saída', 11) + iqT(200, 46, 'entrada da cidade', 11) + iqT(292, 132, 'chegada', 11);
-    s += iqT(104, 84, `${d1} km`, 12, 'geo-lbl-h', 'end') + iqT(128, 112, `estrada: ${v1} km/h`, 10.5, 'iq-tick', 'start');
-    s += iqT(252, 78, `${d2} km`, 12, 'geo-lbl-h', 'start') + iqT(236, 104, `cidade: ${v2} km/h`, 10.5, 'iq-tick', 'end');
+    let s = cvL(30, 130, 200, 60, 'geo-radius') + cvL(200, 60, 292, 60, 'geo-height');
+    s += cvDot(30, 130, 5) + cvDot(200, 60, 5) + cvDot(292, 60, 5);
+    s += iqT(30, 150, 'saída', 11) + iqT(200, 46, 'entrada da cidade', 11) + iqT(294, 46, 'chegada', 11);
+    s += iqT(104, 84, `${d1} km`, 12, 'geo-lbl-h', 'end') + iqT(128, 116, `estrada: ${v1} km/h`, 10.5, 'iq-tick', 'start');
+    s += iqT(246, 78, `${d2} km`, 12, 'geo-lbl-h') + iqT(246, 92, `cidade: ${v2} km/h`, 10.5, 'iq-tick');
     return {subj:'regra3', topic:'Velocidade e tempo', text:`<p>Uma família vai de carro ${dest}. O caminho tem um trecho de estrada, feito a ${v1} km/h, e um trecho dentro da cidade, feito a ${v2} km/h, como no esquema. Considere que o carro mantém essas velocidades o tempo todo.</p>`,
       visual: cvSVG(320, 160, s, 'Esquema do caminho'),
       ask:'Quanto tempo dura a viagem inteira?',
-      opts: iqMC(T, [[lido,`A viagem leva ${iqNum(hDec)} h, mas ${iqNum(hDec - Math.floor(hDec))} h não é ${cents} minutos: 1 h = 60 min.`],[media,'Fez a média das duas velocidades; o tempo de cada trecho precisa ser calculado separadamente.'],[t1,'Faltou o tempo do trecho dentro da cidade.'],[soV1,'Usou a velocidade da estrada no caminho todo.'],[t2 + 60*d1/v2 === T ? null : Math.round(60*(d1+d2)/v2),'Usou a velocidade da cidade no caminho todo.']], {fmt:dur, step:15}),
+      opts: iqMC(T, [[lido,`A viagem leva ${iqNum(hDec)} h, mas ${iqNum(hDec - Math.floor(hDec))} h não é ${cents} minutos: 1 h = 60 min.`],[media,'Fez a média das duas velocidades; o tempo de cada trecho precisa ser calculado separadamente.'],[t1,'Faltou o tempo do trecho dentro da cidade.'],[soV1,'Usou a velocidade da estrada no caminho todo.'],[Math.round(60*(d1+d2)/v2),'Usou a velocidade da cidade no caminho todo.']], {fmt:dur, step:15}),
       steps:[`Tempo = distância ÷ velocidade`, `Estrada: ${d1} ÷ ${v1} = ${iqNum(t1/60)} h = ${t1} min`, `Cidade: ${d2} ÷ ${v2} = ${iqNum(t2/60)} h = ${t2} min`, `Total: ${t1} + ${t2} = ${T} min = ${dur(T)}`]};
   },
   // razão e escala (maquete)

@@ -63,7 +63,7 @@ IQ_UNESP.push(
         s += `<path d="M${cx-rx} ${yBot} A${rx} ${ry} 0 0 1 ${cx+rx} ${yBot}" class="geo-hidden"/>`;
         s += `<polygon points="${cx-rx},${yTop} ${cx},${apex} ${cx+rx},${yTop}" class="geo-face top"/>`;
         s += `<path d="M${cx-rx} ${yTop} A${rx} ${ry} 0 0 0 ${cx+rx} ${yTop}" fill="none" class="geo-face"/><path d="M${cx-rx} ${yTop} A${rx} ${ry} 0 0 1 ${cx+rx} ${yTop}" class="geo-hidden"/>`;
-        s += cvL(cx, apex, cx, yTop, 'geo-height') + iqT(cx+6, (apex+yTop)/2+8, hc+' m', 12, 'geo-lbl-h', 'start');
+        s += cvL(cx, apex, cx, yTop, 'geo-height') + iqT(cx+6, (apex+yTop)/2-2, hc+' m', 12, 'geo-lbl-h', 'start');
         s += cvL(xr, yTop, xr, yBot, 'geo-radius') + cvL(xr-5, yTop, xr+5, yTop, 'geo-radius') + cvL(xr-5, yBot, xr+5, yBot, 'geo-radius') + iqT(xr+8, (yTop+yBot)/2+4, h+' m', 12, 'geo-lbl-h', 'start');
         s += cvL(cx-rx, yBot+26, cx+rx, yBot+26, 'geo-radius') + iqT(cx, yBot+42, 'diâmetro: '+(2*r)+' m', 12, 'geo-lbl-h');
         return cvSVG(320, 220, s, 'Silo: cilindro com cobertura cônica'); })(),
@@ -114,7 +114,9 @@ IQ_UNESP.push(
         [fav<12 ? F(fav,12) : null, 'O total de resultados é 6 × 6 = 36, não 6 + 6 = 12.'],
         [F(36-fav,36), `Essa é a probabilidade de não ${what}.`],
         [which==='hi' ? F(nLo,36) : F(nHi,36), which==='hi' ? 'Essa é a probabilidade do boné.' : which==='lo' ? 'Essa é a probabilidade da camiseta.' : 'Essa é só a probabilidade da camiseta; o boné também é prêmio.'],
-        [which==='any' ? F(nLo,36) : F(fav,6*6*2), which==='any' ? 'Essa é só a probabilidade do boné; a camiseta também é prêmio.' : 'Não há motivo para dividir por 2: o total de resultados é 36.'],
+        [which==='any' ? F(nLo,36) : null, 'Essa é só a probabilidade do boné; a camiseta também é prêmio.'],
+        [F(fav,72), 'Não há motivo para dividir por 2: o total de resultados é 36.'],
+        [F(1,36), 'Essa é a probabilidade de um resultado específico, como (1, 1); é preciso contar todos os favoráveis.'],
       ], {sort:false}),
       steps:['Dois dados: 6 × 6 = 36 resultados igualmente prováveis.', `Resultados favoráveis: ${list.join(' · ')} → ${fav} no total`, `P = ${fav}/36${ans!==fav+'/36' ? ' = '+ans : ''}`]};
   },

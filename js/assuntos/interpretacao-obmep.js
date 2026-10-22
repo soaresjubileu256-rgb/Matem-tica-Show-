@@ -48,7 +48,7 @@ IQ_OBMEP.push(
     return {subj:'angulos', topic:'Ângulos no relógio', text:`<p>O relógio de ponteiros da sala de aula está marcando exatamente ${hora}, como na figura.</p>`,
       visual: cvSVG(320, 200, s, 'Relógio de ponteiros'),
       ask:'Qual é a medida do menor ângulo formado pelos dois ponteiros nesse instante?',
-      opts: iqMC(ang, [[norm(30*h - mm),`Esqueceu que o ponteiro das horas também anda: em ${m} minutos ele avança ${m} × 0,5° = ${m/2}°.`],[360-ang,'Esse é o ângulo maior; a pergunta pede o menor.'],[norm(30*h - m/2 - mm),'O ponteiro das horas anda para a frente (no sentido horário), não para trás.'],[norm(30*h + m - mm),'O ponteiro das horas anda 0,5° por minuto (30° em 60 minutos), não 1°.']], {fmt:v=>v+'°'}),
+      opts: iqMC(ang, [[norm(30*h - mm),`Esqueceu que o ponteiro das horas também anda: em ${m} minutos ele avança ${m} × 0,5° = ${m/2}°.`],[360-ang,'Esse é o ângulo maior; a pergunta pede o menor.'],[norm(30*h - m/2 - mm),'O ponteiro das horas anda para a frente (no sentido horário), não para trás.'],[norm(30*h + m - mm),'O ponteiro das horas anda 0,5° por minuto (30° em 60 minutos), não 1°.']], {fmt:v=>v+'°', step:5}),
       steps:[`Ponteiro dos minutos: anda 6° por minuto → ${m} × 6° = ${mm}° a partir do 12`, `Ponteiro das horas: 30° por hora mais 0,5° por minuto → ${h} × 30° + ${m} × 0,5° = ${hh}°`, `Diferença: |${hh}° − ${mm}°| = ${dif}°${dif>180 ? ` → o menor ângulo é 360° − ${dif}° = ${ang}°` : ''}`]};
   },
   // algarismo das unidades de uma potência
@@ -104,11 +104,11 @@ IQ_OBMEP.push(
     const count = c=> st.filter(x=> (x.ty===0||x.ty===2) ? c===x.who : c!==x.who).length;
     const obj = pick(['o vaso de planta','a janela da cozinha','o porta-retratos','o pote de biscoitos']);
     const regra = T===1 ? 'exatamente uma delas disse a verdade' : 'exatamente uma delas mentiu';
-    const opts = shuffle(kids.map((k,c)=>({label:k, ok:c===culprit, why: c===culprit ? undefined : `Se ${k} fosse o culpado, ${count(c)} das cinco frases seriam verdadeiras, e não ${T}.`})));
+    const opts = shuffle(kids.map((k,c)=>({label:k, ok:c===culprit, why: c===culprit ? undefined : `Se ${k} tivesse quebrado ${obj}, ${count(c)} das cinco frases seriam verdadeiras, e não ${T}.`})));
     return {subj:'logica', topic:'Lógica: verdades e mentiras', text:`<p>Alguém quebrou ${obj}, e só uma das cinco crianças da casa foi a culpada. Cada uma disse uma frase:</p>`,
       visual: iqCards(kids.map((k,i)=>({t:k, lines:[`"${say(st[i])}"`]}))),
       ask:`Sabendo que ${regra}, quem quebrou ${obj}?`, opts,
-      steps:['Teste cada criança como culpada e conte quantas frases ficariam verdadeiras:', kids.map((k,c)=>`${k}: ${count(c)} verdadeira${count(c)===1?'':'s'}`).join(' · '), `Só com ${kids[culprit]} como culpado há ${T===1?'exatamente 1 frase verdadeira':'exatamente 4 frases verdadeiras (1 mentira)'}.`]};
+      steps:['Teste cada criança como culpada e conte quantas frases ficariam verdadeiras:', kids.map((k,c)=>`${k}: ${count(c)} verdadeira${count(c)===1?'':'s'}`).join(' · '), `Só supondo que ${kids[culprit]} quebrou ${obj} há ${T===1?'exatamente 1 frase verdadeira':'exatamente 4 frases verdadeiras (1 mentira)'}.`]};
   },
   // contagem de quadrados num tabuleiro
   ()=>{
@@ -120,7 +120,7 @@ IQ_OBMEP.push(
     for(let j=1;j<m;j++) s += cvL(x0+j*c, y0, x0+j*c, y0+n*c, 'geo-face');
     for(let i=1;i<n;i++) s += cvL(x0, y0+i*c, x0+m*c, y0+i*c, 'geo-face');
     s += `<rect x="${_f(x0+c)}" y="${y0+c}" width="${2*c}" height="${2*c}" fill="none" stroke="#FF8A4C" stroke-width="3"/>`;
-    return {subj:'padroes', topic:'Contagem de figuras', text:`<p>${iqName()} desenhou um tabuleiro com ${n} linhas e ${m} colunas de quadradinhos iguais. Ela quer contar todos os quadrados formados pelas linhas do desenho, de qualquer tamanho. Um deles, de tamanho 2 × 2, está destacado.</p>`,
+    return {subj:'padroes', topic:'Contagem de figuras', text:`<p>${iqName()} desenhou um tabuleiro com ${n} linhas e ${m} colunas de quadradinhos iguais e quer contar todos os quadrados formados pelas linhas do desenho, de qualquer tamanho. Um deles, de tamanho 2 × 2, está destacado.</p>`,
       visual: cvSVG(W, n*c + 16, s, 'Tabuleiro quadriculado'),
       ask:'Quantos quadrados, de todos os tamanhos, há no tabuleiro?',
       opts: iqMC(ans, [[n*m,'Contou só os quadradinhos 1 × 1.'],[n*m + (n-1)*(m-1),'Contou só os quadrados 1 × 1 e 2 × 2; há maiores também.'],[rect,'Contou todos os retângulos, não só os quadrados.'],[off,'Errou as posições: um quadrado k × k cabe em (linhas − k + 1) × (colunas − k + 1) lugares.']], {fmt:v=>String(v)}),
@@ -230,7 +230,7 @@ IQ_OBMEP.push(
     for(let i=1;i<=k;i++){ P = P.map((p,j)=>{ const q = P[(j+1)%4]; return [(p[0]+q[0])/2, (p[1]+q[1])/2]; });
       s += `<polygon points="${P.map(p=>p.map(_f).join(',')).join(' ')}" ${i===k ? 'fill="#FF8A4C" fill-opacity=".55" stroke="#E06A2C" stroke-width="2"' : 'class="geo-face side"'}/>`; }
     s += iqT(160, 232, `${L} cm`, 12);
-    const wr = [[A/Math.pow(4,k),'Ligar os pontos médios não divide o lado ao meio: o quadrado novo tem metade da área, não um quarto.'],[k>1 ? A/Math.pow(2,k-1) : A,k>1 ? 'Fez uma etapa a menos: conte quantas vezes o processo foi feito.' : 'Essa é a área do quadrado maior.'],[A/Math.pow(2,k+1),'Fez uma etapa a mais: conte quantas vezes o processo foi feito.'],[A - ans,'Essa é a área da parte não pintada.'],[A/(2*k),'A área não diminui somando metades: ela cai pela metade a cada etapa.']];
+    const wr = [[A/Math.pow(4,k),'Ligar os pontos médios não divide o lado ao meio: o quadrado novo tem metade da área, não um quarto.'],[k>1 ? A/Math.pow(2,k-1) : A,k>1 ? 'Fez uma etapa a menos: conte quantas vezes o processo foi feito.' : 'Essa é a área do quadrado maior.'],[A/Math.pow(2,k+1),'Fez uma etapa a mais: conte quantas vezes o processo foi feito.'],[A - ans,'Essa é a área da parte não pintada.'],[A/(2*k),'A área não diminui somando metades: ela cai pela metade a cada etapa.'],[3*A/4,'Os quatro triângulos dos cantos, juntos, valem metade do quadrado, não um quarto.'],[4*L,'Esse é o perímetro do quadrado maior, não uma área.']];
     const vezes = ['','uma vez','duas vezes','três vezes'][k];
     return {subj:'geometria', topic:'Área de figuras', text:`<p>Num quadrado de lado ${L} cm, ligamos os pontos médios dos lados vizinhos e obtemos um quadrado menor dentro dele.${k>1 ? ' Depois, repetimos a mesma coisa no quadrado menor, sempre com o último quadrado desenhado.' : ''} O processo foi feito ${vezes} e o último quadrado foi pintado.</p>`,
       visual: cvSVG(320, 240, s, 'Quadrados encaixados'),
