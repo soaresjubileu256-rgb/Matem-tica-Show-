@@ -271,6 +271,8 @@ function renderAuth(mode, users){
 }
 
 async function boot(){
+  // pede ao navegador pra não apagar os dados do app quando faltar espaço (o progresso fica só no aparelho)
+  try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){}
   app.innerHTML = '<div class="content" style="padding-top:60px;text-align:center;color:var(--ink-soft)">Carregando…</div>';
   const users = await loadUsers();
   const savedId = await getSavedCurrentUserId();

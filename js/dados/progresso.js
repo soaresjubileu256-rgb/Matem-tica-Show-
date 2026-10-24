@@ -1,6 +1,13 @@
 /* =========================================================
    Progresso, histórico e erros — tudo separado por conta
    ========================================================= */
+/* quando o armazenamento do aparelho enche, o progresso deixa de ser salvo: avisa (uma vez por uso do app)
+   em vez de perder XP e fases em silêncio */
+let _storageWarned = false;
+function storageFullWarn(){
+  if(_storageWarned) return; _storageWarned = true;
+  try{ queueToast('⚠️', 'Armazenamento cheio', 'Seu progresso pode não ser salvo. Apague páginas antigas do Caderno ou faça um backup.'); }catch(e){}
+}
 function currentUserId(){ return (currentUser && currentUser.id) ? currentUser.id : 'anon'; }
 
 const PROGRESS_KEY_BASE = 'mathstudy-progress-v2';
@@ -24,7 +31,7 @@ async function loadProgress(){
   return progressCache;
 }
 async function saveProgress(){
-  try{ localStorage.setItem(`${PROGRESS_KEY_BASE}:${progressCacheUid}`, JSON.stringify(progressCache)); }catch(e){}
+  try{ localStorage.setItem(`${PROGRESS_KEY_BASE}:${progressCacheUid}`, JSON.stringify(progressCache)); }catch(e){ storageFullWarn(); }
 }
 
 async function loadHistory(){
@@ -38,7 +45,7 @@ async function loadHistory(){
   return historyCache;
 }
 async function saveHistory(){
-  try{ localStorage.setItem(`${HISTORY_KEY_BASE}:${historyCacheUid}`, JSON.stringify(historyCache)); }catch(e){}
+  try{ localStorage.setItem(`${HISTORY_KEY_BASE}:${historyCacheUid}`, JSON.stringify(historyCache)); }catch(e){ storageFullWarn(); }
 }
 
 async function loadErrors(){
@@ -52,7 +59,7 @@ async function loadErrors(){
   return errorsCache;
 }
 async function saveErrors(){
-  try{ localStorage.setItem(`${ERRORS_KEY_BASE}:${errorsCacheUid}`, JSON.stringify(errorsCache)); }catch(e){}
+  try{ localStorage.setItem(`${ERRORS_KEY_BASE}:${errorsCacheUid}`, JSON.stringify(errorsCache)); }catch(e){ storageFullWarn(); }
 }
 
 /* retrato leve e serializável da questão, pra poder mostrar de novo depois (histórico / revisão de erros) */
