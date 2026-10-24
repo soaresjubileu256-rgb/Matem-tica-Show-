@@ -15,7 +15,6 @@ const PATH_NODES = [
 ];
 const UNIT_COLORS = [['#4C7DFF','#7B5CFF'],['#B23FE0','#E0409A'],['#1FB6D0','#2BE0A6'],['#FF5C7A','#FF8A4C'],['#E09A00','#FF7A00'],['#6A5CFF','#33D2E3'],['#E0306A','#B23FE0']];
 function unitStyle(u){ const [a,b] = UNIT_COLORS[u % UNIT_COLORS.length]; return `--uc:${a};--uc2:${b}`; }
-const PATH_OFFSETS = [0, 48, 76, 48, 0, -48, -76, -48];
 const QUIZ_SECONDS = 20;
 const QUIZ_TOTAL = 10;
 
@@ -610,13 +609,25 @@ function pathHero(){
 /* Trilha: os episódios já concluídos ficam recolhidos (só o cartão), pra lista não ficar enorme.
    Tocar no cartão abre/fecha as fases. */
 function pathOpenSet(){ state.pathOpen = state.pathOpen || {}; return state.pathOpen; }
+/* Trilha em tabuleiro: cada episódio é um tabuleiro de losangos (casas em diagonal), as fases são
+   ladrilhos 3D em zigue-zague encaixados nas casas, com símbolos de matemática enfeitando as casas vazias.
+   No topo o Pi diz o que vem a seguir; embaixo, a lista de episódios e o botão "Próxima fase". */
+const PATH_ZIG = [0, -1, 0, 1];             // posição de cada fase: centro, esquerda, centro, direita
+const PATH_DECO = ['+', '×', 'π', '√', '÷', '∑', '%', '='];
+function pathCoachText(n){
+  if(!n) return 'Você completou todos os episódios! Você é a estrela do show! 🌟';
+  const nome = n.subject.name;
+  if(n.type==='chest') return `Abra o prêmio surpresa do episódio de ${nome}! 🎁`;
+  if(n.type==='trophy') return `Hora da Grande final de ${nome}. Vença e ganhe o certificado! 🎤`;
+  return `Aprenda ${nome.charAt(0).toLowerCase()+nome.slice(1)}: ${n.label.replace(' · ', ', ').toLowerCase()}.`;
+}
 function pathScreen(){
   const wrap = document.createElement('div');
   const bar = topbar('Trilha', true, ()=>go('home'));
   bar.appendChild(statusPills());
   bar.classList.add('sticky-top');
   wrap.appendChild(bar);
-  const c = h(`<div class="content path"></div>`);
+  const c = h(`<div class="content path path-iso"></div>`);
   wrap.appendChild(c);
   const done = pathDone();
   const all = allPathNodes();
@@ -626,14 +637,17 @@ function pathScreen(){
   const doneNodes = all.filter(n=>done[n.key]).length;
   const curNode = all[cur];
   const pct = Math.round(doneNodes/all.length*100);
-  // resumo no topo: progresso geral + botão pra ir até a fase atual
+  // o Pi diz o que vem a seguir
+  const coach = h(`<div class="pi-coach"><div class="pi-coach-av">${mascotSVG(curNode?'happy':'joy', 70)}</div><div class="pi-bubble"></div></div>`);
+  coach.querySelector('.pi-bubble').textContent = pathCoachText(curNode);
+  c.appendChild(coach);
   const sum = h(`<div class="path-sum">
       <div class="ps-ring" style="--p:${pct}"><b>${pct}%</b></div>
       <div class="ps-txt"><b>${doneUnits} de ${SUBJECTS.length} episódios</b><small>${curNode ? `Agora: Episódio ${curNode.unit+1} · ${escHTML(curNode.subject.name)}` : 'Trilha completa! 🌟'}</small></div>
-      ${curNode ? '<button type="button" class="ps-go">▶ Continuar</button>' : ''}
     </div>`);
   c.appendChild(sum);
   let currentEl = null;
+  const banners = [];
   SUBJECTS.forEach((s,u)=>{
     const color = unitStyle(u);
     const unitNodes = all.filter(n=>n.unit===u);
@@ -653,6 +667,7 @@ function pathScreen(){
       <div class="u-body"><div class="u-k">EPISÓDIO ${u+1}${unitLocked?' · 🔒':''}${unitDone?' · CONCLUÍDO':''}${isCurUnit?' · VOCÊ ESTÁ AQUI':''}</div><div class="u-n">${s.sym} ${escHTML(s.name)}</div>
         <div class="u-prog"><span class="u-dots">${dots}</span><small>${nDone}/${unitNodes.length} fases${BNCC_ANO[s.id] ? ` · ${BNCC_ANO[s.id]}` : ''}</small></div></div>
       <button type="button" class="u-guide" title="Ver conteúdo" aria-label="Ver conteúdo de ${escHTML(s.name)}">📖</button></div>`);
+    banners[u] = banner;
     banner.querySelector('.u-guide').onclick = e=>{ e.stopPropagation(); go('subjectDetail', {subjectId:s.id}); };
     if(unitDone){
       banner.classList.add('tap');
@@ -670,50 +685,73 @@ function pathScreen(){
     }
     c.appendChild(banner);
     if(collapsed) return;
-    const col = h(`<div class="path-col ${unitLocked?'locked':''}" style="${color}"></div>`);
-    const firstUndone = unitNodes.findIndex(n=>!done[n.key]);
-    col.style.setProperty('--fill', `${(firstUndone<0 ? 1 : firstUndone/(unitNodes.length-1))*100}%`);
-    unitNodes.forEach(n=>{
+    // tabuleiro do episódio: as fases ficam nas casas, uma por linha, em zigue-zague
+    const col = h(`<div class="path-board ${unitLocked?'locked':''}" style="${color}"></div>`);
+    unitNodes.forEach((n,k)=>{
       const gi = all.indexOf(n);
       const isDone = !!done[n.key], isCur = gi===cur, locked = gi>cur && !isDone;
-      const ico = locked ? '🔒' : n.type==='chest' ? (isDone?'✨':'🎁') : n.type==='trophy' ? '🎤' : (isDone?'✓':'★');
-      const off = PATH_OFFSETS[gi % PATH_OFFSETS.length];
-      const side = off > 0 ? 'left' : 'right';
-      const wrapN = h(`<div class="pnode-wrap ${isCur?'is-cur':''}" style="transform:translateX(${off}px)"></div>`);
-      const btn = h(`<button type="button" class="pnode ${n.type} ${isDone?'done':''} ${isCur?'cur':''} ${locked?'locked':''}" style="${color}" aria-label="${n.label}${isDone?', concluída':locked?', bloqueada':''}">${ico}</button>`);
+      const ico = locked ? '🔒' : n.type==='chest' ? (isDone?'✨':'🎁') : n.type==='trophy' ? '🎤' : escHTML(n.subject.sym);
+      const z = PATH_ZIG[k % PATH_ZIG.length];
+      const wrapN = h(`<div class="pnode-wrap ${isCur?'is-cur':''}" style="--z:${z}"></div>`);
+      const btn = h(`<button type="button" class="pnode ${n.type} ${isDone?'done':''} ${isCur?'cur':''} ${locked?'locked':''}" aria-label="${n.label}${isDone?', concluída':locked?', bloqueada':''}">
+          <span class="pd-side"></span><span class="pd-top"></span><span class="pd-ico">${ico}</span>${isDone && n.type!=='chest' ? '<span class="pd-ok">✓</span>' : ''}</button>`);
       wrapN.appendChild(btn);
-      // o balão "▶ JOGAR" e o nome da fase também abrem a fase (antes só o hexágono respondia ao toque)
-      const lbl = h(`<div class="pnode-lbl ${side} ${isCur?'cur':''} ${locked?'locked':''}">${isCur ? `<button type="button" class="pnode-play">${n.type==='chest'?'🎁 ABRIR':'▶ JOGAR'}</button>` : ''}<span>${escHTML(n.label)}</span></div>`);
-      wrapN.appendChild(lbl);
-      if(n.idx===2 && u%2===0 && !isCur){
-        wrapN.appendChild(h(`<div class="path-mascot ${off>0?'right':'left'}">${mascotSVG(isDone?'joy':'happy',62)}</div>`));
-      }
+      if(isCur) wrapN.appendChild(h(`<button type="button" class="pnode-play">${n.type==='chest'?'🎁 ABRIR':'▶ JOGAR'}</button>`));
+      // enfeite: um símbolo de matemática na casa vazia do outro lado
+      if(z !== 0) wrapN.appendChild(h(`<span class="pd-deco" aria-hidden="true">${PATH_DECO[(u*2 + k) % PATH_DECO.length]}</span>`));
       btn.onclick = ()=>{
         if(locked){ showFloat('🔒 Complete as fases anteriores', true); return; }
         if(n.type==='chest') openChest(n, isDone);
         else nodeSheet(n, color, isDone);
       };
-      if(!locked) lbl.onclick = ()=> btn.onclick();
+      const play = wrapN.querySelector('.pnode-play'); if(play) play.onclick = ()=> btn.onclick();
       col.appendChild(wrapN);
       if(isCur) currentEl = wrapN;
     });
     c.appendChild(col);
   });
-  if(cur>=all.length) c.appendChild(mascotBubble('Você completou todos os episódios! Você é a estrela do show! 🌟', 'joy'));
-  // botão flutuante pra voltar à fase atual quando ela sai da tela
+  // barra de baixo: lista dos episódios e "Próxima fase"
+  if(curNode){
+    const cta = h(`<div class="path-cta"><button type="button" class="pc-list" aria-label="Lista de episódios"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="6" r="1.6"/><circle cx="5" cy="12" r="1.6"/><circle cx="5" cy="18" r="1.6"/><path d="M9.5 6h10M9.5 12h10M9.5 18h10"/></svg></button>
+      <button type="button" class="pc-next">${curNode.type==='chest' ? 'Abrir prêmio' : curNode.type==='trophy' ? 'Grande final' : 'Próxima fase'}</button></div>`);
+    cta.querySelector('.pc-next').onclick = ()=>{ const b = currentEl && currentEl.querySelector('.pnode'); if(b) b.onclick(); };
+    cta.querySelector('.pc-list').onclick = ()=> pathListSheet(all, done, cur, u=>{ const el = banners[u]; if(el) el.scrollIntoView({block:'start', behavior:'smooth'}); });
+    wrap.appendChild(cta);
+  }
+  // seta que leva até a fase atual quando ela sai da tela (aponta pra cima ou pra baixo)
   if(currentEl){
-    const fab = h(`<button type="button" class="path-fab" hidden>📍 Fase atual</button>`);
+    const fab = h(`<button type="button" class="path-fab" hidden aria-label="Ir para a fase atual"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg></button>`);
     const goCur = ()=>{ try{ currentEl.scrollIntoView({block:'center', behavior:'smooth'}); }catch(e){} };
     fab.onclick = goCur;
-    const sgo = sum.querySelector('.ps-go'); if(sgo) sgo.onclick = ()=>{ goCur(); const b = currentEl.querySelector('.pnode'); if(b) setTimeout(()=> b.onclick(), 350); };
     wrap.appendChild(fab);
     if('IntersectionObserver' in window){
-      const io = new IntersectionObserver(es=>{ es.forEach(e=>{ fab.hidden = e.isIntersecting; }); });
+      const io = new IntersectionObserver(es=>{ es.forEach(e=>{
+        fab.hidden = e.isIntersecting;
+        fab.classList.toggle('down', !e.isIntersecting && e.boundingClientRect.top > 0);
+      }); });
       io.observe(currentEl);
     }
     setTimeout(goCur, 120);
   }
   return wrap;
+}
+/* lista dos episódios (botão ao lado de "Próxima fase") */
+function pathListSheet(all, done, cur, onPick){
+  const bg = document.createElement('div');
+  bg.className = 'gm-modal-bg sheet';
+  bg.innerHTML = `<div class="node-sheet path-list"><h3>Episódios da Trilha</h3><div class="pl-items"></div></div>`;
+  const box = bg.querySelector('.pl-items');
+  SUBJECTS.forEach((s,u)=>{
+    const ns = all.filter(n=>n.unit===u), nd = ns.filter(n=>done[n.key]).length;
+    const locked = all.indexOf(ns[0]) > cur && !nd, isCur = all[cur] && all[cur].unit===u;
+    const it = h(`<button type="button" class="pl-it ${locked?'locked':''} ${isCur?'cur':''}" style="${unitStyle(u)}"><span class="pl-n">${nd===ns.length ? '✓' : u+1}</span><span class="pl-t"><b></b><small>${locked ? '🔒 Bloqueado' : `${nd}/${ns.length} fases`}${isCur ? ' · você está aqui' : ''}</small></span></button>`);
+    it.querySelector('b').textContent = `${s.sym} ${s.name}`;
+    it.onclick = ()=>{ bg.remove(); onPick(u); };
+    box.appendChild(it);
+  });
+  bg.addEventListener('click', e=>{ if(e.target===bg) bg.remove(); });
+  document.body.appendChild(bg);
+  const c = box.querySelector('.pl-it.cur'); if(c) c.scrollIntoView({block:'center'});
 }
 function nodeSheet(n, color, isDone){
   const bg = document.createElement('div');
