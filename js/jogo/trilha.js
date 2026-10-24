@@ -211,7 +211,8 @@ function stepQuizOf(stepHtml){
   const show = v=> fmt(v);
   return {ask: `${m[1]} = ?`, opts: opts.map(v=>({label:show(v), ok:v===val})), rest: m[3]||''};
 }
-function showStepPlayer(ex){
+function showStepPlayer(ex, o){
+  o = o || {};
   const steps = (ex.steps||[]).filter(Boolean);
   const finalVis = solutionFinalVisual(ex);
   const total = steps.length + 1; // + o slide final com a resposta
@@ -226,7 +227,7 @@ function showStepPlayer(ex){
   const bg = document.createElement('div');
   bg.className = 'sp-full';
   bg.innerHTML = `<div class="sp-card" role="dialog" aria-label="Correção animada">
-      <div class="sp-head"><button type="button" class="sp-x" aria-label="Fechar">✕</button><div class="sp-bar"><i></i></div><span class="sp-count"></span></div>
+      <div class="sp-head"><button type="button" class="sp-x" aria-label="Fechar">✕</button><div class="sp-bar"><i></i></div><span class="sp-count"></span></div>${o.title ? `<div class="sp-title">${o.title}</div>` : ''}
       <div class="sp-top">${board ? '' : `<div class="sp-q mono ${qv.stacked?'stacked':''}">${qv.html}</div>`}</div>
       <div class="sp-stage" aria-live="polite"></div>
       <div class="sp-pi"><div class="sp-pi-av"></div><div class="sp-pi-b"></div></div>
@@ -277,7 +278,8 @@ function showStepPlayer(ex){
     }
     if(i >= steps.length){
       stage.appendChild(h(`<div class="sp-final">${finalVis && !board ? `<div class="sp-fv">${finalVis}</div>` : ''}<div class="sp-ans"><small>Resposta</small><b class="mono"></b></div>${asks.size ? `<div class="sp-score">Você acertou ${score} de ${asks.size} no caminho ${score===asks.size?'🌟':''}</div>` : ''}</div>`));
-      stage.querySelector('.sp-ans b').textContent = answerLabel(ex);
+      if(ex.conclusion!==undefined){ stage.querySelector('.sp-ans small').textContent = 'Conclusão'; stage.querySelector('.sp-ans b').className = 'sp-concl'; stage.querySelector('.sp-ans b').innerHTML = ex.conclusion; }
+      else stage.querySelector('.sp-ans b').textContent = answerLabel(ex);
       say('Pronto! Agora você já sabe o caminho. 🌟', 'joy');
       playTones([523,659,784], 0.07, 'triangle', 0.06);
     } else if(pendingQuiz){
@@ -290,7 +292,7 @@ function showStepPlayer(ex){
     if(now) stage.scrollTo({top: now.offsetTop - stage.offsetTop - 8, behavior:'smooth'});
     bg.querySelector('.sp-prev').disabled = i<=0;
     bg.querySelector('.sp-next').disabled = i>=total-1 || pendingQuiz;
-    if(talk && !pendingQuiz){ speak(i>=steps.length ? `A resposta é ${plain(answerLabel(ex))}` : plain(steps[i])); }
+    if(talk && !pendingQuiz){ speak(i>=steps.length ? (ex.conclusion!==undefined ? plain(ex.conclusion) : `A resposta é ${plain(answerLabel(ex))}`) : plain(steps[i])); }
     else if(talk && pendingQuiz){ speak('E agora, quanto dá?'); }
   }
   function go_(k){ i = Math.max(0, Math.min(total-1, k)); paint(); schedule(); }

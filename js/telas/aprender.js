@@ -46,16 +46,39 @@ function renderExampleBody(ex){
     ? ex.qVisual
     : `<div class="mono">${ex.text}</div>`;
 }
+/* transforma um exemplo resolvido no formato da correção animada (showStepPlayer) */
+function exampleForPlayer(ex){
+  const plain = t=> String(t||'').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
+  // resposta curta só quando o exemplo é uma conta com resultado ("… = 392", "… → 50%"); senão o fim mostra a conclusão
+  let ans = ex.columns && ex.columns.result!=null ? String(ex.columns.result) : '';
+  const txt = plain(ex.text);
+  // em "√16 = 4, pois 4² = 16" o último número não é a resposta: vira conclusão
+  if(!ans && !/\?$/.test(txt) && !/\b(pois|porque)\b/i.test(txt)){ const m = txt.match(/(?:=|→)\s*([^=→:]{1,18})$/); if(m && /\d/.test(m[1]) && !/,\s/.test(m[1])) ans = m[1].trim(); }
+  const num = Number(ans.replace(/\./g,'').replace(',','.'));
+  const out = {type:'single', question: txt || ex.title, steps: ex.steps||[], displayAnswer: ans || '', answer: isFinite(num) ? num : 0};
+  if(!ans) out.conclusion = (ex.steps||[]).length ? ex.steps[ex.steps.length-1] : '';
+  if(ex.columns) out.columns = {nums:ex.columns.nums, op:ex.columns.op, carries:ex.columns.carries, marks:ex.columns.marks};
+  else if(ex.visual) out.qVisual = fracRow(ex.visual);
+  else if(ex.qVisual) out.qVisual = ex.qVisual;
+  return out;
+}
 /* exemplo que abre e fecha; os passos aparecem um de cada vez */
 function learnExampleEl(ex, i, open){
   const steps = ex.steps || [];
   const box = h(`<div class="lr-ex ${open?'open':''}">
     <button type="button" class="lr-ex-head" aria-expanded="${!!open}"><span class="lr-ex-n">${i+1}</span><span class="lr-ex-t"><b>${ex.title}</b>${ex.text?`<small>${ex.text}</small>`:''}</span><span class="lr-ex-chev" aria-hidden="true">⌄</span></button>
     <div class="lr-ex-body example-box"><div class="lr-ex-vis">${renderExampleBody(ex)}</div>
+      ${(ex.steps||[]).length ? '<div class="lr-anim-row"></div>' : ''}
       ${steps.length ? `<div class="lr-steps">${steps.map((st,k)=>`<div class="lr-step" ${k?'hidden':''}><span class="num">${k+1}</span><span class="txt">${st}</span></div>`).join('')}</div>
       <div class="lr-step-ctl"><button type="button" class="lr-next">Próximo passo</button><button type="button" class="lr-all">Ver tudo</button></div>` : ''}
     </div>
   </div>`);
+  const animRow = box.querySelector('.lr-anim-row');
+  if(animRow){
+    const b = h(`<button type="button" class="sp-open lr-anim"><span class="sp-open-i">▶</span><span>Ver animado com o Pi</span></button>`);
+    b.onclick = e=>{ e.stopPropagation(); showStepPlayer(exampleForPlayer(ex), {title: ex.title}); };
+    animRow.appendChild(b);
+  }
   const head = box.querySelector('.lr-ex-head');
   head.onclick = ()=>{ const on = box.classList.toggle('open'); head.setAttribute('aria-expanded', on); };
   const items = [...box.querySelectorAll('.lr-step')];
