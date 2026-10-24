@@ -4091,3 +4091,68 @@ html[data-card="card_galaxia"] .player-card, .lp-card.cd-card_galaxia{background
 .cert-subj.long{font-size:2.05cqw;} .cert-subj.long ~ .cert-lvl{font-size:2.1cqw; margin-top:.8cqw;}
 /* tabelas dos simulados: valores sem quebrar no meio (R$ 90,00) */
 .iq-table td{white-space:nowrap;}
+
+/* ================= TRILHA EM TABULEIRO =================
+   Casas em losango (--dx = meia largura, --dy = meia altura da casa). As fases ficam no centro das casas:
+   uma por linha, alternando centro / esquerda / centro / direita, e cada linha desce meia casa. */
+.path-iso{--dx:78px; --dy:63px; padding-bottom:190px;}
+.pi-coach{display:flex; align-items:flex-start; gap:6px; margin:2px 0 10px;}
+.pi-coach-av{flex:none; margin-top:-4px; filter:drop-shadow(0 6px 10px rgba(0,0,0,.35));}
+.pi-bubble{position:relative; flex:1; margin-top:8px; padding:14px 16px; border-radius:18px; background:#fff; color:#1B1E2E; font:600 15px/1.35 'Inter',sans-serif; box-shadow:0 10px 26px -12px rgba(0,0,0,.5);}
+.pi-bubble::before{content:''; position:absolute; left:-9px; top:18px; border:9px solid transparent; border-left:0; border-right-color:#fff;}
+.path-iso .path-sum{background:#24272C; border-color:rgba(255,255,255,.08); color:#fff;}
+.path-iso .path-sum .ps-txt b{color:#fff;} .path-iso .path-sum .ps-txt small{color:#A9B0BA;}
+/* tabuleiro: casas em losango, duas cores escuras */
+.path-board{position:relative; display:flex; flex-direction:column; align-items:center; margin:10px -20px 16px; padding:calc(var(--dy) * .4) 0 calc(var(--dy) * .9);
+  background-color:#26292E;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='156' height='126'%3E%3Cpolygon points='78,0 156,63 78,126 0,63' fill='%23303439'/%3E%3C/svg%3E");
+  background-size:calc(var(--dx) * 2) calc(var(--dy) * 2);
+  background-position:center calc(var(--dy) * .4 - var(--dy) / 2);
+  box-shadow:inset 0 14px 20px -14px rgba(0,0,0,.6), inset 0 -14px 20px -14px rgba(0,0,0,.6);}
+.path-board.locked{filter:saturate(.5) brightness(.85);}
+.path-board .pnode-wrap{position:relative; width:calc(var(--dx) * 2); height:var(--dy); transform:translateX(calc(var(--z) * var(--dx))); display:block;}
+/* ladrilho 3D: um quadrado girado 45° e achatado (losango) com a lateral mais escura embaixo */
+.path-board .pnode{clip-path:none; overflow:visible; --t:#2BC6A8; --s:#178C78; --i:#E8FFF9; position:absolute; left:50%; top:50%; width:0; height:0; padding:0; margin:0; border:none; background:none; cursor:pointer; z-index:2; animation:none; transform:none; font:inherit;}
+.path-board .pnode::after{content:''; position:absolute; left:-62px; top:-48px; width:124px; height:96px;} /* área de toque */
+.pd-top, .pd-side{position:absolute; left:-45px; top:-45px; width:90px; height:90px; border-radius:15px; transform:scaleY(.807) rotate(45deg); pointer-events:none;}
+.pd-top{background:linear-gradient(135deg, color-mix(in srgb, var(--t) 80%, #fff), var(--t) 55%); box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.18);}
+.pd-side{background:var(--s); top:-35px;}
+.pd-ico{position:absolute; left:-40px; top:-22px; width:80px; height:40px; display:grid; place-items:center; color:var(--i); font:800 26px/1 'Inter',sans-serif; text-shadow:0 2px 0 rgba(0,0,0,.18); pointer-events:none; white-space:nowrap;}
+.pd-ok{position:absolute; left:22px; top:-31px; width:22px; height:22px; border-radius:50%; display:grid; place-items:center; background:#FFD45C; color:#5A3A00; font:900 12px 'Inter',sans-serif; box-shadow:0 2px 6px rgba(0,0,0,.35); pointer-events:none;}
+.path-board .pnode, .path-board .pnode.done, .path-board .pnode.locked, .path-board .pnode.cur{background:none; clip-path:none; transform:none;}
+.path-board .pnode-wrap.is-cur{animation:none;}
+.path-board .pnode.done{--t:#25B497; --s:#14806C;}
+.path-board .pnode.trophy{--t:#F2B83A; --s:#B07800; --i:#fff;}
+.path-board .pnode.chest{--t:#9B6BFF; --s:#6A3DD8;}
+.path-board .pnode.locked{--t:#3C4148; --s:#2B2F35; --i:#8A929C;}
+.path-board .pnode.locked .pd-ico{font-size:20px;}
+.path-board .pnode:active .pd-top, .path-board .pnode:active .pd-ico{translate:0 4px;}
+.path-board .pnode-wrap.is-cur .pnode{filter:drop-shadow(0 0 14px color-mix(in srgb, var(--t) 70%, transparent));}
+.path-board .pnode-wrap.is-cur .pd-top{animation:pd-pulse 1.6s ease-in-out infinite;}
+@keyframes pd-pulse{0%,100%{filter:brightness(1);} 50%{filter:brightness(1.18);}}
+.path-board .pnode-play{position:absolute; left:50%; top:-36px; transform:translateX(-50%); z-index:3; white-space:nowrap;}
+/* símbolo de matemática em 3D na casa vazia ao lado */
+.pd-deco{position:absolute; top:50%; left:50%; transform:translate(calc(-50% - var(--z) * 2 * var(--dx)), -58%); pointer-events:none; z-index:1;
+  font:700 58px/1 'Fraunces',serif; color:#E3E6EA;
+  text-shadow:0 2px 0 #C3C7CD, 0 4px 0 #A5AAB2, 0 6px 0 #8A9098, 0 8px 0 #737981, 0 14px 16px rgba(0,0,0,.55);}
+.path-board.locked .pd-deco{opacity:.5;}
+/* barra de baixo: lista + Próxima fase */
+.path-cta{position:fixed; left:12px; right:12px; bottom:calc(92px + env(safe-area-inset-bottom)); max-width:456px; margin:0 auto; z-index:45; display:flex; gap:10px;}
+.pc-list{flex:none; width:62px; height:58px; border:none; border-radius:16px; background:#2E3238; box-shadow:0 5px 0 #1C1F23; cursor:pointer; display:grid; place-items:center;}
+.pc-list svg{width:28px; height:28px; fill:#E3E6EA; stroke:#E3E6EA; stroke-width:2.2; stroke-linecap:round;}
+.pc-next{flex:1; height:58px; border:none; border-radius:16px; font:800 21px 'Inter',sans-serif; color:#fff; cursor:pointer;
+  background:linear-gradient(180deg, #8BD650, #5FAE2E); box-shadow:0 5px 0 #437F1E, 0 12px 24px -10px rgba(95,174,46,.8); text-shadow:0 2px 0 rgba(0,0,0,.18);}
+.pc-list:active, .pc-next:active{transform:translateY(3px); box-shadow:0 2px 0 #1C1F23;}
+.pc-next:active{box-shadow:0 2px 0 #437F1E;}
+.path-iso ~ .path-fab, .path-fab{left:auto; right:16px; transform:none; bottom:calc(166px + env(safe-area-inset-bottom)); width:52px; height:52px; padding:0; border-radius:14px; background:#2E3238; box-shadow:0 4px 0 #1C1F23, 0 10px 20px -8px rgba(0,0,0,.6); display:grid; place-items:center;}
+.path-fab svg{width:26px; height:26px; fill:none; stroke:#E3E6EA; stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round; transition:transform .2s;}
+.path-fab.down svg{transform:rotate(180deg);}
+/* lista dos episódios */
+.path-list{max-height:76vh; display:flex; flex-direction:column; background:#1E2126 !important; color:#F1F2F4;}
+.path-list h3{margin:0 0 10px;}
+.pl-items{overflow-y:auto; display:flex; flex-direction:column; gap:6px; min-height:0;}
+.pl-it{display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:14px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); color:inherit; text-align:left; cursor:pointer; font-family:'Inter',sans-serif;}
+.pl-it.cur{border-color:var(--uc); background:color-mix(in srgb, var(--uc) 18%, transparent);}
+.pl-it.locked{opacity:.55;}
+.pl-n{flex:none; width:32px; height:32px; border-radius:10px; display:grid; place-items:center; font-weight:800; color:#fff; background:linear-gradient(135deg, var(--uc), var(--uc2));}
+.pl-t b{display:block; font-size:14px;} .pl-t small{font-size:12px; opacity:.75;}
