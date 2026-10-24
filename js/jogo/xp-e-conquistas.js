@@ -107,7 +107,7 @@ function loadGame(){
   return gameCache;
 }
 function saveGame(){
-  try{ localStorage.setItem(`${GAME_KEY_BASE}:${gameCacheUid}`, JSON.stringify(gameCache)); }catch(e){}
+  try{ localStorage.setItem(`${GAME_KEY_BASE}:${gameCacheUid}`, JSON.stringify(gameCache)); }catch(e){ storageFullWarn(); }
 }
 function gameEnsureToday(){
   const g = gameCache, k = dayKey();
