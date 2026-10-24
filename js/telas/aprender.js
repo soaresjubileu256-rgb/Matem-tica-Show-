@@ -76,7 +76,7 @@ function learnExampleEl(ex, i, open){
   const animRow = box.querySelector('.lr-anim-row');
   if(animRow){
     const b = h(`<button type="button" class="sp-open lr-anim"><span class="sp-open-i">▶</span><span>Ver animado com o Pi</span></button>`);
-    b.onclick = e=>{ e.stopPropagation(); showStepPlayer(exampleForPlayer(ex), {title: ex.title}); };
+    b.onclick = e=>{ e.stopPropagation(); showStepPlayer(exampleForPlayer(ex), {title: ex.title, noQuiz: true}); };
     animRow.appendChild(b);
   }
   const head = box.querySelector('.lr-ex-head');
