@@ -10,6 +10,11 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
+  {v:20, date:'2026-10-24', title:'Correção animada, Contra o relógio e cópias automáticas', items:[
+    {ico:'🎬', t:'Correção animada', d:'Depois de responder, toque em "Ver a correção animada": o Pi mostra a resolução passo a passo, um passo de cada vez, e dá pra ouvir em voz alta.', go:'path'},
+    {ico:'⏱️', t:'Contra o relógio', d:'Escolha um assunto e acerte o máximo de questões em 60 segundos. Cada assunto tem o seu recorde!', go:'speedRun'},
+    {ico:'🛟', t:'Cópias automáticas', d:'O app guarda sozinho uma cópia do seu progresso todo dia. Se algo der errado, recupere em Configurações → Cópias automáticas.', go:'settings'},
+  ]},
   {v:19, date:'2026-10-22', title:'Simulados das provas com muito mais questões', items:[
     {ico:'📝', t:'Quase o triplo de questões', d:'ENEM, ETEC, Fuvest, Unicamp, Unesp e OBMEP ganharam 80 modelos novos de questão, com situações, gráficos e figuras diferentes.', go:'exams'},
     {ico:'🔄', t:'Sem repetir', d:'O simulado lembra o que você já fez: só repete uma questão depois de passar por todas, e nunca coloca duas parecidas na mesma prova.', go:'exams'},

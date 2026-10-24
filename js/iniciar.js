@@ -29,6 +29,7 @@ const SCREENS = {
   certificates: certificatesScreen,
   certificate: certificateScreen,
   lightning: lightningScreen,
+  speedRun: speedRunScreen,
   path: pathScreen,
   lesson: lessonScreen,
   quizSetup: quizSetupScreen,

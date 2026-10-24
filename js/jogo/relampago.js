@@ -65,6 +65,7 @@ function lightningScreen(){
         </div>
         <button class="btn primary bi-start">Começar! 🚀</button>
         <p class="bi-keys">No computador, use as teclas 1, 2, 3 e 4.</p>
+        <button type="button" class="sr-link">⏱️ Treinar um assunto contra o relógio <span>›</span></button>
       </div>`);
     const tbox = box.querySelector('.bi-types');
     BOLT_TYPES.forEach(([id,ico,label])=>{
@@ -73,6 +74,7 @@ function lightningScreen(){
       tbox.appendChild(b);
     });
     box.querySelector('.bi-start').onclick = countdown;
+    box.querySelector('.sr-link').onclick = ()=> go('speedRun');
     c.appendChild(box);
   }
   function countdown(){

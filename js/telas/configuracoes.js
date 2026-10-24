@@ -190,7 +190,12 @@ async function settingsScreen(){
   };
   const acts = h(`<div class="st-acts"></div>`);
   acts.appendChild(exportBtn); acts.appendChild(importBtn);
-  dt.appendChild(acts); dt.appendChild(importInput); dt.appendChild(importMsgBox);
+  dt.appendChild(acts);
+  // cópias automáticas (IndexedDB, js/dados/backup-auto.js)
+  const autoBtn = h(`<button type="button" class="st-act st-act-wide"><span>🛟</span><b>Cópias automáticas</b><small>O app guarda sozinho uma cópia por dia. Toque pra ver ou restaurar.</small></button>`);
+  autoBtn.onclick = ()=>{ if(typeof showAutoBackups==='function') showAutoBackups(); };
+  dt.appendChild(autoBtn);
+  dt.appendChild(importInput); dt.appendChild(importMsgBox);
   c.appendChild(dt);
 
   // ---------- Zona de perigo ----------
