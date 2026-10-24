@@ -171,21 +171,65 @@ function stepPlayerButton(ex, wrong){
   b.onclick = e=>{ e.stopPropagation(); showStepPlayer(ex); };
   return b;
 }
+/* quadro da conta armada que vai se montando ao vivo (só + e −): cada célula ganha a posição a partir da direita */
+function liveBoardEl(ex){
+  const c = ex.columns;
+  if(!c || !['+','−','-'].includes(c.op)) return null;
+  const el = h(`<div class="lv-board">${contaArmada(c.nums, c.op, fmt(ex.answer), c.carries, c.marks)}</div>`);
+  el.querySelectorAll('.ca-row').forEach(row=>{
+    const cells = [...row.querySelectorAll('.ca-cell:not(.ca-sign):not(.ca-comma)')].reverse();
+    cells.forEach((cell,k)=>{ cell.dataset.c = k; });
+    if(row.classList.contains('ca-result') || row.classList.contains('ca-carry-row')) cells.forEach(cell=>{ if(cell.textContent.trim()) cell.classList.add('lv-hide'); });
+  });
+  el.querySelectorAll('.ca-strike').forEach(cell=>{ cell.classList.remove('ca-strike'); cell.classList.add('lv-strike-later'); });
+  return el;
+}
+function liveBoardStep(el, k, done){
+  if(!el) return;
+  el.querySelectorAll('.lv-now').forEach(x=>x.classList.remove('lv-now'));
+  el.querySelectorAll('[data-c]').forEach(cell=>{
+    const c = Number(cell.dataset.c);
+    const row = cell.closest('.ca-row');
+    const isRes = row.classList.contains('ca-result'), isTop = row.classList.contains('ca-carry-row');
+    const show = done || (isRes ? c <= k : isTop ? c <= k+1 : true);
+    if(cell.classList.contains('lv-hide') && show){ cell.classList.remove('lv-hide'); cell.classList.add('lv-pop'); }
+    if(cell.classList.contains('lv-strike-later') && (done || c <= k+1)){ cell.classList.remove('lv-strike-later'); cell.classList.add('ca-strike'); }
+    if(!done && c===k && !isTop) cell.classList.add('lv-now');
+  });
+}
+/* pergunta no meio: passos que terminam numa conta "… = número" viram pergunta antes de aparecer */
+function stepQuizOf(stepHtml){
+  const t = String(stepHtml).replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
+  const m = t.match(/^(.*\S)\s*=\s*(−?-?\d+(?:[.,]\d+)?)(\s*(?:→.*)?)$/);
+  if(!m) return null;
+  const val = Number(m[2].replace('−','-').replace(',','.'));
+  if(!isFinite(val) || m[1].length < 3 || !/\d/.test(m[1])) return null;
+  const dec = (m[2].split(/[.,]/)[1]||'').length, st = dec ? Math.pow(10,-dec) : 1;
+  const r = v=> Math.round(v*1e6)/1e6;
+  const cands = [...new Set([val+st, val-st, val+10*st, val+2*st, val-2*st, val*2].map(r))].filter(v=> v!==val && (val<0 || v>=0));
+  const opts = shuffle([val, ...shuffle(cands).slice(0,2)]);
+  const show = v=> fmt(v);
+  return {ask: `${m[1]} = ?`, opts: opts.map(v=>({label:show(v), ok:v===val})), rest: m[3]||''};
+}
 function showStepPlayer(ex){
   const steps = (ex.steps||[]).filter(Boolean);
   const finalVis = solutionFinalVisual(ex);
   const total = steps.length + 1; // + o slide final com a resposta
   const canTalk = ('speechSynthesis' in window) && currentSettingsSync().tts!==false;
-  let i = -1, playing = true, timer = null, talk = false;
+  const board = liveBoardEl(ex);
+  // até 2 perguntas no meio, nos passos com conta (nunca no primeiro passo nem no "Resultado")
+  const quizIdx = steps.map((s,k)=> k>0 && !/^Resultado/i.test(String(s).replace(/<[^>]*>/g,'').trim()) && stepQuizOf(s) ? k : -1).filter(k=>k>=0);
+  const asks = new Set(quizIdx.length<=2 ? quizIdx : [quizIdx[Math.floor(quizIdx.length/3)], quizIdx[Math.floor(quizIdx.length*2/3)]]);
+  const answered = {};
+  let i = -1, playing = true, timer = null, talk = false, score = 0;
   const qv = questionHTML(ex);
   const bg = document.createElement('div');
-  bg.className = 'gm-modal-bg sp-bg';
+  bg.className = 'sp-full';
   bg.innerHTML = `<div class="sp-card" role="dialog" aria-label="Correção animada">
-      <div class="sp-head"><b>🎬 Correção animada</b><button type="button" class="sp-x" aria-label="Fechar">✕</button></div>
-      <div class="sp-q mono ${qv.stacked?'stacked':''}">${qv.html}</div>
-      <div class="sp-bar"><i></i></div>
+      <div class="sp-head"><button type="button" class="sp-x" aria-label="Fechar">✕</button><div class="sp-bar"><i></i></div><span class="sp-count"></span></div>
+      <div class="sp-top">${board ? '' : `<div class="sp-q mono ${qv.stacked?'stacked':''}">${qv.html}</div>`}</div>
       <div class="sp-stage" aria-live="polite"></div>
-      <div class="sp-pi"><div class="sp-pi-av">${mascotSVG('happy', 54)}</div><div class="sp-pi-b"></div></div>
+      <div class="sp-pi"><div class="sp-pi-av"></div><div class="sp-pi-b"></div></div>
       <div class="sp-ctrl">
         <button type="button" class="sp-b sp-prev" aria-label="Passo anterior">◀</button>
         <button type="button" class="sp-b sp-play" aria-label="Pausar">⏸</button>
@@ -193,55 +237,86 @@ function showStepPlayer(ex){
         ${canTalk ? '<button type="button" class="sp-b sp-talk" aria-label="Ouvir em voz alta">🔇</button>' : ''}
       </div>
     </div>`;
+  if(board) bg.querySelector('.sp-top').appendChild(board);
   const stage = bg.querySelector('.sp-stage'), bar = bg.querySelector('.sp-bar i'), piB = bg.querySelector('.sp-pi-b'), pi = bg.querySelector('.sp-pi-av');
-  const lines = ['Primeiro, vamos olhar com calma…', 'Agora o próximo passo…', 'Olha só…', 'Quase lá…', 'Mais um passo…'];
+  const lines = ['Agora o próximo passo…', 'Olha só…', 'Quase lá…', 'Mais um passo…', 'Presta atenção aqui…'];
   const plain = html=> String(html).replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
+  const say = (txt, mood)=>{ piB.textContent = txt; pi.innerHTML = mascotSVG(mood||'happy', 76); };
   function paint(){
     bar.style.width = `${(i+1)/total*100}%`;
+    bg.querySelector('.sp-count').textContent = `${Math.min(i+1,total)}/${total}`;
     stage.innerHTML = '';
+    const pendingQuiz = i < steps.length && asks.has(i) && !answered[i];
     for(let k=0; k<=Math.min(i, steps.length-1); k++){
-      const d = h(`<div class="sp-step ${k===i?'now':'past'}"><span class="sp-n">${k+1}</span><div class="sp-t">${steps[k]}</div></div>`);
+      if(k===i && pendingQuiz){
+        const q = stepQuizOf(steps[k]);
+        const box = h(`<div class="sp-step now sp-quiz"><span class="sp-n">${k+1}</span><div class="sp-t"><div class="sp-qa"></div><div class="sp-qo"></div></div></div>`);
+        box.querySelector('.sp-qa').textContent = q.ask;
+        q.opts.forEach(o=>{
+          const b = h(`<button type="button" class="sp-opt mono"></button>`); b.textContent = o.label;
+          b.onclick = ()=>{
+            box.querySelectorAll('.sp-opt').forEach(x=>{ x.disabled = true; if(x.textContent===q.opts.find(y=>y.ok).label) x.classList.add('ok'); });
+            if(o.ok){ score++; answered[k] = 'ok'; playTones([660,880], 0.06, 'triangle', 0.07); say(pick(['Isso! Você acertou! 🎉','Mandou bem! 👏','Exatamente! ⭐']), 'joy'); }
+            else { b.classList.add('bad'); answered[k] = 'bad'; playTones([300,220], 0.08, 'sine', 0.06); say('Quase! Olha qual era a certa 👀', 'happy'); }
+            setTimeout(()=>{ if(bg.isConnected){ playing = true; paint(); schedule(); } }, 1300);
+          };
+          box.querySelector('.sp-qo').appendChild(b);
+        });
+        stage.appendChild(box);
+        continue;
+      }
+      const d = h(`<div class="sp-step ${k===i?'now':'past'} ${answered[k]==='ok'?'got':''}"><span class="sp-n">${answered[k]==='ok'?'★':k+1}</span><div class="sp-t">${steps[k]}</div></div>`);
       stage.appendChild(d);
     }
+    if(board){
+      // na pergunta, a coluna fica destacada mas o resultado dela só aparece depois da resposta
+      const kk = pendingQuiz ? i-1 : Math.min(i, steps.length-1);
+      liveBoardStep(board, kk, !pendingQuiz && (i >= steps.length-1 || /^Resultado/i.test(plain(steps[Math.max(0,i)]))));
+      if(pendingQuiz) board.querySelectorAll('.lv-now').forEach(x=>x.classList.remove('lv-now'));
+      if(pendingQuiz) board.querySelectorAll(`[data-c="${i}"]`).forEach(cell=>{ if(!cell.closest('.ca-carry-row')) cell.classList.add('lv-now'); });
+    }
     if(i >= steps.length){
-      stage.appendChild(h(`<div class="sp-final">${finalVis ? `<div class="sp-fv">${finalVis}</div>` : ''}<div class="sp-ans"><small>Resposta</small><b class="mono"></b></div></div>`));
+      stage.appendChild(h(`<div class="sp-final">${finalVis && !board ? `<div class="sp-fv">${finalVis}</div>` : ''}<div class="sp-ans"><small>Resposta</small><b class="mono"></b></div>${asks.size ? `<div class="sp-score">Você acertou ${score} de ${asks.size} no caminho ${score===asks.size?'🌟':''}</div>` : ''}</div>`));
       stage.querySelector('.sp-ans b').textContent = answerLabel(ex);
-      piB.textContent = 'Pronto! Agora você já sabe o caminho. 🌟';
-      pi.innerHTML = mascotSVG('joy', 54);
+      say('Pronto! Agora você já sabe o caminho. 🌟', 'joy');
       playTones([523,659,784], 0.07, 'triangle', 0.06);
-    } else {
-      piB.textContent = i<=0 ? lines[0] : lines[1 + (i % (lines.length-1))];
-      pi.innerHTML = mascotSVG('happy', 54);
+    } else if(pendingQuiz){
+      say('E agora, quanto dá? Tenta você! 🤔', 'happy');
+    } else if(!answered[i]){
+      say(i<=0 ? 'Vamos resolver juntos, passo a passo!' : lines[i % lines.length], 'happy');
     }
     const now = stage.querySelector('.sp-step.now, .sp-final');
-    if(now) now.scrollIntoView({block:'nearest', behavior:'smooth'});
+    // rola só a lista dos passos (scrollIntoView rolava a tela inteira e escondia o quadro da conta)
+    if(now) stage.scrollTo({top: now.offsetTop - stage.offsetTop - 8, behavior:'smooth'});
     bg.querySelector('.sp-prev').disabled = i<=0;
-    bg.querySelector('.sp-next').disabled = i>=total-1;
-    if(talk){ speak(i>=steps.length ? `A resposta é ${plain(answerLabel(ex))}` : plain(steps[i])); }
+    bg.querySelector('.sp-next').disabled = i>=total-1 || pendingQuiz;
+    if(talk && !pendingQuiz){ speak(i>=steps.length ? `A resposta é ${plain(answerLabel(ex))}` : plain(steps[i])); }
+    else if(talk && pendingQuiz){ speak('E agora, quanto dá?'); }
   }
   function go_(k){ i = Math.max(0, Math.min(total-1, k)); paint(); schedule(); }
   function schedule(){
     clearTimeout(timer);
     const pb = bg.querySelector('.sp-play');
-    if(i>=total-1){ playing = false; }
-    pb.textContent = playing ? '⏸' : (i>=total-1 ? '↺' : '▶');
-    pb.setAttribute('aria-label', playing ? 'Pausar' : (i>=total-1 ? 'Ver de novo' : 'Continuar'));
-    if(playing){
+    const waiting = i < steps.length && asks.has(i) && !answered[i];
+    if(i>=total-1) playing = false;
+    pb.textContent = waiting ? '⏳' : playing ? '⏸' : (i>=total-1 ? '↺' : '▶');
+    pb.disabled = waiting;
+    if(playing && !waiting){
       const len = i>=0 && i<steps.length ? plain(steps[i]).length : 0;
-      timer = setTimeout(()=>{ if(bg.isConnected) go_(i+1); }, Math.min(6000, 1800 + len*45 + (talk ? len*40 : 0)));
+      timer = setTimeout(()=>{ if(bg.isConnected) go_(i+1); }, Math.min(6500, 2200 + len*45 + (talk ? len*40 : 0)));
     }
   }
-  function close(){ clearTimeout(timer); try{ speechSynthesis.cancel(); }catch(e){} bg.remove(); }
+  function close(){ clearTimeout(timer); try{ speechSynthesis.cancel(); }catch(e){} bg.remove(); document.documentElement.classList.remove('sp-open-lock'); }
   bg.querySelector('.sp-x').onclick = close;
-  bg.addEventListener('click', e=>{ if(e.target===bg) close(); });
   bg.querySelector('.sp-prev').onclick = ()=>{ playing = false; go_(i-1); };
   bg.querySelector('.sp-next').onclick = ()=>{ playing = false; go_(i+1); };
   bg.querySelector('.sp-play').onclick = ()=>{
-    if(i>=total-1){ playing = true; go_(0); return; }
+    if(i>=total-1){ playing = true; Object.keys(answered).forEach(k=>delete answered[k]); score = 0; if(board){ const nb = liveBoardEl(ex); board.replaceWith(nb); } go_(0); return; }
     playing = !playing; schedule();
   };
   const tb = bg.querySelector('.sp-talk');
-  if(tb) tb.onclick = ()=>{ talk = !talk; tb.textContent = talk ? '🔊' : '🔇'; if(talk) speak(i>=steps.length ? `A resposta é ${plain(answerLabel(ex))}` : plain(steps[Math.max(0,i)])); else try{ speechSynthesis.cancel(); }catch(e){} };
+  if(tb) tb.onclick = ()=>{ talk = !talk; tb.textContent = talk ? '🔊' : '🔇'; if(!talk) try{ speechSynthesis.cancel(); }catch(e){} else speak(plain(piB.textContent)); };
+  document.documentElement.classList.add('sp-open-lock');
   document.body.appendChild(bg);
   go_(0);
 }
