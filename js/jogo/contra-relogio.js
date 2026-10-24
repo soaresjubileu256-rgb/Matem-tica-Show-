@@ -107,7 +107,7 @@ function speedRunScreen(){
     function paintSel(){
       const cur = subjOf(subj), best = speedBests(loadGame())[speedKey(subj,diff)] || 0;
       box.querySelector('.sr-sel-sym').textContent = cur.sym || '•';
-      box.querySelector('.sr-sel-txt small').textContent = `${diffOf(diff)[2]} · 🏆 recorde ${best}`;
+      box.querySelector('.sr-sel-txt small').textContent = `${diffOf(diff)[2]} · 🏆 ${best}`;
       box.querySelector('.sr-sel-txt b').textContent = cur.name;
       box.querySelector('.sr-hero-best').textContent = best;
     }
@@ -160,7 +160,7 @@ function speedRunScreen(){
           <div class="sr-chip sr-score"><small>pontos</small><b>0</b><i class="sr-plus"></i></div>
         </div>
         <div class="sr-bar" role="progressbar" aria-label="Tempo restante" aria-valuemin="0" aria-valuemax="${SPEED_SECONDS}"><i></i></div>
-        <div class="sr-card"><div class="sr-q qtext mono"></div><div class="sr-fb" aria-live="polite"></div></div>
+        <div class="sr-card question-card"><div class="sr-q qtext mono"></div><div class="sr-fb" aria-live="polite"></div></div>
         <div class="sr-opts"></div>
       </div>`);
     c.appendChild(ui);
@@ -281,8 +281,8 @@ function speedRunScreen(){
           <div><b>${st.best}</b><span>maior sequência</span></div>
           <div><b>${st.wrong}</b><span>erros</span></div>
         </div>
+        <div class="be-btns"><button class="btn primary" data-a="again">Jogar de novo</button><button class="btn secondary" data-a="change">Trocar assunto</button></div>
         ${st.mistakes.length ? `<div class="be-wrong sr-wrong"><div class="bi-lbl">Pra revisar</div>${st.mistakes.map(m=>`<div class="sr-wrow"><p>${escHTML(m.q.length>110 ? m.q.slice(0,107)+'...' : m.q)}</p><div><span>Certa: <b class="mono">${escHTML(m.ans)}</b></span><small>você marcou ${escHTML(m.got)}</small></div></div>`).join('')}</div>` : (total ? '<div class="be-perfect">✨ Nenhum erro! Mandou bem!</div>' : '')}
-        <div class="be-btns"><button class="btn primary" data-a="again">Jogar de novo ⏱️</button><button class="btn secondary" data-a="change">Trocar assunto</button></div>
       </div>`);
     end.querySelector('[data-a=again]').onclick = countdown;
     end.querySelector('[data-a=change]').onclick = ()=>{ intro(); window.scrollTo(0,0); };
