@@ -220,7 +220,8 @@ function showStepPlayer(ex, o){
   const board = liveBoardEl(ex);
   // até 2 perguntas no meio, nos passos com conta (nunca no primeiro passo nem no "Resultado")
   const quizIdx = steps.map((s,k)=> k>0 && !/^Resultado/i.test(String(s).replace(/<[^>]*>/g,'').trim()) && stepQuizOf(s) ? k : -1).filter(k=>k>=0);
-  const asks = new Set(quizIdx.length<=2 ? quizIdx : [quizIdx[Math.floor(quizIdx.length/3)], quizIdx[Math.floor(quizIdx.length*2/3)]]);
+  // o.noQuiz: só mostra a conta sendo feita, sem perguntas (exemplos de Aprender)
+  const asks = new Set(o.noQuiz ? [] : quizIdx.length<=2 ? quizIdx : [quizIdx[Math.floor(quizIdx.length/3)], quizIdx[Math.floor(quizIdx.length*2/3)]]);
   const answered = {};
   let i = -1, playing = true, timer = null, talk = false, score = 0;
   const qv = questionHTML(ex);
