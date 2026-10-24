@@ -614,7 +614,7 @@ function pathOpenSet(){ state.pathOpen = state.pathOpen || {}; return state.path
    No topo o Pi diz o que vem a seguir; embaixo, a lista de episódios e o botão "Próxima fase". */
 const PATH_ZIG = [0, -1, 0, 1];             // posição de cada fase: centro, esquerda, centro, direita
 /* objetos de escola desenhados (enfeitam as casas vazias do tabuleiro) */
-const PATH_DECO = ['lapis', 'dado', 'calculadora', 'regua', 'transferidor', 'esquadro'];
+const PATH_DECO = ['lapis', 'dado', 'calculadora', 'livros', 'regua', 'compasso', 'transferidor', 'abaco', 'globo', 'esquadro', 'cubo', 'borracha', 'caderno', 'apontador'];
 let _decoSeq = 0;
 function pathDecoSVG(kind){
   const id = 'dc' + (++_decoSeq);
@@ -655,6 +655,58 @@ function pathDecoSVG(kind){
       ${face([20,31],[50,46],[20,67],[[.28,.25],[.72,.75]],'#3A3F48')}
       ${face([50,46],[80,31],[50,82],[[.25,.25],[.5,.5],[.75,.75]],'#3A3F48')}</svg>`;
   }
+  if(kind==='compasso') return `<svg viewBox="0 0 100 100">${shadow}
+      <path d="M50 22 L30 84" stroke="#9AA3AF" stroke-width="5" stroke-linecap="round"/><path d="M50 22 L30 84" stroke="#DDE2E8" stroke-width="2" stroke-linecap="round"/>
+      <path d="M50 22 L70 80" stroke="#9AA3AF" stroke-width="5" stroke-linecap="round"/><path d="M50 22 L70 80" stroke="#DDE2E8" stroke-width="2" stroke-linecap="round"/>
+      <path d="M30 84 L28 90" stroke="#555C66" stroke-width="2.5" stroke-linecap="round"/>
+      <rect x="66" y="72" width="8" height="12" rx="2" transform="rotate(-19 70 78)" fill="#F5B921"/><path d="M71 85 L72 91" stroke="#3B3F46" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M38 58 Q50 54 62 58" stroke="#7E8794" stroke-width="2.5" fill="none"/>
+      <circle cx="50" cy="20" r="7" fill="#E5484D"/><circle cx="50" cy="20" r="3" fill="#FFB3B6"/><rect x="47.5" y="5" width="5" height="10" rx="2" fill="#B8323A"/></svg>`;
+  if(kind==='livros') return `<svg viewBox="0 0 100 100">${shadow}
+      <rect x="16" y="66" width="68" height="18" rx="3" fill="#2F6FD6"/><rect x="20" y="69" width="62" height="12" fill="#F4F1E8"/><rect x="16" y="66" width="8" height="18" rx="2" fill="#2457AE"/>
+      <rect x="22" y="48" width="58" height="18" rx="3" fill="#E5484D"/><rect x="26" y="51" width="52" height="12" fill="#F4F1E8"/><rect x="22" y="48" width="8" height="18" rx="2" fill="#B8323A"/>
+      <path d="M40 57h28" stroke="#E5484D" stroke-width="1.5" opacity=".5"/>
+      <g transform="rotate(-8 50 40)"><rect x="18" y="31" width="60" height="17" rx="3" fill="#2BC6A8"/><rect x="22" y="34" width="54" height="11" fill="#F4F1E8"/><rect x="18" y="31" width="8" height="17" rx="2" fill="#178C78"/>
+      <text x="52" y="43" text-anchor="middle" font-size="8" font-family="Inter,Arial" font-weight="800" fill="#178C78">π</text></g></svg>`;
+  if(kind==='abaco'){
+    const cols = ['#E5484D','#F5B921','#2BC6A8','#4C7DFF'];
+    return `<svg viewBox="0 0 100 100">${shadow}
+      <rect x="14" y="18" width="72" height="66" rx="6" fill="#A06A32"/><rect x="21" y="25" width="58" height="52" rx="2" fill="#2A2D33"/>
+      ${[0,1,2,3].map(r=>`<path d="M21 ${33+r*12.5}h58" stroke="#C9CED6" stroke-width="1.6"/>`+[0,1,2,3,4].map(b=>{ const off = (r*2+b)%3===0 ? 22 : 0; return `<ellipse cx="${27+b*7+off}" cy="${33+r*12.5}" rx="3.6" ry="4.6" fill="${cols[r]}"/>`; }).join('')).join('')}
+      <rect x="14" y="18" width="72" height="5" rx="2" fill="#C08548"/></svg>`;
+  }
+  if(kind==='globo') return `<svg viewBox="0 0 100 100">${shadow}
+      <path d="M38 86 h24 l-4 -6 h-16 Z" fill="#7A5418"/><rect x="47.5" y="68" width="5" height="13" fill="#B07800"/>
+      <path d="M22 44 A28 28 0 0 0 66 70" fill="none" stroke="#C9962B" stroke-width="3.5" stroke-linecap="round"/>
+      <circle cx="48" cy="42" r="24" fill="#3C8DE8"/>
+      <path d="M36 26 q8 -4 12 2 q-2 6 4 8 q6 2 2 10 q-6 4 -10 -2 q-6 -2 -10 -8 Z M54 50 q6 -2 10 4 q-2 8 -8 10 q-4 -6 -2 -14 Z" fill="#45C46A"/>
+      <circle cx="40" cy="34" r="9" fill="rgba(255,255,255,.18)"/></svg>`;
+  if(kind==='cubo'){
+    const C = ['#E5484D','#F5B921','#2BC6A8','#4C7DFF','#FF9F43','#FFFFFF'];
+    let t='';
+    const quad=(o,u,v,i,j,col)=>{ const p=(a,b)=>[o[0]+u[0]*a+v[0]*b, o[1]+u[1]*a+v[1]*b]; const pts=[p(i+.08,j+.08),p(i+.92,j+.08),p(i+.92,j+.92),p(i+.08,j+.92)]; return `<polygon points="${pts.map(q=>q.map(x=>x.toFixed(1)).join(',')).join(' ')}" fill="${col}"/>`; };
+    for(let i=0;i<3;i++) for(let j=0;j<3;j++){
+      t += quad([50,14],[10,5],[-10,5],i,j,C[(i+j*2)%6]);
+      t += quad([20,29],[10,5],[0,12],i,j,C[(i*2+j+1)%6]);
+      t += quad([50,44],[10,-5],[0,12],i,j,C[(i+j+3)%6]);
+    }
+    return `<svg viewBox="0 0 100 100">${shadow}<polygon points="50,12 82,28 82,66 50,82 18,66 18,28" fill="#1C1F24"/>${t}</svg>`;
+  }
+  if(kind==='borracha') return `<svg viewBox="0 0 100 100">${shadow}<g transform="rotate(-14 50 60)">
+      <polygon points="18,52 62,52 78,64 34,64" fill="#FFB3C4"/>
+      <polygon points="18,52 34,64 34,78 18,66" fill="#E87C96"/>
+      <polygon points="34,64 78,64 78,78 34,78" fill="#FF8FA8"/>
+      <polygon points="44,64 64,64 64,78 44,78" fill="#4C7DFF"/><polygon points="38,52 58,52 64,64 44,64" fill="#7DA2FF"/></g></svg>`;
+  if(kind==='caderno') return `<svg viewBox="0 0 100 100">${shadow}<g transform="rotate(8 50 50)">
+      <rect x="26" y="16" width="52" height="68" rx="5" fill="#B23FE0"/><rect x="30" y="16" width="48" height="68" rx="5" fill="#C866F0"/>
+      ${[0,1,2,3,4,5,6].map(i=>`<circle cx="30" cy="${23+i*9}" r="3.2" fill="none" stroke="#DDE2E8" stroke-width="2"/>`).join('')}
+      <rect x="40" y="28" width="30" height="16" rx="3" fill="#F4F1E8"/><path d="M44 34h22M44 39h15" stroke="#B23FE0" stroke-width="2" stroke-linecap="round"/>
+      <text x="55" y="68" text-anchor="middle" font-size="13" font-family="Inter,Arial" font-weight="800" fill="#F4E9FF">x²</text></g></svg>`;
+  if(kind==='apontador') return `<svg viewBox="0 0 100 100">${shadow}
+      <path d="M26 46 h40 l8 10 v22 a4 4 0 0 1 -4 4 h-44 a4 4 0 0 1 -4 -4 v-28 a4 4 0 0 1 4 -4 Z" fill="#1F9E85"/>
+      <path d="M22 50 a4 4 0 0 1 4 -4 h40 l8 10 h-48 a4 4 0 0 1 -4 -4 Z" fill="#2BC6A8"/>
+      <circle cx="46" cy="68" r="8" fill="#14695A"/><circle cx="46" cy="68" r="4.5" fill="#0B3E35"/>
+      <rect x="54" y="60" width="16" height="5" rx="1" fill="#C9CED6"/><circle cx="66" cy="62.5" r="1.4" fill="#7E8794"/></svg>`;
   // esquadro
   return `<svg viewBox="0 0 100 100">${shadow}
       <path d="M22 86 L22 18 L88 86 Z M31 77 L31 46 L61 77 Z" fill="#1A8F77" fill-rule="evenodd"/>
@@ -745,7 +797,7 @@ function pathScreen(){
       wrapN.appendChild(btn);
       if(isCur) wrapN.appendChild(h(`<button type="button" class="pnode-play">${n.type==='chest'?'🎁 ABRIR':'▶ JOGAR'}</button>`));
       // enfeite: um objeto de escola desenhado na casa vazia do outro lado
-      if(z !== 0) wrapN.appendChild(h(`<span class="pd-deco" aria-hidden="true">${pathDecoSVG(PATH_DECO[(u*2 + (k>2?1:0)) % PATH_DECO.length])}</span>`));
+      if(z !== 0) wrapN.appendChild(h(`<span class="pd-deco" aria-hidden="true">${pathDecoSVG(PATH_DECO[(u*5 + (k>2?3:0)) % PATH_DECO.length])}</span>`));
       btn.onclick = ()=>{
         if(locked){ showFloat('🔒 Complete as fases anteriores', true); return; }
         if(n.type==='chest') openChest(n, isDone);
