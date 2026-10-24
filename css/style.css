@@ -4415,3 +4415,7 @@ html.sp-open-lock, html.sp-open-lock body{overflow:hidden;}
 .sp-full .sp-card{overflow:hidden;}
 .sp-full .sp-stage{min-height:0; overflow-y:auto; overscroll-behavior:contain;}
 .sp-full .sp-top, .sp-full .sp-pi, .sp-full .sp-ctrl, .sp-full .sp-head{flex:none;}
+.lr-anim-row{display:flex; justify-content:center; margin:8px 0 2px;}
+.sp-title{flex:none; text-align:center; font:700 16px 'Fraunces',serif; color:#FFE08A; margin-top:-4px;}
+:root.theme-light .sp-title{color:#8A5A00;}
+.sp-full .sp-ans b.sp-concl{display:block; font-size:18px; font-weight:700; line-height:1.45; margin-top:4px;}
