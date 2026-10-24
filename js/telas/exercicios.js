@@ -391,6 +391,7 @@ function exerciseSessionScreen(){
       ? `<div class="ex-cmp-box ok"><small>Sua resposta</small><b>${sess.lastUser||finalTxt}</b></div>`
       : `<div class="ex-cmp-box bad"><small>Você respondeu</small><b>${sess.lastUser||'—'}</b></div><div class="ex-cmp-box ok"><small>Resposta certa</small><b>${finalTxt}</b></div>`;
     fb.querySelector('.fb-explain').innerHTML = `<div class="ex-steps-t">Passo a passo</div>` + stepsList.map(st=>`<div class="step">${st}</div>`).join('');
+    fb.querySelector('.fb-explain').prepend(stepPlayerButton(ex, !correct));
     c.appendChild(fb);
     if(!correct) renderDrillButton(c, sess.subjectId, sess.difficulty);
     const nextBtn = h(`<button class="next-btn ex-next">${sess.index+1<sess.total? 'Próxima questão ›':'Ver resultado ›'}</button>`);
@@ -562,6 +563,7 @@ function reviewErrorsSessionScreen(){
     const stepsHtml = stepsList.map(st=>`<div class="step">${st}</div>`).join('');
     const finalTxt = ex.displayAnswer ? ex.displayAnswer : (ex.type==='pair'? `x' = ${ex.answer[0]}  e  x'' = ${ex.answer[1]}` : ex.type==='xy'? `x = ${ex.answer.x}  e  y = ${ex.answer.y}` : fmt(ex.answer));
     fb.querySelector('.fb-explain').innerHTML = stepsHtml + `<div class="step" style="margin-top:8px"><b>Resposta: ${finalTxt}</b></div>`;
+    fb.querySelector('.fb-explain').prepend(stepPlayerButton(ex, !correct));
     c.appendChild(fb);
     if(!correct) renderDrillButton(c, item.subjectId, item.difficulty);
     const nextBtn = h(`<button class="next-btn">${sess.index+1<sess.total? 'Próximo erro':'Ver resultado'}</button>`);
@@ -794,6 +796,7 @@ function challengeSessionScreen(){
     const stepsHtml = stepsList.map(st=>`<div class="step">${st}</div>`).join('');
     const finalTxt = ex.displayAnswer ? ex.displayAnswer : (ex.type==='pair'? `x' = ${ex.answer[0]}  e  x'' = ${ex.answer[1]}` : ex.type==='xy'? `x = ${ex.answer.x}  e  y = ${ex.answer.y}` : fmt(ex.answer));
     fb.querySelector('.fb-explain').innerHTML = stepsHtml + `<div class="step" style="margin-top:8px"><b>Resposta: ${finalTxt}</b></div>`;
+    fb.querySelector('.fb-explain').prepend(stepPlayerButton(ex, !correct));
     c.appendChild(fb);
     if(!correct) renderDrillButton(c, sess.currentSubjectId, sess.difficulty);
     const nextBtn = h(`<button class="next-btn">${sess.index+1<sess.total? 'Próxima questão':'Ver resultado'}</button>`);
@@ -1242,6 +1245,7 @@ function personalizedSessionScreen(){
     const stepsHtml = stepsList.map(st=>`<div class="step">${st}</div>`).join('');
     const finalTxt = ex.displayAnswer ? ex.displayAnswer : (ex.type==='pair'? `x' = ${ex.answer[0]}  e  x'' = ${ex.answer[1]}` : ex.type==='xy'? `x = ${ex.answer.x}  e  y = ${ex.answer.y}` : fmt(ex.answer));
     fb.querySelector('.fb-explain').innerHTML = stepsHtml + `<div class="step" style="margin-top:8px"><b>Resposta: ${finalTxt}</b></div>`;
+    fb.querySelector('.fb-explain').prepend(stepPlayerButton(ex, !correct));
     c.appendChild(fb);
     if(!correct) renderDrillButton(c, sess.currentSubjectId, sess.difficulty);
     const nextBtn = h(`<button class="next-btn">${sess.index+1<sess.total? 'Próxima questão':'Ver resultado'}</button>`);

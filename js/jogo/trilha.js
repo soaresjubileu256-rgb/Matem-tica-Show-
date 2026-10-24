@@ -155,6 +155,96 @@ function questionHTML(ex){
   if(ex.qVisual) return {stacked:true, html: ex.qVisual};
   return {stacked:false, html: ex.question.replace(/\n/g,'<br>')};
 }
+/* ---------- correção animada: o passo a passo aparece um de cada vez, com o Pi narrando ----------
+   Mostra o enunciado em cima; cada passo entra animado (sozinho a cada ~2,6 s ou tocando em Próximo);
+   no fim aparece a conta resolvida e a resposta. Dá pra ouvir em voz alta se o "ouvir" estiver ligado. */
+function solutionFinalVisual(ex){
+  if(ex.columns) return contaArmada(ex.columns.nums, ex.columns.op, fmt(ex.answer), ex.columns.carries, ex.columns.marks);
+  if(ex.visual){
+    const [ansN, ansD] = String(ex.displayAnswer).includes('/') ? ex.displayAnswer.split('/') : [ex.displayAnswer, null];
+    return fracRow(ex.visual.slice(0, -2).concat(['=', ansD ? {n:ansN, d:ansD} : ex.displayAnswer]));
+  }
+  return ex.solvedVisual || '';
+}
+function stepPlayerButton(ex, wrong){
+  const b = h(`<button type="button" class="sp-open ${wrong?'wrong':''}"><span class="sp-open-i">▶</span><span>Ver a correção animada</span></button>`);
+  b.onclick = e=>{ e.stopPropagation(); showStepPlayer(ex); };
+  return b;
+}
+function showStepPlayer(ex){
+  const steps = (ex.steps||[]).filter(Boolean);
+  const finalVis = solutionFinalVisual(ex);
+  const total = steps.length + 1; // + o slide final com a resposta
+  const canTalk = ('speechSynthesis' in window) && currentSettingsSync().tts!==false;
+  let i = -1, playing = true, timer = null, talk = false;
+  const qv = questionHTML(ex);
+  const bg = document.createElement('div');
+  bg.className = 'gm-modal-bg sp-bg';
+  bg.innerHTML = `<div class="sp-card" role="dialog" aria-label="Correção animada">
+      <div class="sp-head"><b>🎬 Correção animada</b><button type="button" class="sp-x" aria-label="Fechar">✕</button></div>
+      <div class="sp-q mono ${qv.stacked?'stacked':''}">${qv.html}</div>
+      <div class="sp-bar"><i></i></div>
+      <div class="sp-stage" aria-live="polite"></div>
+      <div class="sp-pi"><div class="sp-pi-av">${mascotSVG('happy', 54)}</div><div class="sp-pi-b"></div></div>
+      <div class="sp-ctrl">
+        <button type="button" class="sp-b sp-prev" aria-label="Passo anterior">◀</button>
+        <button type="button" class="sp-b sp-play" aria-label="Pausar">⏸</button>
+        <button type="button" class="sp-b sp-next" aria-label="Próximo passo">▶</button>
+        ${canTalk ? '<button type="button" class="sp-b sp-talk" aria-label="Ouvir em voz alta">🔇</button>' : ''}
+      </div>
+    </div>`;
+  const stage = bg.querySelector('.sp-stage'), bar = bg.querySelector('.sp-bar i'), piB = bg.querySelector('.sp-pi-b'), pi = bg.querySelector('.sp-pi-av');
+  const lines = ['Primeiro, vamos olhar com calma…', 'Agora o próximo passo…', 'Olha só…', 'Quase lá…', 'Mais um passo…'];
+  const plain = html=> String(html).replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
+  function paint(){
+    bar.style.width = `${(i+1)/total*100}%`;
+    stage.innerHTML = '';
+    for(let k=0; k<=Math.min(i, steps.length-1); k++){
+      const d = h(`<div class="sp-step ${k===i?'now':'past'}"><span class="sp-n">${k+1}</span><div class="sp-t">${steps[k]}</div></div>`);
+      stage.appendChild(d);
+    }
+    if(i >= steps.length){
+      stage.appendChild(h(`<div class="sp-final">${finalVis ? `<div class="sp-fv">${finalVis}</div>` : ''}<div class="sp-ans"><small>Resposta</small><b class="mono"></b></div></div>`));
+      stage.querySelector('.sp-ans b').textContent = answerLabel(ex);
+      piB.textContent = 'Pronto! Agora você já sabe o caminho. 🌟';
+      pi.innerHTML = mascotSVG('joy', 54);
+      playTones([523,659,784], 0.07, 'triangle', 0.06);
+    } else {
+      piB.textContent = i<=0 ? lines[0] : lines[1 + (i % (lines.length-1))];
+      pi.innerHTML = mascotSVG('happy', 54);
+    }
+    const now = stage.querySelector('.sp-step.now, .sp-final');
+    if(now) now.scrollIntoView({block:'nearest', behavior:'smooth'});
+    bg.querySelector('.sp-prev').disabled = i<=0;
+    bg.querySelector('.sp-next').disabled = i>=total-1;
+    if(talk){ speak(i>=steps.length ? `A resposta é ${plain(answerLabel(ex))}` : plain(steps[i])); }
+  }
+  function go_(k){ i = Math.max(0, Math.min(total-1, k)); paint(); schedule(); }
+  function schedule(){
+    clearTimeout(timer);
+    const pb = bg.querySelector('.sp-play');
+    if(i>=total-1){ playing = false; }
+    pb.textContent = playing ? '⏸' : (i>=total-1 ? '↺' : '▶');
+    pb.setAttribute('aria-label', playing ? 'Pausar' : (i>=total-1 ? 'Ver de novo' : 'Continuar'));
+    if(playing){
+      const len = i>=0 && i<steps.length ? plain(steps[i]).length : 0;
+      timer = setTimeout(()=>{ if(bg.isConnected) go_(i+1); }, Math.min(6000, 1800 + len*45 + (talk ? len*40 : 0)));
+    }
+  }
+  function close(){ clearTimeout(timer); try{ speechSynthesis.cancel(); }catch(e){} bg.remove(); }
+  bg.querySelector('.sp-x').onclick = close;
+  bg.addEventListener('click', e=>{ if(e.target===bg) close(); });
+  bg.querySelector('.sp-prev').onclick = ()=>{ playing = false; go_(i-1); };
+  bg.querySelector('.sp-next').onclick = ()=>{ playing = false; go_(i+1); };
+  bg.querySelector('.sp-play').onclick = ()=>{
+    if(i>=total-1){ playing = true; go_(0); return; }
+    playing = !playing; schedule();
+  };
+  const tb = bg.querySelector('.sp-talk');
+  if(tb) tb.onclick = ()=>{ talk = !talk; tb.textContent = talk ? '🔊' : '🔇'; if(talk) speak(i>=steps.length ? `A resposta é ${plain(answerLabel(ex))}` : plain(steps[Math.max(0,i)])); else try{ speechSynthesis.cancel(); }catch(e){} };
+  document.body.appendChild(bg);
+  go_(0);
+}
 function solutionHTML(ex){
   let stepsList = ex.steps;
   if(ex.columns){
@@ -359,13 +449,14 @@ function lessonScreen(){
     const sheet = h(`
       <div class="fb-sheet ${ok?'ok':'bad'}">
         <div class="fb-head"><span class="fb-ico">${ok?'👏':'🤔'}</span><div><div class="fb-t">${praise}</div>${!ok || isQuiz ? `<div class="fb-ans mono"></div>`:''}</div></div>
-        <button type="button" class="fb-why">📖 Ver explicação</button>
+        <div class="fb-why-row"><button type="button" class="fb-why">📖 Ver explicação</button></div>
         <div class="fb-steps" style="display:none"></div>
         <button class="show-btn ${ok?'ok':'bad'}">PRÓXIMA ›</button>
       </div>`);
     const ansEl = sheet.querySelector('.fb-ans');
     if(ansEl) ansEl.textContent = ok ? `Resposta: ${answerLabel(ex)}` : answerLabel(ex);
     sheet.querySelector('.fb-steps').innerHTML = solutionHTML(ex);
+    sheet.querySelector('.fb-why-row').appendChild(stepPlayerButton(ex, !ok));
     sheet.querySelector('.fb-why').onclick = (e)=>{
       const st = sheet.querySelector('.fb-steps');
       const open = st.style.display==='none';

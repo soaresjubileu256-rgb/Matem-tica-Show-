@@ -168,16 +168,20 @@ async function changeCurrentUserPassword(currentPass, newPass){
 }
 
 /* baixa um .json com progresso, histórico, erros e configurações da conta logada */
-async function exportProgressData(){
-  saveBackupInfo({last: Date.now()});
+/* monta o objeto do backup (o mesmo usado no arquivo exportado e nas cópias automáticas) */
+async function buildBackupPayload(){
   const [progress, history, errors, settings] = await Promise.all([loadProgress(), loadHistory(), loadErrors(), loadSettings()]);
-  const payload = {
+  return {
     exportedAt: new Date().toISOString(),
     account: currentUser ? currentUser.name : null,
     progress, history, errors, settings,
     game: loadGame(),
     notes: exportNotes(),
   };
+}
+async function exportProgressData(){
+  saveBackupInfo({last: Date.now()});
+  const payload = await buildBackupPayload();
   const safeName = (currentUser && currentUser.name ? currentUser.name : 'progresso').toLowerCase().replace(/[^a-z0-9]+/g,'-');
   const filename = `matematica-show-${safeName}-${new Date().toISOString().slice(0,10)}.json`;
   const jsonStr = JSON.stringify(payload, null, 2);

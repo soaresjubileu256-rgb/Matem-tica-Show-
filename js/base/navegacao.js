@@ -23,6 +23,7 @@ function enterApp(){
   state.screen = 'home';
   replaceHistoryState();
   render();
+  if(typeof autoBackupOnEnter==='function') autoBackupOnEnter(); // cópia automática + recuperação (js/dados/backup-auto.js)
 }
 
 /* sessão em andamento? (usado no aviso ao fechar/recarregar a aba) */
@@ -123,6 +124,7 @@ const SECTION_TABS = [
     {screen:'dailyIntro', ico:'📅', label:'Desafio do Dia', match:['dailyIntro','arenaDaily','dailyReview']},
     {screen:'examSetup', ico:'📝', label:'Simulado', match:['examSetup','examResult']},
     {screen:'lightning', ico:'⚡', label:'Relâmpago'},
+    {screen:'speedRun', ico:'⏱️', label:'Contra o relógio'},
     {screen:'quizSetup', ico:'🎤', label:'Quiz'},
     {screen:'duel', ico:'🤝', label:'Duelo'},
   ]},
@@ -200,7 +202,7 @@ const BOTTOM_NAV_ITEMS = [
   {id:'home', screen:'home', label:'Início', group:['home','help','news','profile','loja','settings','placement','plan']},
   {id:'path', screen:'path', label:'Trilha', group:['path']},
   {id:'study', screen:'content', label:'Estudar', group:STUDY_SCREENS},
-  {id:'arena', screen:'arena', label:'Arena', group:['arena','arenaDaily','dailyIntro','dailyReview','examSetup','examResult','lightning','quizSetup','duel']},
+  {id:'arena', screen:'arena', label:'Arena', group:['arena','arenaDaily','dailyIntro','dailyReview','examSetup','examResult','lightning','speedRun','quizSetup','duel']},
   {id:'tools', screen:'calculator', label:'Ferramentas', group:['calculator','solve','notebook','notePage']},
   {id:'progress', screen:'progress', label:'Progresso', group:['progress','report','history','achievements','certificates','certificate']},
 ];
