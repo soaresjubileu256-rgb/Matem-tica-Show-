@@ -616,6 +616,12 @@ const PATH_ZIG = [0, -1, 0, 1];             // posição de cada fase: centro, e
 /* objetos de escola desenhados (enfeitam as casas vazias do tabuleiro) */
 const PATH_DECO = ['lapis', 'dado', 'calculadora', 'livros', 'regua', 'compasso', 'transferidor', 'abaco', 'globo', 'esquadro', 'cubo', 'borracha', 'caderno', 'apontador'];
 let _decoSeq = 0;
+/* o objeto vira uma imagem (data URI) feita uma vez só e reaproveitada: muito mais leve que desenhar o SVG toda vez */
+const _decoCache = {};
+function pathDecoURI(kind){
+  if(!_decoCache[kind]) _decoCache[kind] = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(pathDecoSVG(kind).replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" '));
+  return _decoCache[kind];
+}
 function pathDecoSVG(kind){
   const id = 'dc' + (++_decoSeq);
   const shadow = `<ellipse cx="50" cy="90" rx="30" ry="6" fill="rgba(0,0,0,.35)"/>`;
@@ -784,6 +790,8 @@ function pathScreen(){
     }
     c.appendChild(banner);
     if(collapsed) return;
+    // episódios bloqueados mais à frente aparecem só com a faixa: desenhar os 58 tabuleiros de uma vez travava o celular
+    if(unitLocked && (!curNode || u > curNode.unit + 1)) return;
     // tabuleiro do episódio: as fases ficam nas casas, uma por linha, em zigue-zague
     const col = h(`<div class="path-board ${unitLocked?'locked':''}" style="${color}"></div>`);
     unitNodes.forEach((n,k)=>{
@@ -797,7 +805,7 @@ function pathScreen(){
       wrapN.appendChild(btn);
       if(isCur) wrapN.appendChild(h(`<button type="button" class="pnode-play">${n.type==='chest'?'🎁 ABRIR':'▶ JOGAR'}</button>`));
       // enfeite: um objeto de escola desenhado na casa vazia do outro lado
-      if(z !== 0) wrapN.appendChild(h(`<span class="pd-deco" aria-hidden="true">${pathDecoSVG(PATH_DECO[(u*5 + (k>2?3:0)) % PATH_DECO.length])}</span>`));
+      if(z !== 0) wrapN.appendChild(h(`<img class="pd-deco" alt="" aria-hidden="true" decoding="async" src="${pathDecoURI(PATH_DECO[(u*5 + (k>2?3:0)) % PATH_DECO.length])}">`));
       btn.onclick = ()=>{
         if(locked){ showFloat('🔒 Complete as fases anteriores', true); return; }
         if(n.type==='chest') openChest(n, isDone);
