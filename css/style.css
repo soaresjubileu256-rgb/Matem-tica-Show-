@@ -4156,3 +4156,18 @@ html[data-card="card_galaxia"] .player-card, .lp-card.cd-card_galaxia{background
 .pl-it.locked{opacity:.55;}
 .pl-n{flex:none; width:32px; height:32px; border-radius:10px; display:grid; place-items:center; font-weight:800; color:#fff; background:linear-gradient(135deg, var(--uc), var(--uc2));}
 .pl-t b{display:block; font-size:14px;} .pl-t small{font-size:12px; opacity:.75;}
+/* Trilha: faixas dos episódios escuras (como o tabuleiro); a cor do episódio fica só no número */
+.path-iso .unit-banner{background:#24272C !important; border:1px solid rgba(255,255,255,.07); box-shadow:0 10px 22px -14px rgba(0,0,0,.7);}
+.path-iso .unit-banner::before{display:none;}
+.path-iso .unit-banner .u-num{background:linear-gradient(135deg, var(--uc), var(--uc2)); border:none; color:#fff; box-shadow:0 4px 0 color-mix(in srgb, var(--uc2) 60%, #000);}
+.path-iso .unit-banner.done .u-num{background:#25B497; color:#fff; box-shadow:0 4px 0 #14806C;}
+.path-iso .unit-banner .u-k{color:#8E97A3; opacity:1;}
+.path-iso .unit-banner.cur .u-k{color:#5FD0B8;}
+.path-iso .unit-banner .u-n{color:#F1F2F4;}
+.path-iso .unit-banner .u-prog small{color:#A9B0BA;}
+.path-iso .unit-banner .u-dots i{background:#3C4148;} .path-iso .unit-banner .u-dots i.on{background:#2BC6A8;}
+.path-iso .unit-banner .u-guide{background:#2E3238; border-color:rgba(255,255,255,.1);}
+.path-iso .unit-banner.cur{box-shadow:0 0 0 2px #2BC6A8, 0 12px 24px -14px rgba(43,198,168,.7);}
+.path-iso .unit-banner.locked{filter:none; opacity:.75;}
+.path-iso .unit-banner .u-jump{background:#2E3238; border-color:#4A5059; color:#E3E6EA;}
+.path-iso .unit-banner .u-toggle{color:#A9B0BA;}
