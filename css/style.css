@@ -4131,10 +4131,10 @@ html[data-card="card_galaxia"] .player-card, .lp-card.cd-card_galaxia{background
 .path-board .pnode-wrap.is-cur .pd-top{animation:pd-pulse 1.6s ease-in-out infinite;}
 @keyframes pd-pulse{0%,100%{filter:brightness(1);} 50%{filter:brightness(1.18);}}
 .path-board .pnode-play{position:absolute; left:50%; top:-36px; transform:translateX(-50%); z-index:3; white-space:nowrap;}
-/* símbolo de matemática em 3D na casa vazia ao lado */
-.pd-deco{position:absolute; top:50%; left:50%; transform:translate(calc(-50% - var(--z) * 2 * var(--dx)), -58%); pointer-events:none; z-index:1;
-  font:700 58px/1 'Fraunces',serif; color:#E3E6EA;
-  text-shadow:0 2px 0 #C3C7CD, 0 4px 0 #A5AAB2, 0 6px 0 #8A9098, 0 8px 0 #737981, 0 14px 16px rgba(0,0,0,.55);}
+/* objeto de escola desenhado na casa vazia ao lado */
+.pd-deco{position:absolute; top:50%; left:50%; width:84px; height:84px; transform:translate(calc(-50% - var(--z) * 2 * var(--dx)), -60%); pointer-events:none; z-index:1;
+  filter:drop-shadow(0 6px 8px rgba(0,0,0,.45));}
+.pd-deco svg{display:block; width:100%; height:100%;}
 .path-board.locked .pd-deco{opacity:.5;}
 /* barra de baixo: lista + Próxima fase */
 .path-cta{position:fixed; left:12px; right:12px; bottom:calc(92px + env(safe-area-inset-bottom)); max-width:456px; margin:0 auto; z-index:45; display:flex; gap:10px;}

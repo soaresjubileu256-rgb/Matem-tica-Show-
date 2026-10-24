@@ -613,7 +613,54 @@ function pathOpenSet(){ state.pathOpen = state.pathOpen || {}; return state.path
    ladrilhos 3D em zigue-zague encaixados nas casas, com símbolos de matemática enfeitando as casas vazias.
    No topo o Pi diz o que vem a seguir; embaixo, a lista de episódios e o botão "Próxima fase". */
 const PATH_ZIG = [0, -1, 0, 1];             // posição de cada fase: centro, esquerda, centro, direita
-const PATH_DECO = ['+', '×', 'π', '√', '÷', '∑', '%', '='];
+/* objetos de escola desenhados (enfeitam as casas vazias do tabuleiro) */
+const PATH_DECO = ['lapis', 'dado', 'calculadora', 'regua', 'transferidor', 'esquadro'];
+let _decoSeq = 0;
+function pathDecoSVG(kind){
+  const id = 'dc' + (++_decoSeq);
+  const shadow = `<ellipse cx="50" cy="90" rx="30" ry="6" fill="rgba(0,0,0,.35)"/>`;
+  if(kind==='lapis') return `<svg viewBox="0 0 100 100"><defs>
+      <linearGradient id="${id}a" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE27A"/><stop offset=".35" stop-color="#FFD03D"/><stop offset=".36" stop-color="#F5B921"/><stop offset=".68" stop-color="#F5B921"/><stop offset=".69" stop-color="#D99A12"/><stop offset="1" stop-color="#C98A0C"/></linearGradient>
+      <linearGradient id="${id}b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F2F4F7"/><stop offset=".5" stop-color="#B9C0CA"/><stop offset="1" stop-color="#8E96A3"/></linearGradient></defs>
+    ${shadow}<g transform="rotate(-38 50 52)">
+      <rect x="8" y="43" width="11" height="17" rx="5" fill="#FF8FA8"/><rect x="8" y="43" width="11" height="6" rx="3" fill="#FFB3C4"/>
+      <rect x="17" y="42" width="9" height="19" rx="1.5" fill="url(#${id}b)"/><path d="M19.5 42v19M23 42v19" stroke="#8E96A3" stroke-width="1"/>
+      <rect x="26" y="42" width="47" height="19" fill="url(#${id}a)"/>
+      <path d="M73 42 L90 51.5 L73 61 Z" fill="#F4CFA0"/><path d="M73 42 L90 51.5 L73 47 Z" fill="#FBE0BC"/>
+      <path d="M85 48.7 L90 51.5 L85 54.3 Z" fill="#3B3F46"/></g></svg>`;
+  if(kind==='regua') return `<svg viewBox="0 0 100 100">${shadow}<g transform="rotate(-24 50 54)">
+      <rect x="6" y="50" width="88" height="20" rx="3" fill="#C9962B"/>
+      <rect x="6" y="44" width="88" height="20" rx="3" fill="#F3C969"/><rect x="6" y="44" width="88" height="5" rx="2.5" fill="#FADB8C"/>
+      ${Array.from({length:17},(_,i)=>`<path d="M${11+i*5} 44v${i%2?4:7}" stroke="#7A5A16" stroke-width="1.2"/>`).join('')}
+      <text x="12" y="61" font-size="6" font-family="Inter,Arial" font-weight="700" fill="#7A5A16">0</text><text x="58" y="61" font-size="6" font-family="Inter,Arial" font-weight="700" fill="#7A5A16">10</text></g></svg>`;
+  if(kind==='calculadora') return `<svg viewBox="0 0 100 100">${shadow}
+      <rect x="27" y="14" width="48" height="74" rx="9" fill="#262A33"/>
+      <rect x="25" y="10" width="48" height="74" rx="9" fill="#3E4553"/><rect x="25" y="10" width="48" height="10" rx="5" fill="#4C5464"/>
+      <rect x="31" y="17" width="36" height="15" rx="3" fill="#BFEFD0"/><text x="64" y="28.5" text-anchor="end" font-size="10" font-family="Inter,Arial" font-weight="800" fill="#1F4D31">3,14</text>
+      ${[0,1,2,3].map(r=>[0,1,2,3].map(cI=>`<rect x="${31+cI*9.3}" y="${38+r*10.5}" width="7.4" height="8" rx="2" fill="${cI===3 ? (r===3?'#2BC6A8':'#FF9F43') : '#DDE1E7'}"/>`).join('')).join('')}</svg>`;
+  if(kind==='transferidor') return `<svg viewBox="0 0 100 100">${shadow}
+      <path d="M12 74 A38 38 0 0 1 88 74 Z" fill="#2F6FD6" opacity=".9"/>
+      <path d="M12 70 A38 38 0 0 1 88 70 Z" fill="rgba(110,175,255,.75)" stroke="#CFE4FF" stroke-width="1.5"/>
+      <path d="M26 70 A24 24 0 0 1 74 70" fill="none" stroke="#E8F2FF" stroke-width="1.2" opacity=".9"/>
+      ${Array.from({length:13},(_,i)=>{ const a = Math.PI - i*Math.PI/12, x1 = 50+38*Math.cos(a), y1 = 70-38*Math.sin(a), x2 = 50+(i%3?33:29)*Math.cos(a), y2 = 70-(i%3?33:29)*Math.sin(a); return `<path d="M${x1.toFixed(1)} ${y1.toFixed(1)}L${x2.toFixed(1)} ${y2.toFixed(1)}" stroke="#F4F9FF" stroke-width="1.3"/>`; }).join('')}
+      <circle cx="50" cy="70" r="3" fill="#F4F9FF"/><path d="M50 70 L71 49" stroke="#FF5C7A" stroke-width="2" stroke-linecap="round"/></svg>`;
+  if(kind==='dado'){
+    const face = (A,B,D,pts,col)=> pts.map(([u,v])=>{ const x = A[0]+u*(B[0]-A[0])+v*(D[0]-A[0]), y = A[1]+u*(B[1]-A[1])+v*(D[1]-A[1]); return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.3" fill="${col}"/>`; }).join('');
+    return `<svg viewBox="0 0 100 100">${shadow}
+      <g stroke-linejoin="round" stroke-width="4">
+      <polygon points="50,16 80,31 50,46 20,31" fill="#FFFFFF" stroke="#FFFFFF"/>
+      <polygon points="20,31 50,46 50,82 20,67" fill="#E1E5EB" stroke="#E1E5EB"/>
+      <polygon points="50,46 80,31 80,67 50,82" fill="#C2C8D1" stroke="#C2C8D1"/></g>
+      <circle cx="50" cy="31" r="4.2" fill="#E5484D"/>
+      ${face([20,31],[50,46],[20,67],[[.28,.25],[.72,.75]],'#3A3F48')}
+      ${face([50,46],[80,31],[50,82],[[.25,.25],[.5,.5],[.75,.75]],'#3A3F48')}</svg>`;
+  }
+  // esquadro
+  return `<svg viewBox="0 0 100 100">${shadow}
+      <path d="M22 86 L22 18 L88 86 Z M31 77 L31 46 L61 77 Z" fill="#1A8F77" fill-rule="evenodd"/>
+      <path d="M20 82 L20 14 L86 82 Z M29 73 L29 42 L59 73 Z" fill="rgba(70,215,180,.82)" fill-rule="evenodd" stroke="#C9FFF0" stroke-width="1.4"/>
+      ${Array.from({length:8},(_,i)=>`<path d="M20 ${20+i*8}h${i%2?4:6}" stroke="#E9FFF8" stroke-width="1.3"/>`).join('')}</svg>`;
+}
 function pathCoachText(n){
   if(!n) return 'Você completou todos os episódios! Você é a estrela do show! 🌟';
   const nome = n.subject.name;
@@ -697,8 +744,8 @@ function pathScreen(){
           <span class="pd-side"></span><span class="pd-top"></span><span class="pd-ico">${ico}</span>${isDone && n.type!=='chest' ? '<span class="pd-ok">✓</span>' : ''}</button>`);
       wrapN.appendChild(btn);
       if(isCur) wrapN.appendChild(h(`<button type="button" class="pnode-play">${n.type==='chest'?'🎁 ABRIR':'▶ JOGAR'}</button>`));
-      // enfeite: um símbolo de matemática na casa vazia do outro lado
-      if(z !== 0) wrapN.appendChild(h(`<span class="pd-deco" aria-hidden="true">${PATH_DECO[(u*2 + k) % PATH_DECO.length]}</span>`));
+      // enfeite: um objeto de escola desenhado na casa vazia do outro lado
+      if(z !== 0) wrapN.appendChild(h(`<span class="pd-deco" aria-hidden="true">${pathDecoSVG(PATH_DECO[(u*2 + (k>2?1:0)) % PATH_DECO.length])}</span>`));
       btn.onclick = ()=>{
         if(locked){ showFloat('🔒 Complete as fases anteriores', true); return; }
         if(n.type==='chest') openChest(n, isDone);
