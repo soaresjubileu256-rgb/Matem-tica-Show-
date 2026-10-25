@@ -171,30 +171,80 @@ function stepPlayerButton(ex, wrong){
   b.onclick = e=>{ e.stopPropagation(); showStepPlayer(ex); };
   return b;
 }
-/* quadro da conta armada que vai se montando ao vivo (só + e −): cada célula ganha a posição a partir da direita */
+/* quadro da conta que vai se montando ao vivo, junto com os passos do Pi:
+   - conta armada de + e − (ex.columns) ou qualquer conta armada / divisão na chave pronta (ex.liveHTML);
+   - o resultado começa escondido e cada passo revela só o que aquele passo calculou. */
 function liveBoardEl(ex){
-  const c = ex.columns;
-  if(!c || !['+','−','-'].includes(c.op)) return null;
-  const el = h(`<div class="lv-board">${contaArmada(c.nums, c.op, fmt(ex.answer), c.carries, c.marks)}</div>`);
-  el.querySelectorAll('.ca-row').forEach(row=>{
-    const cells = [...row.querySelectorAll('.ca-cell:not(.ca-sign):not(.ca-comma)')].reverse();
-    cells.forEach((cell,k)=>{ cell.dataset.c = k; });
-    if(row.classList.contains('ca-result') || row.classList.contains('ca-carry-row')) cells.forEach(cell=>{ if(cell.textContent.trim()) cell.classList.add('lv-hide'); });
-  });
-  el.querySelectorAll('.ca-strike').forEach(cell=>{ cell.classList.remove('ca-strike'); cell.classList.add('lv-strike-later'); });
+  let html = '';
+  if(ex.liveHTML) html = ex.liveHTML;
+  else if(ex.columns && ['+','−','-'].includes(ex.columns.op)) html = contaArmada(ex.columns.nums, ex.columns.op, fmt(ex.answer), ex.columns.carries, ex.columns.marks);
+  if(!html) return null;
+  const el = h(`<div class="lv-board">${html}</div>`);
+  const ca = el.querySelector('.conta-armada'), dc = el.querySelector('.divisao-chave');
+  if(ca){
+    // linhas abaixo do 1º traço: produtos parciais (multiplicação com 2+ algarismos) e o resultado
+    const kids = [...ca.children]; const firstLine = kids.findIndex(k=>k.classList.contains('ca-line'));
+    el._partials = kids.slice(firstLine+1).filter(k=>k.classList.contains('ca-row') && !k.classList.contains('ca-result'));
+    ca.querySelectorAll('.ca-row').forEach(row=>{
+      const cells = [...row.querySelectorAll('.ca-cell:not(.ca-sign):not(.ca-comma)')].reverse();
+      cells.forEach((cell,k)=>{ cell.dataset.c = k; });
+      const hide = row.classList.contains('ca-result') || row.classList.contains('ca-carry-row') || el._partials.includes(row);
+      if(hide) [...row.querySelectorAll('.ca-cell')].forEach(cell=>{ if(cell.textContent.trim()) cell.classList.add('lv-hide'); });
+    });
+    ca.querySelectorAll('.ca-strike').forEach(cell=>{ cell.classList.remove('ca-strike'); cell.classList.add('lv-strike-later'); });
+    el._kind = 'armada';
+  } else if(dc){
+    const q = dc.querySelector('.dc-quotient');
+    q.innerHTML = [...q.textContent.trim()].map(ch=>`<span class="lv-q lv-hide">${ch}</span>`).join('');
+    const left = dc.querySelector('.dc-left');
+    el._rows = [...left.children].slice(1); // a 1ª linha é o dividendo: fica sempre
+    el._rows.forEach(r=> r.classList.add('lv-hide'));
+    el._kind = 'chave';
+  }
   return el;
 }
-function liveBoardStep(el, k, done){
+/* mostra no quadro tudo o que os passos 0..i já calcularam (refaz do zero a cada passo) */
+function liveBoardStep(el, i, done, steps){
   if(!el) return;
+  const plain = t=> String(t||'').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
+  const show = node=>{ if(node.classList.contains('lv-hide')){ node.classList.remove('lv-hide'); node.classList.add('lv-pop'); } };
   el.querySelectorAll('.lv-now').forEach(x=>x.classList.remove('lv-now'));
+  if(el._kind==='chave'){
+    const qd = [...el.querySelectorAll('.lv-q')];
+    let qn = 0, ptr = 0;
+    const rows = el._rows;
+    for(let k=0; k<=i && k<steps.length; k++){
+      const t = plain(steps[k]);
+      if(/cabe/i.test(t)){ if(qd[qn]) show(qd[qn]); qn++; while(ptr<rows.length && !rows[ptr].classList.contains('dc-sub')) ptr++; if(rows[ptr]){ show(rows[ptr]); if(k===i) rows[ptr].classList.add('lv-now'); ptr++; } if(rows[ptr] && rows[ptr].classList.contains('dc-line')){ show(rows[ptr]); ptr++; } }
+      else if(/^Desça|desce/i.test(t)){ if(rows[ptr] && !rows[ptr].classList.contains('dc-sub')){ show(rows[ptr]); if(k===i) rows[ptr].classList.add('lv-now'); ptr++; } }
+      else if(/−|-/.test(t) && /=/.test(t)){ const fin = rows.find(r=>r.classList.contains('dc-final')); if(fin && !rows.slice(ptr).some(r=>r.classList.contains('dc-sub'))){ show(fin); if(k===i) fin.classList.add('lv-now'); } }
+    }
+    if(done){ qd.forEach(show); rows.forEach(show); }
+    return;
+  }
+  // conta armada
+  const partials = el._partials || [];
+  const byColumn = steps.slice(0, Math.max(1, steps.length)).some(t=> /^(Unidades|Dezenas|Centenas|Milhares|Décimos|Centésimos|Milésimos|Ainda tem)/i.test(plain(t)));
+  if(partials.length && !steps.some(t=> /Multiplique|produto/i.test(plain(t)))){
+    // a explicação faz a conta inteira de uma vez (ex.: decimais "ignore as vírgulas: 25 × 12 = 300")
+    el.querySelectorAll('.lv-hide').forEach(show);
+    return;
+  }
+  if(partials.length){
+    // um produto parcial por passo; o resultado no passo da soma
+    partials.forEach((row,k)=>{ if(done || k<=i){ row.querySelectorAll('.lv-hide').forEach(show); if(k===i && !done) row.classList.add('lv-now'); } });
+    if(done || i>=partials.length) el.querySelectorAll('.ca-result .lv-hide, .ca-carry-row .lv-hide').forEach(show);
+    return;
+  }
+  if(!byColumn){ if(done) el.querySelectorAll('.lv-hide').forEach(show); el.querySelectorAll('.lv-strike-later').forEach(c=>{ if(done){ c.classList.remove('lv-strike-later'); c.classList.add('ca-strike'); } }); return; }
   el.querySelectorAll('[data-c]').forEach(cell=>{
     const c = Number(cell.dataset.c);
     const row = cell.closest('.ca-row');
     const isRes = row.classList.contains('ca-result'), isTop = row.classList.contains('ca-carry-row');
-    const show = done || (isRes ? c <= k : isTop ? c <= k+1 : true);
-    if(cell.classList.contains('lv-hide') && show){ cell.classList.remove('lv-hide'); cell.classList.add('lv-pop'); }
-    if(cell.classList.contains('lv-strike-later') && (done || c <= k+1)){ cell.classList.remove('lv-strike-later'); cell.classList.add('ca-strike'); }
-    if(!done && c===k && !isTop) cell.classList.add('lv-now');
+    const vis = done || (isRes ? c <= i : isTop ? c <= i+1 : true);
+    if(vis) show(cell);
+    if(cell.classList.contains('lv-strike-later') && (done || c <= i+1)){ cell.classList.remove('lv-strike-later'); cell.classList.add('ca-strike'); }
+    if(!done && c===i && !isTop) cell.classList.add('lv-now');
   });
 }
 /* pergunta no meio: passos que terminam numa conta "… = número" viram pergunta antes de aparecer */
@@ -273,7 +323,7 @@ function showStepPlayer(ex, o){
     if(board){
       // na pergunta, a coluna fica destacada mas o resultado dela só aparece depois da resposta
       const kk = pendingQuiz ? i-1 : Math.min(i, steps.length-1);
-      liveBoardStep(board, kk, !pendingQuiz && (i >= steps.length-1 || /^Resultado/i.test(plain(steps[Math.max(0,i)]))));
+      liveBoardStep(board, kk, !pendingQuiz && (i >= steps.length || (i === steps.length-1 && /^Resultado|Resto final|Quociente/i.test(plain(steps[i]))) || /^Resultado/i.test(plain(steps[Math.max(0,i)]))), steps);
       if(pendingQuiz) board.querySelectorAll('.lv-now').forEach(x=>x.classList.remove('lv-now'));
       if(pendingQuiz) board.querySelectorAll(`[data-c="${i}"]`).forEach(cell=>{ if(!cell.closest('.ca-carry-row')) cell.classList.add('lv-now'); });
     }
