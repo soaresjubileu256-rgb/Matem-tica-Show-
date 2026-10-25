@@ -4419,3 +4419,16 @@ html.sp-open-lock, html.sp-open-lock body{overflow:hidden;}
 .sp-title{flex:none; text-align:center; font:700 16px 'Fraunces',serif; color:#FFE08A; margin-top:-4px;}
 :root.theme-light .sp-title{color:#8A5A00;}
 .sp-full .sp-ans b.sp-concl{display:block; font-size:18px; font-weight:700; line-height:1.45; margin-top:4px;}
+/* divisão na chave dentro do quadro da correção animada */
+.lv-board .divisao-chave{font-size:30px; color:#1B1E45; margin:0;}
+.lv-board .dc-left{border-right-color:#1B1E45;}
+.lv-board .dc-cell{min-width:.8em;}
+.lv-board .dc-line{background:#1B1E45 !important; border-color:#1B1E45 !important;}
+.lv-board .dc-bracket-line{background:#1B1E45 !important; border-color:#1B1E45 !important;}
+.lv-board .dc-divisor{color:#1B1E45;}
+.lv-board .dc-quotient{color:#0E9F6E; font-weight:800;}
+.lv-board .dc-sub .dc-cell{color:#E0405E;}
+.lv-board .dc-final .dc-cell{color:#4C7DFF; font-weight:800;}
+.lv-board .dc-row.lv-now{background:rgba(255,212,92,.45); border-radius:8px;}
+.lv-board .ca-row.lv-now .ca-cell{background:rgba(255,212,92,.45);}
+.lv-board .lv-hide{visibility:hidden;}

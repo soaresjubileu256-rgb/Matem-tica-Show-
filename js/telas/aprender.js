@@ -58,7 +58,12 @@ function exampleForPlayer(ex){
   const out = {type:'single', question: txt || ex.title, steps: ex.steps||[], displayAnswer: ans || '', answer: isFinite(num) ? num : 0};
   if(!ans) out.conclusion = (ex.steps||[]).length ? ex.steps[ex.steps.length-1] : '';
   if(ex.columns) out.columns = {nums:ex.columns.nums, op:ex.columns.op, carries:ex.columns.carries, marks:ex.columns.marks};
-  else if(ex.visual) out.qVisual = fracRow(ex.visual);
+  else if(ex.visual){
+    // fração: mostra a conta com "?" no lugar do resultado; ele aparece só no fim
+    const eq = ex.visual.lastIndexOf('=');
+    out.qVisual = fracRow(eq > 0 ? ex.visual.slice(0, eq).concat(['=', '?']) : ex.visual);
+  }
+  else if(ex.qVisual && /conta-armada|divisao-chave/.test(ex.qVisual)) out.liveHTML = ex.qVisual; // o Pi monta a conta junto
   else if(ex.qVisual) out.qVisual = ex.qVisual;
   return out;
 }
