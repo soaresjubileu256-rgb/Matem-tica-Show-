@@ -4439,12 +4439,7 @@ html.sp-open-lock, html.sp-open-lock body{overflow:hidden;}
 .ca-cpsep{display:inline-block; margin:0 1px; opacity:.6; font-weight:400;}
 .lv-board .ca-cell.ca-plus{color:#4C7DFF;}
 .lv-board .ca-cpsep{color:#1B1E45;}
-.ca-carry-row .ca-cpcell{position:relative;}
-.ca-cpg{position:absolute; left:50%; bottom:0; transform:translateX(-50%); white-space:nowrap; font-size:.8em; letter-spacing:-.5px;}
-.ca-cpg .ca-cpsep{margin:0 .5px;}
-.conta-armada.ca-wide .ca-cell:not(.ca-sign){min-width:26px;}
-.example-box .conta-armada.ca-wide .ca-cell:not(.ca-sign){min-width:23px;}
-/* no quadro da animação todas as linhas usam a mesma largura de coluna (antes o vai um ficava desalinhado) */
+.ca-carry-row{align-items:flex-end;}
+/* vários "vai um" na mesma casa ficam empilhados: o da 1ª linha embaixo, o da próxima em cima */
+.ca-cpg{display:inline-flex; flex-direction:column; align-items:center; line-height:1.05;}
 .lv-board .conta-armada .ca-cell:not(.ca-sign):not(.ca-comma){min-width:38px;}
-.lv-board .conta-armada.ca-wide .ca-cell:not(.ca-sign):not(.ca-comma){min-width:46px;}
-.lv-board .ca-cpg{font-size:.85em;}
