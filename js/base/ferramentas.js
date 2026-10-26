@@ -353,7 +353,7 @@ function multArmada(a, b, solved, carries){
     });
     if(cols.some(c=>c.length)){
       let carryRow = `<span class="ca-cell ca-sign">\u00A0</span>`;
-      cols.forEach(c=>{ carryRow += `<span class="ca-cell${c.length>1?' ca-cpcell':''}">${c.length>1 ? `<span class="ca-cpg">${c.join('<span class="ca-cpsep">|</span>')}</span>` : c.length ? c[0] : '\u00A0'}</span>`; });
+      cols.forEach(c=>{ carryRow += `<span class="ca-cell${c.length>1?' ca-cpcell':''}">${c.length>1 ? `<span class="ca-cpg">${c.join('')}</span>` : c.length ? c[0] : '\u00A0'}</span>`; });
       rows += `<div class="ca-row ca-carry-row">${carryRow}</div>`;
     }
   }
@@ -367,8 +367,7 @@ function multArmada(a, b, solved, carries){
     }
     rows += `<div class="ca-row ca-result">${rowCells(parse(result), '')}</div>`;
   }
-  // com vários "vai um" na mesma casa (1|2), as colunas ficam mais largas pra caber
-  return `<div class="conta-armada${rows.includes('ca-cpg') ? ' ca-wide' : ''}">${rows}</div>`;
+  return `<div class="conta-armada">${rows}</div>`;
 }
 
 function contaArmada(nums, op, result, carries, topMarks){
