@@ -316,7 +316,7 @@ function showStepPlayer(ex, o){
             box.querySelectorAll('.sp-opt').forEach(x=>{ x.disabled = true; if(x.textContent===q.opts.find(y=>y.ok).label) x.classList.add('ok'); });
             if(o.ok){ score++; answered[k] = 'ok'; playTones([660,880], 0.06, 'triangle', 0.07); say(pick(['Isso! Você acertou! 🎉','Mandou bem! 👏','Exatamente! ⭐']), 'joy'); }
             else { b.classList.add('bad'); answered[k] = 'bad'; playTones([300,220], 0.08, 'sine', 0.06); say('Quase! Olha qual era a certa 👀', 'happy'); }
-            setTimeout(()=>{ if(bg.isConnected){ playing = true; paint(); schedule(); } }, 1300);
+            setTimeout(()=>{ if(bg.isConnected){ playing = true; paint(); schedule(); } }, 2200);
           };
           box.querySelector('.sp-qo').appendChild(b);
         });
@@ -362,7 +362,7 @@ function showStepPlayer(ex, o){
     pb.disabled = waiting;
     if(playing && !waiting){
       const len = i>=0 && i<steps.length ? plain(steps[i]).length : 0;
-      timer = setTimeout(()=>{ if(bg.isConnected) go_(i+1); }, Math.min(6500, 2200 + len*45 + (talk ? len*40 : 0)));
+      timer = setTimeout(()=>{ if(bg.isConnected) go_(i+1); }, Math.min(13000, 4200 + len*90 + (talk ? len*40 : 0)));
     }
   }
   function close(){ clearTimeout(timer); try{ speechSynthesis.cancel(); }catch(e){} bg.remove(); document.documentElement.classList.remove('sp-open-lock'); }

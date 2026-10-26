@@ -4364,13 +4364,13 @@ html.sp-open-lock, html.sp-open-lock body{overflow:hidden;}
 .lv-board{padding:14px 26px 10px; border-radius:22px; background:#FFFDF6; box-shadow:0 14px 30px -14px rgba(0,0,0,.6), inset 0 0 0 1px rgba(0,0,0,.05);
   background-image:repeating-linear-gradient(0deg, transparent 0 31px, rgba(76,125,255,.13) 31px 32px);}
 .lv-board .conta-armada{font-size:34px; color:#1B1E45;}
-.lv-board .ca-cell{color:#1B1E45; min-width:1.05em; transition:background .25s, color .25s;}
+.lv-board .ca-cell{color:#1B1E45; min-width:1.05em; transition:background .5s, color .5s;}
 .lv-board .ca-sign{color:#4C7DFF;}
 .lv-board .ca-line{background:#1B1E45 !important; border-color:#1B1E45 !important;}
 .lv-board .ca-result .ca-cell{color:#0E9F6E; font-weight:800;}
 .lv-board .ca-carry-row .ca-cell{font-size:17px; color:#E0405E;}
 .lv-board .lv-hide{visibility:hidden;}
-.lv-board .lv-pop{animation:lv-pop .45s cubic-bezier(.3,1.6,.5,1);}
+.lv-board .lv-pop{animation:lv-pop .8s cubic-bezier(.3,1.6,.5,1);}
 @keyframes lv-pop{0%{transform:scale(.2) translateY(-10px); opacity:0;} 100%{transform:none; opacity:1;}}
 .lv-board .lv-now{background:rgba(255,212,92,.45); border-radius:8px;}
 /* passos maiores */
