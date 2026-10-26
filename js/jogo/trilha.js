@@ -189,7 +189,11 @@ function liveBoardEl(ex){
       const cells = [...row.querySelectorAll('.ca-cell:not(.ca-sign):not(.ca-comma)')].reverse();
       cells.forEach((cell,k)=>{ cell.dataset.c = k; });
       const hide = row.classList.contains('ca-result') || row.classList.contains('ca-carry-row') || el._partials.includes(row);
-      if(hide) [...row.querySelectorAll('.ca-cell')].forEach(cell=>{ if(cell.textContent.trim()) cell.classList.add('lv-hide'); });
+      if(hide) [...row.querySelectorAll('.ca-cell')].forEach(cell=>{
+        // vai um de várias linhas (1|2): cada pedaço aparece com a sua linha
+        if(cell.querySelector('.ca-cp')){ cell.querySelectorAll('.ca-cp, .ca-cpsep').forEach(x=> x.classList.add('lv-hide')); return; }
+        if(cell.textContent.trim()) cell.classList.add('lv-hide');
+      });
     });
     ca.querySelectorAll('.ca-strike').forEach(cell=>{ cell.classList.remove('ca-strike'); cell.classList.add('lv-strike-later'); });
     el._kind = 'armada';
@@ -233,6 +237,8 @@ function liveBoardStep(el, i, done, steps){
   if(partials.length){
     // um produto parcial por passo; o resultado no passo da soma
     partials.forEach((row,k)=>{ if(done || k<=i){ row.querySelectorAll('.lv-hide').forEach(show); if(k===i && !done) row.classList.add('lv-now'); } });
+    el.querySelectorAll('.ca-cp').forEach(sp=>{ if(done || Number(sp.dataset.p)<=i) show(sp); });
+    el.querySelectorAll('.ca-cpsep').forEach(sep=>{ const l = sep.previousElementSibling; if(l && !l.classList.contains('lv-hide')) show(sep); });
     if(done || i>=partials.length) el.querySelectorAll('.ca-result .lv-hide, .ca-carry-row .lv-hide').forEach(show);
     return;
   }
