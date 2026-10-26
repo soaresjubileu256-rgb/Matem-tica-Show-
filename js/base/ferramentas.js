@@ -290,17 +290,23 @@ function mulSingleDigitSteps(a, m){
 }
 // multiplicação longa: a × b, com b de vários dígitos — produtos parciais deslocados e somados.
 function mulLongSteps(a, b){
+  // jeito do caderno: cada algarismo de b dá uma linha; da 2ª linha em diante ela anda uma casa pra esquerda
+  // e o lugar vazio leva um "+"; no fim soma as linhas
   const bDigits = String(b).split('').reverse();
   const steps = [];
   const partials = [];
   bDigits.forEach((chStr, i)=>{
     const d = Number(chStr);
-    const partial = a*d*Math.pow(10,i);
-    partials.push(partial);
-    const label = i===0 ? `unidade de ${b} (${d})` : i===1 ? `dezena de ${b} (${d}, vale ${d*10})` : `${placeName(i,0)} de ${b} (${d}, vale ${d*Math.pow(10,i)})`;
-    steps.push(`Multiplique ${a} pela ${label}: ${a} × ${d*Math.pow(10,i)} = ${partial}`);
+    const row = a*d;
+    partials.push(row*Math.pow(10,i));
+    // as contas de dentro da linha, com o vai um
+    const da = toDigitsInt(a); let carry = 0; const inner = [];
+    da.forEach((dg,col)=>{ const prod = dg*d + carry, nc = Math.floor(prod/10); inner.push(`${dg} × ${d}${carry?` + ${carry}`:''} = ${prod}${nc && col<da.length-1 ? ` (vai ${nc})` : ''}`); carry = nc; });
+    const casa = i===0 ? 'unidade' : i===1 ? 'dezena' : placeName(i,0);
+    const shift = i===0 ? '' : ` Como é a ${casa}, a linha começa ${i===1?'uma casa':`${i} casas`} pra esquerda: coloque ${i===1?'um +':`${i} sinais de +`} no lugar vazio.`;
+    steps.push(`Multiplique ${a} pelo ${d} da ${casa} de ${b}: ${inner.join(' · ')} → ${row}.${shift}`);
   });
-  steps.push(`Some os produtos parciais: ${partials.join(' + ')} = ${a*b}`);
+  steps.push(`Some as linhas: ${partials.join(' + ')} = ${a*b}`);
   return {steps, partials, result: a*b};
 }
 // conta armada de multiplicação: opera armando a×b, com produtos parciais deslocados quando b tem 2+ dígitos.
@@ -315,10 +321,12 @@ function multArmada(a, b, solved, carries){
   const bDigits = String(b).split('');
   const multiDigit = bDigits.length > 1;
   const partials = multiDigit ? bDigits.slice().reverse().map((ch,i)=> a*Number(ch)*Math.pow(10,i)) : [];
+  // linhas do caderno: o produto do algarismo, deslocado i casas, com '+' no lugar vazio
+  const rowsTxt = multiDigit ? bDigits.slice().reverse().map((ch,i)=> String(a*Number(ch)) + '+'.repeat(i)) : [];
   const result = a*b;
-  const allValues = [a, b].concat(solved ? [result, ...partials] : []);
+  const allValues = [a, b].concat(solved ? [result] : []);
   const parsedAll = allValues.map(parse);
-  const maxIp = Math.max(...parsedAll.map(p=>p.ip.length));
+  const maxIp = Math.max(...parsedAll.map(p=>p.ip.length), ...(solved ? rowsTxt.map(t=>t.length) : []));
   function rowCells(p, sign){
     let out = `<span class="ca-cell ca-sign">${sign||''}</span>`;
     const ip = p.ip.padStart(maxIp, '\u00A0');
@@ -336,18 +344,31 @@ function multArmada(a, b, solved, carries){
     ipChars.forEach(ch=>{ carryRow += `<span class="ca-cell">${ch||'\u00A0'}</span>`; });
     rows += `<div class="ca-row ca-carry-row">${carryRow}</div>`;
   }
+  if(solved && multiDigit){
+    // em cima de cada algarismo de a, os "vai um" de cada linha, separados por | (a linha mais nova à esquerda)
+    const cols = new Array(maxIp).fill(null).map(()=>[]);
+    bDigits.slice().reverse().forEach((ch,i)=>{
+      const cr = mulSingleDigitSteps(a, Number(ch)).carries;
+      cr.forEach((v,col)=>{ if(v && col>0) cols[maxIp-1-col].unshift(`<span class="ca-cp" data-p="${i}">${v}</span>`); });
+    });
+    if(cols.some(c=>c.length)){
+      let carryRow = `<span class="ca-cell ca-sign">\u00A0</span>`;
+      cols.forEach(c=>{ carryRow += `<span class="ca-cell${c.length>1?' ca-cpcell':''}">${c.length>1 ? `<span class="ca-cpg">${c.join('<span class="ca-cpsep">|</span>')}</span>` : c.length ? c[0] : '\u00A0'}</span>`; });
+      rows += `<div class="ca-row ca-carry-row">${carryRow}</div>`;
+    }
+  }
   rows += `<div class="ca-row">${rowCells(parse(a), '')}</div>`;
   rows += `<div class="ca-row">${rowCells(parse(b), '×')}</div>`;
   rows += `<div class="ca-line"></div>`;
   if(solved){
     if(multiDigit){
-      // a última parcela leva o + (é uma soma dos produtos parciais)
-      partials.forEach((p,i)=>{ rows += `<div class="ca-row">${rowCells(parse(p), i===partials.length-1 ? '+' : '')}</div>`; });
+      rowsTxt.forEach(t=>{ rows += `<div class="ca-row ca-partial">${rowCells({ip:t}, '').replace(/>\+</g, ' data-plus="1">+<').replace(/class="ca-cell" data-plus="1"/g, 'class="ca-cell ca-plus"')}</div>`; });
       rows += `<div class="ca-line"></div>`;
     }
     rows += `<div class="ca-row ca-result">${rowCells(parse(result), '')}</div>`;
   }
-  return `<div class="conta-armada">${rows}</div>`;
+  // com vários "vai um" na mesma casa (1|2), as colunas ficam mais largas pra caber
+  return `<div class="conta-armada${rows.includes('ca-cpg') ? ' ca-wide' : ''}">${rows}</div>`;
 }
 
 function contaArmada(nums, op, result, carries, topMarks){

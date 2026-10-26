@@ -4432,3 +4432,19 @@ html.sp-open-lock, html.sp-open-lock body{overflow:hidden;}
 .lv-board .dc-row.lv-now{background:rgba(255,212,92,.45); border-radius:8px;}
 .lv-board .ca-row.lv-now .ca-cell{background:rgba(255,212,92,.45);}
 .lv-board .lv-hide{visibility:hidden;}
+/* multiplicação do caderno: + no lugar vazio e vai um de cada linha (1|2) */
+.ca-cell.ca-plus{color:var(--ink-soft); font-weight:700;}
+.ca-carry-row .ca-cell{white-space:nowrap; overflow:visible;}
+.ca-cp{display:inline-block;}
+.ca-cpsep{display:inline-block; margin:0 1px; opacity:.6; font-weight:400;}
+.lv-board .ca-cell.ca-plus{color:#4C7DFF;}
+.lv-board .ca-cpsep{color:#1B1E45;}
+.ca-carry-row .ca-cpcell{position:relative;}
+.ca-cpg{position:absolute; left:50%; bottom:0; transform:translateX(-50%); white-space:nowrap; font-size:.8em; letter-spacing:-.5px;}
+.ca-cpg .ca-cpsep{margin:0 .5px;}
+.conta-armada.ca-wide .ca-cell:not(.ca-sign){min-width:26px;}
+.example-box .conta-armada.ca-wide .ca-cell:not(.ca-sign){min-width:23px;}
+/* no quadro da animação todas as linhas usam a mesma largura de coluna (antes o vai um ficava desalinhado) */
+.lv-board .conta-armada .ca-cell:not(.ca-sign):not(.ca-comma){min-width:38px;}
+.lv-board .conta-armada.ca-wide .ca-cell:not(.ca-sign):not(.ca-comma){min-width:46px;}
+.lv-board .ca-cpg{font-size:.85em;}
