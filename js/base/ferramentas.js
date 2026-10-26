@@ -341,7 +341,8 @@ function multArmada(a, b, solved, carries){
   rows += `<div class="ca-line"></div>`;
   if(solved){
     if(multiDigit){
-      partials.forEach(p=>{ rows += `<div class="ca-row">${rowCells(parse(p), '')}</div>`; });
+      // a última parcela leva o + (é uma soma dos produtos parciais)
+      partials.forEach((p,i)=>{ rows += `<div class="ca-row">${rowCells(parse(p), i===partials.length-1 ? '+' : '')}</div>`; });
       rows += `<div class="ca-line"></div>`;
     }
     rows += `<div class="ca-row ca-result">${rowCells(parse(result), '')}</div>`;
