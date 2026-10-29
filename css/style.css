@@ -4443,3 +4443,10 @@ html.sp-open-lock, html.sp-open-lock body{overflow:hidden;}
 /* vários "vai um" na mesma casa ficam empilhados: o da 1ª linha embaixo, o da próxima em cima */
 .ca-cpg{display:inline-flex; flex-direction:column; align-items:center; line-height:1.05;}
 .lv-board .conta-armada .ca-cell:not(.ca-sign):not(.ca-comma){min-width:38px;}
+/* ---------- Frase do dia (Início) ---------- */
+.dq-card{position:relative; overflow:hidden; margin:0 20px 16px; border-radius:20px; padding:14px 16px 16px; background:linear-gradient(135deg, rgba(124,92,255,.22), rgba(43,198,168,.14)); border:1px solid rgba(124,92,255,.35);}
+.dq-card::after{content:'\201C'; position:absolute; right:12px; bottom:-34px; font:900 110px/1 Georgia, serif; color:rgba(124,92,255,.18); pointer-events:none;}
+.dq-head{display:flex; align-items:center; gap:8px; font-size:13px; text-transform:uppercase; letter-spacing:.6px; color:var(--ink-soft);}
+.dq-head b{flex:1;}
+.dq-say{border:0; background:rgba(255,255,255,.08); border-radius:50%; width:32px; height:32px; font-size:15px; cursor:pointer;}
+.dq-text{margin:8px 0 0; font-size:17px; line-height:1.45; font-weight:700; color:var(--ink); position:relative; z-index:1;}

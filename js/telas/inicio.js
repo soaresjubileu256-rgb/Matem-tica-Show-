@@ -26,6 +26,7 @@ function homeScreen(){
     : `${saud}${who}! ` + pick(['Bora subir de nível hoje? 🚀', 'O palco é seu hoje! 🎤', 'Luzes, câmera... show! 🎬', 'Que tal uma fase da Trilha? ⭐']);
   wrap.appendChild(mascotBubble(hello, 'happy'));
   showStreakNote();
+  wrap.appendChild(dailyQuoteCard());
   wrap.appendChild(playerCard());
   wrap.appendChild(pathHero());
 
