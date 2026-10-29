@@ -10,6 +10,9 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
+  {v:21, date:'2026-10-29', title:'Frase do dia', items:[
+    {ico:'💬', t:'Uma frase nova todo dia', d:'No Início aparece uma frase motivacional diferente a cada dia, pra começar os estudos com energia. Toque em 🔊 pra ouvir.', go:'home'},
+  ]},
   {v:20, date:'2026-10-24', title:'Correção animada, Contra o relógio e cópias automáticas', items:[
     {ico:'🎬', t:'Correção animada', d:'Depois de responder, toque em "Ver a correção animada": o Pi mostra a resolução passo a passo, um passo de cada vez, e dá pra ouvir em voz alta.', go:'path'},
     {ico:'⏱️', t:'Contra o relógio', d:'Escolha um assunto e acerte o máximo de questões em 60 segundos. Cada assunto tem o seu recorde!', go:'speedRun'},
