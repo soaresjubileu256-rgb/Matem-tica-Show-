@@ -654,12 +654,7 @@ function trySolveFractionOf(text){
 }
 
 /* ---------- MMC e MDC (pela fatoração em primos) ---------- */
-function primeFactors(n){
-  const f = {}; let k = 2;
-  while(n > 1 && k*k <= n){ while(n % k === 0){ f[k] = (f[k]||0) + 1; n /= k; } k++; }
-  if(n > 1) f[n] = (f[n]||0) + 1;
-  return f;
-}
+// primeFactors(n) fica em js/base/ferramentas.js (carrega antes e é usada já na abertura)
 function factorsText(f){
   const sup = e=> String(e).split('').map(d=>'⁰¹²³⁴⁵⁶⁷⁸⁹'[d]).join('');
   const ks = Object.keys(f).map(Number).sort((a,b)=>a-b);

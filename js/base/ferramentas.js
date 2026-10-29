@@ -21,7 +21,7 @@ function shuffle(arr){
   return arr;
 }
 /* decomposição em fatores primos: 12 → {2:2, 3:1} */
-function primeFactors(n){ const f = {}; let d = 2; while(n>1){ while(n%d===0){ f[d]=(f[d]||0)+1; n/=d; } d++; } return f; }
+function primeFactors(n){ const f = {}; let d = 2; while(n>1 && d*d<=n){ while(n%d===0){ f[d]=(f[d]||0)+1; n/=d; } d++; } if(n>1) f[n]=(f[n]||0)+1; return f; }
 function factorsStr(f){ const ks = Object.keys(f); return ks.length ? ks.map(k=>f[k]>1?`${k}<sup>${f[k]}</sup>`:k).join(' × ') : '1'; }
 function mmcSteps(a,b){
   const fa = primeFactors(a), fb = primeFactors(b), keys = [...new Set([...Object.keys(fa), ...Object.keys(fb)])].sort((x,y)=>x-y);
