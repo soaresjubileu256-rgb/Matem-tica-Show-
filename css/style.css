@@ -1745,7 +1745,7 @@ section.block h3{font-size:12.5px; text-transform:uppercase; color:var(--ink-sof
 .cs-v2{background:linear-gradient(135deg,#E2D2FF,#A77BFF);}
 .cs-v3{background:linear-gradient(135deg,#CFE6FF,#4FA8FF);}
 /* caderno digital */
-.nb-tips{display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; margin:2px -20px 14px; padding:0 20px;}
+.nb-tips{display:flex; flex-wrap:wrap; justify-content:center; gap:6px; margin:2px 0 14px;}
 .nb-tips::-webkit-scrollbar{display:none;}
 .nb-tips span{flex-shrink:0; white-space:nowrap; font-size:12px; font-weight:700; color:var(--ink-soft); padding:6px 10px; border-radius:999px; background:var(--surface-2); border:1px solid var(--border);}
 .nb-new{width:100%; margin-bottom:14px;}
@@ -4239,7 +4239,7 @@ html[data-card="card_galaxia"] .player-card, .lp-card.cd-card_galaxia{background
 .ab-modal .ab-note{margin:14px 0 14px; padding:10px 12px; border-radius:12px; background:rgba(255,212,92,.1); border:1px solid rgba(255,212,92,.25); font-size:12.5px; color:#F3E7C2;}
 .ab-modal .ab-close{background:rgba(255,255,255,.12); color:#fff;}
 .lj-tab small, .solve-chip small, .ac-next-t small, .pg-bar small{font-size:10.5px;}
-.pc-level small, .pg-lv-in small{font-size:10px;}
+.pc-level small, .pg-lv-in small{font-size:11px;}
 
 /* =========================================================
    Contra o relógio (js/jogo/contra-relogio.js) — prefixo sr-
@@ -4450,3 +4450,9 @@ html.sp-open-lock, html.sp-open-lock body{overflow:hidden;}
 .dq-head b{flex:1;}
 .dq-say{border:0; background:rgba(255,255,255,.08); border-radius:50%; width:32px; height:32px; font-size:15px; cursor:pointer;}
 .dq-text{margin:8px 0 0; font-size:17px; line-height:1.45; font-weight:700; color:var(--ink); position:relative; z-index:1;}
+/* menu de baixo: cada aba ocupa o espaço do seu nome ("Ferramentas" é maior e encostava em "Progresso") */
+.bn-item{flex:0 0 auto; padding-left:0 !important; padding-right:0 !important;}
+.bn-item .bn-icon{width:36px;}
+.bn-item.active .bn-icon{width:44px;}
+.bottom-nav{justify-content:space-between; padding-left:8px !important; padding-right:8px !important;}
+.ct-near-h small{font-size:11px;}
