@@ -43,6 +43,13 @@ function rankSum16(bytes, nick){ let x = 2166136261; const t = String.fromCharCo
 function b32Enc(bytes){ let bits = 0, val = 0, out = ''; bytes.forEach(b=>{ val = (val<<8)|b; bits += 8; while(bits>=5){ out += RANK_B32[(val>>>(bits-5))&31]; bits -= 5; } }); if(bits>0) out += RANK_B32[(val<<(5-bits))&31]; return out; }
 function b32Dec(str){ let bits = 0, val = 0; const out = []; for(const ch of str){ const v = RANK_B32.indexOf(ch); if(v<0) return null; val = ((val<<5)|v) & 0xfffff; bits += 5; if(bits>=8){ out.push((val>>>(bits-8))&255); bits -= 8; } } return out; }
 
+/* ---------- código curtinho (v3): #APELIDO-XXXXXXXXXXXXXXXXXXX ----------
+   19 letras/números guardam 95 bits: quem é (10), semana (4), XP da semana (14), nível (6),
+   ofensiva (7), questões (14), % de acerto (7), 2 assuntos mais fracos (6+4 cada) e um
+   conferidor (10). A semana vai só "módulo 16": quem lê pega a semana mais recente que bate. */
+const RANK_V3 = [['u',10],['w',4],['x',14],['l',6],['s',7],['q',14],['a',7],['f1',6],['a1',4],['f2',6],['a2',4]];
+function rankSum10(n, nick){ let x = 2166136261; const t = n.toString(36) + nick + RANK_SALT; for(let i=0;i<t.length;i++){ x ^= t.charCodeAt(i); x = Math.imul(x, 16777619) >>> 0; } return x & 1023; }
+
 /* monta o código da semana de quem está logado */
 function myRankCode(){
   const g = loadGame(), pr = progressSync();
@@ -51,22 +58,39 @@ function myRankCode(){
     if(!d || !d.attempted) return;
     q += d.attempted; c += d.correct||0;
     const si = SUBJECTS.findIndex(x=>x.id===id);
-    if(d.attempted >= 3 && si >= 0 && si < 255) subj.push([si, Math.round((d.correct||0)/d.attempted*100)]);
+    if(d.attempted >= 3 && si >= 0 && si < 63) subj.push([si, (d.correct||0)/d.attempted]);
   });
   subj.sort((a,b)=> a[1]-b[1]);
-  const cap = (v,max)=> Math.max(0, Math.min(max, Math.round(v||0)));
-  const u = parseInt(rankHash(String(currentUser.id)), 36) & 0xffff;
-  const wx = cap(weekXpOf(g), 0xffffff), tx = cap(g.xp, 0xffffff), wk = cap(rankWeekIdx(), 0xffff);
-  const qq = cap(q, 0xffff), cc = cap(Math.min(c, q), 0xffff);
-  const bytes = [2, u>>8, u&255, wk>>8, wk&255, wx>>16, (wx>>8)&255, wx&255, tx>>16, (tx>>8)&255, tx&255, cap(gameStreakNow(),255), qq>>8, qq&255, cc>>8, cc&255];
-  for(let k=0;k<3;k++){ const f = subj[k]; bytes.push(f ? f[0] : 255, f ? f[1] : 0); }
-  const nick = myRankNick(), sum = rankSum16(bytes, nick);
-  bytes.push(sum>>8, sum&255);
-  return `#${nick}-` + b32Enc(bytes).match(/.{1,5}/g).join('-');
+  const cap = (v,bits)=> Math.max(0, Math.min((1<<bits)-1, Math.round(v||0)));
+  const val = {u: parseInt(rankHash(String(currentUser.id)), 36) & 1023, w: rankWeekIdx() & 15, x: weekXpOf(g), l: levelInfo(g.xp).level, s: gameStreakNow(),
+    q, a: q ? c/q*100 : 0, f1: subj[0] ? subj[0][0] : 63, a1: subj[0] ? subj[0][1]*15 : 0, f2: subj[1] ? subj[1][0] : 63, a2: subj[1] ? subj[1][1]*15 : 0};
+  let n = 0n;
+  RANK_V3.forEach(([k,bits])=>{ n = (n << BigInt(bits)) | BigInt(cap(val[k], bits)); });
+  const nick = myRankNick();
+  n = (n << 10n) | BigInt(rankSum10(n, nick));
+  let out = '';
+  for(let k=0;k<19;k++){ out = RANK_B32[Number(n & 31n)] + out; n >>= 5n; }
+  return `#${nick}-${out}`;
+}
+function parseRankCodeV3(nick, body){
+  body = body.toUpperCase().replace(/O/g,'0').replace(/[IL]/g,'1');
+  let n = 0n;
+  for(const ch of body){ const v = RANK_B32.indexOf(ch); if(v<0) return null; n = (n << 5n) | BigInt(v); }
+  const sum = Number(n & 1023n), data = n >> 10n;
+  if(rankSum10(data, nick) !== sum) return null;
+  const val = {}; let rest = data;
+  [...RANK_V3].reverse().forEach(([k,bits])=>{ val[k] = Number(rest & BigInt((1<<bits)-1)); rest >>= BigInt(bits); });
+  if(rest !== 0n) return null;
+  const cur = rankWeekIdx(), wk = cur - ((cur - val.w) & 15);
+  const f = [];
+  [['f1','a1'],['f2','a2']].forEach(([fi,ai])=>{ if(val[fi] < 63 && SUBJECTS[val[fi]]) f.push([SUBJECTS[val[fi]].id, Math.round(val[ai]*100/15)]); });
+  return {v:3, u:`${nick}:${val.u}`, n:nick, w:rankWeekFromIdx(wk), x:val.x, l:Math.max(1, val.l), s:val.s, q:val.q, c:Math.round(val.q*val.a/100), f};
 }
 /* lê um código (curto ou o antigo MS-...); devolve o objeto ou null */
 function parseRankCode(code){
   code = String(code||'').trim();
+  const m3 = code.match(/^#([A-Za-z0-9]{1,10})-([0-9A-Za-z]{19})$/);
+  if(m3) return parseRankCodeV3(m3[1].toUpperCase(), m3[2]);
   const m2 = code.match(/^#([A-Za-z0-9]{1,10})((?:[-\s][0-9A-Za-z]{1,5}){6,10})$/);
   if(m2){
     const nick = m2[1].toUpperCase();
@@ -91,11 +115,11 @@ function parseRankCode(code){
 /* tira os códigos de um texto colado (pode vir com mensagem junto, vários de uma vez) */
 function rankCodesIn(text){
   const t = String(text);
-  const found = [...(t.match(/#[A-Za-z0-9]{1,10}(?:-[0-9A-Za-z]{1,5}){6,10}/g) || []), ...(t.match(/MS-[A-Za-z0-9_-]+-[0-9a-z]{5}/g) || [])];
+  const found = [...(t.match(/#[A-Za-z0-9]{1,10}-[0-9A-Za-z]{19}(?![0-9A-Za-z-])/g) || []), ...(t.match(/#[A-Za-z0-9]{1,10}(?:-[0-9A-Za-z]{1,5}){6,10}/g) || []), ...(t.match(/MS-[A-Za-z0-9_-]+-[0-9a-z]{5}/g) || [])];
   return found.map(parseRankCode).filter(Boolean);
 }
 /* identidade de quem está logado, pra não entrar no próprio ranking */
-function myRankIds(){ return [rankHash(String(currentUser.id)), 'c'+(parseInt(rankHash(String(currentUser.id)), 36) & 0xffff).toString(36)]; }
+function myRankIds(){ const h = rankHash(String(currentUser.id)); return [h, 'c'+(parseInt(h, 36) & 0xffff).toString(36), `${myRankNick()}:${parseInt(h, 36) & 1023}`]; }
 
 function rankStore(){ const g = loadGame(); g.friends = g.friends || {}; g.turma = g.turma || {}; return g; }
 
@@ -158,7 +182,7 @@ async function rankWeekView(c){
   mine.querySelector('.rk-nick').textContent = '#' + nick;
   const codeEl = mine.querySelector('.rk-code');
   const [cNick, ...cRest] = code.split('-');
-  codeEl.innerHTML = `<span class="rk-code-nick"></span>-<wbr>${cRest.map(g=>`<span class="rk-cg">${g}</span>`).join('-<wbr>')}`; // quebra a linha só nos tracinhos
+  codeEl.innerHTML = `<span class="rk-code-nick"></span>-<wbr><span class="rk-cg">${cRest.join('-')}</span>`;
   codeEl.querySelector('.rk-code-nick').textContent = cNick;
   const form = mine.querySelector('.rk-nickform'), inp = form.querySelector('.rk-nick-in');
   mine.querySelector('.rk-nick-edit').onclick = ()=>{ form.hidden = !form.hidden; if(!form.hidden){ inp.value = nick; inp.focus(); inp.select(); } };
