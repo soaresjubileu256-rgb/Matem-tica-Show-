@@ -25,8 +25,6 @@ function rankAddWeekXp(g, amount){
 }
 
 function rankHash(s){ let x = 2166136261; for(let i=0;i<s.length;i++){ x ^= s.charCodeAt(i); x = Math.imul(x, 16777619) >>> 0; } return x.toString(36).slice(0,5).padStart(5,'0'); }
-function b64uEnc(s){ return btoa(unescape(encodeURIComponent(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
-function b64uDec(s){ s = s.replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4) s += '='; return decodeURIComponent(escape(atob(s))); }
 
 /* ---------- código curto (v2) ----------
    Formato: #APELIDO-XXXXX-XXXXX-XXXXX-XXXXX-XXXXX-XXXXX-XXXXX-XXXX
@@ -38,10 +36,10 @@ const RANK_WEEK0 = Date.UTC(2024, 0, 1); // uma segunda-feira
 function rankWeekIdx(){ const [y,m,d] = weekKey().split('-').map(Number); return Math.round((Date.UTC(y,m-1,d) - RANK_WEEK0) / (7*864e5)); }
 function rankWeekFromIdx(i){ const d = new Date(RANK_WEEK0 + i*7*864e5); return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`; }
 function rankNickClean(s){ return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,10); }
-function myRankNick(){ const g = loadGame(); return g.rankNick || rankNickClean(currentUser.name.split(' ')[0]) || 'ALUNO'; }
-function rankSum16(bytes, nick){ let x = 2166136261; const t = String.fromCharCode(...bytes) + nick + RANK_SALT; for(let i=0;i<t.length;i++){ x ^= t.charCodeAt(i); x = Math.imul(x, 16777619) >>> 0; } return x & 0xffff; }
-function b32Enc(bytes){ let bits = 0, val = 0, out = ''; bytes.forEach(b=>{ val = (val<<8)|b; bits += 8; while(bits>=5){ out += RANK_B32[(val>>>(bits-5))&31]; bits -= 5; } }); if(bits>0) out += RANK_B32[(val<<(5-bits))&31]; return out; }
-function b32Dec(str){ let bits = 0, val = 0; const out = []; for(const ch of str){ const v = RANK_B32.indexOf(ch); if(v<0) return null; val = ((val<<5)|v) & 0xfffff; bits += 5; if(bits>=8){ out.push((val>>>(bits-8))&255); bits -= 8; } } return out; }
+/* apelido = parte escolhida pela pessoa (até 7) + número fixo da conta (3 dígitos): assim cada pessoa tem um código diferente */
+function myRankNumber(){ return 100 + (parseInt(rankHash('n' + currentUser.id), 36) % 900); }
+function myRankBase(){ const g = loadGame(); return rankNickClean(g.rankNick || currentUser.name.split(' ')[0]).replace(/\d+$/,'').slice(0,7) || 'ALUNO'; }
+function myRankNick(){ return myRankBase() + myRankNumber(); }
 
 /* ---------- código curtinho (v3): #APELIDO-XXXXXXXXXXXXXXXXXXX ----------
    19 letras/números guardam 95 bits: quem é (10), semana (4), XP da semana (14), nível (6),
@@ -86,42 +84,22 @@ function parseRankCodeV3(nick, body){
   [['f1','a1'],['f2','a2']].forEach(([fi,ai])=>{ if(val[fi] < 63 && SUBJECTS[val[fi]]) f.push([SUBJECTS[val[fi]].id, Math.round(val[ai]*100/15)]); });
   return {v:3, u:`${nick}:${val.u}`, n:nick, w:rankWeekFromIdx(wk), x:val.x, l:Math.max(1, val.l), s:val.s, q:val.q, c:Math.round(val.q*val.a/100), f};
 }
-/* lê um código (curto ou o antigo MS-...); devolve o objeto ou null */
+/* lê um código #APELIDO123-XXXXXXXXXXXXXXXXXXX; devolve o objeto ou null */
 function parseRankCode(code){
-  code = String(code||'').trim();
-  const m3 = code.match(/^#([A-Za-z0-9]{1,10})-([0-9A-Za-z]{19})$/);
-  if(m3) return parseRankCodeV3(m3[1].toUpperCase(), m3[2]);
-  const m2 = code.match(/^#([A-Za-z0-9]{1,10})((?:[-\s][0-9A-Za-z]{1,5}){6,10})$/);
-  if(m2){
-    const nick = m2[1].toUpperCase();
-    const body = m2[2].replace(/[-\s]/g,'').toUpperCase().replace(/O/g,'0').replace(/[IL]/g,'1');
-    const b = b32Dec(body);
-    if(!b || b.length < 24 || b[0] !== 2) return null;
-    const bytes = b.slice(0,22), sum = (b[22]<<8)|b[23];
-    if(rankSum16(bytes, nick) !== sum) return null;
-    const n3 = i=> (b[i]<<16)|(b[i+1]<<8)|b[i+2], n2 = i=> (b[i]<<8)|b[i+1];
-    const tx = n3(8), f = [];
-    for(let k=0;k<3;k++){ const si = b[16+k*2]; if(si!==255 && SUBJECTS[si]) f.push([SUBJECTS[si].id, b[17+k*2]]); }
-    return {v:2, u:'c'+n2(1).toString(36), n:nick, w:rankWeekFromIdx(n2(3)), x:n3(5), t:tx, l:levelInfo(tx).level, s:b[11], q:n2(12), c:n2(14), f};
-  }
-  const m = code.match(/^MS-([A-Za-z0-9_-]+)-([0-9a-z]{5})$/);
-  if(!m || rankHash(m[1] + RANK_SALT) !== m[2]) return null;
-  try{
-    const p = JSON.parse(b64uDec(m[1]));
-    if(p.v!==1 || !p.n || !p.u) return null;
-    return p;
-  }catch(e){ return null; }
+  const m = String(code||'').trim().match(/^#([A-Za-z0-9]{1,10})-([0-9A-Za-z]{19})$/);
+  return m ? parseRankCodeV3(m[1].toUpperCase(), m[2]) : null;
 }
 /* tira os códigos de um texto colado (pode vir com mensagem junto, vários de uma vez) */
-function rankCodesIn(text){
-  const t = String(text);
-  const found = [...(t.match(/#[A-Za-z0-9]{1,10}-[0-9A-Za-z]{19}(?![0-9A-Za-z-])/g) || []), ...(t.match(/#[A-Za-z0-9]{1,10}(?:-[0-9A-Za-z]{1,5}){6,10}/g) || []), ...(t.match(/MS-[A-Za-z0-9_-]+-[0-9a-z]{5}/g) || [])];
-  return found.map(parseRankCode).filter(Boolean);
-}
+function rankCodesIn(text){ return (String(text).match(/#[A-Za-z0-9]{1,10}-[0-9A-Za-z]{19}(?![0-9A-Za-z-])/g) || []).map(parseRankCode).filter(Boolean); }
 /* identidade de quem está logado, pra não entrar no próprio ranking */
-function myRankIds(){ const h = rankHash(String(currentUser.id)); return [h, 'c'+(parseInt(h, 36) & 0xffff).toString(36), `${myRankNick()}:${parseInt(h, 36) & 1023}`]; }
+function myRankIds(){ return [`${myRankNick()}:${parseInt(rankHash(String(currentUser.id)), 36) & 1023}`]; }
 
-function rankStore(){ const g = loadGame(); g.friends = g.friends || {}; g.turma = g.turma || {}; return g; }
+function rankStore(){
+  const g = loadGame(); g.friends = g.friends || {}; g.turma = g.turma || {};
+  // só vale o código atual: amigos e alunos que vieram de códigos antigos saem da lista
+  ['friends','turma'].forEach(k=> Object.keys(g[k]).forEach(id=>{ if(g[k][id].v !== 3) delete g[k][id]; }));
+  return g;
+}
 
 function daysLeftInWeek(){ const wd = (new Date().getDay()+6) % 7; return 6 - wd; }
 
@@ -174,24 +152,24 @@ async function rankWeekView(c){
   if(rows.length===1) c.appendChild(h(`<p class="rk-empty">Só você por enquanto! Mande seu código pros amigos e cole o código deles aqui embaixo pra disputar a semana.</p>`));
 
   // meu código (curto, começa com o apelido que a pessoa escolhe)
-  const code = myRankCode(), nick = myRankNick();
+  const code = myRankCode(), base = myRankBase(), num = myRankNumber();
   const mine = h(`<div class="card rk-card"><b>📤 Seu código da semana</b><small>Mande pros amigos ou pro professor. Mande de novo quando quiser atualizar seus pontos.</small>
-    <div class="rk-nickrow"><span>Seu apelido no código:</span><b class="rk-nick"></b><button type="button" class="st-mini rk-nick-edit">✏️ Mudar</button></div>
-    <div class="rk-nickform" hidden><input class="rk-nick-in mono" maxlength="10" autocapitalize="characters" spellcheck="false" placeholder="Ex.: ANATURBO"><button type="button" class="btn primary rk-nick-save">Salvar</button><small class="rk-nick-msg">De 2 a 10 letras ou números, sem espaço nem acento.</small></div>
+    <div class="rk-nickrow"><span>Seu apelido no código:</span><b class="rk-nick"></b><button type="button" class="st-mini rk-nick-edit">✏️ Mudar</button><small class="rk-num-why">O número no fim é só seu: assim ninguém fica com um código igual ao seu.</small></div>
+    <div class="rk-nickform" hidden><input class="rk-nick-in mono" maxlength="7" autocapitalize="characters" spellcheck="false" placeholder="Ex.: ANATURBO"><button type="button" class="btn primary rk-nick-save">Salvar</button><small class="rk-nick-msg">De 2 a 7 letras, sem espaço nem acento. O número ${num} continua no fim.</small></div>
     <div class="rk-code mono"></div><div class="rk-btns"><button type="button" class="btn secondary rk-copy">📋 Copiar</button><button type="button" class="btn primary rk-share">📲 Compartilhar</button></div></div>`);
-  mine.querySelector('.rk-nick').textContent = '#' + nick;
+  mine.querySelector('.rk-nick').innerHTML = `#<span></span><i class="rk-num">${num}</i>`; mine.querySelector('.rk-nick span').textContent = base;
   const codeEl = mine.querySelector('.rk-code');
   const [cNick, ...cRest] = code.split('-');
   codeEl.innerHTML = `<span class="rk-code-nick"></span>-<wbr><span class="rk-cg">${cRest.join('-')}</span>`;
   codeEl.querySelector('.rk-code-nick').textContent = cNick;
   const form = mine.querySelector('.rk-nickform'), inp = form.querySelector('.rk-nick-in');
-  mine.querySelector('.rk-nick-edit').onclick = ()=>{ form.hidden = !form.hidden; if(!form.hidden){ inp.value = nick; inp.focus(); inp.select(); } };
-  inp.oninput = ()=>{ const v = rankNickClean(inp.value); if(v !== inp.value) inp.value = v; };
+  mine.querySelector('.rk-nick-edit').onclick = ()=>{ form.hidden = !form.hidden; if(!form.hidden){ inp.value = base; inp.focus(); inp.select(); } };
+  inp.oninput = ()=>{ const v = rankNickClean(inp.value).slice(0,7); if(v !== inp.value) inp.value = v; };
   const saveNick = ()=>{
-    const v = rankNickClean(inp.value);
-    if(v.length < 2){ form.querySelector('.rk-nick-msg').textContent = '⚠️ Use pelo menos 2 letras ou números.'; return; }
+    const v = rankNickClean(inp.value).replace(/\d+$/,'').slice(0,7);
+    if(v.length < 2){ form.querySelector('.rk-nick-msg').textContent = '⚠️ Use pelo menos 2 letras.'; return; }
     const g2 = loadGame(); g2.rankNick = v; saveGame();
-    showFloat(`✨ Agora seu código começa com #${v}`); render();
+    showFloat(`✨ Agora seu código começa com #${v}${num}`); render();
   };
   form.querySelector('.rk-nick-save').onclick = saveNick;
   inp.onkeydown = e=>{ if(e.key==='Enter'){ e.preventDefault(); saveNick(); } };
