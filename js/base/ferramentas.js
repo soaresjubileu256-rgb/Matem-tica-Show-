@@ -5,7 +5,7 @@
    ========================================================= */
 
 /* ---------------- logo ---------------- */
-const LOGO_URI = 'img/logo.png';
+const LOGO_URI = 'img/logo.svg'; // vetor: nítido em qualquer tamanho (os ícones PNG são gerados dele)
 
 function randInt(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
 function pick(arr){ return arr[randInt(0,arr.length-1)]; }
