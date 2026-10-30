@@ -92,39 +92,64 @@ function reminderCalendarFile(time){
   setTimeout(()=> URL.revokeObjectURL(a.href), 4000);
 }
 
+/* Google Agenda: abre o evento já pronto (repete todo dia, com aviso na hora) */
+function reminderGoogleCalendar(time){
+  const [hh, mm] = time.split(':'), d = new Date(), pad = n=> String(n).padStart(2,'0');
+  const day = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`;
+  const end = `${pad((+hh*60 + +mm + 15) / 60 | 0)}${pad((+mm + 15) % 60)}00`;
+  const url = location.href.split('#')[0].split('?')[0];
+  let tz = 'America/Sao_Paulo'; try{ tz = Intl.DateTimeFormat().resolvedOptions().timeZone || tz; }catch(e){}
+  const q = new URLSearchParams({action:'TEMPLATE', text:'⭐ Hora do Matemática Show!', details:`Jogue uma fase hoje pra manter sua ofensiva. ${url}`,
+    dates:`${day}T${hh}${mm}00/${day}T${end}`, recur:'RRULE:FREQ=DAILY', ctz:tz});
+  const link = `https://calendar.google.com/calendar/render?${q}`;
+  const w = window.open(link, '_blank');
+  if(!w){ const a = document.createElement('a'); a.href = link; a.target = '_blank'; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove(); }
+}
+
 /* cartão das Configurações */
 function reminderCard(settings, saveNow){
-  const card = stCard('⏰', 'Lembrete diário', 'Um aviso na hora que você escolher, se ainda não tiver estudado no dia');
+  const card = stCard('⏰', 'Lembrete diário', 'Um aviso na hora que você escolher, pra não esquecer de estudar');
   const r = reminderOf(settings);
   const msg = h(`<div></div>`);
+  const canNotify = notifSupported() && Notification.permission !== 'denied';
   const timesWrap = h(`<div class="st-sub"></div>`);
-  const paint = ()=> timesWrap.classList.toggle('off', !reminderOf(settings).on);
-  const sw = stSwitch(r.on, 'Lembrete diário', async v=>{
-    if(v){
-      const res = await reminderEnable();
-      if(res !== 'ok'){
-        sw.setAttribute('aria-checked', false);
-        stMsg(msg, false, res === 'denied'
-          ? 'O celular bloqueou as notificações deste app. Libere em Configurações do celular → Apps → Notificações, ou use "Pôr na agenda" abaixo.'
-          : 'Este aparelho não deixa o app mostrar notificações. Use "Pôr na agenda do celular" abaixo: o alarme toca todo dia.');
-        return;
-      }
-      stMsg(msg, true, `Pronto! Se você não estudar até as ${reminderOf(settings).time}, o Pi te lembra.`);
-    } else msg.innerHTML = '';
-    settings.reminder = Object.assign(reminderOf(settings), {on:v});
-    await saveNow(); paint(); reminderSyncMeta();
-  });
-  card.appendChild(stRow('🔔', '#7C5CFF', 'Me lembrar todo dia', 'Só avisa se você ainda não tiver jogado', sw));
+  const paint = ()=> timesWrap.classList.toggle('off', canNotify && !reminderOf(settings).on);
+  if(canNotify){
+    const sw = stSwitch(r.on, 'Lembrete diário', async v=>{
+      if(v){
+        const res = await reminderEnable();
+        if(res !== 'ok'){
+          sw.setAttribute('aria-checked', false);
+          stMsg(msg, false, res === 'denied'
+            ? 'O celular bloqueou as notificações deste app. Use o alarme na agenda aqui embaixo: ele toca todo dia.'
+            : 'Este aparelho não deixa o app mostrar notificações. Use o alarme na agenda aqui embaixo: ele toca todo dia.');
+          return;
+        }
+        stMsg(msg, true, `Pronto! Se você não estudar até as ${reminderOf(settings).time}, o Pi te lembra.`);
+      } else msg.innerHTML = '';
+      settings.reminder = Object.assign(reminderOf(settings), {on:v});
+      await saveNow(); paint(); reminderSyncMeta();
+    });
+    card.appendChild(stRow('🔔', '#7C5CFF', 'Notificação do app', 'Só avisa se você ainda não tiver jogado', sw));
+  } else {
+    // APK e celulares que não deixam o app notificar: o caminho é o alarme na agenda
+    card.appendChild(h(`<div class="rm-note">📲 Neste aparelho o app não consegue mandar notificação. Escolha o horário e crie um <b>alarme diário na agenda</b> do celular: ele toca todo dia, mesmo com o app fechado.</div>`));
+  }
   timesWrap.appendChild(h(`<div class="st-lbl">Horário</div>`));
   timesWrap.appendChild(stSeg(REMINDER_TIMES.map(t=>[t, t.replace(':00','h')]), r.time, async t=>{
     settings.reminder = Object.assign(reminderOf(settings), {time:t});
     await saveNow(); reminderSyncMeta();
   }, 'wrap'));
   card.appendChild(timesWrap); paint();
-  const cal = h(`<button type="button" class="st-act st-act-wide"><span>📅</span><b>Pôr na agenda do celular</b><small>Cria um alarme diário na agenda, no horário escolhido. Funciona mesmo com o app fechado.</small></button>`);
-  cal.onclick = ()=> reminderCalendarFile(reminderOf(settings).time);
-  card.appendChild(cal);
   card.appendChild(msg);
+  card.appendChild(h(`<div class="st-lbl">${canNotify ? 'Ou crie um alarme na agenda' : 'Criar o alarme'}</div>`));
+  const acts = h(`<div class="st-acts"></div>`);
+  const gcal = h(`<button type="button" class="st-act"><span>📅</span><b>Google Agenda</b><small>Abre o evento pronto, repetindo todo dia. É só tocar em Salvar.</small></button>`);
+  gcal.onclick = ()=> reminderGoogleCalendar(reminderOf(settings).time);
+  const ics = h(`<button type="button" class="st-act"><span>📥</span><b>Arquivo de agenda</b><small>Baixa um arquivo .ics: abra ele e escolha a agenda do celular.</small></button>`);
+  ics.onclick = ()=> reminderCalendarFile(reminderOf(settings).time);
+  acts.appendChild(gcal); acts.appendChild(ics);
+  card.appendChild(acts);
   return card;
 }
 

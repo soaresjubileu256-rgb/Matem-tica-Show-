@@ -4535,3 +4535,4 @@ html.sp-open-lock, html.sp-open-lock body{overflow:hidden;}
 @keyframes an-out{0%{opacity:1; transform:translateY(0);} 100%{opacity:0; transform:translateY(-30px);}}
 @keyframes an-fade{from{opacity:0;} to{opacity:1;}}
 @media (prefers-reduced-motion: reduce){ .an-pop, .an-out, .an-fade{animation-duration:.01s;} }
+.rm-note{margin:4px 0 12px; padding:12px 14px; border-radius:14px; background:rgba(76,125,255,.12); border:1px solid rgba(76,125,255,.35); line-height:1.45; font-size:14.5px;}
