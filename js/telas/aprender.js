@@ -176,7 +176,7 @@ function subjectDetailScreen(){
   c.appendChild(hero);
   // atalhos pras partes da página
   const hasQuick = !!(s.gen && s.gen.facil);
-  const nav = h(`<div class="lr-nav">${[['lr-explain','📖','Explicação'],['lr-examples','🧩','Exemplos'],hasQuick?['lr-quick','✅','Teste']:null,['lr-practice','🚀','Praticar']].filter(Boolean).map(([id,ico,t])=>`<button type="button" data-to="${id}"><span>${ico}</span>${t}</button>`).join('')}</div>`);
+  const nav = h(`<div class="lr-nav">${[['lr-explain','📖','Explicação'],CONCEPT_ANIMS[s.id]?['lr-anim','🎬','Animação']:null,['lr-examples','🧩','Exemplos'],hasQuick?['lr-quick','✅','Teste']:null,['lr-practice','🚀','Praticar']].filter(Boolean).map(([id,ico,t])=>`<button type="button" data-to="${id}"><span>${ico}</span>${t}</button>`).join('')}</div>`);
   nav.querySelectorAll('[data-to]').forEach(b=> b.onclick = ()=>{ const el = c.querySelector('#'+b.dataset.to); if(el) el.scrollIntoView({behavior:'smooth', block:'start'}); });
   c.appendChild(nav);
   // explicação, com botão de ouvir
@@ -193,6 +193,9 @@ function subjectDetailScreen(){
     }
   };
   c.appendChild(explain);
+  // explicação animada (equação, frações, porcentagem — js/telas/animacoes.js)
+  const anim = conceptAnimCard(s.id);
+  if(anim) c.appendChild(anim);
   // exemplos
   const exSec = h(`<section class="lr-examples" id="lr-examples"><div class="lr-sec-h"><span>🧩</span><b>Exemplos</b><small>Toque para abrir e veja um passo de cada vez.</small></div></section>`);
   examplesList.forEach((ex,i)=> exSec.appendChild(learnExampleEl(ex, i, i===0)));

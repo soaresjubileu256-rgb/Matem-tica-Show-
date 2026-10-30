@@ -110,6 +110,11 @@ async function settingsScreen(){
   st.appendChild(h(`<small class="st-hint">Usado pra sugerir assuntos e o Desafio do Dia. Você pode estudar qualquer assunto.</small>`));
   c.appendChild(st);
 
+  // ---------- Lembrete diário (js/dados/lembrete.js) ----------
+  const rmCard = reminderCard(settings, saveNow);
+  c.appendChild(rmCard);
+  if(state.scrollTo==='reminder'){ state.scrollTo = null; setTimeout(()=>{ try{ rmCard.scrollIntoView({block:'center', behavior:'smooth'}); }catch(e){} }, 350); }
+
   // ---------- Som e vibração ----------
   const snd = stCard('🔊', 'Som e vibração');
   const volWrap = h(`<div class="st-sub"></div>`);
