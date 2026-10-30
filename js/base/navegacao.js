@@ -24,6 +24,14 @@ function enterApp(){
   replaceHistoryState();
   render();
   if(typeof autoBackupOnEnter==='function') autoBackupOnEnter(); // cópia automática + recuperação (js/dados/backup-auto.js)
+  // abriu tocando em "Jogar agora" na notificação (./?go=path): vai direto pra tela
+  try{
+    const to = new URLSearchParams(location.search).get('go');
+    if(to){
+      history.replaceState(history.state, '', location.pathname + location.hash);
+      if(['path','dailyIntro','home'].includes(to) && to !== 'home') go(to);
+    }
+  }catch(e){}
 }
 
 /* sessão em andamento? (usado no aviso ao fechar/recarregar a aba) */

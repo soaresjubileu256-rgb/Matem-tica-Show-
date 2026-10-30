@@ -10,6 +10,10 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
+  {v:24, date:'2026-10-30', title:'Notificação mais esperta', items:[
+    {ico:'🔔', t:'Lembretes que mudam todo dia', d:'A notificação avisa quando a ofensiva está em risco, traz a Frase do dia e tem botões: "Jogar agora" abre direto a Trilha e "Daqui a 1 hora" lembra de novo depois.', go:'settings'},
+    {ico:'🔥', t:'Último aviso às 21h', d:'Se a ofensiva estiver pra zerar, o Pi avisa mais uma vez à noite. Dá pra escolher também só de segunda a sexta e testar a notificação em Configurações.', go:'settings'},
+  ]},
   {v:23, date:'2026-10-30', title:'Versão pra computador', items:[
     {ico:'💻', t:'Tela grande de verdade', d:'No computador o menu fica na lateral, o Início vira duas colunas e as listas de assuntos aparecem lado a lado.', go:'home'},
     {ico:'⌨️', t:'Atalhos de teclado', d:'Nas fases: 1–4 (ou A–D) escolhe a resposta, Enter confirma e passa pra próxima. Esc fecha avisos e a correção animada; ← e → passam os passos.', go:'path'},
