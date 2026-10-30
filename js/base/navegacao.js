@@ -103,6 +103,7 @@ function topbar(title, showBack, onBack){
 const SECTION_TABS = [
   {id:'progress', tabs:[
     {screen:'progress', ico:'📈', label:'Resumo'},
+    {screen:'ranking', ico:'🏆', label:'Ranking'},
     {screen:'report', ico:'📊', label:'Relatório'},
     {screen:'history', ico:'🕘', label:'Histórico'},
     {screen:'achievements', ico:'🏅', label:'Conquistas'},
@@ -204,7 +205,7 @@ const BOTTOM_NAV_ITEMS = [
   {id:'study', screen:'content', label:'Estudar', group:STUDY_SCREENS},
   {id:'arena', screen:'arena', label:'Arena', group:['arena','arenaDaily','dailyIntro','dailyReview','examSetup','examResult','lightning','speedRun','quizSetup','duel']},
   {id:'tools', screen:'calculator', label:'Ferramentas', group:['calculator','solve','notebook','notePage']},
-  {id:'progress', screen:'progress', label:'Progresso', group:['progress','report','history','achievements','certificates','certificate']},
+  {id:'progress', screen:'progress', label:'Progresso', group:['progress','ranking','report','history','achievements','certificates','certificate']},
 ];
 function bottomNav(){
   const bar = h(`<nav class="bottom-nav" aria-label="Menu principal"></nav>`);

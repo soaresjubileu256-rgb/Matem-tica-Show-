@@ -256,6 +256,7 @@ function gameAddXP(amount){
   const g = loadGame();
   const before = levelInfo(g.xp).level;
   g.xp += amount;
+  if(typeof rankAddWeekXp==='function') rankAddWeekXp(g, amount); // XP da semana, pro Ranking
   const after = levelInfo(g.xp);
   if(after.level > before){
     if(after.level>=5) gameUnlock('level5');

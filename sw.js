@@ -12,7 +12,7 @@ const APP_SHELL = [
   './js/jogo/xp-e-conquistas.js', './js/jogo/trilha.js', './js/jogo/liberar.js', './js/jogo/loja.js', './js/jogo/arena.js', './js/jogo/relampago.js', './js/jogo/contra-relogio.js',
   './js/jogo/duelo.js', './js/telas/entrada.js', './js/telas/inicio.js', './js/telas/aprender.js',
   './js/telas/exercicios.js', './js/telas/modos-estudo.js', './js/telas/provas.js', './js/telas/simulado-provas.js', './js/telas/tabuada.js', './js/telas/estudo.js', './js/telas/ferramentas.js',
-  './js/telas/caderno.js', './js/telas/progresso.js', './js/telas/relatorio.js', './js/telas/certificados.js',
+  './js/telas/caderno.js', './js/telas/progresso.js', './js/telas/relatorio.js', './js/telas/ranking.js', './js/telas/certificados.js',
   './js/telas/perfil.js', './js/telas/configuracoes.js', './js/telas/ajuda.js', './js/telas/novidades.js', './js/telas/feedback.js', './js/iniciar.js',
   './img/logo.png', './img/favicon-48.png', './img/apple-touch-icon.png', './img/icon-192.png',
   './img/icon-512.png', './img/maskable-512.png',
