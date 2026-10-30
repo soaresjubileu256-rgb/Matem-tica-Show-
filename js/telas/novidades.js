@@ -10,6 +10,13 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
+  {v:22, date:'2026-10-30', title:'Ranking, turma, lembrete e explicações animadas', items:[
+    {ico:'🏆', t:'Ranking da semana', d:'Em Progresso → Ranking: dispute XP com os amigos. Mande seu código e cole o deles. Zera toda segunda!', go:'ranking'},
+    {ico:'👩‍🏫', t:'Turma (modo professor)', d:'O professor cola os códigos dos alunos e vê quem estudou e os assuntos em que a turma mais erra.', go:'ranking'},
+    {ico:'⏰', t:'Lembrete diário', d:'Em Configurações, escolha um horário: se você ainda não tiver estudado, o Pi te lembra. Também dá pra pôr o alarme na agenda do celular.', go:'settings'},
+    {ico:'🎬', t:'Explicações animadas', d:'Equação com balança, frações com pizza e porcentagem com o quadro de 100, no Aprender.', go:'content'},
+    {ico:'🛒', t:'Problemas do dia a dia', d:'Adição, subtração, multiplicação, divisão, frações, decimais e porcentagem agora têm questões com situações do dia a dia.', go:'exercisesSubjects'},
+  ]},
   {v:21, date:'2026-10-29', title:'Frase do dia', items:[
     {ico:'💬', t:'Uma frase nova todo dia', d:'No Início aparece uma frase motivacional diferente a cada dia, pra começar os estudos com energia. Toque em 🔊 pra ouvir.', go:'home'},
   ]},
