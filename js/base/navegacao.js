@@ -209,6 +209,10 @@ const BOTTOM_NAV_ITEMS = [
 ];
 function bottomNav(){
   const bar = h(`<nav class="bottom-nav" aria-label="Menu principal"></nav>`);
+  // no computador o menu vira uma barra lateral: logo em cima (o resto fica escondido no celular)
+  const brand = h(`<button type="button" class="bn-brand" aria-label="Início"><img src="${LOGO_URI}" alt=""><b>Matemática Show</b></button>`);
+  brand.onclick = ()=>{ if(state.screen!=='home') go('home'); };
+  bar.appendChild(brand);
   // lembra a última aba de Estudar pra voltar nela
   const sec = typeof sectionOf==='function' ? sectionOf(state.screen) : null;
   if(sec && sec.sec.id==='study') state.lastStudy = sec.tab.screen;
@@ -223,5 +227,15 @@ function bottomNav(){
     btn.onclick = ()=>{ if(state.screen !== target) go(target, target==='geoLab' ? {geoBack:'content'} : {}); };
     bar.appendChild(btn);
   });
+  // rodapé da barra lateral (só no computador): perfil e atalhos do teclado
+  if(currentUser){
+    const me = h(`<button type="button" class="bn-me"><span class="bn-me-av"></span><span class="bn-me-t"><b></b><small>Perfil e configurações</small></span></button>`);
+    me.querySelector('.bn-me-av').innerHTML = typeof avatarFace==='function' ? avatarFace(currentUser) : '';
+    me.querySelector('.bn-me-av').style.background = typeof avatarColor==='function' ? avatarColor(currentUser) : '';
+    me.querySelector('b').textContent = currentUser.name.split(' ')[0];
+    me.onclick = ()=>{ if(state.screen!=='profile') go('profile'); };
+    bar.appendChild(me);
+  }
+  bar.appendChild(h(`<div class="bn-keys" aria-hidden="true">⌨️ <b>1–4</b> escolhe · <b>Enter</b> confirma · <b>Esc</b> fecha</div>`));
   return bar;
 }
