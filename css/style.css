@@ -4653,7 +4653,8 @@ body::after{inset:0;
 .rk-nickform[hidden]{display:none;}
 .rk-nick-in{flex:1; min-width:140px; padding:10px 12px; border-radius:12px; border:1px solid var(--border); background:var(--surface-2); color:var(--ink); font-size:16px; text-transform:uppercase;}
 .rk-nick-msg{width:100%; color:var(--ink-soft);}
-.rk-code{font-size:17px !important; letter-spacing:.5px; line-height:1.6; text-align:center;}
+.rk-code{font-size:15px !important; letter-spacing:.3px; white-space:nowrap; line-height:1.6; text-align:center;}
 .rk-code-nick{color:#B9A8FF; font-weight:800;}
 :root.theme-light .rk-code-nick{color:#5B4BE0;}
 .rk-code{word-break:normal !important; overflow-wrap:normal;} .rk-code-nick, .rk-cg{white-space:nowrap;}
+.rk-num{font-style:normal; color:#5EE6C8;} :root.theme-light .rk-num{color:#0E9C80;} .rk-num-why{width:100%; font-size:12.5px; color:var(--ink-soft);}
