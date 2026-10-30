@@ -5,6 +5,7 @@
 /* ---------------- HOME ---------------- */
 function homeScreen(){
   const wrap = document.createElement('div');
+  wrap.className = 'home-scr'; // no computador vira duas colunas (css)
   const bar = topbar();
   const myAv = avatarOf(currentUser);
   const profileBtn = h(`<button class="auth-logout profile-btn-avatar ${myAv ? 'av-custom' : ''} ${avatarImg(myAv) ? 'is-img' : myAv && myAv.emo ? 'is-emo' : ''}" title="Perfil" aria-label="Abrir meu perfil">${avatarFace(currentUser)}</button>`);

@@ -4536,3 +4536,80 @@ html.sp-open-lock, html.sp-open-lock body{overflow:hidden;}
 @keyframes an-fade{from{opacity:0;} to{opacity:1;}}
 @media (prefers-reduced-motion: reduce){ .an-pop, .an-out, .an-fade{animation-duration:.01s;} }
 .rm-note{margin:4px 0 12px; padding:12px 14px; border-radius:14px; background:rgba(76,125,255,.12); border:1px solid rgba(76,125,255,.35); line-height:1.45; font-size:14.5px;}
+
+/* =========================================================
+   COMPUTADOR (tela a partir de 1000px)
+   O menu de baixo vira uma barra lateral, o conteúdo fica mais largo e as listas
+   longas viram duas colunas. No celular nada disso aparece.
+   ========================================================= */
+.bn-brand, .bn-me, .bn-keys{display:none;}
+@media (min-width:1000px){
+  :root{--side:248px;}
+  #app{max-width:none; margin:0; padding:0 32px 48px calc(var(--side) + 32px);}
+  #app > :first-child{max-width:940px; margin-left:auto; margin-right:auto;}
+  /* telas sem menu (fase, simulado, caderno): centralizadas na tela toda */
+  #app:not(:has(> .bottom-nav)){padding-left:32px;}
+  #app:not(:has(> .bottom-nav)) > :first-child{max-width:760px;}
+  .lesson-footer{max-width:760px;}
+  .fb-sheet{max-width:640px;}
+
+  /* barra lateral */
+  .bottom-nav{top:0; bottom:0 !important; left:0 !important; right:auto !important; width:var(--side); max-width:none; margin:0;
+    flex-direction:column; justify-content:flex-start; align-items:stretch; gap:4px; padding:20px 14px !important;
+    border-radius:0 !important; border-top:none; border-right:1px solid var(--border); overflow-y:auto;}
+  .bn-brand{display:flex; align-items:center; gap:10px; margin:0 6px 18px; padding:6px; border:none; background:none; color:var(--ink); text-align:left; cursor:pointer;}
+  .bn-brand img{width:38px; height:38px;}
+  .bn-brand b{font:700 19px 'Fraunces',serif; line-height:1.1;}
+  .bn-item{flex:none !important; flex-direction:row; justify-content:flex-start; gap:12px; padding:9px 12px !important; border-radius:14px; min-width:0;}
+  .bn-item .bn-icon, .bn-item.active .bn-icon{width:36px !important; height:32px; flex:none;}
+  .bn-item .bn-label{font-size:15.5px !important; letter-spacing:0; max-width:none;}
+  .bn-item:not(.active):hover{background:var(--surface-2); color:var(--ink);}
+  .bn-me{display:flex; align-items:center; gap:10px; margin-top:auto; padding:10px; border-radius:16px; border:1px solid var(--border); background:var(--surface-2); color:var(--ink); text-align:left; cursor:pointer;}
+  .bn-me:hover{border-color:#8C7BFF;}
+  .bn-me-av{width:36px; height:36px; flex:none; border-radius:50%; display:flex; align-items:center; justify-content:center; overflow:hidden; font-weight:800; color:#fff;}
+  .bn-me-av img{width:100%; height:100%; object-fit:cover;}
+  .bn-me-t{min-width:0;} .bn-me-t b{display:block;} .bn-me-t small{color:var(--ink-soft); font-size:12px;}
+  .bn-keys{display:block; margin:10px 4px 0; font-size:11.5px; line-height:1.5; color:var(--ink-soft);}
+  .bn-keys b{color:var(--ink);}
+
+  /* elementos fixos que ficavam centralizados na tela do celular */
+  .path-cta, .upd-bar{left:calc(var(--side) + 24px); right:24px; bottom:24px;}
+  .path-fab{left:calc(50% + var(--side)/2); bottom:96px;}
+  .sec-tabs{justify-content:center; flex-wrap:wrap; overflow:visible; row-gap:8px;}
+
+  /* Início: duas colunas */
+  .home-scr{display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,1fr); column-gap:22px; align-items:start;}
+  .home-scr > *{grid-column:1 / -1; min-width:0;}
+  .home-scr .topbar .brand{visibility:hidden;}
+  .home-scr > .player-card{grid-column:1; grid-row:3; width:auto; max-width:none; justify-self:stretch;}
+  .home-scr > .dq-card{grid-column:2; grid-row:3; align-self:stretch; display:flex; flex-direction:column; justify-content:center;}
+  .home-scr > .path-hero{grid-column:1; grid-row:4;}
+  .home-scr > .hd-today{grid-column:2; grid-row:4 / span 3;}
+  .home-scr > .rm-invite, .home-scr > .ar-import{grid-column:1;}
+  .home-scr > .player-card, .home-scr > .path-hero, .home-scr > .dq-card, .home-scr > .hd-today, .home-scr > .rm-invite{margin-left:0; margin-right:0;}
+  .home-scr > .mascot-row{margin-left:0; margin-right:0;}
+
+  /* listas longas em duas colunas */
+  .ex-list, .ct-list, .ar-phases{display:grid; grid-template-columns:1fr 1fr; column-gap:12px; align-items:start;}
+  .ex-list > :not(.subject-row), .ct-list > :not(.ct-row), .ar-phases > :not(button){grid-column:1 / -1;}
+  .ar-phases{row-gap:9px;}
+  .lj-grid{grid-template-columns:repeat(4,1fr);}
+  .ac-grid{grid-template-columns:repeat(6,1fr);}
+  .ct-gallery{grid-template-columns:repeat(4,1fr);}
+  .rk-list{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+
+  /* Trilha: o tabuleiro continua do tamanho dele, no meio */
+  .path{max-width:620px;}
+  /* correção animada: um pouco mais larga */
+  .sp-full .sp-card{max-width:720px;}
+  .an-svg{max-height:340px;}
+}
+/* mouse: destaque ao passar por cima */
+@media (hover:hover) and (pointer:fine){
+  .subject-row:hover, .ct-row:hover, .rk-row:hover, .st-act:hover, .lr-tool:hover, .td-row:hover, .pm-item:hover{border-color:#8C7BFF; transform:translateY(-1px);}
+  .mc-opt:not(:disabled):hover, .quiz-opt:not(:disabled):hover, .sp-opt:not(:disabled):hover{filter:brightness(1.08); transform:translateY(-1px);}
+  .subject-row, .ct-row, .rk-row, .st-act, .lr-tool, .td-row, .pm-item, .mc-opt, .quiz-opt{transition:transform .15s ease, border-color .15s ease, filter .15s ease;}
+  ::-webkit-scrollbar{width:10px; height:10px;}
+  ::-webkit-scrollbar-thumb{background:rgba(140,123,255,.35); border-radius:10px; border:2px solid transparent; background-clip:padding-box;}
+  ::-webkit-scrollbar-track{background:transparent;}
+}
