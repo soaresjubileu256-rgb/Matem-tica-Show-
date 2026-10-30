@@ -56,6 +56,11 @@ const SCREENS = {
   settings: null, // async, handled specially below
   report: null, // async, handled specially below
 };
+// conta nova: Arena e simulados das provas abrem aos pouquinhos (js/jogo/liberar.js)
+UNLOCKS.forEach(f=> f.screens.forEach(s=>{
+  const real = SCREENS[s];
+  SCREENS[s] = ()=>{ const lf = currentUser && lockedFeatureFor(s); return lf ? lockedFeatureScreen(lf, s) : real(); };
+}));
 
 // telas que carregam dados antes de aparecer (progresso, perfil, histórico...)
 const ASYNC_SCREENS = {progress:()=>progressScreen(), profile:()=>profileScreen(), history:()=>historyScreen(),
@@ -64,7 +69,7 @@ let renderToken = 0;
 function renderAsyncSafe(){
   // guarda o estado atual (ex.: questão já corrigida) na entrada do histórico, senão
   // "voltar" + "avançar" restaurava a questão sem resposta e dava pra ganhar XP de novo
-  if(currentUser){ replaceHistoryState(); applyShopLook(); }
+  if(currentUser){ replaceHistoryState(); applyShopLook(); checkUnlocks(); reminderSyncMeta(); }
   clearPrintSheets(); // trocou de tela: as folhas de impressão já não servem
   if(_tourClose && state.screen !== 'home') _tourClose();
   const token = ++renderToken; // uma tela que termina de carregar depois de outra ter aberto é descartada

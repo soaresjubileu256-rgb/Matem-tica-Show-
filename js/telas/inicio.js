@@ -27,6 +27,8 @@ function homeScreen(){
   wrap.appendChild(mascotBubble(hello, 'happy'));
   showStreakNote();
   wrap.appendChild(dailyQuoteCard());
+  const rmInvite = reminderInviteCard();
+  if(rmInvite) wrap.appendChild(rmInvite);
   wrap.appendChild(playerCard());
   wrap.appendChild(pathHero());
 

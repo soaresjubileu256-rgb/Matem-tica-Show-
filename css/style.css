@@ -4456,3 +4456,28 @@ html.sp-open-lock, html.sp-open-lock body{overflow:hidden;}
 .bn-item.active .bn-icon{width:44px;}
 .bottom-nav{justify-content:space-between; padding-left:8px !important; padding-right:8px !important;}
 .ct-near-h small{font-size:11px;}
+/* listas longas (58 assuntos/episódios): o navegador só desenha o que está na tela — abre bem mais rápido em celular simples */
+.subject-row, .ct-row, .unit-banner.locked{content-visibility:auto; contain-intrinsic-size:auto 74px;}
+/* ---------- parte ainda fechada (liberar aos poucos) ---------- */
+.lockf-card{margin-top:6px; padding:24px 20px; border-radius:22px; text-align:center; background:linear-gradient(160deg, rgba(124,92,255,.22), rgba(43,198,168,.10)); border:1px solid rgba(124,92,255,.35);}
+.lockf-ico{position:relative; width:84px; height:84px; margin:0 auto 10px; border-radius:26px; display:flex; align-items:center; justify-content:center; font-size:44px; background:rgba(255,255,255,.06);}
+.lockf-ico i{position:absolute; right:-8px; bottom:-8px; font-style:normal; font-size:26px;}
+.lockf-card h2{margin:6px 0 4px; font-size:22px;}
+.lockf-card p{margin:0 0 14px; color:var(--ink-soft);}
+.lockf-goal{font-size:15px; line-height:1.4; margin-bottom:12px;}
+.lockf-bar{height:12px; border-radius:8px; background:rgba(255,255,255,.1); overflow:hidden;}
+:root.theme-light .lockf-bar{background:rgba(40,40,90,.1);}
+.lockf-bar i{display:block; height:100%; border-radius:8px; background:linear-gradient(90deg,#2BC6A8,#7C5CFF);}
+.lockf-card small{display:block; margin-top:6px; color:var(--ink-soft);}
+.lockf-btns{display:flex; flex-direction:column; gap:10px; margin-top:18px;}
+.st-seg.wrap{flex-wrap:wrap;}
+.st-seg.wrap button{flex:1 0 22%;}
+/* convite do lembrete no Início */
+.rm-invite{display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin:0 20px 16px; border-radius:20px;}
+.rm-invite .rm-ico{font-size:30px;}
+.rm-invite > div:not(.rm-btns){flex:1; min-width:0;}
+.rm-invite b{display:block; font-size:16px;}
+.rm-invite small{display:block; color:var(--ink-soft); line-height:1.35; margin-top:2px;}
+.rm-btns{display:flex; gap:8px; width:100%;}
+.rm-btns button{flex:1; border-radius:12px; padding:10px; font:800 14px 'Inter',sans-serif; border:1px solid var(--border); background:var(--surface-2); color:var(--ink); cursor:pointer;}
+.rm-btns .rm-yes{background:var(--brand); color:#fff; border:none;}
