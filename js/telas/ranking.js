@@ -28,6 +28,21 @@ function rankHash(s){ let x = 2166136261; for(let i=0;i<s.length;i++){ x ^= s.ch
 function b64uEnc(s){ return btoa(unescape(encodeURIComponent(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
 function b64uDec(s){ s = s.replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4) s += '='; return decodeURIComponent(escape(atob(s))); }
 
+/* ---------- código curto (v2) ----------
+   Formato: #APELIDO-XXXXX-XXXXX-XXXXX-XXXXX-XXXXX-XXXXX-XXXXX-XXXX
+   O apelido é escolhido pela pessoa; o resto são 24 bytes em base32 (só letras maiúsculas
+   e números, sem I, L, O e U pra não confundir): versão, quem é, semana, XP da semana,
+   XP total, ofensiva, questões, acertos, 3 assuntos mais fracos e um conferidor. */
+const RANK_B32 = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+const RANK_WEEK0 = Date.UTC(2024, 0, 1); // uma segunda-feira
+function rankWeekIdx(){ const [y,m,d] = weekKey().split('-').map(Number); return Math.round((Date.UTC(y,m-1,d) - RANK_WEEK0) / (7*864e5)); }
+function rankWeekFromIdx(i){ const d = new Date(RANK_WEEK0 + i*7*864e5); return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`; }
+function rankNickClean(s){ return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,10); }
+function myRankNick(){ const g = loadGame(); return g.rankNick || rankNickClean(currentUser.name.split(' ')[0]) || 'ALUNO'; }
+function rankSum16(bytes, nick){ let x = 2166136261; const t = String.fromCharCode(...bytes) + nick + RANK_SALT; for(let i=0;i<t.length;i++){ x ^= t.charCodeAt(i); x = Math.imul(x, 16777619) >>> 0; } return x & 0xffff; }
+function b32Enc(bytes){ let bits = 0, val = 0, out = ''; bytes.forEach(b=>{ val = (val<<8)|b; bits += 8; while(bits>=5){ out += RANK_B32[(val>>>(bits-5))&31]; bits -= 5; } }); if(bits>0) out += RANK_B32[(val<<(5-bits))&31]; return out; }
+function b32Dec(str){ let bits = 0, val = 0; const out = []; for(const ch of str){ const v = RANK_B32.indexOf(ch); if(v<0) return null; val = ((val<<5)|v) & 0xfffff; bits += 5; if(bits>=8){ out.push((val>>>(bits-8))&255); bits -= 8; } } return out; }
+
 /* monta o código da semana de quem está logado */
 function myRankCode(){
   const g = loadGame(), pr = progressSync();
@@ -35,17 +50,37 @@ function myRankCode(){
   Object.entries(pr).forEach(([id,d])=>{
     if(!d || !d.attempted) return;
     q += d.attempted; c += d.correct||0;
-    if(d.attempted >= 3) subj.push([id, Math.round((d.correct||0)/d.attempted*100), d.attempted]);
+    const si = SUBJECTS.findIndex(x=>x.id===id);
+    if(d.attempted >= 3 && si >= 0 && si < 255) subj.push([si, Math.round((d.correct||0)/d.attempted*100)]);
   });
   subj.sort((a,b)=> a[1]-b[1]);
-  const p = {v:1, u: rankHash(String(currentUser.id)), n: currentUser.name.slice(0,30), w: weekKey(), x: weekXpOf(g), t: g.xp,
-    l: levelInfo(g.xp).level, s: gameStreakNow(), q, c, f: subj.slice(0,5), d: g.lastDay || ''};
-  const body = b64uEnc(JSON.stringify(p));
-  return `MS-${body}-${rankHash(body + RANK_SALT)}`;
+  const cap = (v,max)=> Math.max(0, Math.min(max, Math.round(v||0)));
+  const u = parseInt(rankHash(String(currentUser.id)), 36) & 0xffff;
+  const wx = cap(weekXpOf(g), 0xffffff), tx = cap(g.xp, 0xffffff), wk = cap(rankWeekIdx(), 0xffff);
+  const qq = cap(q, 0xffff), cc = cap(Math.min(c, q), 0xffff);
+  const bytes = [2, u>>8, u&255, wk>>8, wk&255, wx>>16, (wx>>8)&255, wx&255, tx>>16, (tx>>8)&255, tx&255, cap(gameStreakNow(),255), qq>>8, qq&255, cc>>8, cc&255];
+  for(let k=0;k<3;k++){ const f = subj[k]; bytes.push(f ? f[0] : 255, f ? f[1] : 0); }
+  const nick = myRankNick(), sum = rankSum16(bytes, nick);
+  bytes.push(sum>>8, sum&255);
+  return `#${nick}-` + b32Enc(bytes).match(/.{1,5}/g).join('-');
 }
-/* lê um código; devolve o objeto ou null */
+/* lê um código (curto ou o antigo MS-...); devolve o objeto ou null */
 function parseRankCode(code){
-  const m = String(code||'').trim().match(/^MS-([A-Za-z0-9_-]+)-([0-9a-z]{5})$/);
+  code = String(code||'').trim();
+  const m2 = code.match(/^#([A-Za-z0-9]{1,10})((?:[-\s][0-9A-Za-z]{1,5}){6,10})$/);
+  if(m2){
+    const nick = m2[1].toUpperCase();
+    const body = m2[2].replace(/[-\s]/g,'').toUpperCase().replace(/O/g,'0').replace(/[IL]/g,'1');
+    const b = b32Dec(body);
+    if(!b || b.length < 24 || b[0] !== 2) return null;
+    const bytes = b.slice(0,22), sum = (b[22]<<8)|b[23];
+    if(rankSum16(bytes, nick) !== sum) return null;
+    const n3 = i=> (b[i]<<16)|(b[i+1]<<8)|b[i+2], n2 = i=> (b[i]<<8)|b[i+1];
+    const tx = n3(8), f = [];
+    for(let k=0;k<3;k++){ const si = b[16+k*2]; if(si!==255 && SUBJECTS[si]) f.push([SUBJECTS[si].id, b[17+k*2]]); }
+    return {v:2, u:'c'+n2(1).toString(36), n:nick, w:rankWeekFromIdx(n2(3)), x:n3(5), t:tx, l:levelInfo(tx).level, s:b[11], q:n2(12), c:n2(14), f};
+  }
+  const m = code.match(/^MS-([A-Za-z0-9_-]+)-([0-9a-z]{5})$/);
   if(!m || rankHash(m[1] + RANK_SALT) !== m[2]) return null;
   try{
     const p = JSON.parse(b64uDec(m[1]));
@@ -54,7 +89,13 @@ function parseRankCode(code){
   }catch(e){ return null; }
 }
 /* tira os códigos de um texto colado (pode vir com mensagem junto, vários de uma vez) */
-function rankCodesIn(text){ return (String(text).match(/MS-[A-Za-z0-9_-]+-[0-9a-z]{5}/g) || []).map(parseRankCode).filter(Boolean); }
+function rankCodesIn(text){
+  const t = String(text);
+  const found = [...(t.match(/#[A-Za-z0-9]{1,10}(?:-[0-9A-Za-z]{1,5}){6,10}/g) || []), ...(t.match(/MS-[A-Za-z0-9_-]+-[0-9a-z]{5}/g) || [])];
+  return found.map(parseRankCode).filter(Boolean);
+}
+/* identidade de quem está logado, pra não entrar no próprio ranking */
+function myRankIds(){ return [rankHash(String(currentUser.id)), 'c'+(parseInt(rankHash(String(currentUser.id)), 36) & 0xffff).toString(36)]; }
 
 function rankStore(){ const g = loadGame(); g.friends = g.friends || {}; g.turma = g.turma || {}; return g; }
 
@@ -78,7 +119,7 @@ async function rankingScreen(){
 }
 
 async function rankWeekView(c){
-  const g = rankStore(), wk = weekKey(), myId = rankHash(String(currentUser.id));
+  const g = rankStore(), wk = weekKey(), myIds = myRankIds();
   // quem entra: eu, as outras contas deste aparelho e os amigos com código desta semana
   const rows = [{me:true, n:currentUser.name, x:weekXpOf(g), l:levelInfo(g.xp).level, s:gameStreakNow(), src:'você'}];
   const users = await loadUsers();
@@ -87,7 +128,7 @@ async function rankWeekView(c){
     rows.push({n:u.name, x:weekXpOf(og), l:levelInfo(og.xp||0).level, s:streakFromData(og), src:'neste aparelho'});
   });
   Object.values(g.friends).forEach(p=>{
-    if(p.u===myId) return;
+    if(myIds.includes(p.u)) return;
     rows.push({n:p.n, x: p.w===wk ? p.x : 0, l:p.l, s:p.s, src: p.w===wk ? 'amigo' : 'amigo · código antigo', key:p.u});
   });
   rows.sort((a,b)=> b.x-a.x || (a.me?-1:b.me?1:0));
@@ -108,11 +149,28 @@ async function rankWeekView(c){
   c.appendChild(list);
   if(rows.length===1) c.appendChild(h(`<p class="rk-empty">Só você por enquanto! Mande seu código pros amigos e cole o código deles aqui embaixo pra disputar a semana.</p>`));
 
-  // meu código
-  const code = myRankCode();
+  // meu código (curto, começa com o apelido que a pessoa escolhe)
+  const code = myRankCode(), nick = myRankNick();
   const mine = h(`<div class="card rk-card"><b>📤 Seu código da semana</b><small>Mande pros amigos ou pro professor. Mande de novo quando quiser atualizar seus pontos.</small>
+    <div class="rk-nickrow"><span>Seu apelido no código:</span><b class="rk-nick"></b><button type="button" class="st-mini rk-nick-edit">✏️ Mudar</button></div>
+    <div class="rk-nickform" hidden><input class="rk-nick-in mono" maxlength="10" autocapitalize="characters" spellcheck="false" placeholder="Ex.: ANATURBO"><button type="button" class="btn primary rk-nick-save">Salvar</button><small class="rk-nick-msg">De 2 a 10 letras ou números, sem espaço nem acento.</small></div>
     <div class="rk-code mono"></div><div class="rk-btns"><button type="button" class="btn secondary rk-copy">📋 Copiar</button><button type="button" class="btn primary rk-share">📲 Compartilhar</button></div></div>`);
-  mine.querySelector('.rk-code').textContent = code;
+  mine.querySelector('.rk-nick').textContent = '#' + nick;
+  const codeEl = mine.querySelector('.rk-code');
+  const [cNick, ...cRest] = code.split('-');
+  codeEl.innerHTML = `<span class="rk-code-nick"></span>-<wbr>${cRest.map(g=>`<span class="rk-cg">${g}</span>`).join('-<wbr>')}`; // quebra a linha só nos tracinhos
+  codeEl.querySelector('.rk-code-nick').textContent = cNick;
+  const form = mine.querySelector('.rk-nickform'), inp = form.querySelector('.rk-nick-in');
+  mine.querySelector('.rk-nick-edit').onclick = ()=>{ form.hidden = !form.hidden; if(!form.hidden){ inp.value = nick; inp.focus(); inp.select(); } };
+  inp.oninput = ()=>{ const v = rankNickClean(inp.value); if(v !== inp.value) inp.value = v; };
+  const saveNick = ()=>{
+    const v = rankNickClean(inp.value);
+    if(v.length < 2){ form.querySelector('.rk-nick-msg').textContent = '⚠️ Use pelo menos 2 letras ou números.'; return; }
+    const g2 = loadGame(); g2.rankNick = v; saveGame();
+    showFloat(`✨ Agora seu código começa com #${v}`); render();
+  };
+  form.querySelector('.rk-nick-save').onclick = saveNick;
+  inp.onkeydown = e=>{ if(e.key==='Enter'){ e.preventDefault(); saveNick(); } };
   const msg = `Meu código do Matemática Show pra o ranking da semana 🏆 (cole no app em Progresso → Ranking):\n${code}`;
   mine.querySelector('.rk-copy').onclick = async ()=>{ try{ await navigator.clipboard.writeText(msg); showFloat('📋 Código copiado!'); }catch(e){ showFloat('Não deu pra copiar. Segure o código pra copiar.', true); } };
   const sh = mine.querySelector('.rk-share');
@@ -121,10 +179,10 @@ async function rankWeekView(c){
 
   // adicionar amigo
   const add = h(`<div class="card rk-card"><b>➕ Adicionar amigos</b><small>Cole aqui a mensagem com o código que seu amigo mandou (pode colar vários de uma vez).</small>
-    <textarea class="rk-in" rows="3" placeholder="MS-..."></textarea><button type="button" class="btn primary rk-add">Adicionar ao ranking</button><div class="rk-msg"></div></div>`);
+    <textarea class="rk-in" rows="3" placeholder="#APELIDO-…"></textarea><button type="button" class="btn primary rk-add">Adicionar ao ranking</button><div class="rk-msg"></div></div>`);
   add.querySelector('.rk-add').onclick = ()=>{
-    const got = rankCodesIn(add.querySelector('.rk-in').value).filter(p=> p.u!==myId);
-    if(!got.length){ add.querySelector('.rk-msg').innerHTML = `<div class="st-msg bad">⚠️ Não achei nenhum código válido. Confira se copiou ele inteiro (começa com MS-).</div>`; return; }
+    const got = rankCodesIn(add.querySelector('.rk-in').value).filter(p=> !myIds.includes(p.u));
+    if(!got.length){ add.querySelector('.rk-msg').innerHTML = `<div class="st-msg bad">⚠️ Não achei nenhum código válido. Confira se copiou ele inteiro (começa com #).</div>`; return; }
     got.forEach(p=>{ const old = g.friends[p.u]; if(!old || old.w < p.w || (old.w===p.w && p.x>=old.x)) g.friends[p.u] = p; });
     saveGame(); queueToast('🏆', got.length===1 ? `${got[0].n} entrou no ranking!` : `${got.length} amigos no ranking!`, 'Quem fizer mais XP até domingo ganha');
     render();
@@ -136,10 +194,10 @@ async function rankTurmaView(c){
   const g = rankStore(), wk = weekKey();
   const studs = Object.values(g.turma).sort((a,b)=> (b.w===wk?b.x:0) - (a.w===wk?a.x:0));
   c.appendChild(h(`<div class="card rk-card rk-help"><b>👩‍🏫 Como funciona</b><small>Cada aluno abre <b>Progresso → Ranking</b>, toca em <b>Copiar</b> e te manda o código (no WhatsApp da turma, por exemplo). Cole tudo aqui embaixo, até a conversa inteira: o app acha os códigos sozinho. Toda semana os alunos mandam de novo e o resumo atualiza.</small></div>`));
-  const add = h(`<div class="card rk-card"><textarea class="rk-in" rows="4" placeholder="Cole os códigos dos alunos (MS-...)"></textarea><button type="button" class="btn primary rk-add">Adicionar à turma</button><div class="rk-msg"></div></div>`);
+  const add = h(`<div class="card rk-card"><textarea class="rk-in" rows="4" placeholder="Cole os códigos dos alunos (#APELIDO-…)"></textarea><button type="button" class="btn primary rk-add">Adicionar à turma</button><div class="rk-msg"></div></div>`);
   add.querySelector('.rk-add').onclick = ()=>{
     const got = rankCodesIn(add.querySelector('.rk-in').value);
-    if(!got.length){ add.querySelector('.rk-msg').innerHTML = `<div class="st-msg bad">⚠️ Não achei nenhum código válido (eles começam com MS-).</div>`; return; }
+    if(!got.length){ add.querySelector('.rk-msg').innerHTML = `<div class="st-msg bad">⚠️ Não achei nenhum código válido (eles começam com #, por exemplo #ANA-…).</div>`; return; }
     got.forEach(p=>{ const old = g.turma[p.u]; if(!old || old.w < p.w || (old.w===p.w && p.q>=old.q)) g.turma[p.u] = p; });
     saveGame(); queueToast('👩‍🏫', `${got.length} código${got.length===1?'':'s'} lido${got.length===1?'':'s'}`, 'O resumo da turma foi atualizado');
     render();
