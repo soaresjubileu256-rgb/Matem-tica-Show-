@@ -18,16 +18,19 @@ function notifSupported(){ return 'Notification' in window && 'serviceWorker' in
 function notifAllowed(){ return notifSupported() && Notification.permission === 'granted'; }
 
 /* resumo guardado no cache (o service worker lê o mesmo) — regras e textos em js/dados/lembrete-texto.js */
+const REMINDER_META_LS = 'mat-show-lembrete-meta'; // cópia no localStorage, pra quando o "caches" não existe (alguns APKs)
 async function reminderMetaRead(){
-  try{ const c = await caches.open(REMINDER_META_CACHE); const r = await c.match(REMINDER_META_URL); return r ? await r.json() : {}; }catch(e){ return {}; }
+  try{ if('caches' in window){ const c = await caches.open(REMINDER_META_CACHE); const r = await c.match(REMINDER_META_URL); if(r) return await r.json(); } }catch(e){}
+  try{ return JSON.parse(localStorage.getItem(REMINDER_META_LS) || '{}'); }catch(e){ return {}; }
 }
 async function reminderMetaWrite(m){
-  try{ const c = await caches.open(REMINDER_META_CACHE); await c.put(REMINDER_META_URL, new Response(JSON.stringify(m), {headers:{'Content-Type':'application/json'}})); }catch(e){}
+  try{ localStorage.setItem(REMINDER_META_LS, JSON.stringify(m)); }catch(e){}
+  try{ if('caches' in window){ const c = await caches.open(REMINDER_META_CACHE); await c.put(REMINDER_META_URL, new Response(JSON.stringify(m), {headers:{'Content-Type':'application/json'}})); } }catch(e){}
 }
 /* atualiza a parte do resumo que vem do app (sem mexer no "já avisou" e no "daqui a 1 hora") */
 let _reminderMetaLast = '';
 async function reminderSyncMeta(){
-  if(!('caches' in window) || !currentUser) return;
+  if(!currentUser) return;
   try{
     const st = await loadSettings(), r = reminderOf(st), g = loadGame();
     const quotes = {};
@@ -41,15 +44,35 @@ async function reminderSyncMeta(){
   }catch(e){}
 }
 
+/* mostra a notificação. Alguns APKs (WebView) não aceitam tudo, então tenta em 3 degraus:
+   1) completa (botões, vibração, ícone da barra) pelo service worker; 2) simples (título, texto e ícone)
+   pelo service worker; 3) direto pela página. Guarda o motivo da falha pra mostrar no "Testar". */
+let reminderLastError = '';
+function swReadyOrTimeout(ms){
+  if(!('serviceWorker' in navigator)) return Promise.reject(new Error('sem service worker'));
+  return Promise.race([navigator.serviceWorker.ready, new Promise((_, no)=> setTimeout(()=> no(new Error('service worker não respondeu')), ms))]);
+}
+async function reminderDisplay(title, options){
+  const errs = [];
+  const simple = {body: options.body, icon: options.icon, tag: options.tag, data: options.data};
+  try{ const reg = await swReadyOrTimeout(3000); await reg.showNotification(title, options); return true; }catch(e){ errs.push('1: ' + (e && e.message || e)); }
+  try{ const reg = await swReadyOrTimeout(3000); await reg.showNotification(title, simple); return true; }catch(e){ errs.push('2: ' + (e && e.message || e)); }
+  try{
+    const n = new Notification(title, simple);
+    n.onclick = ()=>{ try{ window.focus(); }catch(e){} n.close(); if(currentUser) go('path'); };
+    return true;
+  }catch(e){ errs.push('3: ' + (e && e.message || e)); }
+  reminderLastError = errs.join(' · ');
+  return false;
+}
 async function reminderShow(kind){
   try{
     const m = await reminderMetaRead(), now = new Date();
     const n = reminderNotification(m, kind, now);
-    const reg = await navigator.serviceWorker.ready;
-    await reg.showNotification(n.title, n.options);
-    if(kind !== 'test') await reminderMetaWrite(reminderMarkShown(m, kind, now));
-    return true;
-  }catch(e){ return false; }
+    const ok = await reminderDisplay(n.title, n.options);
+    if(ok && kind !== 'test') await reminderMetaWrite(reminderMarkShown(m, kind, now));
+    return ok;
+  }catch(e){ reminderLastError = String(e && e.message || e); return false; }
 }
 
 /* chamado a cada minuto (com o app aberto ou em segundo plano) */
@@ -156,7 +179,8 @@ function reminderCard(settings, saveNow){
       if(!notifAllowed() && await reminderEnable() !== 'ok'){ stMsg(msg, false, 'O celular não deixou mostrar notificação. Use o alarme na agenda aqui embaixo.'); return; }
       await reminderSyncMeta();
       const ok = await reminderShow('test');
-      stMsg(msg, ok, ok ? 'Notificação de teste enviada! Olhe na barra do celular.' : 'Não deu pra mostrar a notificação neste aparelho.');
+      stMsg(msg, ok, ok ? 'Notificação de teste enviada! Olhe na barra do celular.' : 'Não deu pra mostrar a notificação neste aparelho. Use o alarme na agenda aqui embaixo.');
+      if(!ok && reminderLastError) msg.appendChild(h(`<small class="rm-err"></small>`)).textContent = 'Detalhe técnico: ' + reminderLastError;
     };
     timesWrap.appendChild(test);
   }
