@@ -13,54 +13,57 @@ const REMINDER_META_CACHE = 'mat-show-meta';
 const REMINDER_META_URL = './__lembrete.json';
 const REMINDER_TIMES = ['07:00','12:00','15:00','18:00','19:00','20:00','21:00'];
 
-function reminderOf(st){ return Object.assign({on:false, time:'19:00'}, (st||{}).reminder || {}); }
+function reminderOf(st){ return Object.assign({on:false, time:'19:00', days:'todos', rescue:true}, (st||{}).reminder || {}); }
 function notifSupported(){ return 'Notification' in window && 'serviceWorker' in navigator; }
 function notifAllowed(){ return notifSupported() && Notification.permission === 'granted'; }
 
-/* texto da notificação (o mesmo no app e no service worker) */
-function reminderText(name, streak){
-  return streak > 0
-    ? {title:`🔥 Sua ofensiva de ${streak} dia${streak===1?'':'s'} está esperando!`, body:`${name ? name + ', ' : ''}jogue uma fase hoje pra não perder. O Pi está te esperando!`}
-    : {title:'⭐ Hora do Matemática Show!', body:`${name ? name + ', ' : ''}bora treinar um pouquinho? O Desafio do Dia já está pronto.`};
+/* resumo guardado no cache (o service worker lê o mesmo) — regras e textos em js/dados/lembrete-texto.js */
+async function reminderMetaRead(){
+  try{ const c = await caches.open(REMINDER_META_CACHE); const r = await c.match(REMINDER_META_URL); return r ? await r.json() : {}; }catch(e){ return {}; }
 }
-
-/* guarda o resumo que o service worker usa quando o app está fechado */
+async function reminderMetaWrite(m){
+  try{ const c = await caches.open(REMINDER_META_CACHE); await c.put(REMINDER_META_URL, new Response(JSON.stringify(m), {headers:{'Content-Type':'application/json'}})); }catch(e){}
+}
+/* atualiza a parte do resumo que vem do app (sem mexer no "já avisou" e no "daqui a 1 hora") */
 let _reminderMetaLast = '';
 async function reminderSyncMeta(){
   if(!('caches' in window) || !currentUser) return;
   try{
     const st = await loadSettings(), r = reminderOf(st), g = loadGame();
-    const meta = {on: r.on && notifAllowed(), time: r.time, lastDay: g.lastDay || null, notified: g.reminderDay || null,
-      name: currentUser.name.split(' ')[0], streak: gameStreakNow()};
-    const txt = JSON.stringify(meta);
-    if(txt === _reminderMetaLast) return;
-    _reminderMetaLast = txt;
-    const c = await caches.open(REMINDER_META_CACHE);
-    await c.put(REMINDER_META_URL, new Response(txt, {headers:{'Content-Type':'application/json'}}));
+    const quotes = {};
+    if(typeof dailyQuote === 'function') for(let k=0;k<14;k++){ const d = new Date(); d.setDate(d.getDate()+k); quotes[rmDayKey(d)] = dailyQuote(d); }
+    const app = {on: r.on && notifAllowed(), time: r.time, days: r.days || 'todos', rescue: r.rescue !== false, lastDay: g.lastDay || null,
+      name: currentUser.name.split(' ')[0], streak: gameStreakNow(), quotes, dailyTag: typeof dailyTag==='function' && typeof isoDay==='function' ? dailyTag(isoDay()) : ''};
+    const key = JSON.stringify(app);
+    if(key === _reminderMetaLast) return;
+    _reminderMetaLast = key;
+    await reminderMetaWrite(Object.assign(await reminderMetaRead(), app));
   }catch(e){}
 }
 
-async function reminderShow(){
-  const g = loadGame(), name = currentUser ? currentUser.name.split(' ')[0] : '';
-  const t = reminderText(name, gameStreakNow());
+async function reminderShow(kind){
   try{
+    const m = await reminderMetaRead(), now = new Date();
+    const n = reminderNotification(m, kind, now);
     const reg = await navigator.serviceWorker.ready;
-    await reg.showNotification(t.title, {body:t.body, icon:'img/icon-192.png', badge:'img/favicon-48.png', tag:'lembrete', data:{url:'./'}});
-    g.reminderDay = dayKey(); saveGame(); reminderSyncMeta();
-  }catch(e){}
+    await reg.showNotification(n.title, n.options);
+    if(kind !== 'test') await reminderMetaWrite(reminderMarkShown(m, kind, now));
+    return true;
+  }catch(e){ return false; }
 }
 
-/* chamado a cada minuto */
+/* chamado a cada minuto (com o app aberto ou em segundo plano) */
 async function reminderTick(){
   if(!currentUser || !notifAllowed()) return;
-  const st = await loadSettings(), r = reminderOf(st);
-  if(!r.on) return;
-  const g = loadGame(), today = dayKey();
-  if(g.lastDay === today || g.reminderDay === today) return; // já jogou ou já avisou hoje
-  const [hh, mm] = r.time.split(':').map(Number), now = new Date();
-  if(now.getHours()*60 + now.getMinutes() >= hh*60 + mm) reminderShow();
+  await reminderSyncMeta();
+  const kind = reminderDue(await reminderMetaRead(), new Date());
+  if(kind) reminderShow(kind);
 }
 setInterval(reminderTick, 60000);
+// tocou em "Jogar agora" na notificação com o app já aberto: o service worker pede pra abrir a Trilha
+if('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', e=>{
+  if(e.data && e.data.type === 'go' && currentUser && state.screen !== e.data.screen) go(e.data.screen);
+});
 
 /* liga o lembrete: pede permissão e, se der, registra a conferência em segundo plano */
 async function reminderEnable(){
@@ -140,6 +143,23 @@ function reminderCard(settings, saveNow){
     settings.reminder = Object.assign(reminderOf(settings), {time:t});
     await saveNow(); reminderSyncMeta();
   }, 'wrap'));
+  if(canNotify){
+    timesWrap.appendChild(h(`<div class="st-lbl">Dias</div>`));
+    timesWrap.appendChild(stSeg([['todos','📅 Todo dia'],['semana','🏫 Seg a sex']], r.days || 'todos', async d=>{
+      settings.reminder = Object.assign(reminderOf(settings), {days:d}); await saveNow(); reminderSyncMeta();
+    }));
+    timesWrap.appendChild(stRow('🔥', '#FF8A3D', 'Último aviso às 21h', 'Se a ofensiva estiver em risco', stSwitch(r.rescue !== false, 'Último aviso às 21h', async v=>{
+      settings.reminder = Object.assign(reminderOf(settings), {rescue:v}); await saveNow(); reminderSyncMeta();
+    })));
+    const test = h(`<button type="button" class="st-mini">🔔 Testar notificação</button>`);
+    test.onclick = async ()=>{
+      if(!notifAllowed() && await reminderEnable() !== 'ok'){ stMsg(msg, false, 'O celular não deixou mostrar notificação. Use o alarme na agenda aqui embaixo.'); return; }
+      await reminderSyncMeta();
+      const ok = await reminderShow('test');
+      stMsg(msg, ok, ok ? 'Notificação de teste enviada! Olhe na barra do celular.' : 'Não deu pra mostrar a notificação neste aparelho.');
+    };
+    timesWrap.appendChild(test);
+  }
   card.appendChild(timesWrap); paint();
   card.appendChild(msg);
   card.appendChild(h(`<div class="st-lbl">${canNotify ? 'Ou crie um alarme na agenda' : 'Criar o alarme'}</div>`));
