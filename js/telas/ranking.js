@@ -1,10 +1,9 @@
 /* =========================================================
-   RANKING DA SEMANA e TURMA (modo professor) — sem servidor
+   RANKING DA SEMANA — sem servidor
    - Cada aluno tem um "código da semana": um texto curto com nome, XP da semana,
      nível, ofensiva, questões e os assuntos em que mais erra.
-   - O aluno manda o código (WhatsApp, por exemplo) pros amigos ou pro professor.
+   - O aluno manda o código (WhatsApp, por exemplo) pros amigos.
    - Amigos colam o código e entram no ranking da semana (junto com as contas deste aparelho).
-   - O professor cola os códigos da turma e vê o resumo de todos e os assuntos que a turma mais erra.
    O código tem um conferidor simples (pra não sair errado ao copiar); não é à prova de trapaça.
    ========================================================= */
 const RANK_SALT = 'mat-show-rank-1';
@@ -95,9 +94,9 @@ function rankCodesIn(text){ return (String(text).match(/#[A-Za-z0-9]{1,10}-[0-9A
 function myRankIds(){ return [`${myRankNick()}:${parseInt(rankHash(String(currentUser.id)), 36) & 1023}`]; }
 
 function rankStore(){
-  const g = loadGame(); g.friends = g.friends || {}; g.turma = g.turma || {};
+  const g = loadGame(); g.friends = g.friends || {}; delete g.turma; // a Turma (modo professor) saiu do app
   // só vale o código atual: amigos e alunos que vieram de códigos antigos saem da lista
-  ['friends','turma'].forEach(k=> Object.keys(g[k]).forEach(id=>{ if(g[k][id].v !== 3) delete g[k][id]; }));
+  Object.keys(g.friends).forEach(id=>{ if(g.friends[id].v !== 3) delete g.friends[id]; });
   return g;
 }
 
@@ -108,15 +107,7 @@ async function rankingScreen(){
   wrap.appendChild(topbar('🏆 Ranking', true, ()=>go('progress')));
   const c = h(`<div class="content rk"></div>`);
   wrap.appendChild(c);
-  const view = state.rankView || 'semana';
-  const seg = h(`<div class="st-seg rk-seg" role="radiogroup"></div>`);
-  [['semana','🏆 Ranking da semana'],['turma','👩‍🏫 Turma (professor)']].forEach(([id,label])=>{
-    const b = h(`<button type="button" role="radio" aria-checked="${id===view}">${label}</button>`);
-    b.onclick = ()=>{ if(id!==view){ state.rankView = id; render(); } };
-    seg.appendChild(b);
-  });
-  c.appendChild(seg);
-  if(view==='turma') await rankTurmaView(c); else await rankWeekView(c);
+  await rankWeekView(c);
   return wrap;
 }
 
@@ -153,7 +144,7 @@ async function rankWeekView(c){
 
   // meu código (curto, começa com o apelido que a pessoa escolhe)
   const code = myRankCode(), base = myRankBase(), num = myRankNumber();
-  const mine = h(`<div class="card rk-card"><b>📤 Seu código da semana</b><small>Mande pros amigos ou pro professor. Mande de novo quando quiser atualizar seus pontos.</small>
+  const mine = h(`<div class="card rk-card"><b>📤 Seu código da semana</b><small>Mande pros amigos. Mande de novo quando quiser atualizar seus pontos.</small>
     <div class="rk-nickrow"><span>Seu apelido no código:</span><b class="rk-nick"></b><button type="button" class="st-mini rk-nick-edit">✏️ Mudar</button><small class="rk-num-why">O número no fim é só seu: assim ninguém fica com um código igual ao seu.</small></div>
     <div class="rk-nickform" hidden><input class="rk-nick-in mono" maxlength="7" autocapitalize="characters" spellcheck="false" placeholder="Ex.: ANATURBO"><button type="button" class="btn primary rk-nick-save">Salvar</button><small class="rk-nick-msg">De 2 a 7 letras, sem espaço nem acento. O número ${num} continua no fim.</small></div>
     <div class="rk-code mono"></div><div class="rk-btns"><button type="button" class="btn secondary rk-copy">📋 Copiar</button><button type="button" class="btn primary rk-share">📲 Compartilhar</button></div></div>`);
@@ -190,58 +181,4 @@ async function rankWeekView(c){
     render();
   };
   c.appendChild(add);
-}
-
-async function rankTurmaView(c){
-  const g = rankStore(), wk = weekKey();
-  const studs = Object.values(g.turma).sort((a,b)=> (b.w===wk?b.x:0) - (a.w===wk?a.x:0));
-  c.appendChild(h(`<div class="card rk-card rk-help"><b>👩‍🏫 Como funciona</b><small>Cada aluno abre <b>Progresso → Ranking</b>, toca em <b>Copiar</b> e te manda o código (no WhatsApp da turma, por exemplo). Cole tudo aqui embaixo, até a conversa inteira: o app acha os códigos sozinho. Toda semana os alunos mandam de novo e o resumo atualiza.</small></div>`));
-  const add = h(`<div class="card rk-card"><textarea class="rk-in" rows="4" placeholder="Cole os códigos dos alunos (#APELIDO-…)"></textarea><button type="button" class="btn primary rk-add">Adicionar à turma</button><div class="rk-msg"></div></div>`);
-  add.querySelector('.rk-add').onclick = ()=>{
-    const got = rankCodesIn(add.querySelector('.rk-in').value);
-    if(!got.length){ add.querySelector('.rk-msg').innerHTML = `<div class="st-msg bad">⚠️ Não achei nenhum código válido (eles começam com #, por exemplo #ANA-…).</div>`; return; }
-    got.forEach(p=>{ const old = g.turma[p.u]; if(!old || old.w < p.w || (old.w===p.w && p.q>=old.q)) g.turma[p.u] = p; });
-    saveGame(); queueToast('👩‍🏫', `${got.length} código${got.length===1?'':'s'} lido${got.length===1?'':'s'}`, 'O resumo da turma foi atualizado');
-    render();
-  };
-  c.appendChild(add);
-  if(!studs.length){ c.appendChild(h(`<p class="rk-empty">Nenhum aluno ainda. Os códigos que você colar aparecem aqui.</p>`)); return; }
-
-  // resumo
-  const q = studs.reduce((t,p)=>t+(p.q||0),0), ok = studs.reduce((t,p)=>t+(p.c||0),0);
-  const active = studs.filter(p=> p.w===wk && p.x>0).length;
-  c.appendChild(h(`<div class="rk-stats"><div><b>${studs.length}</b><small>alunos</small></div><div><b>${active}</b><small>estudaram nesta semana</small></div><div><b>${q ? Math.round(ok/q*100) : 0}%</b><small>de acerto geral</small></div></div>`));
-
-  // assuntos que a turma mais erra
-  const agg = {};
-  studs.forEach(p=> (p.f||[]).forEach(([id,acc])=>{ if(acc>=70) return; const a = agg[id] = agg[id] || {n:0, sum:0}; a.n++; a.sum += acc; }));
-  const weak = Object.entries(agg).sort((a,b)=> b[1].n-a[1].n || a[1].sum/a[1].n - b[1].sum/b[1].n).slice(0,5);
-  if(weak.length){
-    const box = h(`<div class="card rk-card"><b>🎯 Onde a turma mais erra</b><small>Assuntos com menos de 70% de acerto, e quantos alunos estão com dificuldade.</small><div class="rk-weak"></div></div>`);
-    weak.forEach(([id,a])=>{
-      const s = SUBJECTS.find(x=>x.id===id); if(!s) return;
-      const avg = Math.round(a.sum/a.n);
-      const r = h(`<button type="button" class="rk-wrow"><span class="rk-wsym">${s.sym}</span><span class="rk-wn"><b>${escHTML(s.name)}</b><small>${a.n} aluno${a.n===1?'':'s'} · ${avg}% de acerto em média</small></span><span class="rk-wbar"><i style="width:${avg}%"></i></span></button>`);
-      r.onclick = ()=> go('subjectDetail', {subjectId:id});
-      box.querySelector('.rk-weak').appendChild(r);
-    });
-    c.appendChild(box);
-  }
-
-  // alunos
-  const tb = h(`<div class="card rk-card"><b>📋 Alunos</b><div class="rk-tbl"></div><button type="button" class="st-mini rk-clear">🗑️ Limpar a turma</button></div>`);
-  studs.forEach(p=>{
-    const acc = p.q ? Math.round(p.c/p.q*100) : 0, cur = p.w===wk;
-    const worst = (p.f||[]).find(([id,a])=> a<70 && SUBJECTS.some(x=>x.id===id));
-    const ws = worst && SUBJECTS.find(x=>x.id===worst[0]);
-    const r = h(`<div class="rk-st"><div class="rk-st-h"><b></b><span class="${cur?'':'old'}">${cur ? `${p.x} XP na semana` : 'código de outra semana'}</span><button type="button" class="rk-del" aria-label="Tirar da turma">✕</button></div>
-      <small>Nível ${p.l} · ${p.q} questões · ${acc}% de acerto${p.s ? ` · 🔥 ${p.s} dias` : ''}${ws ? ` · precisa de ajuda em <b>${escHTML(ws.name)}</b>` : ''}</small></div>`);
-    r.querySelector('b').textContent = p.n;
-    r.querySelector('.rk-del').onclick = ()=>{ delete g.turma[p.u]; saveGame(); render(); };
-    tb.querySelector('.rk-tbl').appendChild(r);
-  });
-  tb.querySelector('.rk-clear').onclick = async ()=>{
-    if(await showConfirm({icon:'🗑️', title:'Limpar a turma?', message:'Os códigos dos alunos saem deste aparelho. Eles podem mandar de novo depois.', ok:'Limpar', cancel:'Cancelar', danger:true})){ g.turma = {}; saveGame(); render(); }
-  };
-  c.appendChild(tb);
 }

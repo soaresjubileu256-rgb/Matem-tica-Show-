@@ -4481,7 +4481,7 @@ html.sp-open-lock, html.sp-open-lock body{overflow:hidden;}
 .rm-btns{display:flex; gap:8px; width:100%;}
 .rm-btns button{flex:1; border-radius:12px; padding:10px; font:800 14px 'Inter',sans-serif; border:1px solid var(--border); background:var(--surface-2); color:var(--ink); cursor:pointer;}
 .rm-btns .rm-yes{background:var(--brand); color:#fff; border:none;}
-/* ---------- Ranking e Turma ---------- */
+/* ---------- Ranking ---------- */
 .rk-seg{margin-bottom:14px;}
 .rk-seg button{font-size:13px;}
 .rk-head{display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin:4px 2px 10px;}
