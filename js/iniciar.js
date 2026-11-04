@@ -99,4 +99,10 @@ function renderAsyncSafe(){
 }
 render = renderAsyncSafe;
 
+// o lembrete/notificação saiu do app: desliga a conferência em segundo plano de quem tinha ligado antes
+try{
+  if('serviceWorker' in navigator) navigator.serviceWorker.ready.then(reg=>{ if(reg.periodicSync) reg.periodicSync.unregister('lembrete').catch(()=>{}); }).catch(()=>{});
+  localStorage.removeItem('mat-show-lembrete-meta');
+}catch(e){}
+
 boot();

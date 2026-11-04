@@ -14,9 +14,8 @@ const NEWS = [
     {ico:'💻', t:'Tela grande de verdade', d:'No computador o menu fica na lateral, o Início vira duas colunas e as listas de assuntos aparecem lado a lado.', go:'home'},
     {ico:'⌨️', t:'Atalhos de teclado', d:'Nas fases: 1–4 (ou A–D) escolhe a resposta, Enter confirma e passa pra próxima. Esc fecha avisos e a correção animada; ← e → passam os passos.', go:'path'},
   ]},
-  {v:22, date:'2026-10-30', title:'Ranking, lembrete e explicações animadas', items:[
+  {v:22, date:'2026-10-30', title:'Ranking e explicações animadas', items:[
     {ico:'🏆', t:'Ranking da semana', d:'Em Progresso → Ranking: dispute XP com os amigos. Mande seu código e cole o deles. Zera toda segunda!', go:'ranking'},
-    {ico:'⏰', t:'Lembrete diário', d:'Em Configurações, escolha um horário e crie um alarme na agenda do celular: ele toca todo dia, mesmo com o app fechado.', go:'settings'},
     {ico:'🎬', t:'Explicações animadas', d:'Equação com balança, frações com pizza e porcentagem com o quadro de 100, no Aprender.', go:'content'},
     {ico:'🛒', t:'Problemas do dia a dia', d:'Adição, subtração, multiplicação, divisão, frações, decimais e porcentagem agora têm questões com situações do dia a dia.', go:'exercisesSubjects'},
   ]},
