@@ -1,105 +1,17 @@
 /* =========================================================
-   LEMBRETE DIÁRIO
-   - settings.reminder = {on, time:'19:00'}
-   - Com o app aberto (ou em segundo plano), confere a cada minuto: passou da hora e a
-     pessoa ainda não jogou hoje → mostra a notificação (uma vez por dia).
-   - Com o app fechado: onde o navegador deixa (app instalado no Chrome), o service worker
-     acorda de tempos em tempos (periodicSync) e faz a mesma conferência. Pra isso ele lê
-     um resuminho guardado no cache "mat-show-meta" (o service worker não lê o localStorage).
-   - Onde não dá pra notificar (alguns APKs não deixam), dá pra pôr o lembrete na agenda
-     do celular (arquivo .ics com alarme todo dia).
+   LEMBRETE DIÁRIO (pela agenda do celular)
+   O app não manda notificação: no APK ela só chegava com o app aberto. O lembrete é um
+   alarme que se repete todo dia na agenda do celular (Google Agenda ou arquivo .ics),
+   e funciona mesmo com o app fechado.
    ========================================================= */
-const REMINDER_META_CACHE = 'mat-show-meta';
-const REMINDER_META_URL = './__lembrete.json';
 const REMINDER_TIMES = ['07:00','12:00','15:00','18:00','19:00','20:00','21:00'];
+function reminderOf(st){ return Object.assign({time:'19:00'}, (st||{}).reminder || {}); }
 
-function reminderOf(st){ return Object.assign({on:false, time:'19:00', days:'todos', rescue:true}, (st||{}).reminder || {}); }
-function notifSupported(){ return 'Notification' in window && 'serviceWorker' in navigator; }
-function notifAllowed(){ return notifSupported() && Notification.permission === 'granted'; }
-
-/* resumo guardado no cache (o service worker lê o mesmo) — regras e textos em js/dados/lembrete-texto.js */
-const REMINDER_META_LS = 'mat-show-lembrete-meta'; // cópia no localStorage, pra quando o "caches" não existe (alguns APKs)
-async function reminderMetaRead(){
-  try{ if('caches' in window){ const c = await caches.open(REMINDER_META_CACHE); const r = await c.match(REMINDER_META_URL); if(r) return await r.json(); } }catch(e){}
-  try{ return JSON.parse(localStorage.getItem(REMINDER_META_LS) || '{}'); }catch(e){ return {}; }
-}
-async function reminderMetaWrite(m){
-  try{ localStorage.setItem(REMINDER_META_LS, JSON.stringify(m)); }catch(e){}
-  try{ if('caches' in window){ const c = await caches.open(REMINDER_META_CACHE); await c.put(REMINDER_META_URL, new Response(JSON.stringify(m), {headers:{'Content-Type':'application/json'}})); } }catch(e){}
-}
-/* atualiza a parte do resumo que vem do app (sem mexer no "já avisou" e no "daqui a 1 hora") */
-let _reminderMetaLast = '';
-async function reminderSyncMeta(){
-  if(!currentUser) return;
-  try{
-    const st = await loadSettings(), r = reminderOf(st), g = loadGame();
-    const quotes = {};
-    if(typeof dailyQuote === 'function') for(let k=0;k<14;k++){ const d = new Date(); d.setDate(d.getDate()+k); quotes[rmDayKey(d)] = dailyQuote(d); }
-    const app = {on: r.on && notifAllowed(), time: r.time, days: r.days || 'todos', rescue: r.rescue !== false, lastDay: g.lastDay || null,
-      name: currentUser.name.split(' ')[0], streak: gameStreakNow(), quotes, dailyTag: typeof dailyTag==='function' && typeof isoDay==='function' ? dailyTag(isoDay()) : ''};
-    const key = JSON.stringify(app);
-    if(key === _reminderMetaLast) return;
-    _reminderMetaLast = key;
-    await reminderMetaWrite(Object.assign(await reminderMetaRead(), app));
-  }catch(e){}
-}
-
-/* mostra a notificação. Alguns APKs (WebView) não aceitam tudo, então tenta em 3 degraus:
-   1) completa (botões, vibração, ícone da barra) pelo service worker; 2) simples (título, texto e ícone)
-   pelo service worker; 3) direto pela página. Guarda o motivo da falha pra mostrar no "Testar". */
-let reminderLastError = '';
-function swReadyOrTimeout(ms){
-  if(!('serviceWorker' in navigator)) return Promise.reject(new Error('sem service worker'));
-  return Promise.race([navigator.serviceWorker.ready, new Promise((_, no)=> setTimeout(()=> no(new Error('service worker não respondeu')), ms))]);
-}
-async function reminderDisplay(title, options){
-  const errs = [];
-  const simple = {body: options.body, icon: options.icon, tag: options.tag, data: options.data};
-  try{ const reg = await swReadyOrTimeout(3000); await reg.showNotification(title, options); return true; }catch(e){ errs.push('1: ' + (e && e.message || e)); }
-  try{ const reg = await swReadyOrTimeout(3000); await reg.showNotification(title, simple); return true; }catch(e){ errs.push('2: ' + (e && e.message || e)); }
-  try{
-    const n = new Notification(title, simple);
-    n.onclick = ()=>{ try{ window.focus(); }catch(e){} n.close(); if(currentUser) go('path'); };
-    return true;
-  }catch(e){ errs.push('3: ' + (e && e.message || e)); }
-  reminderLastError = errs.join(' · ');
-  return false;
-}
-async function reminderShow(kind){
-  try{
-    const m = await reminderMetaRead(), now = new Date();
-    const n = reminderNotification(m, kind, now);
-    const ok = await reminderDisplay(n.title, n.options);
-    if(ok && kind !== 'test') await reminderMetaWrite(reminderMarkShown(m, kind, now));
-    return ok;
-  }catch(e){ reminderLastError = String(e && e.message || e); return false; }
-}
-
-/* chamado a cada minuto (com o app aberto ou em segundo plano) */
-async function reminderTick(){
-  if(!currentUser || !notifAllowed()) return;
-  await reminderSyncMeta();
-  const kind = reminderDue(await reminderMetaRead(), new Date());
-  if(kind) reminderShow(kind);
-}
-setInterval(reminderTick, 60000);
-// tocou em "Jogar agora" na notificação com o app já aberto: o service worker pede pra abrir a Trilha
-if('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', e=>{
-  if(e.data && e.data.type === 'go' && currentUser && state.screen !== e.data.screen) go(e.data.screen);
-});
-
-/* liga o lembrete: pede permissão e, se der, registra a conferência em segundo plano */
-async function reminderEnable(){
-  if(!notifSupported()) return 'unsupported';
-  let perm = Notification.permission;
-  if(perm === 'default'){ try{ perm = await Notification.requestPermission(); }catch(e){ perm = 'denied'; } }
-  if(perm !== 'granted') return perm === 'denied' ? 'denied' : 'unsupported';
-  try{
-    const reg = await navigator.serviceWorker.ready;
-    if('periodicSync' in reg) await reg.periodicSync.register('lembrete', {minInterval: 60*60*1000});
-  }catch(e){} // sem periodicSync: o lembrete funciona enquanto o app estiver aberto ou em segundo plano
-  return 'ok';
-}
+/* quem tinha ligado a notificação nas versões antigas: desliga a conferência em segundo plano */
+try{
+  if('serviceWorker' in navigator) navigator.serviceWorker.ready.then(reg=>{ if(reg.periodicSync) reg.periodicSync.unregister('lembrete').catch(()=>{}); }).catch(()=>{});
+  localStorage.removeItem('mat-show-lembrete-meta');
+}catch(e){}
 
 /* lembrete na agenda do celular (funciona mesmo sem notificação do app) */
 function reminderCalendarFile(time){
@@ -134,59 +46,16 @@ function reminderGoogleCalendar(time){
 
 /* cartão das Configurações */
 function reminderCard(settings, saveNow){
-  const card = stCard('⏰', 'Lembrete diário', 'Um aviso na hora que você escolher, pra não esquecer de estudar');
+  const card = stCard('⏰', 'Lembrete diário', 'Um alarme todo dia na agenda do celular, pra não esquecer de estudar');
   const r = reminderOf(settings);
-  const msg = h(`<div></div>`);
-  const canNotify = notifSupported() && Notification.permission !== 'denied';
+  card.appendChild(h(`<div class="rm-note">📅 Escolha o horário e crie o alarme na agenda do celular: ele toca todo dia, mesmo com o app fechado.</div>`));
   const timesWrap = h(`<div class="st-sub"></div>`);
-  const paint = ()=> timesWrap.classList.toggle('off', canNotify && !reminderOf(settings).on);
-  if(canNotify){
-    const sw = stSwitch(r.on, 'Lembrete diário', async v=>{
-      if(v){
-        const res = await reminderEnable();
-        if(res !== 'ok'){
-          sw.setAttribute('aria-checked', false);
-          stMsg(msg, false, res === 'denied'
-            ? 'O celular bloqueou as notificações deste app. Use o alarme na agenda aqui embaixo: ele toca todo dia.'
-            : 'Este aparelho não deixa o app mostrar notificações. Use o alarme na agenda aqui embaixo: ele toca todo dia.');
-          return;
-        }
-        stMsg(msg, true, `Pronto! Se você não estudar até as ${reminderOf(settings).time}, o Pi te lembra.`);
-      } else msg.innerHTML = '';
-      settings.reminder = Object.assign(reminderOf(settings), {on:v});
-      await saveNow(); paint(); reminderSyncMeta();
-    });
-    card.appendChild(stRow('🔔', '#7C5CFF', 'Notificação do app', 'Só avisa se você ainda não tiver jogado', sw));
-  } else {
-    // APK e celulares que não deixam o app notificar: o caminho é o alarme na agenda
-    card.appendChild(h(`<div class="rm-note">📲 Neste aparelho o app não consegue mandar notificação. Escolha o horário e crie um <b>alarme diário na agenda</b> do celular: ele toca todo dia, mesmo com o app fechado.</div>`));
-  }
   timesWrap.appendChild(h(`<div class="st-lbl">Horário</div>`));
   timesWrap.appendChild(stSeg(REMINDER_TIMES.map(t=>[t, t.replace(':00','h')]), r.time, async t=>{
-    settings.reminder = Object.assign(reminderOf(settings), {time:t});
-    await saveNow(); reminderSyncMeta();
+    settings.reminder = Object.assign(reminderOf(settings), {time:t}); await saveNow();
   }, 'wrap'));
-  if(canNotify){
-    timesWrap.appendChild(h(`<div class="st-lbl">Dias</div>`));
-    timesWrap.appendChild(stSeg([['todos','📅 Todo dia'],['semana','🏫 Seg a sex']], r.days || 'todos', async d=>{
-      settings.reminder = Object.assign(reminderOf(settings), {days:d}); await saveNow(); reminderSyncMeta();
-    }));
-    timesWrap.appendChild(stRow('🔥', '#FF8A3D', 'Último aviso às 21h', 'Se a ofensiva estiver em risco', stSwitch(r.rescue !== false, 'Último aviso às 21h', async v=>{
-      settings.reminder = Object.assign(reminderOf(settings), {rescue:v}); await saveNow(); reminderSyncMeta();
-    })));
-    const test = h(`<button type="button" class="st-mini">🔔 Testar notificação</button>`);
-    test.onclick = async ()=>{
-      if(!notifAllowed() && await reminderEnable() !== 'ok'){ stMsg(msg, false, 'O celular não deixou mostrar notificação. Use o alarme na agenda aqui embaixo.'); return; }
-      await reminderSyncMeta();
-      const ok = await reminderShow('test');
-      stMsg(msg, ok, ok ? 'Notificação de teste enviada! Olhe na barra do celular.' : 'Não deu pra mostrar a notificação neste aparelho. Use o alarme na agenda aqui embaixo.');
-      if(!ok && reminderLastError) msg.appendChild(h(`<small class="rm-err"></small>`)).textContent = 'Detalhe técnico: ' + reminderLastError;
-    };
-    timesWrap.appendChild(test);
-  }
-  card.appendChild(timesWrap); paint();
-  card.appendChild(msg);
-  card.appendChild(h(`<div class="st-lbl">${canNotify ? 'Ou crie um alarme na agenda' : 'Criar o alarme'}</div>`));
+  card.appendChild(timesWrap);
+  card.appendChild(h(`<div class="st-lbl">Criar o alarme</div>`));
   const acts = h(`<div class="st-acts"></div>`);
   const gcal = h(`<button type="button" class="st-act"><span>📅</span><b>Google Agenda</b><small>Abre o evento pronto, repetindo todo dia. É só tocar em Salvar.</small></button>`);
   gcal.onclick = ()=> reminderGoogleCalendar(reminderOf(settings).time);
@@ -194,17 +63,5 @@ function reminderCard(settings, saveNow){
   ics.onclick = ()=> reminderCalendarFile(reminderOf(settings).time);
   acts.appendChild(gcal); acts.appendChild(ics);
   card.appendChild(acts);
-  return card;
-}
-
-/* convite no Início: aparece uma vez, depois do 1º dia jogado */
-function reminderInviteCard(){
-  const g = loadGame();
-  if(g.reminderAsked || !g.lastDay) return null;
-  const card = h(`<div class="card rm-invite"><span class="rm-ico">⏰</span><div><b>Quer um lembrete diário?</b><small>O Pi avisa na hora que você escolher, pra não perder a ofensiva.</small></div>
-    <div class="rm-btns"><button type="button" class="rm-no">Agora não</button><button type="button" class="rm-yes">Escolher horário</button></div></div>`);
-  const done = ()=>{ g.reminderAsked = true; saveGame(); card.remove(); };
-  card.querySelector('.rm-no').onclick = done;
-  card.querySelector('.rm-yes').onclick = ()=>{ done(); go('settings', {scrollTo:'reminder'}); };
   return card;
 }
