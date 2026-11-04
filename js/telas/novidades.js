@@ -10,17 +10,13 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
-  {v:24, date:'2026-10-30', title:'Notificação mais esperta', items:[
-    {ico:'🔔', t:'Lembretes que mudam todo dia', d:'A notificação avisa quando a ofensiva está em risco, traz a Frase do dia e tem botões: "Jogar agora" abre direto a Trilha e "Daqui a 1 hora" lembra de novo depois.', go:'settings'},
-    {ico:'🔥', t:'Último aviso às 21h', d:'Se a ofensiva estiver pra zerar, o Pi avisa mais uma vez à noite. Dá pra escolher também só de segunda a sexta e testar a notificação em Configurações.', go:'settings'},
-  ]},
   {v:23, date:'2026-10-30', title:'Versão pra computador', items:[
     {ico:'💻', t:'Tela grande de verdade', d:'No computador o menu fica na lateral, o Início vira duas colunas e as listas de assuntos aparecem lado a lado.', go:'home'},
     {ico:'⌨️', t:'Atalhos de teclado', d:'Nas fases: 1–4 (ou A–D) escolhe a resposta, Enter confirma e passa pra próxima. Esc fecha avisos e a correção animada; ← e → passam os passos.', go:'path'},
   ]},
   {v:22, date:'2026-10-30', title:'Ranking, lembrete e explicações animadas', items:[
     {ico:'🏆', t:'Ranking da semana', d:'Em Progresso → Ranking: dispute XP com os amigos. Mande seu código e cole o deles. Zera toda segunda!', go:'ranking'},
-    {ico:'⏰', t:'Lembrete diário', d:'Em Configurações, escolha um horário: se você ainda não tiver estudado, o Pi te lembra. Também dá pra pôr o alarme na agenda do celular.', go:'settings'},
+    {ico:'⏰', t:'Lembrete diário', d:'Em Configurações, escolha um horário e crie um alarme na agenda do celular: ele toca todo dia, mesmo com o app fechado.', go:'settings'},
     {ico:'🎬', t:'Explicações animadas', d:'Equação com balança, frações com pizza e porcentagem com o quadro de 100, no Aprender.', go:'content'},
     {ico:'🛒', t:'Problemas do dia a dia', d:'Adição, subtração, multiplicação, divisão, frações, decimais e porcentagem agora têm questões com situações do dia a dia.', go:'exercisesSubjects'},
   ]},
