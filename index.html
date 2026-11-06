@@ -2,9 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<!-- segurança: só roda código dos arquivos do próprio app (bloqueia código injetado, mesmo se escapar alguma falha) -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; media-src 'self' data: blob:; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <title>Matemática Show</title>
 
 <!-- PWA: manifest + cor do tema + ícones -->
@@ -20,9 +18,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="description" content="Seu professor de matemática digital — aprenda, pratique e resolva questões passo a passo.">
 
-<!-- fontes guardadas no próprio app (fonts/): abrem mais rápido, funcionam sem internet e não passam pelo Google -->
-<link rel="preload" href="fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="fonts/fraunces.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -48,7 +45,6 @@
 <script src="js/assuntos/contexto.js"></script>
 <script src="js/base/resolvedor.js"></script>
 <script src="js/dados/progresso.js"></script>
-<script src="js/dados/validar.js"></script>
 <script src="js/dados/configuracoes.js"></script>
 <script src="js/dados/contas.js"></script>
 <script src="js/dados/backup-auto.js"></script>
@@ -85,5 +81,16 @@
 <script src="js/telas/novidades.js"></script>
 <script src="js/telas/feedback.js"></script>
 <script src="js/iniciar.js"></script>
+
+<script>
+// registra o service worker (funcionamento offline + instalação como app). Se o navegador
+// não suportar, ou se estiver rodando fora de um servidor (ex: abrindo o arquivo direto),
+// simplesmente não faz nada — o app continua funcionando normal, só sem o modo offline.
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
 </body>
 </html>

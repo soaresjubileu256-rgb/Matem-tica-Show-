@@ -61,61 +61,38 @@ function attachStrengthMeter(input, getName){
   return box;
 }
 
-/* ---------- senha guardada com segurança ----------
-   Formato novo: "pbkdf2$<voltas>$<sal>$<hash>" — PBKDF2-SHA256 com sal aleatório por conta, então
-   senhas iguais dão textos diferentes e adivinhar por tentativa e erro fica muito mais lento.
-   Contas antigas (SHA-256 puro, ou o "fb..." de aparelhos sem crypto.subtle) continuam entrando
-   e passam pro formato novo no primeiro login certo. */
-const PASS_ITER = 120000;
-const hexOf = buf=> Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-const bytesOf = hex=> new Uint8Array((hex.match(/../g)||[]).map(x=>parseInt(x,16)));
-function cryptoReady(){ return !!(window.crypto && crypto.subtle && crypto.getRandomValues); }
-async function pbkdf2Hex(pw, saltBytes, iter){
-  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveBits']);
-  return hexOf(await crypto.subtle.deriveBits({name:'PBKDF2', hash:'SHA-256', salt:saltBytes, iterations:iter}, key, 256));
-}
-/* texto guardado de uma senha nova (precisa de crypto.subtle: página em https) */
 async function hashPassword(pw){
-  if(!cryptoReady()) throw new Error('crypto indisponível');
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  return `pbkdf2$${PASS_ITER}$${hexOf(salt)}$${await pbkdf2Hex(pw, salt, PASS_ITER)}`;
-}
-function legacyFbHash(pw){ let hh=0; for(let i=0;i<pw.length;i++){ hh = (hh*31 + pw.charCodeAt(i))|0; } return 'fb'+hh; }
-/* confere a senha com o que está guardado; upgrade:true quando ainda está no formato antigo */
-async function verifyPassword(pw, stored){
-  stored = String(stored||'');
-  if(stored.startsWith('pbkdf2$')){
-    const [, it, salt, hash] = stored.split('$');
-    if(!cryptoReady()) return {ok:false};
-    return {ok: await pbkdf2Hex(pw, bytesOf(salt), Number(it)) === hash};
+  try{
+    const enc = new TextEncoder().encode(pw);
+    const buf = await crypto.subtle.digest('SHA-256', enc);
+    return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  }catch(e){
+    let hh=0; for(let i=0;i<pw.length;i++){ hh = (hh*31 + pw.charCodeAt(i))|0; }
+    return 'fb'+hh;
   }
-  if(stored.startsWith('fb')) return {ok: stored === legacyFbHash(pw), upgrade:true};
-  if(!cryptoReady()) return {ok:false};
-  return {ok: hexOf(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw))) === stored, upgrade:true};
-}
-/* depois de um login certo no formato antigo: grava no formato novo */
-async function upgradePassHash(userId, pw){
-  if(!cryptoReady()) return;
-  const list = await loadUsers();
-  const i = list.findIndex(u=>u.id===userId);
-  if(i < 0) return;
-  list[i] = Object.assign({}, list[i], {passHash: await hashPassword(pw)});
-  await saveUsers(list);
 }
 
-/* tentativas erradas de login ficam guardadas no aparelho (recarregar a página não zera) */
-const LOGIN_FAILS_KEY = 'mathstudy-login-fails-v1';
-function loginFails(){ try{ return JSON.parse(localStorage.getItem(LOGIN_FAILS_KEY)||'{}') || {}; }catch(e){ return {}; } }
-function saveLoginFails(o){ try{ localStorage.setItem(LOGIN_FAILS_KEY, JSON.stringify(o)); }catch(e){} }
+/* senhas salvas por uma versão do app que usava outro formato ("pbkdf2$voltas$sal$hash"):
+   continuam sendo reconhecidas, pra ninguém ficar sem entrar na conta */
+async function passMatches(pw, stored){
+  stored = String(stored||'');
+  if(stored.startsWith('pbkdf2$')){
+    try{
+      const [, it, salt, hash] = stored.split('$');
+      const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveBits']);
+      const bits = await crypto.subtle.deriveBits({name:'PBKDF2', hash:'SHA-256', salt:new Uint8Array((salt.match(/../g)||[]).map(x=>parseInt(x,16))), iterations:Number(it)}, key, 256);
+      return Array.from(new Uint8Array(bits)).map(b=>b.toString(16).padStart(2,'0')).join('') === hash;
+    }catch(e){ return false; }
+  }
+  return (await hashPassword(pw)) === stored;
+}
 
 async function loadUsers(){
   if(usersCache !== null) return usersCache;
-  let raw = null;
   try{
-    raw = localStorage.getItem(USERS_KEY);
+    const raw = localStorage.getItem(USERS_KEY);
     usersCache = raw ? JSON.parse(raw) : [];
-    if(!Array.isArray(usersCache)) usersCache = [];
-  }catch(e){ usersCache = []; if(raw) markCorrupt(USERS_KEY, raw); }
+  }catch(e){ usersCache = []; }
   // migração de versões antigas: uma única conta guardada sem lista.
   if(usersCache.length===0){
     try{
@@ -195,8 +172,7 @@ async function changeCurrentUserPassword(currentPass, newPass){
   const users = await loadUsers();
   const idx = users.findIndex(u=>u.id===currentUser.id);
   if(idx<0) return {ok:false, error:'Conta não encontrada.'};
-  if(!(await verifyPassword(currentPass, users[idx].passHash)).ok) return {ok:false, error:'Senha atual incorreta.'};
-  if(!cryptoReady()) return {ok:false, error:'Abra o app pelo endereço seguro (https) pra trocar a senha.'};
+  if(!(await passMatches(currentPass, users[idx].passHash))) return {ok:false, error:'Senha atual incorreta.'};
   const weak = passwordProblem(newPass, currentUser.name);
   if(weak) return {ok:false, error:weak};
   if(newPass === currentPass) return {ok:false, error:'A nova senha precisa ser diferente da atual.'};
@@ -273,7 +249,7 @@ async function importProgressData(file){
   let data;
   try{
     const text = await file.text();
-    data = sanitizeBackup(JSON.parse(text)); // confere tipos e valores e tira HTML perigoso (js/dados/validar.js)
+    data = JSON.parse(text);
   }catch(e){
     return {ok:false, error:'Não foi possível ler esse arquivo. Confira se é um .json exportado pelo Matemática Show.'};
   }

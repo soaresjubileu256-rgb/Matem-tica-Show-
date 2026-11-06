@@ -16,12 +16,10 @@ let settingsCache = null, settingsCacheUid = null;
 async function loadSettings(){
   const uid = currentUserId();
   if(settingsCache && settingsCacheUid===uid) return settingsCache;
-  let raw = null;
   try{
-    raw = localStorage.getItem(`${SETTINGS_KEY_BASE}:${uid}`);
+    const raw = localStorage.getItem(`${SETTINGS_KEY_BASE}:${uid}`);
     settingsCache = raw ? Object.assign({}, DEFAULT_SETTINGS, JSON.parse(raw)) : Object.assign({}, DEFAULT_SETTINGS);
-    settingsCache = sanitizeSettings(settingsCache) || Object.assign({}, DEFAULT_SETTINGS); // conserta valores inválidos já gravados
-  }catch(e){ settingsCache = Object.assign({}, DEFAULT_SETTINGS); if(raw) markCorrupt(`${SETTINGS_KEY_BASE}:${uid}`, raw); }
+  }catch(e){ settingsCache = Object.assign({}, DEFAULT_SETTINGS); }
   settingsCacheUid = uid;
   return settingsCache;
 }

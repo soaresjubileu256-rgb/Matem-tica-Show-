@@ -58,8 +58,6 @@ function normalizeExpr(raw){
   s = s.replace(/√/g, ' sqrt ');
   s = s.replace(/[−–—]/g, '-'); // sinais de menos "tipográficos" (−, –, —) -> hífen normal
 
-  // mmc(4,6) / mdc(12, 18): aqui a vírgula separa os números, não é vírgula decimal
-  if(/^(?:mmc|mdc|m\.m\.c|m\.d\.c)\b/.test(s)) s = s.replace(/,\s*/g, '; ');
   // decimal commas -> dot
   s = s.replace(/,(?=\d)/g, '.');
 
@@ -463,29 +461,6 @@ function trySolveRoot(text){
   return null;
 }
 
-function trySolveRootExpression(text){
-  let t = text.replace(/raiz\s+(?:quadrada\s+)?de\s+/g, ' sqrt ');
-  if(!/sqrt/.test(t) || t.includes('=') || /[a-rt-z]/.test(t.replace(/sqrt/g,''))) return null;
-  t = t.replace(/(\d|\))\s*sqrt/g, '$1 * sqrt'); // 2√9 = 2 × √9
-  const roots = [];
-  let bad = false;
-  t = t.replace(/sqrt\s*\(?\s*(\d+(?:\.\d+)?)\s*\)?/g, (m, n)=>{
-    const v = Math.sqrt(parseFloat(n));
-    const exact = Number.isInteger(v);
-    const shown = exact ? String(v) : String(Math.round(v*100)/100);
-    roots.push(`√${fmt(parseFloat(n))} = ${exact ? fmt(v) : '≈ ' + fmt(Math.round(v*100)/100)}`);
-    return ` ${shown} `;
-  });
-  if(/sqrt/.test(t) || bad || !roots.length) return null;
-  const r = trySolveArithmetic(t.replace(/\s+/g,' ').trim());
-  if(!r) return null;
-  const approx = roots.some(x=> x.includes('≈'));
-  r.howTo = 'Primeiro calcule as raízes; depois resolva o resto da conta normalmente.' + (approx ? ' (Raiz não exata: usamos o valor aproximado com 2 casas.)' : '');
-  r.steps = [`Raízes primeiro: ${roots.join(' · ')}`, ...(r.steps||[])];
-  if(approx) r.final = '≈ ' + String(r.final).replace(/^≈\s*/,'');
-  r.kind = 'Conta com raiz';
-  return r;
-}
 function trySolveArithmetic(text){
   if(text.includes('=') || /[a-zA-Z]/.test(text)) return null;
   if(!/[0-9]/.test(text) || /[^0-9.+\-*/^()\s]/.test(text)) return null;
@@ -777,6 +752,6 @@ function solveQuestion(raw){
 const SOLVE_KINDS = [
   [trySolveFunction,'Função'], [trySolveSystem,'Sistema de equações'], [trySolveQuadratic,'Equação do 2º grau'], [trySolveLinear,'Equação do 1º grau'],
   [trySolveProportion,'Proporção (regra de três)'], [trySolvePolyEq,'Equação'], [trySolveMmcMdc,'MMC e MDC'], [trySolveMean,'Média'],
-  [trySolveFactorial,'Fatorial'], [trySolveFractionOf,'Fração de uma quantidade'], [trySolveRoot,'Raiz'], [trySolveRootExpression,'Conta com raiz'], [trySolvePercentage,'Porcentagem'],
+  [trySolveFactorial,'Fatorial'], [trySolveFractionOf,'Fração de uma quantidade'], [trySolveRoot,'Raiz'], [trySolvePercentage,'Porcentagem'],
   [trySolveFractionPair,'Frações'], [trySolveDivZero,'Divisão por zero'], [trySolveArithmetic,'Conta'],
 ];

@@ -52,7 +52,6 @@ async function listAutoBackups(uid){
 async function autoBackupNow(reason){
   try{
     if(!currentUser) return false;
-    if(dataCorrupt) return false; // dado estragado: não faz cópia, pra não empurrar a cópia boa pra fora
     const uid = currentUserId();
     const payload = JSON.parse(JSON.stringify(await buildBackupPayload()));
     const xp = (payload.game && payload.game.xp) || 0;
@@ -97,7 +96,6 @@ async function autoBkRestoreFlow(snap, opts){
   if(!ok) return false;
   const res = await restoreAutoBackup(snap);
   if(!res.ok){ queueToast('⚠️', 'Ops', res.error || 'Não foi possível restaurar'); return false; }
-  dataCorrupt = false; // os dados agora vieram da cópia boa
   queueToast('🛟', 'Progresso restaurado', `Nível ${snap.level} · ${snap.xp} XP`);
   render();
   return true;
@@ -147,14 +145,11 @@ async function autoBackupCheckRecovery(){
     const xp = (loadGame().xp)||0;
     const answered = autoBkAnswered(await loadProgress());
     const hist = await loadHistory();
-    if(!dataCorrupt && (xp || answered || (hist && hist.length))) return false;
-    const snap = (await listAutoBackups()).find(s=> s.xp > 0 || s.answered > 0);
+    if(xp || answered || (hist && hist.length)) return false;
+    const snap = (await listAutoBackups()).find(s=> s.xp > 0);
     if(!snap) return false;
-    const when = new Date(snap.ts).toLocaleDateString('pt-BR');
     const ok = await showConfirm({icon:'🛟', title:'Recuperar progresso?',
-      message: dataCorrupt
-        ? `Parte dos seus dados não pôde ser lida neste aparelho. Encontramos uma cópia de ${when} (nível ${snap.level}). Quer recuperar? Se preferir, dá pra recuperar depois em Configurações → Cópias automáticas.`
-        : `Encontramos uma cópia do seu progresso de ${when} (nível ${snap.level}). Quer recuperar?`,
+      message:`Encontramos uma cópia do seu progresso de ${new Date(snap.ts).toLocaleDateString('pt-BR')} (nível ${snap.level}). Quer recuperar?`,
       ok:'Recuperar', cancel:'Agora não'});
     if(ok) await autoBkRestoreFlow(snap, {skipConfirm:true});
     return true;

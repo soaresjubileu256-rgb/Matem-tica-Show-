@@ -98,8 +98,8 @@ function dayKey(d){ d = d || new Date(); return `${d.getFullYear()}-${d.getMonth
 function loadGame(){
   const uid = currentUserId();
   if(gameCache && gameCacheUid===uid) return gameCache;
-  let g = null, raw = null;
-  try{ raw = localStorage.getItem(`${GAME_KEY_BASE}:${uid}`); g = raw ? JSON.parse(raw) : null; }catch(e){ if(raw) markCorrupt(`${GAME_KEY_BASE}:${uid}`, raw); }
+  let g = null;
+  try{ const raw = localStorage.getItem(`${GAME_KEY_BASE}:${uid}`); g = raw ? JSON.parse(raw) : null; }catch(e){}
   gameCache = Object.assign({xp:0, streak:0, lastDay:null, bestCombo:0, hits:0, hardHits:0, fixed:0, boltBest:0, subjectsHit:{}, ach:{}, today:null}, g||{});
   gameCacheUid = uid;
   gameEnsureToday();
@@ -261,8 +261,7 @@ function gameAddXP(amount){
   if(after.level > before){
     if(after.level>=5) gameUnlock('level5');
     if(after.level>=10) gameUnlock('level10');
-    const uid = currentUserId();
-    setTimeout(()=>{ if(currentUser && currentUserId()===uid) showLevelUp(after); }, 700); // saiu da conta nesse meio-tempo: não mostra
+    setTimeout(()=>showLevelUp(after), 700);
   }
 }
 function gameUnlock(id){
