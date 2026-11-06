@@ -10,6 +10,11 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
+  {v:25, date:'2026-11-06', title:'Jogo mais justo e animado', items:[
+    {ico:'🧊', t:'Protetor de ofensiva', d:'Compre na Loja ou no painel da ofensiva (🔥). Se você ficar um dia sem jogar, ele salva seus dias seguidos. Dá pra guardar 2.', go:'loja'},
+    {ico:'📒', t:'Sem vidas? Revise seus erros', d:'Quando as vidas acabarem, revise 3 erros do seu caderno e acerte pelo menos 2 pra ganhar 1 vida.', go:'path'},
+    {ico:'⬆️', t:'Fim de fase com mais emoção', d:'A barra de nível enche com o XP que você ganhou e mostra quando você sobe de nível.', go:'path'},
+  ]},
   {v:24, date:'2026-11-06', title:'Resolver mais esperto', items:[
     {ico:'🔎', t:'Raiz no meio da conta', d:'O Resolver agora resolve contas com raiz junto, como √16 + 1, 2√9 ou (√49 − 2) × 3, mostrando a raiz primeiro.', go:'solve'},
     {ico:'🧮', t:'MMC e MDC como no caderno', d:'Dá pra escrever mmc(4,6) ou mdc(12,18) do jeito que se escreve na escola.', go:'solve'},

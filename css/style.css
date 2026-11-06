@@ -4652,3 +4652,30 @@ body::after{inset:0;
 
 /* selo do Desafio do Dia: ícone (antes era o número do desafio) */
 .dl-hero-num{opacity:.35;}
+
+/* protetor de ofensiva */
+.sk-frz{display:flex; align-items:center; gap:10px; text-align:left; background:rgba(90,180,255,.12); border:1px solid rgba(120,200,255,.4); border-radius:14px; padding:10px; margin-bottom:12px;}
+.sk-frz-i{font-size:26px;}
+.sk-frz div{flex:1;} .sk-frz div > b{display:block; font-size:14px;} .sk-frz small{font-size:12px; color:#C9C4F0;}
+.sk-frz-buy, .lj-frz-buy{flex:none; width:auto !important; margin:0 !important; padding:8px 12px !important; border-radius:999px; border:0; font-weight:800; background:linear-gradient(135deg,#4C7DFF,#33D2E3); color:#fff; cursor:pointer;}
+.sk-frz-buy:disabled, .lj-frz-buy:disabled{opacity:.5; cursor:default;}
+/* sem vidas: revisar erros */
+.nh-rv-go{display:block; width:100%; margin-bottom:10px; background:linear-gradient(135deg,#2BE0A6,#1FB6D0) !important; color:#062b25 !important;}
+.nh-rv-go small{display:block; font-size:11px; font-weight:700; opacity:.8; margin-top:2px;}
+.gm-modal p.nh-rv-note{font-size:12px; margin:0 0 10px; color:#C9C4F0;}
+.er-life{display:flex; align-items:center; gap:12px; margin-top:14px; padding:12px 14px; border-radius:16px; background:rgba(255,75,75,.1); border:1px solid rgba(255,75,75,.35); text-align:left;}
+.er-life.ok{background:rgba(43,224,166,.12); border-color:rgba(43,224,166,.45);}
+.er-life > span{font-size:30px;} .er-life b{display:block; font-size:16px; color:var(--ink);} .er-life small{font-size:13px; color:var(--ink-soft);}
+/* recompensa no fim da fase */
+.rw-card{margin:14px auto 4px; max-width:420px; padding:12px 14px; border-radius:16px; background:rgba(123,92,255,.12); border:1px solid rgba(123,92,255,.4); text-align:left;}
+.rw-top{display:flex; align-items:center; gap:8px; margin-bottom:8px;}
+.rw-lv{font-weight:800; color:var(--ink);} .rw-lv b{font-size:18px;}
+.rw-ttl{flex:1; font-size:12px; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.rw-gain{font-weight:800; color:var(--show-gold);}
+.rw-bar{height:12px; border-radius:999px; background:rgba(255,255,255,.1); overflow:hidden;}
+.rw-bar i{display:block; height:100%; border-radius:999px; background:linear-gradient(90deg,#FFB800,#FF7A00); transition:width .9s cubic-bezier(.2,.8,.2,1);}
+.rw-sub{margin-top:6px; font-size:12px; color:var(--ink-soft);}
+.rw-up{margin-top:8px; font-weight:800; color:#2BE0A6; font-size:15px;}
+.rw-card.pop{animation:rwPop .5s ease;}
+@keyframes rwPop{0%{transform:scale(1)}40%{transform:scale(1.05)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion: reduce){ .rw-bar i{transition:none;} .rw-card.pop{animation:none;} }
