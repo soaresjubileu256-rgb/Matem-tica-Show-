@@ -42,8 +42,9 @@ js/
     catalogo.js            GRUPOS DE ASSUNTOS (a ordem única do app), ano (BNCC)
   dados/
     progresso.js      acertos, histórico, caderno de erros e revisão espaçada
+    validar.js        confere e limpa backups importados, avisa dado corrompido e sincroniza abas
     configuracoes.js  configurações salvas (tema, som, volume, meta, nível)
-    contas.js         várias contas no aparelho, senha, backup e lembrete de backup
+    contas.js         várias contas no aparelho, senha (PBKDF2 com sal), backup e lembrete de backup
   jogo/
     xp-e-conquistas.js  XP, níveis, ofensiva, missões, conquistas e efeitos
     trilha.js           Trilha do Show, vidas, moedas, mascote Pi e motor do Quiz
@@ -70,7 +71,8 @@ js/
     ajuda.js          tour guiado e "Como usar"
     feedback.js       "Fale com a gente": nota e Formulário Google (link em FEEDBACK_FORM_URL)
     novidades.js      Novidades: janela depois de cada atualização, sininho no Início e aviso de versão nova
-  iniciar.js          lista de telas e início do app (sempre o último)
+  iniciar.js          lista de telas, registro do modo offline e início do app (sempre o último)
+fonts/                fontes do app (Inter, Fraunces, JetBrains Mono), guardadas junto pra funcionar sem internet
 ```
 
 ## Onde fica cada coisa no app

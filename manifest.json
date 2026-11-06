@@ -3,6 +3,7 @@
   "short_name": "Mat. Show",
   "description": "Seu professor de matemática digital — aprenda, pratique, jogue na Arena e resolva questões passo a passo.",
   "lang": "pt-BR",
+  "id": "./",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
