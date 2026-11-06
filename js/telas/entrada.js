@@ -5,6 +5,7 @@
    "Esqueci minha senha" e espera após várias tentativas erradas.
    ========================================================= */
 const LOGIN_MAX_TRIES = 5, LOGIN_WAIT_MS = 30000;
+const _loginFails = {}; // {userId: {n, until}}
 /* cada conta ganha uma cor pela posição na lista do aparelho (até 8 contas, todas diferentes),
    pra ficar fácil de achar a sua; sem posição, a cor sai do nome */
 const AV_GRADS = [
@@ -37,7 +38,7 @@ function avatarImg(av){ return av && typeof av.img==='string' && /^data:image\/(
 function avatarFace(u){
   const av = avatarOf(u);
   if(avatarImg(av)) return `<img class="av-img" src="${avatarImg(av)}" alt="">`;
-  if(av && av.emo) return AV_EMOJIS.includes(av.emo) ? av.emo : escHTML(av.emo); // só emoji da lista; o resto vira texto
+  if(av && av.emo) return av.emo;
   return u && u.name ? escHTML(u.name.trim().charAt(0).toUpperCase()) : '?';
 }
 function avatarHTML(u, cls, idx){
@@ -164,25 +165,20 @@ function authScreen(mode, users){
     if(!pass){ showError('Digite sua senha.'); return; }
     const list = await loadUsers();
     const id = userIdFromName(name);
-    const fails = loginFails(), f = fails[id];
+    const f = _loginFails[id];
     if(f && f.until > Date.now()){ showError(`Muitas tentativas. Espere ${Math.ceil((f.until-Date.now())/1000)} segundos e tente de novo.`); return; }
     const acc = list.find(u=>u.id===id);
     const btn = card.querySelector('.auth-go'); btn.disabled = true; btn.textContent = 'Entrando…';
-    const check = acc ? await verifyPassword(pass, acc.passHash) : {ok:false};
-    if(!check.ok){
+    if(!acc || !(await passMatches(pass, acc.passHash))){
       btn.disabled = false; btn.textContent = 'Entrar ▶';
-      const rec = fails[id] = fails[id] || {n:0, until:0};
+      const rec = _loginFails[id] = _loginFails[id] || {n:0, until:0};
       rec.n++;
-      const locked = rec.n >= LOGIN_MAX_TRIES;
-      if(locked){ rec.n = 0; rec.until = Date.now() + LOGIN_WAIT_MS; }
-      saveLoginFails(fails);
-      if(locked) showError('Senha errada muitas vezes. Espere 30 segundos. 💡 Toque em "Esqueci minha senha" pra ver sua dica.');
+      if(rec.n >= LOGIN_MAX_TRIES){ rec.n = 0; rec.until = Date.now() + LOGIN_WAIT_MS; showError('Senha errada muitas vezes. Espere 30 segundos. 💡 Toque em "Esqueci minha senha" pra ver sua dica.'); }
       else showError(acc ? `Senha incorreta. Tente de novo${rec.n>=2 ? ' — ou veja sua dica em "Esqueci minha senha"' : ''}.` : 'Não achei nenhuma conta com esse nome neste aparelho.');
       const pf = card.querySelector('.authPass'); pf.value = ''; pf.focus();
       return;
     }
-    if(fails[id]){ delete fails[id]; saveLoginFails(fails); }
-    if(check.upgrade) upgradePassHash(acc.id, pass); // conta antiga: passa a senha pro formato novo
+    delete _loginFails[id];
     currentUser = {id: acc.id, name: acc.name};
     await setCurrentUserId(acc.id);
     await loadSettings();
@@ -247,7 +243,6 @@ function authScreen(mode, users){
     const id = userIdFromName(name);
     const list = await loadUsers();
     if(list.some(u=>u.id===id)){ showError('Já existe uma conta com esse nome neste aparelho. Escolha outro nome ou entre na conta.'); return; }
-    if(!cryptoReady()){ showError('Abra o app pelo endereço seguro (https) pra criar a conta.'); return; }
     const btn = card.querySelector('.auth-go'); btn.disabled = true; btn.textContent = 'Criando…';
     const passHash = await hashPassword(pass);
     const newUser = {id, name, passHash};

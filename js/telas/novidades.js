@@ -10,11 +10,6 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
-  {v:24, date:'2026-11-06', title:'Resolver mais esperto e mais proteção', items:[
-    {ico:'🔎', t:'Resolver entende mais contas', d:'Agora resolve raiz no meio da conta (√16 + 1, 2√9) e mmc(4,6) ou mdc(12,18) do jeito que se escreve no caderno.', go:'solve'},
-    {ico:'🔍', t:'Zoom com os dedos', d:'Dá pra ampliar a tela com dois dedos pra ler melhor.', go:'home'},
-    {ico:'🛡️', t:'Seus dados mais protegidos', d:'Senhas guardadas com mais segurança, backups conferidos antes de entrar no app e progresso protegido mesmo com o app aberto duas vezes.', go:'settings'},
-  ]},
   {v:23, date:'2026-10-30', title:'Versão pra computador', items:[
     {ico:'💻', t:'Tela grande de verdade', d:'No computador o menu fica na lateral, o Início vira duas colunas e as listas de assuntos aparecem lado a lado.', go:'home'},
     {ico:'⌨️', t:'Atalhos de teclado', d:'Nas fases: 1–4 (ou A–D) escolhe a resposta, Enter confirma e passa pra próxima. Esc fecha avisos e a correção animada; ← e → passam os passos.', go:'path'},
