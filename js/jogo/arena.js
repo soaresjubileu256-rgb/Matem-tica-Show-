@@ -218,7 +218,6 @@ function dailyDate(k){ return k.split('-').reverse().join('/'); }
    Desafios de antes dessa data não têm número (mostram só a data). */
 const DAILY_FIRST_DAY = '2026-10-17';
 function dailyNumber(k){ return Math.round((new Date(k+'T12:00') - new Date(DAILY_FIRST_DAY+'T12:00'))/864e5) + 1; }
-function dailyTag(k){ const n = dailyNumber(k); return n >= 1 ? '#' + String(n).padStart(2, '0') : dailyDate(k); }
 function dailyQuestions(k, track){
   track = track || 'fund';
   return withSeed(dailySeed(k)*10 + (track==='em' ? 1 : 0), ()=>{
@@ -299,7 +298,7 @@ function dailyIntroScreen(){
   let track = state.dailyTrack || dailyDefaultTrack();
   const [y,m,d] = k.split('-'), streak = dailyStreak();
   c.appendChild(h(`<div class="dl-hero">
-    <div class="dl-hero-num">${dailyTag(k)}</div>
+    <div class="dl-hero-num">📅</div>
     <div class="dl-hero-t"><h2>Desafio do Dia</h2><p>${d}/${m}/${y} · as mesmas perguntas para todo mundo do seu nível</p></div>
     ${streak ? `<div class="dl-hero-streak">🔥 ${streak} dia${streak===1?'':'s'} seguido${streak===1?'':'s'}! Não quebre a sequência.</div>` : ''}
   </div>`));
@@ -338,7 +337,7 @@ function dailyIntroScreen(){
 function dailyReviewScreen(){
   const k = state.reviewDay || isoDay(), r = arenaData().daily[k];
   const wrap = document.createElement('div');
-  wrap.appendChild(topbar(`📖 Correção · ${dailyTag(k)}`, true, ()=>go('arenaDaily')));
+  wrap.appendChild(topbar('📖 Correção do Desafio', true, ()=>go('arenaDaily')));
   const c = h(`<div class="content"></div>`);
   wrap.appendChild(c);
   if(!r || !r.picks){ c.appendChild(h(`<p class="ar-muted">A correção só existe para os desafios feitos a partir desta versão do app.</p>`)); return wrap; }
@@ -490,7 +489,7 @@ function arenaQuizEnd(c, sess){
 function dailyShareText(k, r){
   const [y,m,d] = k.split('-');
   const t = dailyTrack(r.track), st = r.streak > 1 ? `\n🔥 ${r.streak} dias seguidos` : '';
-  return `Desafio do Dia ${dailyTag(k)} · Matemática Show\n${t.ico} ${t.short} · ${d}/${m}/${y}\n${r.marks} ${r.ok}/${r.n} em ${mmssA(r.secs)}${st}`;
+  return `Desafio do Dia · Matemática Show\n${t.ico} ${t.short} · ${d}/${m}/${y}\n${r.marks} ${r.ok}/${r.n} em ${mmssA(r.secs)}${st}`;
 }
 function dailyShareBox(k, r){
   const box = h(`<div class="card ar-share"><div class="ar-share-t">Compartilhe seu resultado</div><pre class="ar-share-txt"></pre>
@@ -517,7 +516,7 @@ function arenaDailyScreen(){
   if(!r){ setTimeout(()=>startDaily(), 0); return wrap; }
   const t = dailyTrack(r.track);
   const hero = h(`<div class="dl-hero done">
-    <div class="dl-hero-num">${dailyTag(k)}</div>
+    <div class="dl-hero-num">📅</div>
     <div class="dl-hero-t"><h2>${r.ok===r.n ? 'Perfeito! 🏆' : 'Desafio feito ✓'}</h2><p>${t.ico} ${t.short} · ${r.ok} de ${r.n} certas em ${mmssA(r.secs)}</p></div>
     <div class="ar-marks">${r.marks}</div>
     <div class="dl-next">Próximo desafio em </div>
@@ -539,7 +538,7 @@ function arenaDailyScreen(){
     c.appendChild(h(`<h3 class="ar-label" style="text-align:left">Dias anteriores</h3>`));
     const l = h(`<div class="ar-dlist"></div>`);
     hist.forEach(([dk, x])=>{
-      const row = h(`<${x.picks?'button type="button"':'div'} class="ar-drow ${x.picks?'tap':''}"><span>${dailyNumber(dk) >= 1 ? dailyTag(dk) + ' · ' : ''}${dailyDate(dk).slice(0,5)}${x.track?` · ${dailyTrack(x.track).ico}`:''}</span><span class="ar-dm">${x.marks}</span><b>${x.ok}/${x.n}</b>${x.picks?'<i class="chev">›</i>':''}</${x.picks?'button':'div'}>`);
+      const row = h(`<${x.picks?'button type="button"':'div'} class="ar-drow ${x.picks?'tap':''}"><span>${dailyDate(dk).slice(0,5)}${x.track?` · ${dailyTrack(x.track).ico}`:''}</span><span class="ar-dm">${x.marks}</span><b>${x.ok}/${x.n}</b>${x.picks?'<i class="chev">›</i>':''}</${x.picks?'button':'div'}>`);
       if(x.picks) row.onclick = ()=> go('dailyReview', {reviewDay:dk});
       l.appendChild(row);
     });
