@@ -91,6 +91,51 @@ function pickDailyMissions(day){
   }
   return out;
 }
+/* MISSÃO DA SEMANA: uma missão maior por semana (segunda a domingo), com baú de prêmio.
+   Os contadores ficam em g.wkm = {k: semana, correct, lessons, days:{}, claimed} */
+const WEEK_MISSIONS = [
+  {id:'w_correct', ico:'✅', title:'Acerte 80 questões nesta semana',           need:80, cur:w=>w.correct||0},
+  {id:'w_lessons', ico:'🗺️', title:'Complete 8 fases da Trilha nesta semana',   need:8,  cur:w=>w.lessons||0},
+  {id:'w_days',    ico:'📅', title:'Jogue em 5 dias diferentes nesta semana',   need:5,  cur:w=>Object.keys(w.days||{}).length},
+  {id:'w_daily',   ico:'🏆', title:'Faça o Desafio do Dia 4 vezes nesta semana', need:4, cur:()=> (typeof arenaData==='function') ? Object.keys(arenaData().daily||{}).filter(k=> weekKey(new Date(k+'T12:00'))===weekKey()).length : 0},
+];
+const WEEK_REWARD = {gems:100, xp:60};
+function weekMissionData(){
+  const g = loadGame(), k = weekKey();
+  if(!g.wkm || g.wkm.k !== k){
+    // sorteio fixo pra semana + conta
+    let seed = 0; const str = k + ':' + currentUserId();
+    for(let i=0;i<str.length;i++) seed = (seed*31 + str.charCodeAt(i)) >>> 0;
+    g.wkm = {k, id: WEEK_MISSIONS[seed % WEEK_MISSIONS.length].id, correct:0, lessons:0, days:{}, claimed:false};
+  }
+  return g.wkm;
+}
+function weekMissionBump(field){
+  const w = weekMissionData();
+  if(field==='day') w.days[dayKey()] = 1; else w[field] = (w[field]||0) + 1;
+}
+function weekMissionState(){
+  const w = weekMissionData(), m = WEEK_MISSIONS.find(x=>x.id===w.id) || WEEK_MISSIONS[0];
+  const cur = Math.min(m.cur(w), m.need);
+  return {m, cur, need:m.need, done:cur>=m.need, claimed:!!w.claimed};
+}
+function claimWeekMission(){
+  const st = weekMissionState();
+  if(!st.done || st.claimed) return false;
+  const g = loadGame();
+  weekMissionData().claimed = true;
+  g.gems = (g.gems||0) + WEEK_REWARD.gems;
+  gameAddXP(WEEK_REWARD.xp);
+  saveGame();
+  playTones([523,659,784,1047,1319], 0.1, 'triangle', 0.09); launchConfetti(160);
+  const bg = document.createElement('div');
+  bg.className = 'gm-modal-bg';
+  bg.innerHTML = `<div class="gm-modal"><div class="big chest-open">🧰</div><h2>Baú da semana!</h2><p>Missão da semana completa!<br>Você ganhou <b style="color:#FFD45C">${WEEK_REWARD.gems} 🪙 moedas</b> e <b style="color:#fff">+${WEEK_REWARD.xp} XP</b></p><button type="button">Pegar!</button></div>`;
+  bg.querySelector('button').onclick = ()=> bg.remove();
+  bg.addEventListener('click', e=>{ if(e.target===bg) bg.remove(); });
+  document.body.appendChild(bg);
+  return true;
+}
 function todayMissions(){ return (loadGame().today.missions || []).map(id=> MISSION_POOL.find(m=>m.id===id)).filter(Boolean); }
 
 let gameCache = null, gameCacheUid = null;
@@ -366,6 +411,7 @@ function gameOnAnswer(subjectId, correct, difficulty, opts){
   const g = loadGame();
   gameTouchDay();
   g.today.answered++;
+  weekMissionBump('day');
   const sess = state.session;
   const prevCombo = sess ? (sess.combo||0) : 0;
   let gain = 0;
@@ -374,6 +420,7 @@ function gameOnAnswer(subjectId, correct, difficulty, opts){
   g.today.subj = g.today.subj || {}; g.today.subj[subjectId] = 1;
   if(correct){
     g.today.correct = (g.today.correct||0) + 1;
+    weekMissionBump('correct');
     if(difficulty==='dificil') g.today.hard = (g.today.hard||0) + 1;
     g.hits++;
     if(difficulty==='dificil') g.hardHits++;
@@ -382,6 +429,7 @@ function gameOnAnswer(subjectId, correct, difficulty, opts){
     // XP base pela dificuldade + bônus de combo (até +100%)
     const base = XP_BY_DIFFICULTY[difficulty] || 10;
     gain = Math.round(base * (1 + Math.min(combo-1, 5)*0.2));
+    if(xpBoostLeft() > 0) gain *= 2; // ⚡ XP em dobro comprado na Loja
     if(combo > g.bestCombo) g.bestCombo = combo;
     if(combo > g.today.bestCombo) g.today.bestCombo = combo;
     gameUnlock('first');
@@ -396,7 +444,7 @@ function gameOnAnswer(subjectId, correct, difficulty, opts){
     if(sess) sess.xp = (sess.xp||0) + gain;
     gameAddXP(gain);
     const inLesson = sess && (sess.kind==='lesson' || sess.kind==='quiz' || sess.kind==='placement');
-    if(!inLesson) showFloat(`+${gain} XP${combo>=2? ` · 🔥x${combo}`:''}`);
+    if(!inLesson) showFloat(`+${gain} XP${combo>=2? ` · 🔥x${combo}`:''}${xpBoostLeft()>0 ? ' · ⚡x2' : ''}`);
     if(combo>=3) playComboSound(combo);
   } else if(prevCombo>=2 && !(sess && (sess.kind==='lesson' || sess.kind==='quiz' || sess.kind==='placement'))){
     showFloat('Combo perdido 💔', true);
@@ -607,6 +655,25 @@ function missionsCard(){
       const min = Math.max(1, Math.round((t - new Date())/60000)), hh = Math.floor(min/60), mm = min%60;
       box.appendChild(h(`<div class="m-next">✨ Missões do dia completas! Novas missões amanhã · em ${hh ? `${hh}h ` : ''}${mm}min</div>`));
     }
+    // missão da semana
+    box.querySelectorAll('.m-week').forEach(n=>n.remove());
+    const ws = weekMissionState();
+    const now = new Date(), end = new Date(now); end.setDate(now.getDate() + (7 - ((now.getDay()+6)%7))); end.setHours(0,0,0,0);
+    const daysLeft = Math.max(1, Math.ceil((end - now)/864e5));
+    const wk = h(`<div class="m-week ${ws.claimed?'done':''}">
+        <div class="mw-head"><span>🧰 Missão da semana</span><small>${ws.claimed ? 'feita! nova na segunda' : `${daysLeft} dia${daysLeft===1?'':'s'} pra acabar`}</small></div>
+        <div class="mission">
+          <span class="m-ico">${ws.claimed?'✅':ws.m.ico}</span>
+          <div class="m-body"><div class="m-title">${ws.m.title}</div><div class="m-track"><i style="width:${Math.round(ws.cur/ws.need*100)}%"></i></div><small class="mw-n">${ws.cur}/${ws.need}</small></div>
+        </div>
+      </div>`);
+    const row = wk.querySelector('.mission');
+    if(ws.done && !ws.claimed){
+      const b = h(`<button type="button" class="m-claim">Abrir baú 🧰</button>`);
+      b.onclick = ()=>{ claimWeekMission(); render(); };
+      row.appendChild(b);
+    } else row.appendChild(h(`<span class="m-reward">${ws.claimed ? 'feito!' : `🧰 ${WEEK_REWARD.gems} 🪙`}</span>`));
+    box.appendChild(wk);
   }
   paint();
   return box;
@@ -723,6 +790,21 @@ function achievementsScreen(){
   };
   FILTERS.forEach(fl=>{ const b = h(`<button type="button" class="ex-chip" data-f="${fl.id}">${fl.name} <small>${fl.n}</small></button>`); b.onclick = ()=>{ state.achFilter = fl.id; paint(); }; chips.appendChild(b); });
   c.appendChild(chips); c.appendChild(list); paint();
+
+  // medalhas de episódio (uma por episódio da Trilha completo)
+  if(typeof allPathNodes==='function'){
+    const trophies = allPathNodes().filter(n=>n.type==='trophy'), pd = pathDone();
+    const nDone = trophies.filter(n=>pd[n.key]).length;
+    c.appendChild(h(`<h3 class="ar-label">Medalhas de episódio <small style="opacity:.7">${nDone}/${trophies.length}</small></h3>`));
+    const eg = h(`<div class="ep-medals"></div>`);
+    trophies.forEach(n=>{
+      const on = !!pd[n.key];
+      const el = h(`<div class="ep-medal ${on?'on':''}" title=""><span class="ep-m-ico">${on ? '🏅' : '🔒'}</span><b></b><small>Ep. ${n.unit+1}</small></div>`);
+      el.querySelector('b').textContent = n.subject.name;
+      eg.appendChild(el);
+    });
+    c.appendChild(eg);
+  }
 
   // títulos em escada
   c.appendChild(h(`<h3 class="ar-label">Títulos</h3>`));
