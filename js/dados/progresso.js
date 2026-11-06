@@ -23,10 +23,11 @@ let errorsCache = null, errorsCacheUid = null;
 async function loadProgress(){
   const uid = currentUserId();
   if(progressCache && progressCacheUid===uid) return progressCache;
+  let raw = null;
   try{
-    const raw = localStorage.getItem(`${PROGRESS_KEY_BASE}:${uid}`);
+    raw = localStorage.getItem(`${PROGRESS_KEY_BASE}:${uid}`);
     progressCache = raw ? JSON.parse(raw) : {};
-  }catch(e){ progressCache = {}; }
+  }catch(e){ progressCache = {}; if(raw) markCorrupt(`${PROGRESS_KEY_BASE}:${uid}`, raw); }
   progressCacheUid = uid;
   return progressCache;
 }
@@ -37,10 +38,11 @@ async function saveProgress(){
 async function loadHistory(){
   const uid = currentUserId();
   if(historyCache && historyCacheUid===uid) return historyCache;
+  let raw = null;
   try{
-    const raw = localStorage.getItem(`${HISTORY_KEY_BASE}:${uid}`);
+    raw = localStorage.getItem(`${HISTORY_KEY_BASE}:${uid}`);
     historyCache = raw ? JSON.parse(raw) : [];
-  }catch(e){ historyCache = []; }
+  }catch(e){ historyCache = []; if(raw) markCorrupt(`${HISTORY_KEY_BASE}:${uid}`, raw); }
   historyCacheUid = uid;
   return historyCache;
 }
@@ -51,10 +53,11 @@ async function saveHistory(){
 async function loadErrors(){
   const uid = currentUserId();
   if(errorsCache && errorsCacheUid===uid) return errorsCache;
+  let raw = null;
   try{
-    const raw = localStorage.getItem(`${ERRORS_KEY_BASE}:${uid}`);
+    raw = localStorage.getItem(`${ERRORS_KEY_BASE}:${uid}`);
     errorsCache = raw ? JSON.parse(raw) : [];
-  }catch(e){ errorsCache = []; }
+  }catch(e){ errorsCache = []; if(raw) markCorrupt(`${ERRORS_KEY_BASE}:${uid}`, raw); }
   errorsCacheUid = uid;
   return errorsCache;
 }

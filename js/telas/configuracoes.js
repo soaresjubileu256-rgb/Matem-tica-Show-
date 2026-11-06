@@ -38,7 +38,7 @@ async function settingsScreen(){
   const saveNow = async ()=>{ await saveSettings(); };
 
   // topo: quem está usando e um resumo das escolhas
-  const sum = ()=> `${settings.theme==='light'?'☀️ Claro':'🌙 Escuro'} · ${settings.sound?'🔊 Som ligado':'🔇 Sem som'} · 🎯 Meta ${settings.dailyGoal}`;
+  const sum = ()=> `${settings.theme==='light'?'☀️ Claro':'🌙 Escuro'} · ${settings.sound?'🔊 Som ligado':'🔇 Sem som'} · 🎯 Meta ${Number(settings.dailyGoal) || 10}`;
   const hero = h(`<div class="st-hero"><span class="st-av">${avatarFace(currentUser)}</span><div><b></b><small class="st-sum">${sum()}</small></div></div>`);
   const av = avatarOf(currentUser);
   hero.querySelector('.st-av').style.background = avatarColor(currentUser);
