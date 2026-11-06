@@ -460,7 +460,12 @@ function arenaQuizEnd(c, sess){
       <div class="le-stat green"><div class="k">ACERTOS</div><div class="v">🎯 ${sess.correct}/${sess.needed}</div></div>
       <div class="le-stat blue"><div class="k">TEMPO</div><div class="v">⏱ ${mmssA(secs)}</div></div>
     </div>`));
-  if(sess.gems) c.appendChild(h(`<div class="le-gems">+${sess.gems} 🪙 moedas</div>`));
+  c.appendChild(rewardMeter(sess));
+  if(sess.gems){
+    const ge = h(`<div class="le-gems">+<b>${sess.gems}</b> 🪙 moedas</div>`);
+    c.appendChild(ge);
+    if(!sess.gemsCounted){ sess.gemsCounted = true; animateCount(ge.querySelector('b'), sess.gems, null, 900); }
+  }
   if(sess.starBonus) c.appendChild(h(`<p class="le-sub">+${sess.starBonus} XP pelas estrelas novas</p>`));
   if(isDaily){
     const r = a.daily[sess.dayIso];

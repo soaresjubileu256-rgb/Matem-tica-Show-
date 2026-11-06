@@ -54,6 +54,18 @@ function nextHeartIn(){
 }
 function gemsNow(){ heartsNow(); return loadGame().gems; }
 function addGems(n){ const g = loadGame(); heartsNow(); g.gems += n; saveGame(); }
+function gainHeart(){
+  const g = loadGame(); heartsNow();
+  if(g.hearts >= HEARTS_MAX) return false;
+  g.hearts += 1;
+  if(g.hearts >= HEARTS_MAX) g.heartTs = Date.now();
+  saveGame();
+  return true;
+}
+/* sem vidas: revisar 3 erros do caderno vale 1 vida (algumas vezes por dia) */
+const LIFE_REVIEW_N = 3;
+const LIFE_REVIEW_PER_DAY = 3;
+function lifeReviewsLeft(){ const g = loadGame(); gameEnsureToday(); return Math.max(0, LIFE_REVIEW_PER_DAY - (g.today.lifeReviews||0)); }
 function refillHeartsWithGems(){
   const g = loadGame(); heartsNow();
   if(g.gems < HEART_REFILL_COST) return false;
@@ -725,7 +737,12 @@ function lessonEnd(wrap, sess){
       <div class="le-stat green"><div class="k">${isQuiz?'ACERTOS':'PRECISÃO'}</div><div class="v">🎯 ${isQuiz? `${sess.correct}/${sess.needed}` : acc+'%'}</div></div>
       <div class="le-stat blue"><div class="k">TEMPO</div><div class="v">⏱ ${Math.floor(secs/60)}:${String(secs%60).padStart(2,'0')}</div></div>
     </div>`));
-  if(gems) c.appendChild(h(`<div class="le-gems">+${gems} 🪙 moedas</div>`));
+  c.appendChild(rewardMeter(sess));
+  if(gems){
+    const ge = h(`<div class="le-gems">+<b>${gems}</b> 🪙 moedas</div>`);
+    c.appendChild(ge);
+    if(!sess.gemsCounted){ sess.gemsCounted = true; animateCount(ge.querySelector('b'), gems, null, 900); }
+  }
   if(isQuiz){
     const poolName = (QUIZ_POOLS.find(x=>x[0]===(sess.pool||'all'))||[])[2] || 'Todos';
     c.appendChild(h(`<p class="le-sub">🏆 Recorde no ${({facil:'fácil',medio:'médio',dificil:'difícil'})[sess.diff]} · ${poolName}: <b>${(g.quizBest[quizBestKey(sess.pool, sess.diff)]||0).toLocaleString('pt-BR')}</b> pontos${sess.bestStreak>=2 ? ` · 🔥 maior sequência: ${sess.bestStreak}` : ''}</p>`));
@@ -786,6 +803,7 @@ function showNoHearts(onRefill){
     <div>${mascotSVG('sad',100)}</div>
     <h2 style="color:#FF4B4B">Sem vidas! 💔</h2>
     <p>Próxima vida em <b class="nh-t">${fmtMinSec(nextHeartIn())}</b>.<br>Enquanto isso, você pode praticar livremente em Exercícios, Relâmpago ou Quiz.</p>
+    <div class="nh-review"></div>
     <button type="button" class="nh-refill" ${gems<HEART_REFILL_COST?'disabled':''}>Recarregar ❤️ por ${HEART_REFILL_COST} 🪙 (você tem ${gems})</button>
     <button type="button" class="nh-close" style="margin-top:10px;background:rgba(255,255,255,.1);color:#fff">Voltar</button>
   </div>`;
@@ -794,6 +812,19 @@ function showNoHearts(onRefill){
     if(refillHeartsWithGems()){ bg.remove(); if(onRefill) onRefill(); else render(); }
   };
   bg.querySelector('.nh-close').onclick = ()=>{ bg.remove(); if(onRefill) go('path'); };
+  // ganhar vida revisando erros (precisa ter pelo menos 3 no caderno)
+  loadErrors().then(errs=>{
+    const box = bg.querySelector('.nh-review');
+    if(!box || !bg.isConnected) return;
+    const left = lifeReviewsLeft();
+    if(errs.length < LIFE_REVIEW_N){
+      box.innerHTML = `<p class="nh-rv-note">📒 Quando tiver ${LIFE_REVIEW_N} erros no caderno, dá pra ganhar vida revisando.</p>`;
+      return;
+    }
+    if(!left){ box.innerHTML = `<p class="nh-rv-note">📒 Você já ganhou ${LIFE_REVIEW_PER_DAY} vidas revisando hoje. Amanhã tem mais!</p>`; return; }
+    box.innerHTML = `<button type="button" class="nh-rv-go">📒 Revisar ${LIFE_REVIEW_N} erros e ganhar 1 ❤️<small>acerte pelo menos 2 · ${left}x hoje</small></button>`;
+    box.querySelector('.nh-rv-go').onclick = ()=>{ bg.remove(); startReviewErrors({limit:LIFE_REVIEW_N, lifeReward:true}); };
+  });
   document.body.appendChild(bg);
 }
 

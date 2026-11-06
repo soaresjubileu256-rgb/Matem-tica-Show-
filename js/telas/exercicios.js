@@ -423,9 +423,16 @@ async function startReviewErrors(opts){
   let pool = errs.filter(e=>errorIsDue(e, now) && (!opts.subjectId || e.subjectId===opts.subjectId));
   if(!pool.length || opts.all) pool = errs.filter(e=>!opts.subjectId || e.subjectId===opts.subjectId);
   if(!pool.length){ go('home'); return; }
-  pool = pool.slice().sort((a,b)=>(a.box||1)-(b.box||1) || (b.count||1)-(a.count||1)).slice(0, REVIEW_ERRORS_MAX);
+  const max = opts.limit || REVIEW_ERRORS_MAX;
+  if(opts.limit && pool.length < max){
+    // poucos vencidos hoje: completa com os outros erros do caderno
+    const more = errs.filter(e=>!pool.includes(e) && (!opts.subjectId || e.subjectId===opts.subjectId)).sort((a,b)=>(a.box||1)-(b.box||1));
+    pool = pool.concat(more);
+  }
+  pool = pool.slice().sort((a,b)=>(a.box||1)-(b.box||1) || (b.count||1)-(a.count||1)).slice(0, max);
   state.session = {
     errorQueue: pool.map(e=>({...e})),
+    lifeReward: !!opts.lifeReward,
     index:0, total: pool.length,
     correct:0, wrong:0, results:[], checked:false, wasCorrect:null,
   };
@@ -461,6 +468,31 @@ function reviewErrorsSessionScreen(){
   if(!sess || sess.index >= sess.total){
     const pct = (sess && sess.total)? Math.round((sess.correct/sess.total)*100) : 0;
     gameSessionEnd(c, sess? sess.correct : 0, sess? sess.total : 0, `Você acertou ${pct}% na revisão dos seus erros.`);
+    if(sess && sess.lifeReward){
+      const need = Math.min(2, sess.total);
+      if(sess.lifeOk === undefined){
+        sess.lifeOk = sess.correct >= need && lifeReviewsLeft() > 0;
+        if(sess.lifeOk){
+          const g = loadGame(); g.today.lifeReviews = (g.today.lifeReviews||0) + 1; saveGame();
+          gainHeart(); playTones([523,659,784,1047], 0.09, 'triangle', 0.09); launchConfetti(90);
+        }
+      }
+      c.appendChild(h(sess.lifeOk
+        ? `<div class="er-life ok"><span>❤️</span><div><b>+1 vida!</b><small>Agora você tem ${heartsNow()} ${heartsNow()===1?'vida':'vidas'}. Bora pra Trilha!</small></div></div>`
+        : `<div class="er-life"><span>💔</span><div><b>Quase!</b><small>Precisava acertar ${need} de ${sess.total} pra ganhar a vida.${lifeReviewsLeft() ? ' Dá pra tentar de novo.' : ''}</small></div></div>`));
+      const actions = h(`<div class="cta-row" style="margin-top:14px"></div>`);
+      const trail = h(`<button class="btn primary">🗺️ Voltar à Trilha</button>`);
+      trail.onclick = ()=> go('path');
+      actions.appendChild(trail);
+      if(!sess.lifeOk && lifeReviewsLeft()){
+        const again = h(`<button class="btn secondary">🔁 Tentar de novo</button>`);
+        again.onclick = ()=> startReviewErrors({limit:LIFE_REVIEW_N, lifeReward:true});
+        actions.appendChild(again);
+      }
+      c.appendChild(actions);
+      wrap.appendChild(c);
+      return wrap;
+    }
     const items = sess ? sess.errorQueue.slice(0, sess.index) : [];
     const n = k=> items.filter(x=>x.reviewResult===k).length;
     c.appendChild(h(`<div class="er-res">

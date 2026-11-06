@@ -115,10 +115,23 @@ function gameEnsureToday(){
   if(!g.today.missions) g.today.missions = pickDailyMissions(k);
 }
 /* ---------- ofensiva (dias seguidos) ----------
-   - g.days guarda o histórico recente: 1 = jogou ('f' = dia salvo por protetor, só em dados antigos)
-   - passou um dia inteiro sem jogar, a ofensiva volta pra zero (não existe mais protetor)
+   - g.days guarda o histórico recente: 1 = jogou, 'f' = dia salvo por um protetor 🧊
+   - passou um dia inteiro sem jogar: se tiver protetor guardado, ele é gasto e a ofensiva continua;
+     senão a ofensiva volta pra zero
    - marcos (3, 7, 14, 30...) dão moedas e uma comemoração */
 const STREAK_DAYS_KEEP = 70;
+const STREAK_FREEZE_COST = 40;  // moedas por protetor
+const STREAK_FREEZE_MAX = 2;    // quantos dá pra guardar
+function streakFreezes(){ return loadGame().freezes || 0; }
+function buyStreakFreeze(){
+  const g = loadGame(); heartsNow();
+  if((g.freezes||0) >= STREAK_FREEZE_MAX){ showFloat(`Você já tem ${STREAK_FREEZE_MAX} protetores guardados 🧊`); return false; }
+  if((g.gems||0) < STREAK_FREEZE_COST){ showFloat(`Faltam ${STREAK_FREEZE_COST - (g.gems||0)} 🪙`, true); return false; }
+  g.gems -= STREAK_FREEZE_COST; g.freezes = (g.freezes||0) + 1;
+  saveGame(); playTones([523,784,1047], 0.08, 'triangle', 0.1);
+  showFloat('🧊 Protetor guardado!');
+  return true;
+}
 const STREAK_MILESTONES = [[3,10],[7,25],[14,40],[30,75],[50,100],[100,200],[200,300],[365,500]];
 function keyToDate(k){ const [y,m,d] = String(k).split('-').map(Number); return new Date(y, m-1, d); }
 function dayDiff(a, b){ return Math.round((keyToDate(b) - keyToDate(a)) / 864e5); } // b - a, em dias
@@ -127,7 +140,8 @@ function dayShift(n){ const d = new Date(); d.setDate(d.getDate()+n); return day
 function streakFromData(g){
   if(!g || !g.lastDay || !g.streak) return 0;
   const gap = dayDiff(g.lastDay, dayKey());
-  return gap<=1 ? g.streak : 0; // jogou hoje ou ontem: vale; pulou um dia inteiro: zerou
+  // jogou hoje ou ontem: vale; pulou dias mas tem protetores pra cobrir: vale; senão zerou
+  return gap<=1 || gap-1 <= (g.freezes||0) ? g.streak : 0;
 }
 /* ao abrir o jogo (e quando o dia vira): se pulou um dia inteiro, a ofensiva zera */
 function gameCheckStreak(){
@@ -144,6 +158,16 @@ function gameCheckStreak(){
   if(!g.lastDay || !g.streak) return;
   const gap = dayDiff(g.lastDay, dayKey());
   if(gap<=1) return;
+  const missed = gap - 1;
+  if((g.freezes||0) >= missed){
+    // protetores cobrem os dias sem jogar: a chama continua
+    g.freezes -= missed;
+    for(let i=1; i<=missed; i++) g.days[dayShift(-i)] = 'f';
+    g.lastDay = dayShift(-1);
+    g.streakNote = {type:'saved', used:missed, streak:g.streak};
+    saveGame();
+    return;
+  }
   g.streakNote = {type:'lost', streak:g.streak};
   g.streak = 0;
   saveGame();
@@ -185,6 +209,7 @@ function showStreakNote(){
   const g = loadGame(), n = g.streakNote;
   if(!n) return;
   delete g.streakNote; saveGame();
+  if(n.type==='saved') queueToast('🧊', n.used>1 ? `${n.used} protetores usados!` : 'Protetor usado!', `Sua ofensiva de ${n.streak} dia${n.streak===1?'':'s'} foi salva. Jogue hoje pra continuar!`);
   if(n.type==='lost' && n.streak>=2) queueToast('💔', 'A ofensiva apagou', `Você tinha ${n.streak} dias. Jogue hoje pra acender de novo!`);
 }
 /* o app pode ficar aberto de um dia pro outro: quando o dia muda, zera a meta e as missões
@@ -206,7 +231,7 @@ window.addEventListener('focus', checkDayChange);
 
 /* painel da ofensiva: dias da semana, recorde e próximo marco */
 function showStreakPanel(){
-  const g = loadGame(), streak = gameStreakNow(), today = playedToday();
+  const g = loadGame(), streak = gameStreakNow(), today = playedToday(), fr = g.freezes||0;
   const WD = ['D','S','T','Q','Q','S','S'];
   let week = '';
   for(let i=-6; i<=0; i++){
@@ -225,7 +250,7 @@ function showStreakPanel(){
     <div class="big ${streak?'':'sk-off'}">🔥</div>
     <h2>${streak} dia${streak===1?'':'s'} de ofensiva</h2>
     <p>${today ? 'Você já jogou hoje. A chama está garantida! ✅'
-      : streak ? 'Responda 1 pergunta hoje! Se passar o dia sem jogar, a ofensiva volta pra zero.'
+      : streak ? `Responda 1 pergunta hoje! ${fr ? 'Se passar o dia sem jogar, um protetor 🧊 salva a ofensiva.' : 'Se passar o dia sem jogar, a ofensiva volta pra zero.'}`
       : 'Responda 1 pergunta pra acender sua ofensiva!'}</p>
     <div class="sk-week">${week}</div>
     <div class="sk-stats">
@@ -233,13 +258,76 @@ function showStreakPanel(){
       <div><b>📅 ${Object.keys(g.days||{}).filter(k=>g.days[k]===1 && dayDiff(k, dayKey())<7).length}/7</b><span>dias nesta semana</span></div>
     </div>
     ${next ? `<div class="sk-goal"><div class="sk-goal-t">Próximo marco: <b>${next[0]} dias</b> · +${next[1]} 🪙</div><div class="sk-bar"><i style="width:${pct}%"></i></div><small>faltam ${next[0]-streak} dia${next[0]-streak===1?'':'s'}</small></div>` : ''}
-    <p class="sk-help">Jogue pelo menos 1 pergunta todo dia. Ficou um dia inteiro sem jogar, a ofensiva volta pra zero.</p>
+    <div class="sk-frz">
+      <span class="sk-frz-i">🧊</span>
+      <div><b>Protetor de ofensiva</b><small>Salva a ofensiva se você ficar um dia sem jogar · guardados: <b>${fr}/${STREAK_FREEZE_MAX}</b></small></div>
+      <button type="button" class="sk-frz-buy" ${fr>=STREAK_FREEZE_MAX?'disabled':''}>${fr>=STREAK_FREEZE_MAX ? 'Cheio' : `🪙 ${STREAK_FREEZE_COST}`}</button>
+    </div>
+    <p class="sk-help">Jogue pelo menos 1 pergunta todo dia. Ficou um dia inteiro sem jogar e não tem protetor, a ofensiva volta pra zero.</p>
     <button type="button" class="sk-close" style="margin-top:10px;background:rgba(255,255,255,.1);color:#fff">Fechar</button>
   </div>`;
   const close = ()=> bg.remove();
   bg.querySelector('.sk-close').onclick = close;
+  bg.querySelector('.sk-frz-buy').onclick = ()=>{
+    if(!buyStreakFreeze()) return;
+    close(); showStreakPanel();
+    if(typeof render==='function' && state.screen==='loja') render();
+  };
   bg.addEventListener('click', e=>{ if(e.target===bg) close(); });
   document.body.appendChild(bg);
+}
+
+/* ---------- recompensa no fim da fase ----------
+   barra de nível que enche com o XP ganho (e vira o nível, se subir), com os números contando */
+function animateCount(el, to, fmtFn, ms){
+  if(!el) return;
+  fmtFn = fmtFn || (n=>String(n));
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reduce || !to){ el.textContent = fmtFn(to); return; }
+  const t0 = performance.now(); ms = ms || 900;
+  const step = t=>{
+    if(!el.isConnected) return;
+    const k = Math.min(1, (t-t0)/ms), e = 1 - Math.pow(1-k, 3);
+    el.textContent = fmtFn(Math.round(to*e));
+    if(k < 1) requestAnimationFrame(step);
+  };
+  el.textContent = fmtFn(0);
+  requestAnimationFrame(step);
+}
+function rewardMeter(sess){
+  const g = loadGame();
+  if(!sess.rw) sess.rw = {after:g.xp, before:Math.max(0, g.xp - (sess.xp||0))};
+  const A = levelInfo(sess.rw.before), B = levelInfo(sess.rw.after);
+  const gained = sess.rw.after - sess.rw.before, up = B.level - A.level;
+  const first = !sess.rwShown; sess.rwShown = true;
+  const el = h(`<div class="rw-card ${up?'is-up':''}">
+      <div class="rw-top"><span class="rw-lv">Nível <b class="rw-n">${first ? A.level : B.level}</b></span><span class="rw-ttl"></span><span class="rw-gain">+<b class="rw-x">${gained}</b> XP</span></div>
+      <div class="rw-bar"><i style="width:${first ? A.pct : B.pct}%"></i></div>
+      <div class="rw-sub">${B.need - B.into} XP pro nível ${B.level+1}</div>
+      <div class="rw-up" ${first && up ? 'hidden' : up ? '' : 'hidden'}>⬆️ Subiu pro nível ${B.level}!</div>
+    </div>`);
+  el.querySelector('.rw-ttl').textContent = (first ? A : B).title;
+  if(!first || !gained) return el;
+  const bar = el.querySelector('.rw-bar i'), reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const finish = ()=>{
+    el.querySelector('.rw-n').textContent = B.level;
+    el.querySelector('.rw-ttl').textContent = B.title;
+    if(up){ el.querySelector('.rw-up').hidden = false; el.classList.add('pop'); }
+  };
+  if(reduce){ bar.style.width = B.pct+'%'; finish(); return el; }
+  animateCount(el.querySelector('.rw-x'), gained, null, 900);
+  setTimeout(()=>{
+    if(!el.isConnected) return;
+    if(!up){ bar.style.width = B.pct+'%'; playTones([660,880], 0.06, 'sine', 0.05); return; }
+    bar.style.width = '100%';
+    setTimeout(()=>{
+      if(!el.isConnected) return;
+      bar.style.transition = 'none'; bar.style.width = '0%'; void bar.offsetWidth; bar.style.transition = '';
+      finish(); playTones([523,659,784,1047], 0.08, 'triangle', 0.08);
+      requestAnimationFrame(()=>{ bar.style.width = B.pct+'%'; });
+    }, 950);
+  }, 350);
+  return el;
 }
 function xpForLevel(lv){ return 100 + (lv-1)*50; } // XP pra ir do nível lv pro lv+1
 function levelInfo(xp){

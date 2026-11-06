@@ -271,7 +271,12 @@ function lojaScreen(){
       <div class="lj-helps-h">💡 Ajudas com moedas <small>nas fases da Trilha e da Arena</small></div>
       <div class="lj-help"><span>✂️</span><div><b>50/50</b><small>Tira duas alternativas erradas</small></div><em>🪙 ${PAID_HELPS.fifty.cost}<small>${PAID_HELPS.fifty.perDay}x por dia</small></em></div>
       <div class="lj-help"><span>❤️</span><div><b>+1 vida</b><small>Uma vida extra na hora do aperto</small></div><em>🪙 ${PAID_HELPS.life.cost}<small>${PAID_HELPS.life.perDay}x por dia</small></em></div>
-      <p class="lj-earn">Ganhe moedas nas fases da Trilha, nos baús, na Arena e mantendo a ofensiva. Os itens da loja são só de visual.</p>
+      <div class="lj-help lj-frz"><span>🧊</span><div><b>Protetor de ofensiva</b><small>Salva a ofensiva se ficar um dia sem jogar · guardados: ${streakFreezes()}/${STREAK_FREEZE_MAX}</small></div><button type="button" class="lj-frz-buy" ${streakFreezes()>=STREAK_FREEZE_MAX?'disabled':''}>${streakFreezes()>=STREAK_FREEZE_MAX ? 'Cheio' : `🪙 ${STREAK_FREEZE_COST}`}</button></div>
+      <p class="lj-earn">Ganhe moedas nas fases da Trilha, nos baús, na Arena e mantendo a ofensiva. Os itens de visual só mudam a aparência.</p>
     </div>`));
+  c.querySelector('.lj-frz-buy').onclick = ()=>{
+    showConfirm({icon:'🧊', title:'Comprar protetor?', message:`Custa ${STREAK_FREEZE_COST} moedas. Você tem ${gemsNow()}. Se você ficar um dia sem jogar, ele salva sua ofensiva.`, ok:`Comprar por ${STREAK_FREEZE_COST} 🪙`, cancel:'Agora não'})
+      .then(ok=>{ if(ok && buyStreakFreeze()) render(); });
+  };
   return wrap;
 }
