@@ -10,6 +10,11 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
+  {v:27, date:'2026-11-06', title:'Desafie seus amigos', items:[
+    {ico:'🎯', t:'Desafiar amigo', d:'Na Arena: jogue 7 perguntas, mande o código e seu amigo joga as mesmas. Quem acerta mais vence!', go:'friendChallenge'},
+    {ico:'👾', t:'Chefe do episódio', d:'A Grande final de cada episódio agora é uma luta contra o chefe: cada acerto tira vida dele.', go:'path'},
+    {ico:'⬆️', t:'Fases que se adaptam', d:'Acertou 3 seguidas? Vem uma pergunta bônus mais difícil. Errou 2? Vem uma de reforço. E o combo 🔥 aparece na fase.', go:'path'},
+  ]},
   {v:26, date:'2026-11-06', title:'Mais motivos pra jogar', items:[
     {ico:'🧰', t:'Missão da semana', d:'Uma missão maior toda semana, embaixo das missões do dia. Completou? Abre um baú com 100 moedas e +60 XP.', go:'home'},
     {ico:'🏅', t:'Medalha de episódio', d:'Terminou a Grande final de um episódio? Ganha uma medalha (veja em Conquistas) e +50 moedas.', go:'achievements'},

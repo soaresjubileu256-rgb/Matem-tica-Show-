@@ -5,8 +5,8 @@
    vira uma pequena comemoração. Contas que já tinham progresso continuam com tudo aberto.
    ========================================================= */
 const UNLOCKS = [
-  {id:'arena', ico:'⚔️', name:'Arena', what:'Relâmpago, Contra o relógio, Quiz, Duelo e Simulado',
-   screens:['arena','lightning','speedRun','quizSetup','duel','examSetup'],
+  {id:'arena', ico:'⚔️', name:'Arena', what:'Relâmpago, Contra o relógio, Quiz, Duelo, Desafiar amigo e Simulado',
+   screens:['arena','lightning','speedRun','quizSetup','duel','examSetup','friendChallenge'],
    goal:'Termine o Episódio 1 da Trilha ou responda 20 questões', pi:'Primeiro a gente esquenta na Trilha, depois o palco da Arena é seu! 🎤',
    check:()=>{ const n = totalAnswered(); return {open: n>=20 || unlockEpisodeDone(0), have:n, need:20}; }},
   {id:'provas', ico:'🎓', name:'Simulados das provas', what:'ENEM, ETEC, Fuvest, Unicamp, Unesp e OBMEP',

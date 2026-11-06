@@ -124,6 +124,11 @@ function arenaScreen(){
     c.appendChild(cont);
   }
 
+  // desafiar amigo
+  const fcb = h(`<button type="button" class="ar-next fc-entry"><span class="ar-sym">🎯</span><span class="ar-next-t"><small>NOVO</small><b>Desafiar amigo</b><span class="fc-entry-s">As mesmas perguntas pros dois. Quem acerta mais?</span></span><span class="ar-next-go">▶</span></button>`);
+  fcb.onclick = ()=> go('friendChallenge');
+  c.appendChild(fcb);
+
   // fases com estrelas
   c.appendChild(h(`<h3 class="ar-label">Fases da Arena</h3>`));
   c.appendChild(h(`<div class="ar-rules"><span>❓ ${ARENA_PHASE_Q} perguntas</span><span>❤️ ${ARENA_LIVES} vidas</span><span>⏱️ ${QUIZ_SECONDS}s cada</span><span>⭐ 5 · ⭐⭐ 7 · ⭐⭐⭐ 9 acertos</span></div>`));
@@ -371,13 +376,13 @@ function dailyReviewScreen(){
 
 /* próxima pergunta dentro do motor do quiz (chamado por lessonAdvance) */
 function arenaNextQuestion(sess){
-  if(sess.mode === 'daily'){ sess.q = JSON.parse(JSON.stringify(sess.plan[sess.asked])); sess.subjectId = sess.q.subjectId; }
+  if(sess.plan){ sess.q = JSON.parse(JSON.stringify(sess.plan[sess.asked])); sess.subjectId = sess.q.subjectId; }
   else sess.q = newLessonQuestion(sess);
   sess.asked++; sess.qStart = Date.now();
 }
 /* depois de corrigir cada pergunta (chamado por lessonCheck) */
 function arenaAfterCheck(sess, ok){
-  if(sess.mode === 'daily'){ sess.marks.push(ok ? '🟩' : '🟥'); sess.picks.push(sess.selected===null ? -1 : sess.selected); }
+  if(sess.plan){ sess.marks.push(ok ? '🟩' : '🟥'); sess.picks.push(sess.selected===null ? -1 : sess.selected); }
   if(sess.mode === 'arena' && !ok){ sess.lives--; if(sess.lives <= 0) sess.outOfLives = true; }
 }
 /* saiu no meio do Desafio do Dia: vale uma tentativa, então guarda o que já fez */
@@ -408,6 +413,7 @@ function mmssA(s){ s = Math.max(0, Math.round(s||0)); return `${Math.floor(s/60)
 
 /* fim de uma fase da Arena ou do Desafio do Dia (chamado por lessonEnd) */
 function arenaQuizEnd(c, sess){
+  if(sess.mode === 'friend'){ friendChallengeEnd(c, sess); return; }
   const g = loadGame(), a = arenaData();
   const secs = Math.round((Date.now()-sess.startTs)/1000);
   const isDaily = sess.mode === 'daily';
@@ -889,5 +895,170 @@ function examResultScreen(){
   const foot = h(`<div class="cta-row" style="margin-top:16px"><button type="button" class="btn secondary" data-a="a">Voltar à Arena</button></div>`);
   foot.querySelector('[data-a=a]').onclick = ()=> go('arena');
   c.appendChild(foot);
+  return wrap;
+}
+
+/* =========================================================
+   DESAFIAR AMIGO (sem servidor): quem cria joga 7 perguntas e recebe um código.
+   O código guarda o assunto, a semente das perguntas, os acertos, o tempo e o nome.
+   O amigo digita o código, joga AS MESMAS perguntas e vê quem ganhou.
+   Quem criou pode digitar o código de volta pra ver o resultado sem jogar de novo.
+   ========================================================= */
+const FC_N = 7;
+const FC_DIFFS = ['facil','facil','medio','medio','medio','dificil','dificil'];
+const FC_WIN_GEMS = 20, FC_WIN_GEMS_PER_DAY = 3;
+function fcOptions(){
+  return [{k:'fund', name:'🎲 Misturado · Fundamental'}, {k:'em', name:'🎲 Misturado · Ensino Médio'}]
+    .concat(SUBJECTS.map(s=>({k:s.id, name:`${s.sym} ${s.name}`})));
+}
+function fcB36(n, len){ return Math.max(0, Math.floor(n)).toString(36).toUpperCase().padStart(len,'0').slice(-len); }
+function fcCheck(s){ let x = 7; for(const ch of s) x = (x*31 + ch.charCodeAt(0)) % 36; return x.toString(36).toUpperCase(); }
+function fcMyName(){ return String((currentUser && currentUser.name) || 'Amigo').split(/\s+/)[0].replace(/[^\p{L}]/gu,'').slice(0,12) || 'Amigo'; }
+function fcEncode(o){
+  const body = fcB36(o.opt,2) + fcB36(o.seed,4) + String(Math.min(FC_N, o.ok)) + fcB36(Math.min(o.secs, 1295),2);
+  const raw = body + fcCheck(body);
+  return `${raw.slice(0,5)}-${raw.slice(5)}${o.name ? '-' + o.name : ''}`;
+}
+function fcDecode(str){
+  const m = String(str||'').trim().match(/^([0-9a-z]{5})\s*-?\s*([0-9a-z]{5})(?:\s*-\s*(.+))?$/i);
+  if(!m) return null;
+  const raw = (m[1]+m[2]).toUpperCase(), body = raw.slice(0,9);
+  if(fcCheck(body) !== raw[9]) return null;
+  const opt = parseInt(body.slice(0,2),36), seed = parseInt(body.slice(2,6),36), ok = Number(body[6]), secs = parseInt(body.slice(7,9),36);
+  if(!(opt >= 0 && opt < fcOptions().length) || !(ok >= 0 && ok <= FC_N)) return null;
+  const name = String(m[3]||'').replace(/[^\p{L}]/gu,'').slice(0,12) || 'Amigo';
+  return {opt, seed, ok, secs, name};
+}
+function fcPlan(opt, seed){
+  const o = fcOptions()[opt];
+  return withSeed(seed + 77, ()=>{
+    let ids;
+    if(o.k==='fund' || o.k==='em'){
+      const list = shuffle(levelIds(o.k).filter(id=> SUBJECTS.some(s=>s.id===id)));
+      ids = FC_DIFFS.map((_,i)=> list[i % list.length]);
+    } else ids = FC_DIFFS.map(()=> o.k);
+    return ids.map((id,i)=>{ const s = SUBJECTS.find(x=>x.id===id); const ex = s.gen[FC_DIFFS[i]](); return {ex, subjectId:id, diff:FC_DIFFS[i], secs:DAILY_SECS[FC_DIFFS[i]], opts:buildOptions(ex)}; });
+  });
+}
+function fcData(){ const g = loadGame(); g.fc = g.fc || {played:0, wins:0, sent:{}}; g.fc.sent = g.fc.sent || {}; return g.fc; }
+function startFriendChallenge(opt, seed, rival){
+  const plan = fcPlan(opt, seed);
+  const sess = arenaBaseSession({mode:'friend', plan, marks:[], picks:[], needed:FC_N, diff:'misturada', exitTo:'friendChallenge', fc:{opt, seed, rival:rival||null}});
+  sess.q = JSON.parse(JSON.stringify(plan[0])); sess.subjectId = sess.q.subjectId; sess.asked++; sess.qStart = Date.now();
+  state.session = sess;
+  go('lesson');
+}
+function fcVersus(me, rival){
+  const win = me.ok > rival.ok || (me.ok === rival.ok && me.secs < rival.secs);
+  const tie = me.ok === rival.ok && me.secs === rival.secs;
+  const el = h(`<div class="fc-vs">
+      <div class="fc-side ${win?'win':''}"><small>Você</small><b>${me.ok}/${FC_N}</b><span>⏱ ${mmssA(me.secs)}</span>${win && !tie ? '<i>🏆</i>' : ''}</div>
+      <div class="fc-x">VS</div>
+      <div class="fc-side ${!win && !tie?'win':''}"><small class="fc-rn"></small><b>${rival.ok}/${FC_N}</b><span>⏱ ${mmssA(rival.secs)}</span>${!win && !tie ? '<i>🏆</i>' : ''}</div>
+    </div>`);
+  el.querySelector('.fc-rn').textContent = rival.name;
+  return {el, win: win && !tie, tie};
+}
+async function fcShare(text){
+  try{ if(navigator.share){ await navigator.share({text}); return; } }catch(e){ if(e && e.name==='AbortError') return; }
+  try{ await navigator.clipboard.writeText(text); showFloat('Copiado! Cole na conversa 📋'); }
+  catch(e){ showFloat('Não deu pra copiar. Anote o código ✍️', true); }
+}
+function friendChallengeEnd(c, sess){
+  const g = loadGame(), fc = fcData(), rival = sess.fc.rival;
+  if(!sess.endDone){
+    sess.endDone = true;
+    sess.secs = Math.round((Date.now()-sess.startTs)/1000);
+    fc.played++;
+    const key = `${sess.fc.opt}:${sess.fc.seed}`;
+    if(!rival){
+      fc.sent[key] = {ok:sess.correct, secs:sess.secs, ts:Date.now()};
+      const ks = Object.keys(fc.sent).sort((a,b)=>fc.sent[a].ts-fc.sent[b].ts); while(ks.length > 20) delete fc.sent[ks.shift()];
+    } else {
+      const me = {ok:sess.correct, secs:sess.secs};
+      const w = me.ok > rival.ok || (me.ok === rival.ok && me.secs < rival.secs);
+      sess.won = w;
+      if(w){
+        fc.wins++;
+        gameEnsureToday();
+        if((g.today.fcWins||0) < FC_WIN_GEMS_PER_DAY){ g.today.fcWins = (g.today.fcWins||0) + 1; sess.gems = FC_WIN_GEMS; }
+      }
+    }
+    saveGame();
+    if(sess.gems) addGems(sess.gems);
+    replaceHistoryState();
+    if(!rival || sess.won){ setTimeout(()=>launchConfetti(sess.won ? 170 : 90), 200); playTones([523,659,784,1047,1319], 0.11, 'triangle', 0.09); }
+    else playTones([392,330,262], 0.14, 'sine', 0.08);
+  }
+  const me = {ok:sess.correct, secs:sess.secs};
+  const optName = fcOptions()[sess.fc.opt].name;
+  c.appendChild(h(`<div class="le-mascot">${mascotSVG(!rival || sess.won ? 'joy' : 'happy', 110)}</div>`));
+  let title = 'Desafio pronto! 🎯';
+  if(rival){ const v = fcVersus(me, rival); title = v.tie ? 'Empate! 🤝' : v.win ? 'Você venceu! 🏆' : `${escHTML(rival.name)} venceu dessa vez!`; }
+  c.appendChild(h(`<h2 class="le-title">${title}</h2>`));
+  c.appendChild(h(`<div class="ar-marks" aria-label="${me.ok} certas de ${FC_N}">${sess.marks.join('')}</div>`));
+  if(rival) c.appendChild(fcVersus(me, rival).el);
+  else c.appendChild(h(`<p class="le-sub">${optName} · ${me.ok}/${FC_N} certas em ${mmssA(me.secs)}</p>`));
+  if(sess.gems) c.appendChild(h(`<div class="le-gems">+${sess.gems} 🪙 pela vitória</div>`));
+  c.appendChild(rewardMeter(sess));
+  const code = fcEncode({opt:sess.fc.opt, seed:sess.fc.seed, ok:me.ok, secs:me.secs, name:fcMyName()});
+  const box = h(`<div class="fc-code-box">
+      <small>${rival ? `Mande seu código pra ${escHTML(rival.name)} ver o resultado:` : 'Mande este código pro seu amigo. Ele joga as mesmas perguntas e vê quem ganhou:'}</small>
+      <div class="fc-code mono"></div>
+      <div class="fc-code-btns"><button type="button" class="show-btn fc-send">📤 ENVIAR</button><button type="button" class="show-btn ghost fc-copy">📋 COPIAR</button></div>
+    </div>`);
+  box.querySelector('.fc-code').textContent = code;
+  const msg = rival
+    ? `Joguei seu desafio no Matemática Show! 🤝 Fiz ${me.ok}/${FC_N} em ${mmssA(me.secs)}. Veja quem ganhou: Arena → Desafiar amigo → digite o código ${code}`
+    : `Te desafio no Matemática Show! 🎯 Fiz ${me.ok}/${FC_N} em ${mmssA(me.secs)} (${optName.replace(/^\S+\s/,'')}). Abra o app → Arena → Desafiar amigo e digite o código: ${code}`;
+  box.querySelector('.fc-send').onclick = ()=> fcShare(msg);
+  box.querySelector('.fc-copy').onclick = async ()=>{ try{ await navigator.clipboard.writeText(code); showFloat('Código copiado! 📋'); }catch(e){ showFloat('Não deu pra copiar. Anote o código ✍️', true); } };
+  c.appendChild(box);
+  const foot = h(`<div class="lesson-footer static"></div>`);
+  const back = h(`<button class="show-btn">CONTINUAR</button>`);
+  back.onclick = ()=> go('friendChallenge');
+  foot.appendChild(back);
+  c.appendChild(foot);
+}
+function friendChallengeScreen(){
+  const wrap = document.createElement('div');
+  wrap.appendChild(topbar('🎯 Desafiar amigo', true, ()=>go('arena')));
+  const c = h(`<div class="content fc-screen"></div>`);
+  wrap.appendChild(c);
+  const fc = fcData(), opts = fcOptions();
+  c.appendChild(h(`<div class="fc-hero">
+      <h2>Quem acerta mais?</h2>
+      <ol class="fc-steps"><li>Você joga ${FC_N} perguntas e ganha um <b>código</b>.</li><li>Manda o código pro amigo (WhatsApp, recado...).</li><li>Ele joga <b>as mesmas perguntas</b> e vê quem ganhou. Mais acertos vence; empate, o mais rápido.</li></ol>
+      <div class="fc-stats"><span>🎯 ${fc.played} jogado${fc.played===1?'':'s'}</span><span>🏆 ${fc.wins} vitória${fc.wins===1?'':'s'}</span></div>
+    </div>`));
+  // criar
+  const mk = h(`<div class="card fc-card"><h3>🆕 Criar desafio</h3><label for="fc-opt">Assunto</label><select id="fc-opt" class="fc-select"></select><button type="button" class="show-btn fc-go">▶ JOGAR E CRIAR CÓDIGO</button></div>`);
+  const sel = mk.querySelector('select');
+  opts.forEach((o,i)=>{ const op = document.createElement('option'); op.value = i; op.textContent = o.name; sel.appendChild(op); });
+  sel.value = String(state.fcOpt !== undefined ? state.fcOpt : (dailyDefaultTrack()==='em' ? 1 : 0));
+  sel.onchange = ()=>{ state.fcOpt = Number(sel.value); };
+  mk.querySelector('.fc-go').onclick = ()=> startFriendChallenge(Number(sel.value), Math.floor(Math.random()*1679616), null);
+  c.appendChild(mk);
+  // aceitar
+  const ac = h(`<div class="card fc-card"><h3>📩 Tenho um código</h3><label for="fc-in">Código do desafio</label><input id="fc-in" class="fc-input mono" placeholder="Ex.: 0A1B2-C3D4E-Ana" autocomplete="off" autocapitalize="characters" spellcheck="false"><button type="button" class="show-btn fc-accept">ACEITAR DESAFIO</button><div class="fc-result"></div></div>`);
+  const inp = ac.querySelector('input'), res = ac.querySelector('.fc-result');
+  ac.querySelector('.fc-accept').onclick = ()=>{
+    const d = fcDecode(inp.value);
+    res.innerHTML = '';
+    if(!d){ showFloat('Código inválido. Confira as letras e números 🔍', true); return; }
+    const mine = fc.sent[`${d.opt}:${d.seed}`];
+    if(mine){
+      // é a resposta de um desafio que eu criei: mostra o resultado sem jogar de novo
+      const v = fcVersus({ok:mine.ok, secs:mine.secs}, d);
+      res.appendChild(h(`<div class="fc-res-t">${v.tie ? 'Empate! 🤝' : v.win ? 'Você venceu! 🏆' : ''}</div>`));
+      if(!v.tie && !v.win){ const t = res.querySelector('.fc-res-t'); t.textContent = `${d.name} venceu dessa vez!`; }
+      res.appendChild(v.el);
+      if(v.win) launchConfetti(120);
+      return;
+    }
+    showConfirm({icon:'🎯', title:`Desafio de ${d.name}`, message:`${opts[d.opt].name.replace(/^\S+\s/,'')} · ${FC_N} perguntas. ${d.name} fez ${d.ok}/${FC_N} em ${mmssA(d.secs)}. Bora?`, ok:'Jogar agora', cancel:'Agora não'})
+      .then(ok=>{ if(ok) startFriendChallenge(d.opt, d.seed, d); });
+  };
+  c.appendChild(ac);
   return wrap;
 }
