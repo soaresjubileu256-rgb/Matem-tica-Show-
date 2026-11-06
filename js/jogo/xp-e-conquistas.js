@@ -98,8 +98,8 @@ function dayKey(d){ d = d || new Date(); return `${d.getFullYear()}-${d.getMonth
 function loadGame(){
   const uid = currentUserId();
   if(gameCache && gameCacheUid===uid) return gameCache;
-  let g = null;
-  try{ const raw = localStorage.getItem(`${GAME_KEY_BASE}:${uid}`); g = raw ? JSON.parse(raw) : null; }catch(e){}
+  let g = null, raw = null;
+  try{ raw = localStorage.getItem(`${GAME_KEY_BASE}:${uid}`); g = raw ? JSON.parse(raw) : null; }catch(e){ if(raw) markCorrupt(`${GAME_KEY_BASE}:${uid}`, raw); }
   gameCache = Object.assign({xp:0, streak:0, lastDay:null, bestCombo:0, hits:0, hardHits:0, fixed:0, boltBest:0, subjectsHit:{}, ach:{}, today:null}, g||{});
   gameCacheUid = uid;
   gameEnsureToday();

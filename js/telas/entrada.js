@@ -38,7 +38,7 @@ function avatarImg(av){ return av && typeof av.img==='string' && /^data:image\/(
 function avatarFace(u){
   const av = avatarOf(u);
   if(avatarImg(av)) return `<img class="av-img" src="${avatarImg(av)}" alt="">`;
-  if(av && av.emo) return av.emo;
+  if(av && av.emo) return AV_EMOJIS.includes(av.emo) ? av.emo : escHTML(av.emo); // só emoji da lista; o resto vira texto
   return u && u.name ? escHTML(u.name.trim().charAt(0).toUpperCase()) : '?';
 }
 function avatarHTML(u, cls, idx){

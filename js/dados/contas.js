@@ -74,10 +74,12 @@ async function hashPassword(pw){
 
 async function loadUsers(){
   if(usersCache !== null) return usersCache;
+  let raw = null;
   try{
-    const raw = localStorage.getItem(USERS_KEY);
+    raw = localStorage.getItem(USERS_KEY);
     usersCache = raw ? JSON.parse(raw) : [];
-  }catch(e){ usersCache = []; }
+    if(!Array.isArray(usersCache)) usersCache = [];
+  }catch(e){ usersCache = []; if(raw) markCorrupt(USERS_KEY, raw); }
   // migração de versões antigas: uma única conta guardada sem lista.
   if(usersCache.length===0){
     try{
@@ -235,7 +237,7 @@ async function importProgressData(file){
   let data;
   try{
     const text = await file.text();
-    data = JSON.parse(text);
+    data = sanitizeBackup(JSON.parse(text)); // confere tipos e valores e tira HTML perigoso (js/dados/validar.js)
   }catch(e){
     return {ok:false, error:'Não foi possível ler esse arquivo. Confira se é um .json exportado pelo Matemática Show.'};
   }
