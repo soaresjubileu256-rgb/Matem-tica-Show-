@@ -4699,3 +4699,37 @@ body::after{inset:0;
 .sp.boost{background:rgba(255,184,0,.18); color:#FFD45C; font-weight:800;}
 .mb-show{display:grid; place-items:center; min-height:120px; margin-bottom:6px;}
 .missions.collapsed .m-week .mission{display:flex;} /* a missão da semana fica sempre à mostra */
+
+/* Trilha: combo, chefe */
+.lesson-combo{font-weight:800; color:#FFB800; font-size:14px; margin-right:6px; white-space:nowrap; animation:rwPop .4s ease;}
+.fb-combo{font-size:13px; font-weight:800; color:#FFB800; margin-top:2px;}
+.boss-bar{display:flex; align-items:center; gap:10px; margin:0 0 10px; padding:10px 12px; border-radius:14px; background:rgba(255,75,75,.1); border:1px solid rgba(255,75,75,.4);}
+.boss-ico{font-size:30px;} .boss-bar.hit .boss-ico{animation:bossHit .5s ease;}
+.boss-t{flex:1;} .boss-t b{display:block; font-size:13px; color:var(--ink); margin-bottom:4px;}
+.boss-hp{height:10px; border-radius:999px; background:rgba(255,255,255,.1); overflow:hidden;}
+.boss-hp i{display:block; height:100%; background:linear-gradient(90deg,#FF4B4B,#FF8A4C); border-radius:999px; transition:width .5s ease;}
+.boss-bar small{font-weight:800; color:#FF8A8A;}
+@keyframes bossHit{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px) rotate(-8deg)}75%{transform:translateX(5px) rotate(8deg)}}
+@media (prefers-reduced-motion: reduce){ .boss-bar.hit .boss-ico, .lesson-combo{animation:none;} .boss-hp i{transition:none;} }
+/* desafiar amigo */
+.fc-entry .fc-entry-s{display:block; font-size:12px; color:var(--ink-soft); font-weight:600;}
+.fc-hero{padding:16px; border-radius:18px; background:linear-gradient(135deg,rgba(76,125,255,.18),rgba(178,63,224,.18)); border:1px solid rgba(123,92,255,.4); margin-bottom:14px;}
+.fc-hero h2{margin:0 0 8px;}
+.fc-steps{margin:0 0 10px; padding-left:20px; color:var(--ink-soft); font-size:14px; line-height:1.5;}
+.fc-stats{display:flex; gap:10px; flex-wrap:wrap;} .fc-stats span{font-size:13px; font-weight:700; padding:4px 10px; border-radius:999px; background:rgba(255,255,255,.08);}
+.fc-card{margin-bottom:14px;} .fc-card h3{margin:0 0 10px;}
+.fc-card label{display:block; font-size:13px; color:var(--ink-soft); margin-bottom:6px;}
+.fc-select, .fc-input{width:100%; box-sizing:border-box; padding:12px; border-radius:12px; border:1px solid var(--border-soft); background:rgba(255,255,255,.05); color:var(--ink); font-size:16px; margin-bottom:12px;}
+.fc-input{letter-spacing:1px;}
+.fc-vs{display:flex; align-items:stretch; gap:8px; margin:12px auto; max-width:420px;}
+.fc-side{flex:1; position:relative; padding:12px 8px; border-radius:16px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); text-align:center;}
+.fc-side.win{background:rgba(255,184,0,.12); border-color:rgba(255,184,0,.5);}
+.fc-side small{display:block; font-size:12px; color:var(--ink-soft); font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.fc-side b{display:block; font-size:26px; color:var(--ink);} .fc-side span{font-size:12px; color:var(--ink-soft);}
+.fc-side i{position:absolute; top:-10px; right:-6px; font-style:normal; font-size:22px;}
+.fc-x{align-self:center; font-weight:900; color:var(--ink-soft);}
+.fc-res-t{font-weight:800; font-size:18px; text-align:center; margin-top:12px; color:var(--ink);}
+.fc-code-box{margin:14px auto 0; max-width:420px; padding:14px; border-radius:16px; background:rgba(76,125,255,.1); border:1px dashed rgba(123,160,255,.6); text-align:center;}
+.fc-code-box small{display:block; font-size:13px; color:var(--ink-soft);}
+.fc-code{font-size:22px; font-weight:800; letter-spacing:2px; margin:8px 0 10px; color:var(--ink); word-break:break-all; user-select:all;}
+.fc-code-btns{display:flex; gap:8px;} .fc-code-btns .show-btn{flex:1;}

@@ -409,11 +409,17 @@ function solutionHTML(ex){
 /* ---------- iniciar lições / quiz ---------- */
 function newLessonQuestion(sess){
   const subj = SUBJECTS.find(s=>s.id===sess.subjectId) || pick(SUBJECTS);
-  let diff = sess.diff;
+  let diff = sess.diff, adapt = null;
   if(diff==='mix') diff = (sess.asked % 2) ? 'dificil' : 'medio';
+  // dificuldade que se adapta: acertou 3 seguidas → uma mais difícil; errou 2 seguidas → uma de reforço
+  if(sess.adaptNext){
+    const order = ['facil','medio','dificil'], j = order.indexOf(diff) + (sess.adaptNext==='up' ? 1 : -1);
+    if(j >= 0 && j < order.length){ diff = order[j]; adapt = sess.adaptNext; }
+    sess.adaptNext = null;
+  }
   const {ex, signature} = genQuestionAvoidingRepeat(subj, diff, sess.lastSignature);
   sess.lastSignature = signature;
-  return {ex, subjectId:subj.id, diff, opts: buildOptions(ex)};
+  return {ex, subjectId:subj.id, diff, opts: buildOptions(ex), adapt};
 }
 function startPathLesson(node, jump){
   if(!jump && heartsNow()<=0){ showNoHearts(); return; }
@@ -423,6 +429,7 @@ function startPathLesson(node, jump){
     needed: jump ? 6 : node.n, maxWrong: jump ? 2 : null,
     asked:0, cleared:0, correct:0, wrong:0, retry:[], combo:0, xp:0,
     selected:null, checked:false, wasCorrect:null, startTs: Date.now(), lastSignature:null,
+    boss: !jump && node.type==='trophy', missStreak:0, adaptNext:null,
   };
   sess.q = newLessonQuestion(sess); sess.asked++;
   state.session = sess;
@@ -460,6 +467,10 @@ function lessonAdvance(sess){
   if(sess.maxWrong!==null && sess.wrong > sess.maxWrong){ sess.failed = true; return; }
   if(sess.cleared >= sess.needed){ sess.finished = true; return; }
   const newLeft = sess.needed - sess.cleared - sess.retry.length;
+  if(sess.kind==='lesson' && sess.jumpUnit===null && !sess.boss && sess.diff!=='mix'){
+    if((sess.missStreak||0) >= 2){ sess.adaptNext = 'down'; sess.missStreak = 0; }
+    else if(sess.combo >= 3 && sess.combo % 3 === 0 && sess.lastAdaptCombo !== sess.combo){ sess.adaptNext = 'up'; sess.lastAdaptCombo = sess.combo; }
+  }
   if(newLeft > 0){ sess.q = newLessonQuestion(sess); sess.asked++; }
   else { const q = sess.retry.shift(); q.opts = buildOptions(q.ex); q.out = []; q.cut = null; q.retry = true; sess.q = q; }
 }
@@ -475,7 +486,7 @@ function lessonScreen(){
 
   const exitTo = sess.exitTo || (isQuiz ? 'quizSetup' : 'path');
   const top = h(`<div class="lesson-top"><button class="lesson-x" aria-label="Sair">✕</button><div class="lesson-prog"><i style="width:${Math.round((isQuiz? (sess.asked-1+(sess.checked?1:0)) : sess.cleared)/sess.needed*100)}%"></i></div>${
-    isQuiz ? `${sess.lives!==undefined ? `<span class="lesson-hearts" aria-label="${sess.lives} vidas">❤️ ${sess.lives}</span>` : ''}<span class="lesson-score">🏅 ${sess.score}</span>` : sess.maxWrong!==null ? `<span class="lesson-hearts">🛡️ ${Math.max(0,sess.maxWrong+1-sess.wrong)}</span>` : `<span class="lesson-hearts">❤️ ${heartsNow()}</span>`
+    isQuiz ? `${sess.lives!==undefined ? `<span class="lesson-hearts" aria-label="${sess.lives} vidas">❤️ ${sess.lives}</span>` : ''}<span class="lesson-score">🏅 ${sess.score}</span>` : `${(sess.combo||0)>=2 ? `<span class="lesson-combo" aria-label="Combo de ${sess.combo}">🔥 x${sess.combo}</span>` : ''}${sess.maxWrong!==null ? `<span class="lesson-hearts">🛡️ ${Math.max(0,sess.maxWrong+1-sess.wrong)}</span>` : `<span class="lesson-hearts">❤️ ${heartsNow()}</span>`}`
   }</div>`);
   top.querySelector('.lesson-x').onclick = ()=>{
     showConfirm({
@@ -523,7 +534,11 @@ function lessonScreen(){
       c.appendChild(hb);
     }
   } else {
-    c.appendChild(h(`<div class="lesson-kicker">${q.retry ? '🔁 ERRO ANTERIOR' : sess.jumpUnit!==null ? '⏩ TESTE DE NIVELAMENTO' : `${subj.sym} ${subj.name.toUpperCase()}`}</div>`));
+    if(sess.boss){
+      const hp = Math.max(0, sess.needed - sess.cleared);
+      c.appendChild(h(`<div class="boss-bar ${sess.checked && sess.wasCorrect ? 'hit' : ''}"><span class="boss-ico">${hp ? '👾' : '💥'}</span><div class="boss-t"><b>Chefe do episódio</b><div class="boss-hp" aria-label="Vida do chefe: ${hp} de ${sess.needed}"><i style="width:${hp/sess.needed*100}%"></i></div></div><small>${hp}/${sess.needed}</small></div>`));
+    }
+    c.appendChild(h(`<div class="lesson-kicker">${q.retry ? '🔁 ERRO ANTERIOR' : sess.jumpUnit!==null ? '⏩ TESTE DE NIVELAMENTO' : q.adapt==='up' ? '⬆️ PERGUNTA BÔNUS · MAIS DIFÍCIL' : q.adapt==='down' ? '🛟 PERGUNTA DE REFORÇO · MAIS FÁCIL' : `${subj.sym} ${subj.name.toUpperCase()}`}</div>`));
     c.appendChild(h(`<h2 class="lesson-title">Escolha a resposta certa</h2>`));
   }
   const qv = questionHTML(ex);
@@ -592,10 +607,14 @@ function lessonScreen(){
     const ok = sess.wasCorrect;
     const praise = isQuiz
       ? (ok ? `+${sess.lastPoints.toLocaleString('pt-BR')} pontos!${sess.qStreak>=2?` 🔥 ${sess.qStreak} seguidas`:''}` : (sess.selected===null ? '⏰ Tempo esgotado!' : 'Não foi dessa vez!'))
-      : (ok ? (q.missed ? pick(['Isso aí, conseguiu! 💪','Acertou! Persistência é tudo! 🌟','Boa! Não desistiu! 👏']) : pick(['Aplausos! 👏','Na mosca! 🎯','Show de bola!','Brilhou! ✨','Que talento! 🌟'])) : 'Quase! A resposta era:');
+      : (ok ? (q.missed ? pick(['Isso aí, conseguiu! 💪','Acertou! Persistência é tudo! 🌟','Boa! Não desistiu! 👏'])
+               : sess.boss ? pick(['💥 Acertou o chefe!','💥 Golpe certeiro no chefe!','💥 O chefe sentiu essa!'])
+               : q.adapt==='up' ? 'Mandou bem na difícil! 💪'
+               : pick(['Aplausos! 👏','Na mosca! 🎯','Show de bola!','Brilhou! ✨','Que talento! 🌟'])) : 'Quase! A resposta era:');
+    const comboLine = !isQuiz && ok && !q.missed && (sess.combo||0) >= 3 ? `<div class="fb-combo">🔥 Combo x${sess.combo} · XP turbinado!</div>` : '';
     const sheet = h(`
       <div class="fb-sheet ${ok?'ok':'bad'}">
-        <div class="fb-head"><span class="fb-ico">${ok?'👏':'🤔'}</span><div><div class="fb-t">${praise}</div>${!ok || isQuiz ? `<div class="fb-ans mono"></div>`:''}</div></div>
+        <div class="fb-head"><span class="fb-ico">${ok?'👏':'🤔'}</span><div><div class="fb-t">${praise}</div>${comboLine}${!ok || isQuiz ? `<div class="fb-ans mono"></div>`:''}</div></div>
         <div class="fb-why-row"><button type="button" class="fb-why">📖 Ver explicação</button></div>
         <div class="fb-steps" style="display:none"></div>
         <button class="show-btn ${ok?'ok':'bad'}">PRÓXIMA ›</button>
@@ -645,7 +664,7 @@ async function lessonCheck(sess, idx){
     q.out = (q.out||[]).concat(idx);
     sess.selected = null; sess.tryAgain = true;
     if(!q.missed){
-      q.missed = true; sess.wrong++;
+      q.missed = true; sess.wrong++; sess.missStreak = (sess.missStreak||0) + 1;
       if(sess.maxWrong===null) loseHeart();
       await recordAnswer(q.subjectId, false, {difficulty: q.diff, ex: q.ex});
     }
@@ -674,7 +693,7 @@ async function lessonCheck(sess, idx){
   } else {
     // acertou: conta como resolvida; só conta "de primeira" (e dá XP) se não tinha errado antes
     sess.cleared++;
-    if(!q.missed) sess.correct++;
+    if(!q.missed){ sess.correct++; sess.missStreak = 0; }
   }
   if(!q.missed) await recordAnswer(q.subjectId, ok, {difficulty: q.diff, ex: q.ex});
   render();
