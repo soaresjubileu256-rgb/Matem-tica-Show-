@@ -105,4 +105,10 @@ try{
   localStorage.removeItem('mat-show-lembrete-meta');
 }catch(e){}
 
+// registra o service worker (modo sem internet + instalar como app). Sem suporte, ou abrindo o arquivo
+// direto (sem servidor), não faz nada: o app funciona normal, só sem o modo offline.
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+}
+
 boot();

@@ -1,3 +1,12 @@
+/* ---------- fontes (arquivos em fonts/, licença SIL Open Font License — veja fonts/LEIA-ME.md) ----------
+   Fontes "variáveis": um arquivo por família cobre todos os pesos. Só o alfabeto latino (português). */
+@font-face{font-family:'Inter'; font-style:normal; font-weight:400 800; font-display:swap; src:url(../fonts/inter.woff2) format('woff2');
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;}
+@font-face{font-family:'Fraunces'; font-style:normal; font-weight:500 700; font-display:swap; src:url(../fonts/fraunces.woff2) format('woff2');
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;}
+@font-face{font-family:'JetBrains Mono'; font-style:normal; font-weight:400 700; font-display:swap; src:url(../fonts/jetbrains-mono.woff2) format('woff2');
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;}
+
 :root{
   --paper:#07070F;
   --paper-line:rgba(255,255,255,.05);
@@ -4649,3 +4658,5 @@ body::after{inset:0;
 .rk-code{word-break:normal !important; overflow-wrap:normal;} .rk-code-nick, .rk-cg{white-space:nowrap;}
 .rk-num{font-style:normal; color:#5EE6C8;} :root.theme-light .rk-num{color:#0E9C80;} .rk-num-why{width:100%; font-size:12.5px; color:var(--ink-soft);}
 .st-sub .st-seg + .st-lbl{margin-top:14px;}
+/* zoom com os dedos liberado (acessibilidade); o toque duplo não amplia, pra não atrapalhar quem responde rápido */
+html{touch-action:manipulation;}

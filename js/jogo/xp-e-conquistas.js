@@ -261,7 +261,8 @@ function gameAddXP(amount){
   if(after.level > before){
     if(after.level>=5) gameUnlock('level5');
     if(after.level>=10) gameUnlock('level10');
-    setTimeout(()=>showLevelUp(after), 700);
+    const uid = currentUserId();
+    setTimeout(()=>{ if(currentUser && currentUserId()===uid) showLevelUp(after); }, 700); // saiu da conta nesse meio-tempo: não mostra
   }
 }
 function gameUnlock(id){
