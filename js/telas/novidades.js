@@ -10,6 +10,10 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
+  {v:24, date:'2026-11-06', title:'Resolver mais esperto', items:[
+    {ico:'🔎', t:'Raiz no meio da conta', d:'O Resolver agora resolve contas com raiz junto, como √16 + 1, 2√9 ou (√49 − 2) × 3, mostrando a raiz primeiro.', go:'solve'},
+    {ico:'🧮', t:'MMC e MDC como no caderno', d:'Dá pra escrever mmc(4,6) ou mdc(12,18) do jeito que se escreve na escola.', go:'solve'},
+  ]},
   {v:23, date:'2026-10-30', title:'Versão pra computador', items:[
     {ico:'💻', t:'Tela grande de verdade', d:'No computador o menu fica na lateral, o Início vira duas colunas e as listas de assuntos aparecem lado a lado.', go:'home'},
     {ico:'⌨️', t:'Atalhos de teclado', d:'Nas fases: 1–4 (ou A–D) escolhe a resposta, Enter confirma e passa pra próxima. Esc fecha avisos e a correção animada; ← e → passam os passos.', go:'path'},
