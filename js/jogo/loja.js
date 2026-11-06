@@ -114,6 +114,37 @@ const PAID_HELPS = {
   fifty: {ico:'✂️', name:'50/50',      cost:15, perDay:3, tip:'Tira duas alternativas erradas'},
   life:  {ico:'❤️', name:'+1 vida',    cost:20, perDay:2, tip:'Ganha uma vida extra'},
 };
+/* ⚡ XP em dobro por um tempo */
+const XP_BOOST_COST = 50;
+const XP_BOOST_MS = 15*60*1000;
+function xpBoostLeft(){ try{ const g = loadGame(); return Math.max(0, (g.boostUntil||0) - Date.now()); }catch(e){ return 0; } }
+function buyXpBoost(){
+  const g = loadGame(); heartsNow();
+  if(xpBoostLeft() > 0){ showFloat('O XP em dobro já está ligado ⚡'); return false; }
+  if((g.gems||0) < XP_BOOST_COST){ showFloat(`Faltam ${XP_BOOST_COST - (g.gems||0)} 🪙`, true); return false; }
+  g.gems -= XP_BOOST_COST; g.boostUntil = Date.now() + XP_BOOST_MS;
+  saveGame(); playTones([523,784,1047,1319], 0.07, 'triangle', 0.09);
+  showFloat('⚡ XP em dobro por 15 min!');
+  return true;
+}
+/* 🎁 baú misterioso: um item de visual que você ainda não tem (às vezes um raro) */
+const MYSTERY_COST = 70;
+function mysteryCandidates(){ const sh = shopData(); return SHOP_ITEMS.filter(it=> it.price && !sh.owned[it.id]); }
+function openMysteryBox(){
+  const g = loadGame(); heartsNow();
+  const pool = mysteryCandidates();
+  if(!pool.length){ showFloat('Você já tem todos os itens! 🎉'); return null; }
+  if((g.gems||0) < MYSTERY_COST){ showFloat(`Faltam ${MYSTERY_COST - (g.gems||0)} 🪙`, true); return null; }
+  // os mais baratos saem mais; o raro é bem difícil
+  const weight = it=> it.rare ? 0.15 : it.price <= 90 ? 4 : it.price <= 150 ? 2.5 : 1.2;
+  let r = Math.random() * pool.reduce((a,it)=>a+weight(it), 0), got = pool[pool.length-1];
+  for(const it of pool){ r -= weight(it); if(r <= 0){ got = it; break; } }
+  g.gems -= MYSTERY_COST;
+  shopData().owned[got.id] = 1;
+  saveGame();
+  playTones([523,659,784,1047,1319], 0.09, 'triangle', 0.09); launchConfetti(got.price > 150 ? 180 : 110);
+  return got;
+}
 function helpsUsedToday(id){ const g = loadGame(); gameEnsureToday(); g.today.helps = g.today.helps || {}; return g.today.helps[id] || 0; }
 /* onde as ajudas aparecem: fases da Trilha (fora do nivelamento) e da Arena (não no Desafio do Dia) */
 function paidHelpsAllowed(sess){
@@ -268,13 +299,35 @@ function lojaScreen(){
   c.appendChild(grid);
 
   c.appendChild(h(`<div class="lj-helps">
-      <div class="lj-helps-h">💡 Ajudas com moedas <small>nas fases da Trilha e da Arena</small></div>
+      <div class="lj-helps-h">💡 Ajudas e extras <small>ajudas valem nas fases da Trilha e da Arena</small></div>
       <div class="lj-help"><span>✂️</span><div><b>50/50</b><small>Tira duas alternativas erradas</small></div><em>🪙 ${PAID_HELPS.fifty.cost}<small>${PAID_HELPS.fifty.perDay}x por dia</small></em></div>
       <div class="lj-help"><span>❤️</span><div><b>+1 vida</b><small>Uma vida extra na hora do aperto</small></div><em>🪙 ${PAID_HELPS.life.cost}<small>${PAID_HELPS.life.perDay}x por dia</small></em></div>
+      <div class="lj-help"><span>⚡</span><div><b>XP em dobro</b><small>${xpBoostLeft()>0 ? `Ligado! Faltam ${Math.ceil(xpBoostLeft()/60000)} min` : 'Todo XP de acerto vale o dobro por 15 minutos'}</small></div><button type="button" class="lj-frz-buy lj-boost-buy" ${xpBoostLeft()>0?'disabled':''}>${xpBoostLeft()>0 ? 'Ligado' : `🪙 ${XP_BOOST_COST}`}</button></div>
+      <div class="lj-help"><span>🎁</span><div><b>Baú misterioso</b><small>${mysteryCandidates().length ? `Um item de visual que você ainda não tem (pode sair um raro!) · ${mysteryCandidates().length} pra descobrir` : 'Você já tem todos os itens! 🎉'}</small></div><button type="button" class="lj-frz-buy lj-box-buy" ${mysteryCandidates().length?'':'disabled'}>🪙 ${MYSTERY_COST}</button></div>
       <div class="lj-help lj-frz"><span>🧊</span><div><b>Protetor de ofensiva</b><small>Salva a ofensiva se ficar um dia sem jogar · guardados: ${streakFreezes()}/${STREAK_FREEZE_MAX}</small></div><button type="button" class="lj-frz-buy" ${streakFreezes()>=STREAK_FREEZE_MAX?'disabled':''}>${streakFreezes()>=STREAK_FREEZE_MAX ? 'Cheio' : `🪙 ${STREAK_FREEZE_COST}`}</button></div>
       <p class="lj-earn">Ganhe moedas nas fases da Trilha, nos baús, na Arena e mantendo a ofensiva. Os itens de visual só mudam a aparência.</p>
     </div>`));
-  c.querySelector('.lj-frz-buy').onclick = ()=>{
+  c.querySelector('.lj-boost-buy').onclick = ()=>{
+    showConfirm({icon:'⚡', title:'Ligar XP em dobro?', message:`Custa ${XP_BOOST_COST} moedas. Você tem ${gemsNow()}. Por 15 minutos, cada acerto vale o dobro de XP.`, ok:`Ligar por ${XP_BOOST_COST} 🪙`, cancel:'Agora não'})
+      .then(ok=>{ if(ok && buyXpBoost()) render(); });
+  };
+  c.querySelector('.lj-box-buy').onclick = ()=>{
+    showConfirm({icon:'🎁', title:'Abrir baú misterioso?', message:`Custa ${MYSTERY_COST} moedas. Você tem ${gemsNow()}. Sai um item de visual que você ainda não tem.`, ok:`Abrir por ${MYSTERY_COST} 🪙`, cancel:'Agora não'})
+      .then(ok=>{
+        if(!ok) return;
+        const it = openMysteryBox();
+        if(!it) return;
+        const tier = shopTier(it);
+        const bg = document.createElement('div');
+        bg.className = 'gm-modal-bg';
+        bg.innerHTML = `<div class="gm-modal mb-modal"><div class="mb-show lj-show-${it.cat}">${shopPreview(it, true)}</div><h2></h2><p>Item <b>${tier.name}</b> · já é seu!</p><button type="button" class="mb-use">Usar agora</button><button type="button" class="mb-close" style="margin-top:10px;background:rgba(255,255,255,.1);color:#fff">Depois</button></div>`;
+        bg.querySelector('h2').textContent = `${it.ico} ${it.name}`;
+        bg.querySelector('.mb-use').onclick = ()=>{ bg.remove(); shopEquip(it.id); state.lojaCat = it.cat; state.lojaTry = null; render(); };
+        bg.querySelector('.mb-close').onclick = ()=>{ bg.remove(); render(); };
+        document.body.appendChild(bg);
+      });
+  };
+  c.querySelector('.lj-frz .lj-frz-buy').onclick = ()=>{
     showConfirm({icon:'🧊', title:'Comprar protetor?', message:`Custa ${STREAK_FREEZE_COST} moedas. Você tem ${gemsNow()}. Se você ficar um dia sem jogar, ele salva sua ofensiva.`, ok:`Comprar por ${STREAK_FREEZE_COST} 🪙`, cancel:'Agora não'})
       .then(ok=>{ if(ok && buyStreakFreeze()) render(); });
   };

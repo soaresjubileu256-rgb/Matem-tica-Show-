@@ -10,6 +10,11 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
+  {v:26, date:'2026-11-06', title:'Mais motivos pra jogar', items:[
+    {ico:'🧰', t:'Missão da semana', d:'Uma missão maior toda semana, embaixo das missões do dia. Completou? Abre um baú com 100 moedas e +60 XP.', go:'home'},
+    {ico:'🏅', t:'Medalha de episódio', d:'Terminou a Grande final de um episódio? Ganha uma medalha (veja em Conquistas) e +50 moedas.', go:'achievements'},
+    {ico:'🎁', t:'Novidades na Loja', d:'Baú misterioso (sai um item que você ainda não tem) e XP em dobro por 15 minutos.', go:'loja'},
+  ]},
   {v:25, date:'2026-11-06', title:'Jogo mais justo e animado', items:[
     {ico:'🧊', t:'Protetor de ofensiva', d:'Compre na Loja ou no painel da ofensiva (🔥). Se você ficar um dia sem jogar, ele salva seus dias seguidos. Dá pra guardar 2.', go:'loja'},
     {ico:'📒', t:'Sem vidas? Revise seus erros', d:'Quando as vidas acabarem, revise 3 erros do seu caderno e acerte pelo menos 2 pra ganhar 1 vida.', go:'path'},

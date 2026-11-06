@@ -16,6 +16,7 @@ const PATH_NODES = [
 const UNIT_COLORS = [['#4C7DFF','#7B5CFF'],['#B23FE0','#E0409A'],['#1FB6D0','#2BE0A6'],['#FF5C7A','#FF8A4C'],['#E09A00','#FF7A00'],['#6A5CFF','#33D2E3'],['#E0306A','#B23FE0']];
 function unitStyle(u){ const [a,b] = UNIT_COLORS[u % UNIT_COLORS.length]; return `--uc:${a};--uc2:${b}`; }
 const QUIZ_SECONDS = 20;
+const EPISODE_BONUS = 50;   // moedas extras ao terminar a Grande final de um episódio
 const QUIZ_TOTAL = 10;
 
 function allPathNodes(){
@@ -708,14 +709,19 @@ function lessonEnd(wrap, sess){
       gems = Math.floor(sess.correct/2);
     } else {
       g.today.lessons = (g.today.lessons||0) + 1;
+      if(sess.jumpUnit===null) weekMissionBump('lessons');
       if(sess.jumpUnit!==null){
         allPathNodes().forEach(n=>{ if(n.unit < sess.jumpUnit) pathDone()[n.key] = true; });
         gems = 15;
       } else {
         pathDone()[sess.nodeKey] = true;
         const node = allPathNodes().find(n=>n.key===sess.nodeKey);
-        if(node && node.type==='trophy'){ gameUnlock('unit'); queueToast('📜', 'Certificado liberado!', `${node.subject.name}: veja em Certificados`); }
         gems = sess.wrong===0 ? 15 : 10;
+        if(node && node.type==='trophy'){
+          gameUnlock('unit'); queueToast('📜', 'Certificado liberado!', `${node.subject.name}: veja em Certificados`);
+          // prêmio do fim do episódio: medalha + baú
+          gems += EPISODE_BONUS; sess.episodeDone = node.subject.name;
+        }
       }
       g.lessonsDone = (g.lessonsDone||0) + 1;
     }
@@ -729,7 +735,12 @@ function lessonEnd(wrap, sess){
   gems = sess.gems||0;
   const isQuiz = sess.kind==='quiz';
   c.appendChild(h(`<div class="le-mascot">${mascotSVG('joy',130)}</div>`));
-  c.appendChild(h(`<h2 class="le-title">${isQuiz ? (sess.record ? 'Novo recorde! 🏆' : 'Quiz concluído!') : sess.jumpUnit!==null ? 'Episódio liberado! ⏩' : sess.wrong===0 ? 'Fase perfeita! 🌟' : 'Fase concluída!'}</h2>`));
+  c.appendChild(h(`<h2 class="le-title">${isQuiz ? (sess.record ? 'Novo recorde! 🏆' : 'Quiz concluído!') : sess.jumpUnit!==null ? 'Episódio liberado! ⏩' : sess.episodeDone ? 'Episódio completo! 🏅' : sess.wrong===0 ? 'Fase perfeita! 🌟' : 'Fase concluída!'}</h2>`));
+  if(sess.episodeDone){
+    const ep = h(`<div class="ep-done"><span class="ep-done-m">🏅</span><div><b>Medalha de episódio</b><small></small></div></div>`);
+    ep.querySelector('small').textContent = `${sess.episodeDone} · +${EPISODE_BONUS} 🪙 no baú do episódio · veja em Conquistas`;
+    c.appendChild(ep);
+  }
   if(isQuiz) c.appendChild(h(`<div class="le-bigscore">${sess.score.toLocaleString('pt-BR')} <small>pontos</small></div>`));
   c.appendChild(h(`
     <div class="le-stats">
@@ -833,6 +844,7 @@ function statusPills(){
   const hearts = heartsNow();
   const bar = h(`<div class="status-pills">
     <button type="button" class="sp fire ${gameStreakNow()?'':'off'}" aria-label="Ver ofensiva">🔥 ${gameStreakNow()}</button>
+    ${xpBoostLeft()>0 ? `<span class="sp boost" title="XP em dobro">⚡x2 <small>${Math.ceil(xpBoostLeft()/60000)}min</small></span>` : ''}
     <span class="sp gem">🪙 ${gemsNow()}</span>
     <button type="button" class="sp heart" aria-label="Vidas">❤️ ${hearts}${hearts<HEARTS_MAX?` <small>${fmtMinSec(nextHeartIn())}</small>`:''}</button>
   </div>`);
