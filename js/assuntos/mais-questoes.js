@@ -241,14 +241,14 @@ const MAIS_QUESTOES = {
     facil:[
       ()=>{ const a=randInt(2,9), r=randInt(2,12);
         return mkSingle(`x ÷ ${a} = ${r}. Quanto vale x?`, a*r, [`Faça a operação inversa: multiplique por ${a}.`, `x = ${r} × ${a} = ${a*r}`]); },
-      ()=>{ const a=randInt(3,30), x=randInt(2,40);
+      ()=>{ const a=randInt(3,30), x=a+randInt(1,40);
         return mkSingle(`x − ${a} = ${x-a}. Quanto vale x?`, x, [`Passe o ${a} somando.`, `x = ${x-a} + ${a} = ${x}`]); },
       ()=>{ const k=randInt(3,15), x=randInt(2,30);
         return mkSingle(`Pensei num número, somei ${k} e deu ${x+k}. Que número pensei?`, x, [`x + ${k} = ${x+k}`, `x = ${x+k} − ${k} = ${x}`]); },
     ],
     medio:[
       ()=>{ const a=randInt(2,6), b=randInt(1,8), x=randInt(-5,10);
-        return mkSingle(`${a}(x + ${b}) = ${a*(x+b)}. Quanto vale x?`, x, [`Divida os dois lados por ${a}: x + ${b} = ${x+b}.`, `x = ${x+b} − ${b} = ${nm(x)}`]); },
+        return mkSingle(`${a}(x + ${b}) = ${nm(a*(x+b))}. Quanto vale x?`, x, [`Divida os dois lados por ${a}: x + ${b} = ${nm(x+b)}.`, `x = ${x+b} − ${b} = ${nm(x)}`]); },
       ()=>{ const a=randInt(2,5), x=a*randInt(1,8), b=randInt(1,10);
         return mkSingle(`x/${a} + ${b} = ${x/a+b}. Quanto vale x?`, x, [`Tire ${b} dos dois lados: x/${a} = ${x/a}.`, `Multiplique por ${a}: x = ${x}`]); },
       ()=>{ const k=randInt(1,12), x=randInt(3,25);
@@ -445,13 +445,13 @@ const MAIS_QUESTOES = {
     ],
     medio:[
       ()=>{ const a=randInt(2,8), b=randInt(-5,10), x1=randInt(1,3), x2=x1+randInt(1,4);
-        return mkSingle(`Uma função do 1º grau tem f(${x1}) = ${a*x1+b} e f(${x2}) = ${a*x2+b}. Qual é o coeficiente angular (a)?`, a, [`a = variação de y ÷ variação de x.`, `(${a*x2+b} − ${nm(a*x1+b)}) ÷ (${x2} − ${x1}) = ${a*(x2-x1)} ÷ ${x2-x1} = ${a}`]); },
+        return mkSingle(`Uma função do 1º grau tem f(${x1}) = ${nm(a*x1+b)} e f(${x2}) = ${nm(a*x2+b)}. Qual é o coeficiente angular (a)?`, a, [`a = variação de y ÷ variação de x.`, `(${a*x2+b} − ${nm(a*x1+b)}) ÷ (${x2} − ${x1}) = ${a*(x2-x1)} ÷ ${x2-x1} = ${a}`]); },
       ()=>{ const fixo=pick([4,5,6]), km=pick([2,3]), d=randInt(3,15);
         return mkSingle(`Um táxi cobra R$ ${fixo},00 de bandeirada mais R$ ${km},00 por km. Quanto custa uma corrida de ${d} km? (em reais)`, fixo+km*d, [`Preço = ${fixo} + ${km} × km.`, `${fixo} + ${km} × ${d} = ${fixo+km*d}`]); },
     ],
     dificil:[
       ()=>{ const a=randInt(2,6), b=randInt(-4,6), x=randInt(6,12);
-        return mkSingle(`Uma função do 1º grau tem f(1) = ${a+b} e f(3) = ${3*a+b}. Quanto vale f(${x})?`, a*x+b, [`a = (${3*a+b} − ${nm(a+b)}) ÷ 2 = ${a}.`, `b = f(1) − a = ${nm(a+b)} − ${a} = ${nm(b)}.`, `f(${x}) = ${a} × ${x} ${fmtSigned(b)} = ${a*x+b}`]); },
+        return mkSingle(`Uma função do 1º grau tem f(1) = ${nm(a+b)} e f(3) = ${nm(3*a+b)}. Quanto vale f(${x})?`, a*x+b, [`a = (${3*a+b} − ${nm(a+b)}) ÷ 2 = ${a}.`, `b = f(1) − a = ${nm(a+b)} − ${a} = ${nm(b)}.`, `f(${x}) = ${a} × ${x} ${fmtSigned(b)} = ${a*x+b}`]); },
       ()=>{ const r=mqTry(()=>{ const a=randInt(1,4), b=randInt(-3,5), c=-randInt(1,3), d=randInt(5,15); return {a,b,c,d}; }, v=>(v.d-v.b)%(v.a-v.c)===0);
         const {a,b,c,d}=r, x=(d-b)/(a-c);
         const fx=`${a===1?'':a}x ${fmtSigned(b)}`, gx=`${c===-1?'−':nm(c)}x + ${d}`;
@@ -509,6 +509,501 @@ const MAIS_QUESTOES = {
   },
 };
 
+/* ---------------- Ensino Médio ---------------- */
+/* matriz com células de texto (aceita "x") */
+function mqMat(M){ return `<span class="mat-wrap"><span class="mat"><table>${M.map(r=>`<tr>${r.map(v=>`<td>${typeof v==='number'?nm(v):v}</td>`).join('')}</tr>`).join('')}</table></span></span>`; }
+function mqSup(n){ return String(n).split('').map(d=>'⁰¹²³⁴⁵⁶⁷⁸⁹'[d]).join(''); }
+Object.assign(MAIS_QUESTOES, {
+  exponencial:{
+    facil:[
+      ()=>{ const b=pick([2,3,5]), n=b===5?randInt(1,3):randInt(2,5);
+        return mkSingle(`f(x) = ${b}ˣ. Quanto vale f(${n})?`, Math.pow(b,n), [`f(${n}) = ${b}${mqSup(n)}`, `= ${Math.pow(b,n)}`]); },
+      ()=>{ const c=pick([50,100,200,500]), h=randInt(2,5);
+        return mkSingle(`Uma colônia de bactérias dobra a cada hora. Começando com ${c} bactérias, quantas haverá depois de ${h} horas?`, c*Math.pow(2,h), [`Depois de ${h} horas: ${c} × 2${mqSup(h)}.`, `${c} × ${Math.pow(2,h)} = ${c*Math.pow(2,h)}`]); },
+    ],
+    medio:[
+      ()=>{ const c=pick([100,200,300]), h=randInt(3,6), f=c*Math.pow(2,h);
+        return mkSingle(`Uma população de ${c} bactérias dobra a cada hora. Em quantas horas ela chega a ${f}?`, h, [`${c} × 2ʰ = ${f} → 2ʰ = ${f/c}.`, `2${mqSup(h)} = ${f/c} → h = ${h}`]); },
+      ()=>{ const [k0,k1,base,e1,e2]=pick([[9,27,3,2,3],[4,8,2,2,3],[25,125,5,2,3],[4,32,2,2,5],[16,8,2,4,3],[8,32,2,3,5]]), k=[k0,k1];
+        if(!Number.isInteger(e2/e1*100)) return mkSingle(`Resolva: 4ˣ = 8`, 1.5, ['4 = 2² e 8 = 2³: 2²ˣ = 2³', '2x = 3 → x = 1,5']);
+        return mkSingle(`Resolva: ${k[0]}ˣ = ${k[1]}`, e2/e1, [`Escreva na mesma base: ${k[0]} = ${base}${mqSup(e1)} e ${k[1]} = ${base}${mqSup(e2)}.`, `${e1}x = ${e2} → x = ${fmt(e2/e1)}`]); },
+    ],
+    dificil:[
+      ()=>{ const x=randInt(1,5), v=3*Math.pow(2,x);
+        return mkSingle(`Resolva: 2ˣ⁺¹ + 2ˣ = ${v}`, x, [`2ˣ⁺¹ = 2 · 2ˣ. Então 2 · 2ˣ + 2ˣ = 3 · 2ˣ.`, `3 · 2ˣ = ${v} → 2ˣ = ${v/3}`, `x = ${x}`]); },
+      ()=>{ const p=pick([1000,2000,5000,10000]), t=pick([10,20]);
+        return mkSingle(`Uma cidade tem ${p.toLocaleString('pt-BR')} habitantes e cresce ${t}% ao ano. Quantos habitantes terá daqui a 2 anos?`, Math.round(p*Math.pow(1+t/100,2)), [`P = ${p} × (1 + ${t/100})² = ${p} × ${fmt(Math.pow(1+t/100,2))}.`, `= ${Math.round(p*Math.pow(1+t/100,2))}`]); },
+    ],
+  },
+  logaritmo:{
+    facil:[
+      ()=>{ const b=pick([2,3,5]), k=b===2?randInt(2,6):randInt(1,4), n=Math.pow(b,k);
+        return mkSingle(`Quanto vale log${subN(b)} ${n}?`, k, [`log${subN(b)} ${n} é o expoente que leva ${b} a ${n}.`, `${b}${mqSup(k)} = ${n} → ${k}`]); },
+      ()=>{ const b=randInt(2,20);
+        return mkSingle(`Quanto vale log${subN(b)} 1?`, 0, [`Todo número (positivo, diferente de 1) elevado a 0 dá 1.`, `log${subN(b)} 1 = 0`]); },
+    ],
+    medio:[
+      ()=>{ const a=randInt(4,7), b=randInt(1,a-2);
+        return mkSingle(`Quanto vale log₂ ${Math.pow(2,a)} − log₂ ${Math.pow(2,b)}?`, a-b, [`log₂ ${Math.pow(2,a)} = ${a} e log₂ ${Math.pow(2,b)} = ${b}.`, `${a} − ${b} = ${a-b}`]); },
+      ()=>{ const b=pick([2,3,5,10]), k=randInt(2,3);
+        return mkSingle(`Se log${subN(b)} x = ${k}, quanto vale x?`, Math.pow(b,k), [`Pela definição: x = ${b}${mqSup(k)}.`, `x = ${Math.pow(b,k)}`]); },
+    ],
+    dificil:[
+      ()=>{ const k=randInt(2,5), a=randInt(1,5);
+        return mkSingle(`Resolva: log₂(x − ${a}) = ${k}`, Math.pow(2,k)+a, [`x − ${a} = 2${mqSup(k)} = ${Math.pow(2,k)}.`, `x = ${Math.pow(2,k)+a}`]); },
+      ()=>mkSingle(`Use log 2 = 0,30. Quanto vale log 5?`, 0.7, [`5 = 10 ÷ 2 → log 5 = log 10 − log 2.`, `1 − 0,30 = 0,70`]),
+      ()=>{ const [b,n,r]=pick([[4,8,1.5],[8,4,null],[9,27,1.5],[4,32,2.5],[25,125,1.5]]);
+        if(r===null) return mkFrac(`Quanto vale log₈ 4?`, 2, 3, ['8 = 2³ e 4 = 2²: 8ˣ = 4 → 2³ˣ = 2² → x = 2/3']);
+        return mkSingle(`Quanto vale log${subN(b)} ${n}?`, r, [`Escreva na mesma base e iguale os expoentes.`, `${b}ˣ = ${n} → x = ${fmt(r)}`]); },
+    ],
+  },
+  pa:{
+    facil:[
+      ()=>{ const a=randInt(-10,20), r=pick([-5,-3,-2,2,3,4,5,6,7]);
+        return mkSingle(`Qual é a razão da PA (${nm(a)}, ${nm(a+r)}, ${nm(a+2*r)}, …)?`, r, [`Razão = um termo menos o anterior.`, `${nm(a+r)} − ${np(a)} = ${nm(r)}`]); },
+      ()=>{ const a=randInt(1,20), r=randInt(1,10), b=a+2*r;
+        return mkSingle(`Os números ${a}, x e ${b} formam uma PA. Quanto vale x?`, a+r, [`Numa PA, o termo do meio é a média dos vizinhos.`, `x = (${a} + ${b}) ÷ 2 = ${a+r}`]); },
+    ],
+    medio:[
+      ()=>{ const a=randInt(1,10), r=randInt(2,6), n=randInt(10,40), an=a+(n-1)*r;
+        return mkSingle(`Quantos termos tem a PA (${a}, ${a+r}, ${a+2*r}, …, ${an})?`, n, [`aₙ = a₁ + (n − 1)·r → ${an} = ${a} + (n − 1)·${r}.`, `n − 1 = ${(an-a)/r} → n = ${n}`]); },
+      ()=>{ const r=randInt(2,7), a3=randInt(1,20), a7=a3+4*r;
+        return mkSingle(`Numa PA, a₃ = ${a3} e a₇ = ${a7}. Qual é a razão?`, r, [`De a₃ até a₇ são 4 saltos: 4r = ${a7} − ${a3} = ${4*r}.`, `r = ${r}`]); },
+    ],
+    dificil:[
+      ()=>{ const n=pick([50,100,200,40,60]);
+        return mkSingle(`Quanto dá a soma 1 + 2 + 3 + … + ${n}?`, n*(n+1)/2, [`PA com a₁ = 1, aₙ = ${n} e ${n} termos.`, `S = (1 + ${n}) × ${n} ÷ 2 = ${n*(n+1)/2}`]); },
+      ()=>{ const a=randInt(1,9), r=randInt(2,5), n=pick([10,15,20,25]), an=a+(n-1)*r;
+        return mkSingle(`Uma PA de ${n} termos tem a₁ = ${a} e a${subN(n)} = ${an}. Qual é a soma dos termos?`, (a+an)*n/2, [`S = (a₁ + aₙ)·n ÷ 2`, `(${a} + ${an}) × ${n} ÷ 2 = ${(a+an)*n/2}`]); },
+    ],
+  },
+  pg:{
+    facil:[
+      ()=>{ const a=randInt(1,5), q=pick([2,3,4,5]);
+        return mkSingle(`Qual é a razão da PG (${a}, ${a*q}, ${a*q*q}, …)?`, q, [`Razão = um termo dividido pelo anterior.`, `${a*q} ÷ ${a} = ${q}`]); },
+      ()=>{ const a=pick([64,128,256,81,243]), q=a%3===0?3:2;
+        return mkSingle(`Qual é o próximo termo da PG (${a}, ${a/q}, ${a/q/q}, …)?`, a/q/q/q, [`Cada termo é o anterior dividido por ${q}.`, `${a/q/q} ÷ ${q} = ${a/q/q/q}`]); },
+    ],
+    medio:[
+      ()=>{ const a1=randInt(1,6), q=pick([2,3,4]);
+        return mkSingle(`Numa PG, a₂ = ${a1*q} e a₃ = ${a1*q*q}. Quanto vale a₁?`, a1, [`Razão: ${a1*q*q} ÷ ${a1*q} = ${q}.`, `a₁ = a₂ ÷ q = ${a1*q} ÷ ${q} = ${a1}`]); },
+      ()=>{ const [a,b]=pick([[4,16],[2,8],[3,27],[2,18],[4,36],[5,20],[1,49]]);
+        return mkSingle(`Os números ${a}, x e ${b} formam uma PG de termos positivos. Quanto vale x?`, Math.sqrt(a*b), [`Na PG, o termo do meio ao quadrado é o produto dos vizinhos: x² = ${a} × ${b} = ${a*b}.`, `x = ${Math.sqrt(a*b)}`]); },
+    ],
+    dificil:[
+      ()=>{ const a=pick([2,4,6,8,10,12]);
+        return mkSingle(`Quanto vale a soma infinita ${a} + ${fmt(a/2)} + ${fmt(a/4)} + ${fmt(a/8)} + …?`, 2*a, [`PG infinita com a₁ = ${a} e q = 1/2.`, `S = a₁ ÷ (1 − q) = ${a} ÷ 1/2 = ${2*a}`]); },
+      ()=>{ const h=pick([81,243,162]), n=pick([2,3]);
+        return mkSingle(`Uma bola cai de ${h} m e, a cada batida no chão, sobe 1/3 da altura anterior. Que altura ela atinge depois da ${n}ª batida? (em m)`, h/Math.pow(3,n), [`PG com razão 1/3.`, `${h} × (1/3)${mqSup(n)} = ${h} ÷ ${Math.pow(3,n)} = ${h/Math.pow(3,n)} m`]); },
+    ],
+  },
+  conicas:{
+    facil:[
+      ()=>{ const r=randInt(2,12);
+        return mkSingle(`Qual é o raio da circunferência x² + y² = ${r*r}?`, r, [`x² + y² = r² → r² = ${r*r}.`, `r = ${r}`]); },
+      ()=>{ const a=randInt(1,9)*pick([1,-1]), b=randInt(1,9)*pick([1,-1]), r=randInt(2,8);
+        return mkSingle(`A circunferência (x ${a<0?'+':'−'} ${Math.abs(a)})² + (y ${b<0?'+':'−'} ${Math.abs(b)})² = ${r*r} tem centro (a, b). Quanto vale a?`, a, [`Forma (x − a)² + (y − b)² = r².`, `(x ${a<0?'+':'−'} ${Math.abs(a)}) = (x − (${nm(a)})) → a = ${nm(a)}`]); },
+    ],
+    medio:[
+      ()=>{ const a=randInt(1,6), b=randInt(1,6), r=randInt(2,9);
+        return mkSingle(`Qual é o raio da circunferência (x − ${a})² + (y + ${b})² = ${r*r}?`, r, [`Na forma (x − a)² + (y − b)² = r², r² = ${r*r}.`, `r = ${r}`]); },
+      ()=>{ const a=randInt(2,10), b=randInt(2,10);
+        return mkSingle(`Qual é a medida do eixo real da hipérbole x²/${a*a} − y²/${b*b} = 1?`, 2*a, [`a² = ${a*a} → a = ${a}.`, `Eixo real = 2a = ${2*a}`]); },
+    ],
+    dificil:[
+      ()=>{ const [a,b,c]=pick([[5,4,3],[5,3,4],[10,6,8],[10,8,6],[13,12,5],[13,5,12]]);
+        return mkFrac(`Qual é a excentricidade da elipse x²/${a*a} + y²/${b*b} = 1? (responda em fração)`, c, a, [`a² = b² + c² → c² = ${a*a} − ${b*b} = ${c*c} → c = ${c}.`, `e = c/a = ${fracStr(c,a)}`]); },
+      ()=>{ const p=randInt(1,6);
+        return mkSingle(`A parábola y² = ${4*p}x tem foco no ponto (p, 0). Quanto vale p?`, p, [`Forma y² = 4px.`, `4p = ${4*p} → p = ${p}`]); },
+    ],
+  },
+  ciclo:{
+    facil:[
+      ()=>{ const a=randInt(1,359), q=a<90?1:a<180?2:a<270?3:4;
+        if(a%90===0) return mkSingle(`Em que quadrante está o ângulo de 135°?`, 2, ['Entre 90° e 180°: 2º quadrante.']);
+        return mkSingle(`Em que quadrante está o ângulo de ${a}°? (responda 1, 2, 3 ou 4)`, q, [`1º: 0° a 90° · 2º: 90° a 180° · 3º: 180° a 270° · 4º: 270° a 360°.`, `${a}° está no ${q}º quadrante.`]); },
+      ()=>{ const [t,f,v]=pick([[90,'sen',1],[180,'cos',-1],[0,'cos',1],[270,'sen',-1],[90,'cos',0],[180,'sen',0]]);
+        return mkSingle(`Quanto vale ${f} ${t}°?`, v, [`No ciclo, ${t}° fica no ponto (${nm(Math.round(Math.cos(t*Math.PI/180)))}, ${nm(Math.round(Math.sin(t*Math.PI/180)))}).`, `${f==='sen'?'Seno é o y':'Cosseno é o x'}: ${nm(v)}`]); },
+    ],
+    medio:[
+      ()=>{ const [t,f,v]=pick([[150,'sen',0.5],[210,'sen',-0.5],[120,'cos',-0.5],[300,'cos',0.5],[330,'sen',-0.5],[240,'cos',-0.5]]);
+        return mkSingle(`Quanto vale ${f} ${t}°? (em decimal)`, v, [`Reduza ao 1º quadrante: o ângulo de referência é ${[30,60].find(r=>[180-r,180+r,360-r].includes(t))}°.`, `${f} ${t}° = ${fmt(v)} (o sinal vem do quadrante)`]); },
+      ()=>{ const r=pick([30,45,60]), q=pick([2,3,4]), t=q===2?180-r:q===3?180+r:360-r;
+        return mkSingle(`O ângulo de ${t}° tem qual ângulo de referência no 1º quadrante? (em graus)`, r, [`${q===2?`180° − ${t}°`:q===3?`${t}° − 180°`:`360° − ${t}°`} = ${r}°`]); },
+    ],
+    dificil:[
+      ()=>{ const v=randInt(2,6), r=randInt(10,350);
+        return mkSingle(`Quantas voltas completas há no arco de ${v*360+r}°?`, v, [`${v*360+r} ÷ 360 = ${v} e sobram ${r}°.`, `${v} voltas completas`]); },
+      ()=>{ const k=pick([[13,6,30],[9,4,45],[7,3,60],[25,6,30],[17,4,45]]);
+        return mkSingle(`Qual é a menor determinação positiva, em graus, do arco ${k[0]}π/${k[1]} rad?`, k[2], [`${k[0]}π/${k[1]} = ${k[0]*180/k[1]}°.`, `${k[0]*180/k[1]} − 360${k[0]*180/k[1]>720?' − 360':''} = ${k[2]}°`]); },
+    ],
+  },
+  leis:{
+    facil:[
+      ()=>{ const a=randInt(2,10)*2, b=randInt(2,10)*2;
+        return mkSingle(`Dois lados de um triângulo medem ${a} cm e ${b} cm e formam um ângulo de 30°. Qual é a área? (sen 30° = 0,5)`, a*b/4, [`Área = (a · b · sen θ) ÷ 2.`, `${a} × ${b} × 0,5 ÷ 2 = ${a*b/4} cm²`]); },
+    ],
+    medio:[
+      ()=>{ const a=pick([5,6,8,10,12,15]);
+        return mkSingle(`Num triângulo, o lado a mede ${a} cm e o ângulo oposto mede 30°. Qual é o raio da circunferência circunscrita? (a ÷ sen A = 2R)`, a, [`${a} ÷ 0,5 = 2R → 2R = ${2*a}.`, `R = ${a} cm`]); },
+      ()=>{ const a=randInt(2,10)*2, b=randInt(2,10);
+        return mkSingle(`Dois lados de um triângulo medem ${a} cm e ${b} cm e formam um ângulo de 150°. Qual é a área? (sen 150° = 0,5)`, a*b/4, [`Área = (a · b · sen θ) ÷ 2.`, `${a} × ${b} × 0,5 ÷ 2 = ${fmt(a*b/4)} cm²`]); },
+    ],
+    dificil:[
+      ()=>{ const [a,b,c,ang]=pick([[5,8,7,60],[3,8,7,60],[3,5,7,120],[5,3,7,120]]);
+        return mkSingle(`Um triângulo tem lados ${a}, ${b} e ${c}. Quanto mede, em graus, o ângulo oposto ao lado ${c}?`, ang, [`Lei dos cossenos: ${c}² = ${a}² + ${b}² − 2·${a}·${b}·cos θ.`, `${c*c} = ${a*a+b*b} − ${2*a*b}·cos θ → cos θ = ${fmt((a*a+b*b-c*c)/(2*a*b))}.`, `θ = ${ang}°`]); },
+    ],
+  },
+  condicional:{
+    facil:[
+      ()=>mkFrac(`Uma moeda foi lançada duas vezes e sabe-se que saiu pelo menos uma cara. Qual a probabilidade de terem saído duas caras?`, 1, 3, ['Casos com pelo menos uma cara: CC, CK, KC (3 casos).', 'Só um deles é CC: 1/3']),
+      ()=>{ const n=pick([10,12,20]), pares=n/2, lim=pick([4,6]), maiores=[]; for(let i=2;i<=n;i+=2) if(i>lim) maiores.push(i);
+        return mkFrac(`Sorteou-se um número de 1 a ${n} e ele é par. Qual a probabilidade de ser maior que ${lim}?`, maiores.length, pares, [`Pares de 1 a ${n}: ${pares} números.`, `Maiores que ${lim}: ${maiores.join(', ')} (${maiores.length}).`, `P = ${maiores.length}/${pares} = ${fracStr(maiores.length,pares)}`]); },
+    ],
+    medio:[
+      ()=>{ const v=randInt(3,7), a=randInt(2,6), t=v+a;
+        return mkFrac(`Uma urna tem ${v} bolas vermelhas e ${a} azuis. Tirando 2 bolas, sem reposição, qual a probabilidade de as duas serem vermelhas?`, v*(v-1), t*(t-1), [`1ª vermelha: ${v}/${t}. Dado isso, 2ª vermelha: ${v-1}/${t-1}.`, `P = ${v}/${t} × ${v-1}/${t-1} = ${v*(v-1)}/${t*(t-1)} = ${fracStr(v*(v-1),t*(t-1))}`]); },
+    ],
+    dificil:[
+      ()=>{ const [b1,p1]=pick([[3,1],[2,2],[4,1],[3,2]]), [b2,p2]=pick([[1,3],[1,4],[2,3],[1,2]]);
+        const n=b1*(b2+p2), d=b1*(b2+p2)+b2*(b1+p1);
+        return mkFrac(`A caixa A tem ${b1} bolas brancas e ${p1} preta${p1>1?'s':''}; a caixa B tem ${b2} branca${b2>1?'s':''} e ${p2} pretas. Escolhe-se uma caixa ao acaso e tira-se uma bola: é branca. Qual a probabilidade de ter vindo da caixa A?`, n, d, [`P(branca e A) = 1/2 × ${b1}/${b1+p1}. P(branca e B) = 1/2 × ${b2}/${b2+p2}.`, `P(A | branca) = (${b1}/${b1+p1}) ÷ (${b1}/${b1+p1} + ${b2}/${b2+p2}).`, `= ${fracStr(n,d)}`]); },
+    ],
+  },
+  juros:{
+    facil:[
+      ()=>{ const c=pick([500,1000,2000,4000]), i=randInt(1,8), t=randInt(2,10), j=c*i*t/100;
+        return mkSingle(`Um capital de R$ ${c} rendeu R$ ${j} de juros simples em ${t} meses. Qual foi a taxa mensal (em %)?`, i, [`J = C · i · t → ${j} = ${c} · i · ${t}.`, `i = ${j} ÷ ${c*t} = ${fmt(i/100)} = ${i}%`]); },
+      ()=>{ const i=pick([2,5,10]);
+        return mkSingle(`A juros simples de ${i}% ao mês, em quantos meses um capital rende juros iguais à metade dele?`, 50/i, [`Juros = 50% do capital.`, `${i}% × t = 50% → t = ${50/i} meses`]); },
+    ],
+    medio:[
+      ()=>{ const i=randInt(2,6), t=randInt(2,10), c=pick([1000,2000,5000]), j=c*i*t/100;
+        return mkSingle(`Qual capital, aplicado a juros simples de ${i}% ao mês por ${t} meses, rende R$ ${j} de juros? (em reais)`, c, [`J = C · i · t → ${j} = C × ${i/100} × ${t}.`, `C = ${j} ÷ ${fmt(i*t/100)} = ${c}`]); },
+    ],
+    dificil:[
+      ()=>{ const c=pick([1000,2000,5000]), i=pick([5,10,20]);
+        const m=c*Math.pow(1+i/100,2);
+        return mkSingle(`Quanto de juros (não o montante) rende R$ ${c} a juros compostos de ${i}% ao mês, em 2 meses? (em reais)`, Math.round((m-c)*100)/100, [`Montante: ${c} × ${fmt(1+i/100)}² = ${fmt(m)}.`, `Juros: ${fmt(m)} − ${c} = ${fmt(m-c)}`]); },
+    ],
+  },
+  parcelamento:{
+    facil:[
+      ()=>{ const n=pick([2,3,4,5,6,8,10,12]), p=randInt(5,40)*10;
+        return mkSingle(`Um produto de R$ ${n*p} será pago em ${n} parcelas iguais, sem juros. Qual é o valor de cada parcela? (em reais)`, p, [`${n*p} ÷ ${n} = ${p}`]); },
+    ],
+    medio:[
+      ()=>{ const v=randInt(5,30)*100, d=pick([5,10]), n=pick([3,4,5]);
+        return mkSingle(`Um produto custa R$ ${v} em ${n}x sem juros ou à vista com ${d}% de desconto. Quantos reais economiza quem paga à vista?`, v*d/100, [`Desconto: ${d}% de ${v} = ${v*d/100}.`, `Economia = R$ ${v*d/100}`]); },
+    ],
+    dificil:[
+      ()=>{ const ent=randInt(2,10)*100, i=pick([5,10]), rest=randInt(2,10)*100, par=rest*(1+i/100), vista=ent+rest;
+        return mkSingle(`À vista, um produto custa R$ ${vista}. A prazo: R$ ${ent} de entrada e mais R$ ${par} um mês depois. Qual é a taxa de juros mensal (em %)?`, i, [`Depois da entrada, ficaram devendo ${vista} − ${ent} = ${rest}.`, `Pagaram ${par} por esses ${rest}: juros de ${par-rest}.`, `${par-rest} ÷ ${rest} = ${i}%`]); },
+    ],
+  },
+  descontos:{
+    facil:[
+      ()=>{ const p=randInt(4,30)*10, d=pick([10,20,25,50]);
+        return mkSingle(`Um produto de R$ ${p} está com ${d}% de desconto. De quantos reais é o desconto?`, p*d/100, [`${d}% de ${p} = ${p} × ${d} ÷ 100 = ${fmt(p*d/100)}`]); },
+      ()=>{ const p=pick([50,80,100,200,250]), d=pick([10,20,25,40]), f=p*(100-d)/100;
+        return mkSingle(`Um produto que custava R$ ${p} passou a custar R$ ${fmt(f)}. De quantos por cento foi o desconto?`, d, [`Desconto em reais: ${p} − ${fmt(f)} = ${fmt(p-f)}.`, `${fmt(p-f)} ÷ ${p} = ${fmt(d/100)} = ${d}%`]); },
+    ],
+    medio:[
+      ()=>{ const t=pick([10,20,25,50]), p=pick([100,200,400]), f=p*(1+t/100)*(1-t/100);
+        return mkSingle(`Um produto de R$ ${p} teve aumento de ${t}% e depois desconto de ${t}%. Quanto custa agora? (em reais)`, Math.round(f*100)/100, [`Aumento: ${p} × ${fmt(1+t/100)} = ${fmt(p*(1+t/100))}.`, `Desconto: ${fmt(p*(1+t/100))} × ${fmt(1-t/100)} = ${fmt(f)}`, `Não volta ao preço original!`]); },
+    ],
+    dificil:[
+      ()=>{ const d=pick([10,20,25,40]), o=randInt(2,20)*20, f=o*(100-d)/100;
+        if(!Number.isInteger(f*100)) return mkSingle('Depois de 20% de desconto, um produto custa R$ 240. Qual era o preço original?', 300, ['240 = 0,8 × P → P = 300']);
+        return mkSingle(`Depois de um desconto de ${d}%, um produto passou a custar R$ ${fmt(f)}. Qual era o preço original? (em reais)`, o, [`Preço com desconto = ${fmt(1-d/100)} × original.`, `Original = ${fmt(f)} ÷ ${fmt(1-d/100)} = ${o}`]); },
+    ],
+  },
+  inflacao:{
+    facil:[
+      ()=>{ const p=pick([20,40,50,80,100,200]), i=pick([5,10,20,25]), n=p*(1+i/100);
+        return mkSingle(`Um produto passou de R$ ${p} para R$ ${fmt(n)}. Qual foi a inflação desse produto (em %)?`, i, [`Aumento: ${fmt(n)} − ${p} = ${fmt(n-p)}.`, `${fmt(n-p)} ÷ ${p} = ${fmt(i/100)} = ${i}%`]); },
+    ],
+    medio:[
+      ()=>{ const i=pick([25,100]), v=i===25?80:50;
+        return mkSingle(`Com uma inflação de ${i}%, o que custava R$ 100 passa a custar R$ ${100+i}. Com R$ 100, você compra quantos por cento do que comprava antes?`, v, [`100 ÷ ${100+i} = ${fmt(100/(100+i))}.`, `= ${v}%`]); },
+    ],
+    dificil:[
+      ()=>{ const i=pick([25,100,60]), perda=Math.round(i/(100+i)*10000)/100;
+        if(!Number.isInteger(perda*100)) return mkSingle('Com inflação de 25%, quanto o dinheiro perde de poder de compra (em %)?', 20, ['1 ÷ 1,25 = 0,8 → perde 20%']);
+        return mkSingle(`Com uma inflação de ${i}%, quanto o dinheiro perde de poder de compra (em %)?`, perda, [`O que custava 100 passa a custar ${100+i}.`, `Poder de compra: 100 ÷ ${100+i} = ${fmt(100/(100+i))}.`, `Perda: 100% − ${fmt(10000/(100+i))}% = ${fmt(perda)}%`]); },
+    ],
+  },
+  determinantes:{
+    facil:[
+      ()=>{ const b=randInt(1,6), c=randInt(1,6), d=randInt(2,6), x=randInt(1,8), det=x*d-b*c, q=`Para que valor de x o determinante da matriz é ${nm(det)}?`;
+        return mkSingle(q, x, [`det = x · ${d} − ${b} · ${c} = ${d}x − ${b*c}.`, `${d}x − ${b*c} = ${nm(det)} → ${d}x = ${det+b*c}`, `x = ${x}`], null, matQ(q, [mqMat([['x',b],[c,d]])]), mqMat([[x,b],[c,d]])); },
+      ()=>{ const a=randInt(2,9), d=randInt(2,9), q='Qual é o determinante desta matriz diagonal?';
+        return mkSingle(q, a*d, [`Matriz diagonal: o determinante é o produto da diagonal.`, `${a} × ${d} = ${a*d}`], null, matQ(q, [matHTML([[a,0],[0,d]])]), matHTML([[a,0],[0,d]])); },
+    ],
+    medio:[
+      ()=>{ const d=randInt(-6,8)||3, k=pick([2,3]);
+        return mkSingle(`A é uma matriz 2×2 com det A = ${nm(d)}. Quanto vale det(${k}A)?`, k*k*d, [`Multiplicar a matriz n×n por k multiplica o det por kⁿ.`, `det(${k}A) = ${k}² × ${np(d)} = ${nm(k*k*d)}`]); },
+      ()=>{ const a=randInt(-5,6)||2, b=randInt(-5,6)||3;
+        return mkSingle(`det A = ${nm(a)} e det B = ${nm(b)}. Quanto vale det(A · B)?`, a*b, [`det(A · B) = det A × det B.`, `${np(a)} × ${np(b)} = ${nm(a*b)}`]); },
+    ],
+    dificil:[
+      ()=>{ const M=[[randInt(1,5),randInt(-5,5),randInt(-5,5)],[0,randInt(1,5),randInt(-5,5)],[0,0,randInt(-4,5)||2]], d=M[0][0]*M[1][1]*M[2][2], q='Qual é o determinante desta matriz triangular?';
+        return mkSingle(q, d, [`Matriz triangular: o determinante é o produto da diagonal principal.`, `${np(M[0][0])} × ${np(M[1][1])} × ${np(M[2][2])} = ${nm(d)}`], null, matQ(q, [matHTML(M)]), matHTML(M)); },
+      ()=>{ const d=pick([2,4,5,8,-2,-4,-5]);
+        return mkFrac(`A é uma matriz invertível com det A = ${nm(d)}. Quanto vale det(A⁻¹)?`, 1, d, [`det(A⁻¹) = 1 ÷ det A.`, `= 1/${nm(d)}`]); },
+    ],
+  },
+  sistlin:{
+    facil:[
+      ()=>{ const x=randInt(1,9), y=randInt(1,9), z=randInt(1,9);
+        return mkSingle(`Três amigos: x + y = ${x+y}, y + z = ${y+z} e x + z = ${x+z}. Quanto vale x + y + z?`, x+y+z, [`Some as três equações: 2x + 2y + 2z = ${2*(x+y+z)}.`, `x + y + z = ${x+y+z}`]); },
+    ],
+    medio:[
+      ()=>{ const a=randInt(1,5), b=randInt(1,5), c=randInt(1,5), d=-randInt(1,5);
+        return mkSingle(`No sistema ${a}x + ${b}y = 7 e ${c}x ${fmtSigned(d)}y = 1, quanto vale o determinante D dos coeficientes?`, a*d-b*c, [`D = | ${a} ${b} ; ${c} ${nm(d)} | = ${a}·${np(d)} − ${b}·${c}`, `= ${nm(a*d)} − ${b*c} = ${nm(a*d-b*c)}`]); },
+    ],
+    dificil:[
+      ()=>{ const a=randInt(1,4), b=randInt(1,4), m=randInt(2,4);
+        return mkSingle(`Para qual valor de k o sistema ${a}x + ${b}y = 3 e ${a*m}x + ky = 5 NÃO tem solução única?`, b*m, [`Não tem solução única quando D = 0.`, `D = ${a}k − ${b}·${a*m} = 0 → k = ${b*m}`]); },
+    ],
+  },
+  analitica:{
+    facil:[
+      ()=>{ const x1=randInt(-8,8), x2=x1+2*randInt(-5,5), y1=randInt(-8,8), y2=randInt(-8,8);
+        return mkSingle(`Qual é a coordenada x do ponto médio entre A(${nm(x1)}, ${nm(y1)}) e B(${nm(x2)}, ${nm(y2)})?`, (x1+x2)/2, [`x do ponto médio = (x_A + x_B) ÷ 2.`, `(${nm(x1)} + ${np(x2)}) ÷ 2 = ${nm((x1+x2)/2)}`]); },
+      ()=>{ const t=pick([[3,4,5],[6,8,10],[5,12,13],[8,6,10]]);
+        return mkSingle(`Qual é a distância do ponto P(${t[0]}, ${t[1]}) até a origem?`, t[2], [`d = √(${t[0]}² + ${t[1]}²) = √${t[0]**2+t[1]**2}`, `= ${t[2]}`]); },
+    ],
+    medio:[
+      ()=>{ const a=randInt(1,6), c=randInt(1,12);
+        return mkSingle(`Qual é o coeficiente linear (onde corta o eixo y) da reta ${a}x + y − ${c} = 0?`, c, [`Isole y: y = −${a}x + ${c}.`, `Coeficiente linear = ${c}`]); },
+      ()=>{ const m=randInt(-4,5)||2, b=randInt(-6,6), k=randInt(1,6);
+        return mkSingle(`A reta tem coeficiente angular ${nm(m)} e passa por (0, ${nm(b)}). Qual é o valor de y quando x = ${k}?`, m*k+b, [`y = ${nm(m)}x ${fmtSigned(b)}`, `y = ${nm(m)} × ${k} ${fmtSigned(b)} = ${nm(m*k+b)}`]); },
+    ],
+    dificil:[
+      ()=>{ const [x0,y0,c]=pick([[1,2,4],[2,1,-5],[3,3,9],[0,0,10],[1,1,-2],[4,2,5]]), d=Math.abs(3*x0+4*y0+c)/5;
+        return mkSingle(`Qual é a distância do ponto P(${x0}, ${y0}) até a reta 3x + 4y ${fmtSigned(c)} = 0?`, d, [`d = |3·${x0} + 4·${y0} ${fmtSigned(c)}| ÷ √(3² + 4²)`, `= ${Math.abs(3*x0+4*y0+c)} ÷ 5 = ${fmt(d)}`]); },
+      ()=>{ const a=randInt(2,12), b=randInt(2,12);
+        return mkSingle(`Qual é a área do triângulo de vértices (0, 0), (${a}, 0) e (0, ${b})?`, a*b/2, [`É um triângulo retângulo com catetos ${a} e ${b}.`, `Área = ${a} × ${b} ÷ 2 = ${fmt(a*b/2)}`]); },
+    ],
+  },
+  trigret:{
+    facil:[
+      ()=>{ const h=2*randInt(2,15);
+        return mkSingle(`Num triângulo retângulo, a hipotenusa mede ${h} cm. Quanto mede o cateto oposto ao ângulo de 30°? (sen 30° = 0,5)`, h/2, [`sen 30° = oposto ÷ hipotenusa.`, `oposto = ${h} × 0,5 = ${h/2} cm`]); },
+    ],
+    medio:[
+      ()=>{ const d=randInt(3,30);
+        return mkSingle(`Um poste projeta uma sombra de ${d} m quando os raios do sol fazem 45° com o chão. Qual é a altura do poste? (tg 45° = 1)`, d, [`tg 45° = altura ÷ sombra.`, `altura = ${d} × 1 = ${d} m`]); },
+      ()=>{ const c=2*randInt(2,15);
+        return mkSingle(`Uma rampa de ${c} m de comprimento faz 30° com o chão. Que altura ela alcança? (sen 30° = 0,5)`, c/2, [`altura = comprimento × sen 30°`, `${c} × 0,5 = ${c/2} m`]); },
+    ],
+    dificil:[
+      ()=>{ const d=randInt(10,40), o=pick([1.5,1.6,1.7,1.8]);
+        return mkSingle(`Uma pessoa com os olhos a ${fmt(o)} m do chão está a ${d} m de um prédio e vê o topo sob um ângulo de 45°. Qual é a altura do prédio? (em m)`, d+o, [`tg 45° = 1 → a parte acima dos olhos mede ${d} m.`, `Altura = ${d} + ${fmt(o)} = ${fmt(d+o)} m`]); },
+      ()=>{ const e=pick([4,6,8,10]);
+        return mkSingle(`Uma escada de ${e} m está apoiada num muro, fazendo 60° com o chão. A que distância do muro está o pé da escada? (cos 60° = 0,5)`, e/2, [`cos 60° = distância ÷ escada.`, `${e} × 0,5 = ${e/2} m`]); },
+    ],
+  },
+  identidades:{
+    facil:[
+      ()=>{ const x=randInt(10,80);
+        return mkSingle(`Quanto vale sen² ${x}° + cos² ${x}°?`, 1, [`Relação fundamental: sen² x + cos² x = 1 para qualquer x.`, `= 1`]); },
+      ()=>{ const [c,s]=pick([[0.6,0.8],[0.8,0.6]]);
+        return mkSingle(`Se cos x = ${fmt(c)} e x está no 1º quadrante, quanto vale sen x?`, s, [`sen² x = 1 − ${fmt(c)}² = 1 − ${fmt(c*c)} = ${fmt(1-c*c)}.`, `sen x = ${fmt(s)}`]); },
+    ],
+    medio:[
+      ()=>{ const c=pick([0.5,0.25,0.2,0.8]);
+        return mkSingle(`Se cos x = ${fmt(c)}, quanto vale sec x?`, 1/c, [`sec x = 1 ÷ cos x.`, `1 ÷ ${fmt(c)} = ${fmt(1/c)}`]); },
+      ()=>{ const s=pick([0.6,0.8,0.5]);
+        return mkSingle(`Se sen x = ${fmt(s)}, quanto vale cos 2x? (use cos 2x = 1 − 2·sen² x)`, Math.round((1-2*s*s)*100)/100, [`sen² x = ${fmt(s*s)}.`, `cos 2x = 1 − 2 × ${fmt(s*s)} = ${fmt(1-2*s*s)}`]); },
+    ],
+    dificil:[
+      ()=>{ const [o,a,h]=pick([[3,4,5],[4,3,5],[5,12,13],[12,5,13],[8,15,17]]);
+        return mkFrac(`Se tg x = ${o}/${a} e x está no 1º quadrante, quanto vale sen x?`, o, h, [`Monte o triângulo: oposto ${o}, adjacente ${a}.`, `Hipotenusa: √(${o}² + ${a}²) = ${h}.`, `sen x = ${o}/${h}`]); },
+    ],
+  },
+  matrizes:{
+    facil:[
+      ()=>{ const m=randInt(2,5), n=randInt(2,5);
+        return mkSingle(`Quantos elementos tem uma matriz ${m}×${n}?`, m*n, [`${m} linhas × ${n} colunas.`, `= ${m*n} elementos`]); },
+      ()=>{ const n=randInt(2,6);
+        return mkSingle(`Quanto dá a soma de todos os elementos da matriz identidade ${n}×${n}?`, n, [`A identidade tem 1 na diagonal principal e 0 no resto.`, `São ${n} uns: soma = ${n}`]); },
+    ],
+    medio:[
+      ()=>{ const m=randInt(2,5), n=randInt(2,5), p=randInt(2,5);
+        return mkSingle(`A é ${m}×${n} e B é ${n}×${p}. Quantas colunas tem a matriz A · B?`, p, [`(${m}×${n}) · (${n}×${p}) = ${m}×${p}.`, `${p} colunas`]); },
+      ()=>{ const m=randInt(2,5), n=randInt(2,5);
+        return mkSingle(`A matriz A é ${m}×${n}. Quantas linhas tem a transposta Aᵗ?`, n, [`Na transposta, linhas viram colunas.`, `Aᵗ é ${n}×${m}: ${n} linhas`]); },
+    ],
+    dificil:[
+      ()=>{ const a=randInt(-3,4), b=randInt(-3,4), c=randInt(-3,4), d=randInt(-3,4), v=a*a+b*c, q='Sendo A esta matriz, qual é o elemento da linha 1, coluna 1 de A²?';
+        return mkSingle(q, v, [`(A²)₁₁ = linha 1 de A · coluna 1 de A.`, `${np(a)}·${np(a)} + ${np(b)}·${np(c)} = ${nm(v)}`], null, matQ(q, [matHTML([[a,b],[c,d]],'A')]), matHTML([[a,b],[c,d]],'A')); },
+    ],
+  },
+  eqtrig:{
+    facil:[
+      ()=>{ const [f,v,x]=pick([['sen','1/2',30],['tg','1',45],['sen','1',90],['cos','1/2',60],['tg','√3',60],['cos','0',90]]);
+        return mkSingle(`Qual é o ângulo x, entre 0° e 90°, com ${f} x = ${v}?`, x, [`Valor notável: ${f} ${x}° = ${v}.`, `x = ${x}°`]); },
+    ],
+    medio:[
+      ()=>{ const [f,v,a,b]=pick([['cos','1/2',60,300],['tg','1',45,225],['sen','1/2',30,150],['cos','√3/2',30,330]]);
+        return mkPair(`Resolva ${f} x = ${v} para 0° ≤ x < 360°. (Dê as duas soluções, em graus.)`, a, b, [`No 1º quadrante: ${a}°.`, `${f==='sen'?'Seno positivo também no 2º quadrante':f==='cos'?'Cosseno positivo também no 4º quadrante':'Tangente positiva também no 3º quadrante'}: ${b}°.`]); },
+    ],
+    dificil:[
+      ()=>{ const [eq,a,b]=pick([['2·sen x − 1 = 0',30,150],['2·cos x − 1 = 0',60,300],['2·sen x + 1 = 0',210,330],['tg x + 1 = 0',135,315]]);
+        return mkPair(`Resolva ${eq} para 0° ≤ x < 360°. (Dê as duas soluções, em graus.)`, a, b, [`Isole a função trigonométrica.`, `Soluções: ${a}° e ${b}°`]); },
+      ()=>mkSingle(`Quantas soluções tem sen x = 0 para 0° ≤ x ≤ 360°?`, 3, ['sen x = 0 em 0°, 180° e 360°.', 'São 3 soluções.']),
+    ],
+  },
+  inequacoes:{
+    facil:[
+      ()=>{ const a=randInt(2,5), b=randInt(5,30);
+        return mkSingle(`Quantos números inteiros positivos satisfazem ${a}x < ${b}?`, Math.ceil(b/a)-1, [`x < ${fmt(b/a)}.`, `Inteiros positivos: 1 até ${Math.ceil(b/a)-1} → ${Math.ceil(b/a)-1}`]); },
+    ],
+    medio:[
+      ()=>{ const a=randInt(2,5), x0=randInt(1,8), b=a*x0+randInt(1,a-1);
+        return mkSingle(`Qual é o maior número inteiro que satisfaz −${a}x + ${b} > 0?`, Math.floor(b/a), [`−${a}x > −${b} → x < ${fmt(b/a)} (o sinal inverte ao dividir por negativo).`, `Maior inteiro: ${Math.floor(b/a)}`]); },
+    ],
+    dificil:[
+      ()=>{ const a=randInt(-5,2), b=a+randInt(2,8);
+        return mkSingle(`Quantos números inteiros satisfazem (x ${a<0?'+':'−'} ${Math.abs(a)})(x − ${b}) ≤ 0?`, b-a+1, [`As raízes são ${nm(a)} e ${b}; o produto é ≤ 0 entre elas.`, `Inteiros de ${nm(a)} até ${b}: ${b-a+1}`]); },
+    ],
+  },
+  modular:{
+    facil:[
+      ()=>{ const a=randInt(1,15), b=randInt(1,15);
+        return mkSingle(`Quanto vale |−${a}| − |${b}|?`, a-b, [`|−${a}| = ${a} e |${b}| = ${b}.`, `${a} − ${b} = ${nm(a-b)}`]); },
+      ()=>{ const a=randInt(-10,10), b=randInt(-10,10);
+        return mkSingle(`Qual é a distância entre ${nm(a)} e ${nm(b)} na reta numérica?`, Math.abs(a-b), [`Distância = |${nm(a)} − ${np(b)}|.`, `= |${nm(a-b)}| = ${Math.abs(a-b)}`]); },
+    ],
+    medio:[
+      ()=>{ const a=randInt(2,10);
+        return mkSingle(`Quantos números inteiros satisfazem |x| ≤ ${a}?`, 2*a+1, [`−${a} ≤ x ≤ ${a}.`, `De −${a} até ${a}: ${2*a+1} inteiros`]); },
+    ],
+    dificil:[
+      ()=>{ const a=randInt(1,9), b=randInt(2,8);
+        return mkSingle(`Quantos números inteiros satisfazem |x − ${a}| < ${b}?`, 2*b-1, [`−${b} < x − ${a} < ${b} → ${a-b} < x < ${a+b}.`, `Inteiros de ${a-b+1} até ${a+b-1}: ${2*b-1}`]); },
+      ()=>{ const b=randInt(2,9), a=randInt(1,9), x1=(a+b)/2;
+        if(!Number.isInteger(x1)) return mkSingle(`Resolva |2x − 4| = 6. Qual é a maior solução?`, 5, ['2x − 4 = 6 → x = 5', '2x − 4 = −6 → x = −1', 'Maior: 5']);
+        return mkSingle(`Resolva |2x − ${a}| = ${b}. Qual é a maior solução?`, x1, [`2x − ${a} = ${b} → x = ${fmt(x1)}`, `2x − ${a} = −${b} → x = ${fmt((a-b)/2)}`, `Maior: ${fmt(x1)}`]); },
+    ],
+  },
+  dispersao:{
+    facil:[
+      ()=>{ const r=mqTry(()=>Array.from({length:4},()=>randInt(2,20)), v=>v.reduce((a,b)=>a+b)%4===0) || [2,4,6,8];
+        const t=r.reduce((a,b)=>a+b);
+        return mkSingle(`Qual é a média dos dados ${r.join(', ')}?`, t/4, [`Soma: ${r.join(' + ')} = ${t}.`, `${t} ÷ 4 = ${t/4}`]); },
+    ],
+    medio:[
+      ()=>{ const k=randInt(2,9), n=randInt(3,6);
+        return mkSingle(`Qual é a variância dos dados ${Array(n).fill(k).join(', ')}?`, 0, [`Todos os valores são iguais à média (${k}).`, `Não há variação: variância = 0`]); },
+    ],
+    dificil:[
+      ()=>{ const d=randInt(2,9), k=randInt(2,20);
+        return mkSingle(`Um conjunto de dados tem desvio padrão ${d}. Se somarmos ${k} a todos os valores, qual será o novo desvio padrão?`, d, [`Somar a mesma constante desloca todos os dados, mas não muda a distância entre eles.`, `O desvio padrão continua ${d}`]); },
+      ()=>{ const d=randInt(2,9), k=pick([2,3,5,10]);
+        return mkSingle(`Um conjunto de dados tem desvio padrão ${d}. Se multiplicarmos todos os valores por ${k}, qual será o novo desvio padrão?`, d*k, [`Multiplicar os dados por ${k} multiplica o desvio padrão por ${k}.`, `${d} × ${k} = ${d*k}`]); },
+    ],
+  },
+  probabilidade:{
+    facil:[
+      ()=>{ const v=randInt(1,6), a=randInt(1,6);
+        return mkFrac(`Uma urna tem ${v} bolas vermelhas e ${a} azuis. Tirando uma ao acaso, qual a probabilidade de ser azul?`, a, a+v, [`Casos favoráveis: ${a}. Total: ${a+v}.`, `P = ${a}/${a+v} = ${fracStr(a,a+v)}`]); },
+      ()=>mkFrac(`Lançando uma moeda, qual a probabilidade de sair cara?`, 1, 2, ['2 resultados possíveis, 1 favorável: 1/2']),
+    ],
+    dificil:[
+      ()=>{ const n=pick([2,3,4]);
+        return mkFrac(`Lançando uma moeda ${n} vezes, qual a probabilidade de sair cara em todas?`, 1, Math.pow(2,n), [`Cada lançamento: 1/2. São independentes.`, `(1/2)${mqSup(n)} = 1/${Math.pow(2,n)}`]); },
+      ()=>mkFrac(`Lançando um dado duas vezes, qual a probabilidade de NÃO sair 6 em nenhuma?`, 25, 36, ['Não sair 6 num lançamento: 5/6.', '5/6 × 5/6 = 25/36']),
+    ],
+  },
+  polinomios:{
+    facil:[
+      ()=>{ const g=randInt(2,6), c=randInt(1,9);
+        return mkSingle(`Qual é o grau de P(x) = ${c}x${mqSup(g)} − x + ${randInt(1,9)}?`, g, [`O grau é o maior expoente de x (com coeficiente diferente de zero).`, `Grau ${g}`]); },
+      ()=>{ const a=randInt(1,5), b=pick([-5,-4,-3,-2,-1,1,2,3,4,5]), c=pick([-5,-4,-3,-2,-1,1,2,3,4,5]), d=randInt(1,9);
+        return mkSingle(`Qual é a soma dos coeficientes de P(x) = ${a}x³ ${fmtSigned(b)}x² ${fmtSigned(c)}x + ${d}?`, a+b+c+d, [`A soma dos coeficientes é P(1).`, `${a} ${fmtSigned(b)} ${fmtSigned(c)} + ${d} = ${a+b+c+d}`]); },
+    ],
+    dificil:[
+      ()=>{ const r=[randInt(1,4),randInt(1,4),randInt(1,5)], s=r[0]+r[1]+r[2], p2=r[0]*r[1]+r[0]*r[2]+r[1]*r[2], p=r[0]*r[1]*r[2];
+        return mkSingle(`Qual é a soma das raízes de x³ − ${s}x² + ${p2}x − ${p} = 0?`, s, [`Girard: soma das raízes = −b ÷ a.`, `= ${s} ÷ 1 = ${s}`]); },
+      ()=>{ const r=[randInt(1,4),randInt(1,4),randInt(1,5)], s=r[0]+r[1]+r[2], p2=r[0]*r[1]+r[0]*r[2]+r[1]*r[2], p=r[0]*r[1]*r[2];
+        return mkSingle(`Qual é o produto das raízes de x³ − ${s}x² + ${p2}x − ${p} = 0?`, p, [`Girard (grau 3): produto = −d ÷ a.`, `= −(−${p}) ÷ 1 = ${p}`]); },
+    ],
+  },
+  complexos:{
+    dificil:[
+      ()=>{ const k=randInt(5,60), e=4*k+pick([0,2]);
+        return mkSingle(`Quanto vale i${String(e).split('').map(d=>'⁰¹²³⁴⁵⁶⁷⁸⁹'[d]).join('')}?`, e%4===0?1:-1, [`As potências de i se repetem de 4 em 4: i⁰ = 1, i¹ = i, i² = −1, i³ = −i.`, `${e} ÷ 4 deixa resto ${e%4} → i${'⁰¹²³'[e%4]} = ${e%4===0?'1':'−1'}`]); },
+      ()=>{ const a=randInt(1,9), b=randInt(1,9);
+        return mkSingle(`Quanto vale (${a} + ${b}i)(${a} − ${b}i)?`, a*a+b*b, [`z · z̄ = a² + b².`, `${a}² + ${b}² = ${a*a+b*b}`]); },
+    ],
+  },
+  conjuntos:{
+    facil:[
+      ()=>{ const ab=randInt(1,8), a=ab+randInt(2,10), b=ab+randInt(2,10);
+        return mkSingle(`n(A) = ${a}, n(B) = ${b} e n(A ∩ B) = ${ab}. Quanto vale n(A ∪ B)?`, a+b-ab, [`n(A ∪ B) = n(A) + n(B) − n(A ∩ B).`, `${a} + ${b} − ${ab} = ${a+b-ab}`]); },
+    ],
+    dificil:[
+      ()=>{ const ab=randInt(5,30), a=ab+randInt(10,50), b=ab+randInt(10,50);
+        return mkSingle(`Numa pesquisa, ${a} pessoas gostam de futebol, ${b} de vôlei e ${ab} dos dois. Todo mundo gosta de pelo menos um. Quantas pessoas foram pesquisadas?`, a+b-ab, [`Os ${ab} foram contados duas vezes.`, `${a} + ${b} − ${ab} = ${a+b-ab}`]); },
+      ()=>{ const n=randInt(2,7);
+        return mkSingle(`Quantos subconjuntos tem um conjunto com ${n} elementos?`, Math.pow(2,n), [`Cada elemento entra ou não entra: 2 possibilidades.`, `2${'⁰¹²³⁴⁵⁶⁷'[n]} = ${Math.pow(2,n)}`]); },
+    ],
+  },
+  espacial:{
+    facil:[
+      ()=>{ const a=randInt(2,10), b=randInt(2,10), c=randInt(2,10);
+        return mkSingle(`Qual é o volume (em cm³) de uma caixa de ${a} cm × ${b} cm × ${c} cm?`, a*b*c, [`Volume = comprimento × largura × altura.`, `${a} × ${b} × ${c} = ${a*b*c} cm³`]); },
+    ],
+    medio:[
+      ()=>{ const r=randInt(1,6), h=randInt(2,10);
+        return mkSingle(`Qual é o volume (em cm³) de um cilindro de raio ${r} cm e altura ${h} cm? Use π = 3.`, 3*r*r*h, [`V = π · r² · h.`, `3 × ${r*r} × ${h} = ${3*r*r*h} cm³`]); },
+    ],
+    dificil:[
+      ()=>{ const r=pick([3,6,9]);
+        return mkSingle(`Qual é o volume (em cm³) de uma esfera de raio ${r} cm? Use π = 3.`, 4*r*r*r, [`V = (4/3) · π · r³.`, `(4/3) × 3 × ${r*r*r} = 4 × ${r*r*r} = ${4*r*r*r} cm³`]); },
+    ],
+  },
+  combinatoria:{
+    facil:[
+      ()=>{ const n=pick([3,4]);
+        return mkSingle(`Quantos anagramas tem a palavra ${n===3?pick(['SOL','MAR','LUA','CÉU']):pick(['GATO','BOLA','RIMA','PATO'])}?`, n===3?6:24, [`Letras diferentes: ${n}! = ${n===3?'3 × 2 × 1':'4 × 3 × 2 × 1'}.`, `= ${n===3?6:24}`]); },
+      ()=>{ const d=pick([2,3]);
+        return mkSingle(`Quantas senhas de ${d} dígitos (de 0 a 9, podendo repetir) existem?`, Math.pow(10,d), [`Cada dígito tem 10 opções.`, `${Array(d).fill(10).join(' × ')} = ${Math.pow(10,d)}`]); },
+    ],
+    dificil:[
+      ()=>{ const n=randInt(5,10);
+        return mkSingle(`De um grupo de ${n} pessoas, quantas comissões de 3 pessoas podem ser formadas?`, n*(n-1)*(n-2)/6, [`C(${n}, 3) = ${n} × ${n-1} × ${n-2} ÷ 3!`, `= ${n*(n-1)*(n-2)} ÷ 6 = ${n*(n-1)*(n-2)/6}`]); },
+      ()=>{ const [w,v]=pick([['ARARA',10],['BANANA',60],['OSSO',6],['CASA',12],['ARROZ',60]]);
+        return mkSingle(`Quantos anagramas tem a palavra ${w}?`, v, [`Permutação com letras repetidas: divida pelos fatoriais das repetições.`, `= ${v}`]); },
+    ],
+  },
+  functrig:{
+    dificil:[
+      ()=>{ const k=pick([2,3,4,6]);
+        return mkSingle(`Qual é o período, em graus, de f(x) = sen(${k}x)?`, 360/k, [`O período de sen(kx) é 360° ÷ k.`, `360 ÷ ${k} = ${360/k}°`]); },
+      ()=>{ const a=randInt(2,8), b=randInt(1,a);
+        return mkSingle(`f(x) = ${a} + ${b}·cos x. Qual é o valor mínimo de f?`, a-b, [`cos x varia de −1 a 1.`, `Mínimo: ${a} + ${b} × (−1) = ${a-b}`]); },
+    ],
+  },
+  espacial2:{
+    medio:[
+      ()=>{ const a=randInt(2,10);
+        return mkSingle(`Um cubo tem volume ${a*a*a} cm³. Quanto mede a aresta? (em cm)`, a, [`V = a³ → a = ∛${a*a*a}.`, `a = ${a} cm`]); },
+      ()=>{ const r=randInt(1,6), h=randInt(2,10);
+        return mkSingle(`Qual é a área lateral (em cm²) de um cilindro de raio ${r} cm e altura ${h} cm? Use π = 3.`, 2*3*r*h, [`Área lateral = 2 · π · r · h.`, `2 × 3 × ${r} × ${h} = ${6*r*h} cm²`]); },
+    ],
+  },
+});
+
+/* O Desafio do Dia recria as perguntas pela semente (data) pra mostrar a correção.
+   Pros dias anteriores aos tipos novos, a geração tem que ser igual à antiga: com
+   MQ_DESLIGADO = true os geradores usam só o tipo antigo (sem gastar sorteio). */
+const MQ_DESDE = '2026-11-08';
+let MQ_DESLIGADO = false;
+
 /* liga os tipos novos aos geradores de cada assunto */
 SUBJECTS.forEach(s=>{
   const extra = MAIS_QUESTOES[s.id];
@@ -517,6 +1012,7 @@ SUBJECTS.forEach(s=>{
     const list = extra[lv], base = s.gen[lv];
     if(!list || !list.length || !base) return;
     s.gen[lv] = ()=>{
+      if(MQ_DESLIGADO) return base();
       const k = randInt(0, list.length); // 0..n: o último é o gerador antigo
       if(k === list.length) return base();
       try{ return list[k](); }catch(e){ return base(); }

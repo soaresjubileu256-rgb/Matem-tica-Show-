@@ -225,6 +225,11 @@ const DAILY_FIRST_DAY = '2026-10-17';
 function dailyNumber(k){ return Math.round((new Date(k+'T12:00') - new Date(DAILY_FIRST_DAY+'T12:00'))/864e5) + 1; }
 function dailyQuestions(k, track){
   track = track || 'fund';
+  // desafios de antes dos tipos novos de questão: gera como antes (a correção bate com o que foi respondido)
+  if(typeof MQ_DESDE!=='undefined' && k < MQ_DESDE && !MQ_DESLIGADO){
+    MQ_DESLIGADO = true;
+    try{ return dailyQuestions(k, track); } finally { MQ_DESLIGADO = false; }
+  }
   return withSeed(dailySeed(k)*10 + (track==='em' ? 1 : 0), ()=>{
     const ids = shuffle(dailyTrackIds(track)).slice(0, DAILY_N);
     const diffs = ['facil','facil','medio','medio','medio','dificil','dificil'];
