@@ -828,17 +828,35 @@ function showConfirm(opts){
 function showNoHearts(onRefill){
   const bg = document.createElement('div');
   bg.className = 'gm-modal-bg';
-  const gems = gemsNow();
-  bg.innerHTML = `<div class="gm-modal">
-    <div>${mascotSVG('sad',100)}</div>
-    <h2 style="color:#FF4B4B">Sem vidas! 💔</h2>
-    <p>Próxima vida em <b class="nh-t">${fmtMinSec(nextHeartIn())}</b>.<br>Enquanto isso, você pode praticar livremente em Exercícios, Relâmpago ou Quiz.</p>
-    <div class="nh-review"></div>
-    <button type="button" class="nh-refill" ${gems<HEART_REFILL_COST?'disabled':''}>Recarregar ❤️ por ${HEART_REFILL_COST} 🪙 (você tem ${gems})</button>
-    <button type="button" class="nh-close" style="margin-top:10px;background:rgba(255,255,255,.1);color:#fff">Voltar</button>
+  const gems = gemsNow(), hearts = heartsNow(), canRefill = gems >= HEART_REFILL_COST;
+  const pct = ()=> Math.round((1 - nextHeartIn()/HEART_REGEN_MS) * 100);
+  bg.innerHTML = `<div class="gm-modal nh-modal" role="dialog" aria-labelledby="nh-title">
+    <div class="nh-mascot">${mascotSVG('happy',84)}</div>
+    <div class="nh-hearts" aria-label="${hearts} de ${HEARTS_MAX} vidas">${Array.from({length:HEARTS_MAX},(_,i)=>`<span class="${i<hearts?'on':''}">♥</span>`).join('')}</div>
+    <h2 id="nh-title">Acabaram as vidas</h2>
+    <p class="nh-sub">Não desanima! Escolha como voltar pra Trilha:</p>
+    <div class="nh-timer">
+      <div class="nh-timer-t"><span>⏳ Próxima vida em</span><b class="nh-t">${fmtMinSec(nextHeartIn())}</b></div>
+      <div class="nh-tbar"><i style="width:${pct()}%"></i></div>
+    </div>
+    <div class="nh-opts">
+      <div class="nh-review"></div>
+      <button type="button" class="nh-opt nh-refill ${canRefill?'':'off'}">
+        <span class="nh-oi">🪙</span>
+        <span class="nh-ot"><b>Recarregar todas</b><small>${canRefill ? `${HEARTS_MAX} vidas de uma vez · você tem ${gems} 🪙` : `Você tem ${gems} 🪙 · faltam ${HEART_REFILL_COST-gems}`}</small></span>
+        <span class="nh-op">${HEART_REFILL_COST} 🪙</span>
+      </button>
+    </div>
+    <p class="nh-free">💡 Exercícios, Relâmpago e Quiz <b>não gastam vidas</b>.</p>
+    <button type="button" class="nh-close">Voltar</button>
   </div>`;
-  const tick = setInterval(()=>{ if(!bg.isConnected) return clearInterval(tick); const t = bg.querySelector('.nh-t'); if(t) t.textContent = fmtMinSec(nextHeartIn()); }, 1000);
+  const tick = setInterval(()=>{
+    if(!bg.isConnected) return clearInterval(tick);
+    const t = bg.querySelector('.nh-t'); if(t) t.textContent = fmtMinSec(nextHeartIn());
+    const b = bg.querySelector('.nh-tbar i'); if(b) b.style.width = pct() + '%';
+  }, 1000);
   bg.querySelector('.nh-refill').onclick = ()=>{
+    if(!canRefill){ showFloat(`Faltam ${HEART_REFILL_COST-gems} 🪙`, true); return; }
     if(refillHeartsWithGems()){ bg.remove(); if(onRefill) onRefill(); else render(); }
   };
   bg.querySelector('.nh-close').onclick = ()=>{ bg.remove(); if(onRefill) go('path'); };
@@ -847,12 +865,13 @@ function showNoHearts(onRefill){
     const box = bg.querySelector('.nh-review');
     if(!box || !bg.isConnected) return;
     const left = lifeReviewsLeft();
-    if(errs.length < LIFE_REVIEW_N){
-      box.innerHTML = `<p class="nh-rv-note">📒 Quando tiver ${LIFE_REVIEW_N} erros no caderno, dá pra ganhar vida revisando.</p>`;
-      return;
-    }
-    if(!left){ box.innerHTML = `<p class="nh-rv-note">📒 Você já ganhou ${LIFE_REVIEW_PER_DAY} vidas revisando hoje. Amanhã tem mais!</p>`; return; }
-    box.innerHTML = `<button type="button" class="nh-rv-go">📒 Revisar ${LIFE_REVIEW_N} erros e ganhar 1 ❤️<small>acerte pelo menos 2 · ${left}x hoje</small></button>`;
+    const card = (cls, sub, badge)=> `<button type="button" class="nh-opt nh-rv-go ${cls}">
+        <span class="nh-oi">📒</span>
+        <span class="nh-ot"><b>Revisar ${LIFE_REVIEW_N} erros</b><small>${sub}</small></span>
+        <span class="nh-op">${badge}</span></button>`;
+    if(errs.length < LIFE_REVIEW_N){ box.innerHTML = card('off', `Libera quando tiver ${LIFE_REVIEW_N} erros no caderno`, '🔒'); return; }
+    if(!left){ box.innerHTML = card('off', `Já usou ${LIFE_REVIEW_PER_DAY}x hoje. Amanhã tem mais!`, '✓'); return; }
+    box.innerHTML = card('best', `Acerte 2 e ganhe 1 vida · ${left}x hoje`, '+1 ♥');
     box.querySelector('.nh-rv-go').onclick = ()=>{ bg.remove(); startReviewErrors({limit:LIFE_REVIEW_N, lifeReward:true}); };
   });
   document.body.appendChild(bg);
