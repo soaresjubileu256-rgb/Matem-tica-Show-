@@ -111,7 +111,9 @@ function authScreen(mode, users){
   function paintPicker(){
     card.innerHTML = header('Oi! Quem vai jogar hoje? 🎬') + `<div class="auth-label">Toque na sua conta</div><div class="acc-list"></div>
       <button type="button" class="show-btn ghost new-acc">＋ Criar nova conta</button>
-      <div class="auth-row center"><button type="button" class="auth-link other-acc">Minha conta não está aqui</button></div>`;
+      <div class="auth-row center"><button type="button" class="auth-link other-acc">Minha conta não está aqui</button></div>
+      <button type="button" class="auth-transfer">📲 Trazer conta de outro celular</button>`;
+    card.querySelector('.auth-transfer').onclick = paintTransferIn;
     const grid = card.querySelector('.acc-list');
     users.forEach((u,i)=>{
       const info = peekGame(u.id);
@@ -205,7 +207,9 @@ function authScreen(mode, users){
       <div class="auth-field hint-field" style="display:none"><label>Dica da senha <small>(ajuda se você esquecer)</small></label><input type="text" class="authHint" placeholder="Ex.: meu bicho favorito + número da camisa" maxlength="60"></div>
       <button type="button" class="show-btn auth-go">Criar conta e começar ▶</button>
       <p class="auth-note">🔒 Tudo fica salvo só neste aparelho. Cada conta tem seu próprio progresso.</p>
+      <button type="button" class="auth-transfer">📲 Já jogo em outro celular: trazer minha conta</button>
       ${users.length ? `<div class="auth-row center"><button type="button" class="auth-link back">‹ Já tenho conta</button></div>` : ''}`;
+    card.querySelector('.auth-transfer').onclick = paintTransferIn;
     const passInput = card.querySelector('.authPass');
     passInput.closest('.auth-field').appendChild(attachStrengthMeter(passInput, ()=> card.querySelector('.authName').value));
     card.querySelector('.authName').addEventListener('input', ()=>{ const m = card.querySelector('.pw-meter'); if(m && m.refresh) m.refresh(); });
@@ -256,6 +260,64 @@ function authScreen(mode, users){
     applyTheme(settingsCache.theme);
     applyTextScale(settingsCache.textScale);
     enterApp();
+  }
+
+  /* ---- trazer conta de outro celular (código de transferência) ---- */
+  function paintTransferIn(){
+    card.innerHTML = header('Trazendo sua conta? 📲 Cole aqui a mensagem que você mandou do outro celular.') + `
+      <div class="authErrorBox"></div>
+      <div class="auth-field"><label>Mensagem com o código</label><textarea class="tf-in" rows="4" placeholder="Cole aqui a mensagem inteira (começa com “Minha conta do Matemática Show”)" spellcheck="false" autocapitalize="off"></textarea></div>
+      <button type="button" class="show-btn auth-go">Continuar ▶</button>
+      <p class="auth-note">No outro celular: Perfil → Configurações → <b>Levar pra outro celular</b>.</p>
+      <div class="auth-row center"><button type="button" class="auth-link back">‹ Voltar</button></div>`;
+    card.querySelector('.back').onclick = ()=> (users.length ? paintPicker() : paintRegister());
+    const go1 = card.querySelector('.auth-go');
+    go1.onclick = async ()=>{
+      go1.disabled = true; go1.textContent = 'Lendo o código…';
+      const res = await decodeTransferCode(card.querySelector('.tf-in').value);
+      go1.disabled = false; go1.textContent = 'Continuar ▶';
+      if(!res.ok){ showError(res.error); return; }
+      paintTransferConfirm(res.data);
+    };
+  }
+  function paintTransferConfirm(data){
+    const sm = transferSummary(data);
+    card.innerHTML = header('Achei sua conta! 🎉 Agora escolha a senha pra este celular.', 'joy') + `
+      <div class="tf-sum"><span class="tf-sum-av">⭐</span><div><b class="tf-sum-n"></b><small>Nível ${sm.level} · ${sm.answered} questões${sm.streak?` · 🔥 ${sm.streak} dias`:''}</small></div></div>
+      <div class="authErrorBox"></div>
+      <div class="auth-field"><label>Seu nome</label><input type="text" class="authName" maxlength="30" autocomplete="username"></div>
+      ${passField('authPass','Senha','new-password','Pode ser a mesma do outro celular')}
+      ${passField('authPass2','Repita a senha','new-password','Digite a senha de novo')}
+      <button type="button" class="show-btn auth-go">Trazer minha conta ▶</button>
+      <div class="auth-row center"><button type="button" class="auth-link back">‹ Voltar</button></div>`;
+    card.querySelector('.tf-sum-n').textContent = sm.name || 'Sua conta';
+    card.querySelector('.authName').value = sm.name || '';
+    wirePassToggles(); wireCaps();
+    card.querySelector('.back').onclick = paintTransferIn;
+    const doIt = async ()=>{
+      const name = card.querySelector('.authName').value.trim().replace(/\s+/g,' ');
+      const pass = card.querySelector('.authPass').value, pass2 = card.querySelector('.authPass2').value;
+      if(name.length < 2){ showError('O nome precisa ter pelo menos 2 letras.'); return; }
+      const weak = passwordProblem(pass, name);
+      if(weak){ showError(weak); return; }
+      if(pass!==pass2){ showError('As senhas não são iguais. Digite de novo.'); return; }
+      const id = userIdFromName(name), list = await loadUsers();
+      if(list.some(u=>u.id===id)){ showError('Já existe uma conta com esse nome neste celular. Mude o nome (ex.: acrescente o sobrenome).'); return; }
+      const btn = card.querySelector('.auth-go'); btn.disabled = true; btn.textContent = 'Trazendo…';
+      list.push({id, name, passHash: await hashPassword(pass)});
+      await saveUsers(list);
+      currentUser = {id, name};
+      await setCurrentUserId(id);
+      const res = await importProgressObject(data);
+      markNewsSeen();
+      await loadSettings();
+      applyTheme(settingsCache.theme); applyTextScale(settingsCache.textScale);
+      try{ markTutorialDone(); }catch(e){}
+      enterApp();
+      setTimeout(()=> queueToast('📲', res.ok ? 'Conta trazida!' : 'Conta criada', res.ok ? 'Seu progresso chegou neste celular 🎉' : 'Não deu pra trazer tudo, mas a conta foi criada.'), 600);
+    };
+    card.querySelector('.auth-go').onclick = doIt;
+    wireEnter(doIt);
   }
 
   if(mode==='register' || !users.length) paintRegister();

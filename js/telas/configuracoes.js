@@ -191,6 +191,10 @@ async function settingsScreen(){
   const acts = h(`<div class="st-acts"></div>`);
   acts.appendChild(exportBtn); acts.appendChild(importBtn);
   dt.appendChild(acts);
+  // levar a conta pra outro celular (js/dados/transferir.js)
+  const tfBtn = h(`<button type="button" class="st-act st-act-wide tf-act"><span>📲</span><b>Levar pra outro celular</b><small>Gera um código pra mandar pra você mesmo e abrir a conta no celular novo</small></button>`);
+  tfBtn.onclick = ()=> showTransferOut();
+  dt.appendChild(tfBtn);
   // cópias automáticas (IndexedDB, js/dados/backup-auto.js)
   const autoBtn = h(`<button type="button" class="st-act st-act-wide"><span>🛟</span><b>Cópias automáticas</b><small>O app guarda sozinho uma cópia por dia. Toque pra ver ou restaurar.</small></button>`);
   autoBtn.onclick = ()=>{ if(typeof showAutoBackups==='function') showAutoBackups(); };

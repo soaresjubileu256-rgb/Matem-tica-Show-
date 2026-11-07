@@ -10,6 +10,10 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
+  {v:29, date:'2026-11-08', title:'Trocou de celular? Leve sua conta', items:[
+    {ico:'📲', t:'Levar pra outro celular', d:'Em Configurações → Seus dados, gere um código e mande pra você mesmo. No celular novo, toque em "Trazer conta de outro celular" e cole a mensagem: o progresso vem junto.', go:'settings'},
+    {ico:'💡', t:'O app percebe quando você erra seguido', d:'Errou 3 seguidas do mesmo assunto? Aparece um atalho pra rever a explicação sem sair da questão.', go:'exercisesSubjects'},
+  ]},
   {v:28, date:'2026-11-07', title:'Muito mais questões', items:[
     {ico:'📚', t:'Tipos novos de pergunta em todos os assuntos', d:'Mais de 200 tipos novos: problemas do dia a dia, "qual número falta", sequências, idades, juros, probabilidade, matrizes e muito mais. As questões repetem bem menos.', go:'exercisesSubjects'},
     {ico:'📅', t:'Também no Desafio do Dia', d:'A partir de amanhã, o Desafio do Dia também sorteia os tipos novos.', go:'dailyIntro'},

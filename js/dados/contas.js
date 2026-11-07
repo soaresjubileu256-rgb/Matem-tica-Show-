@@ -253,6 +253,10 @@ async function importProgressData(file){
   }catch(e){
     return {ok:false, error:'Não foi possível ler esse arquivo. Confira se é um .json exportado pelo Matemática Show.'};
   }
+  return importProgressObject(data);
+}
+/* restaura a partir do objeto já lido (arquivo exportado ou código de transferência) */
+async function importProgressObject(data){
   if(!data || typeof data !== 'object' || (!data.progress && !data.history && !data.errors && !data.settings)){
     return {ok:false, error:'Esse arquivo não parece ser um backup do Matemática Show.'};
   }
