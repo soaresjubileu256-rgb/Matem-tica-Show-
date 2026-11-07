@@ -392,6 +392,7 @@ function exerciseSessionScreen(){
       : `<div class="ex-cmp-box bad"><small>Você respondeu</small><b>${sess.lastUser||'—'}</b></div><div class="ex-cmp-box ok"><small>Resposta certa</small><b>${finalTxt}</b></div>`;
     fb.querySelector('.fb-explain').innerHTML = `<div class="ex-steps-t">Passo a passo</div>` + stepsList.map(st=>`<div class="step">${st}</div>`).join('');
     fb.querySelector('.fb-explain').prepend(stepPlayerButton(ex, !correct));
+    if(!correct){ const rb = repeatedErrorBanner(sess.subjectId); if(rb) fb.appendChild(rb); }
     c.appendChild(fb);
     if(!correct) renderDrillButton(c, sess.subjectId, sess.difficulty);
     const nextBtn = h(`<button class="next-btn ex-next">${sess.index+1<sess.total? 'Próxima questão ›':'Ver resultado ›'}</button>`);
@@ -596,6 +597,7 @@ function reviewErrorsSessionScreen(){
     const finalTxt = ex.displayAnswer ? ex.displayAnswer : (ex.type==='pair'? `x' = ${ex.answer[0]}  e  x'' = ${ex.answer[1]}` : ex.type==='xy'? `x = ${ex.answer.x}  e  y = ${ex.answer.y}` : fmt(ex.answer));
     fb.querySelector('.fb-explain').innerHTML = stepsHtml + `<div class="step" style="margin-top:8px"><b>Resposta: ${finalTxt}</b></div>`;
     fb.querySelector('.fb-explain').prepend(stepPlayerButton(ex, !correct));
+    if(!correct){ const rb = repeatedErrorBanner(item.subjectId); if(rb) fb.appendChild(rb); }
     c.appendChild(fb);
     if(!correct) renderDrillButton(c, item.subjectId, item.difficulty);
     const nextBtn = h(`<button class="next-btn">${sess.index+1<sess.total? 'Próximo erro':'Ver resultado'}</button>`);
@@ -829,6 +831,7 @@ function challengeSessionScreen(){
     const finalTxt = ex.displayAnswer ? ex.displayAnswer : (ex.type==='pair'? `x' = ${ex.answer[0]}  e  x'' = ${ex.answer[1]}` : ex.type==='xy'? `x = ${ex.answer.x}  e  y = ${ex.answer.y}` : fmt(ex.answer));
     fb.querySelector('.fb-explain').innerHTML = stepsHtml + `<div class="step" style="margin-top:8px"><b>Resposta: ${finalTxt}</b></div>`;
     fb.querySelector('.fb-explain').prepend(stepPlayerButton(ex, !correct));
+    if(!correct){ const rb = repeatedErrorBanner(sess.currentSubjectId); if(rb) fb.appendChild(rb); }
     c.appendChild(fb);
     if(!correct) renderDrillButton(c, sess.currentSubjectId, sess.difficulty);
     const nextBtn = h(`<button class="next-btn">${sess.index+1<sess.total? 'Próxima questão':'Ver resultado'}</button>`);
@@ -1278,6 +1281,7 @@ function personalizedSessionScreen(){
     const finalTxt = ex.displayAnswer ? ex.displayAnswer : (ex.type==='pair'? `x' = ${ex.answer[0]}  e  x'' = ${ex.answer[1]}` : ex.type==='xy'? `x = ${ex.answer.x}  e  y = ${ex.answer.y}` : fmt(ex.answer));
     fb.querySelector('.fb-explain').innerHTML = stepsHtml + `<div class="step" style="margin-top:8px"><b>Resposta: ${finalTxt}</b></div>`;
     fb.querySelector('.fb-explain').prepend(stepPlayerButton(ex, !correct));
+    if(!correct){ const rb = repeatedErrorBanner(sess.currentSubjectId); if(rb) fb.appendChild(rb); }
     c.appendChild(fb);
     if(!correct) renderDrillButton(c, sess.currentSubjectId, sess.difficulty);
     const nextBtn = h(`<button class="next-btn">${sess.index+1<sess.total? 'Próxima questão':'Ver resultado'}</button>`);
@@ -1292,4 +1296,49 @@ function personalizedSessionScreen(){
 
   wrap.appendChild(c);
   return wrap;
+}
+
+/* =========================================================
+   ERROU VÁRIAS SEGUIDAS DO MESMO ASSUNTO
+   Quando as últimas 3 respostas de um assunto foram erradas, a correção mostra um
+   aviso com a explicação do assunto (abre por cima, sem perder a questão).
+   Depois de mostrar, só volta a aparecer depois de mais 3 respostas daquele assunto.
+   ========================================================= */
+const REPEAT_ERR_N = 3;
+function repeatedErrorBanner(subjectId){
+  try{
+    if(!subjectId || !progressCache || progressCacheUid!==currentUserId()) return null;
+    const d = progressCache[subjectId], s = SUBJECTS.find(x=>x.id===subjectId);
+    if(!d || !d.recent || !s || !s.learn) return null;
+    const last = d.recent.slice(-REPEAT_ERR_N);
+    if(last.length < REPEAT_ERR_N || last.some(x=>x.ok)) return null;
+    const g = loadGame(); g.helpAt = g.helpAt || {};
+    const at = g.helpAt[subjectId];
+    if(at !== d.attempted){
+      if(at && d.attempted - at < REPEAT_ERR_N) return null; // acabou de mostrar: dá um tempo
+      g.helpAt[subjectId] = d.attempted; saveGame();
+    }
+    let n = 0; for(let i=d.recent.length-1; i>=0 && !d.recent[i].ok; i--) n++;
+    const el = h(`<div class="rep-err"><span class="rep-ico">💡</span><div class="rep-t"><b></b><small>Que tal rever a explicação rapidinho? Depois você continua daqui.</small></div><button type="button" class="rep-go">📖 Ver</button></div>`);
+    el.querySelector('b').textContent = `Você errou ${n} seguidas de ${s.name}`;
+    el.querySelector('.rep-go').onclick = ()=> showLearnSheet(s);
+    return el;
+  }catch(e){ return null; }
+}
+/* explicação do assunto numa folha por cima da tela (a sessão continua onde estava) */
+function showLearnSheet(s){
+  const bg = document.createElement('div');
+  bg.className = 'gm-modal-bg sheet';
+  bg.innerHTML = `<div class="rep-sheet" role="dialog" aria-label="Explicação">
+    <div class="rep-sheet-h"><b></b><button type="button" class="rep-x" aria-label="Fechar">✕</button></div>
+    <div class="rep-sheet-c explain-card lr-body"></div>
+    <button type="button" class="show-btn rep-back">Voltar pra questão</button>
+  </div>`;
+  bg.querySelector('.rep-sheet-h b').textContent = `📖 ${s.name}`;
+  bg.querySelector('.rep-sheet-c').innerHTML = s.learn;
+  const close = ()=> bg.remove();
+  bg.querySelector('.rep-x').onclick = close;
+  bg.querySelector('.rep-back').onclick = close;
+  bg.addEventListener('click', e=>{ if(e.target===bg) close(); });
+  document.body.appendChild(bg);
 }

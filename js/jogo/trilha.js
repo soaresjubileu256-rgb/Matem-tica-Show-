@@ -592,6 +592,7 @@ function lessonScreen(){
       if(tries>=2){ box.querySelector('.ta-hint').style.display=''; hb.textContent = '💡 Esconder dica'; }
       hb.onclick = ()=>{ const d = box.querySelector('.ta-hint'); const open = d.style.display==='none'; d.style.display = open?'':'none'; hb.textContent = open ? '💡 Esconder dica' : '💡 Ver dica'; };
     }
+    const rb = repeatedErrorBanner(q.subjectId); if(rb) box.appendChild(rb);
     c.appendChild(box);
   }
 
