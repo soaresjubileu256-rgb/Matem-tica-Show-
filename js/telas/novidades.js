@@ -10,6 +10,10 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
+  {v:28, date:'2026-11-07', title:'Muito mais questões', items:[
+    {ico:'📚', t:'Tipos novos de pergunta em todos os assuntos', d:'Mais de 200 tipos novos: problemas do dia a dia, "qual número falta", sequências, idades, juros, probabilidade, matrizes e muito mais. As questões repetem bem menos.', go:'exercisesSubjects'},
+    {ico:'📅', t:'Também no Desafio do Dia', d:'A partir de amanhã, o Desafio do Dia também sorteia os tipos novos.', go:'dailyIntro'},
+  ]},
   {v:27, date:'2026-11-06', title:'Desafie seus amigos', items:[
     {ico:'🎯', t:'Desafiar amigo', d:'Na Arena: jogue 7 perguntas, mande o código e seu amigo joga as mesmas. Quem acerta mais vence!', go:'friendChallenge'},
     {ico:'👾', t:'Chefe do episódio', d:'A Grande final de cada episódio agora é uma luta contra o chefe: cada acerto tira vida dele.', go:'path'},
