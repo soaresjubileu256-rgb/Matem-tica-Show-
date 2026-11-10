@@ -1,9 +1,12 @@
-/* Service worker do Matemática Show: deixa o app abrir sem internet.
-   - arquivos do app (html, css, js, ícones): tenta a rede primeiro, pra sempre pegar a
-     versão mais nova, e usa a cópia guardada quando estiver offline
+/* Service worker do Matemática Show: abre rápido e funciona sem internet.
+   - arquivos do app (html, css, js, ícones): abrem direto da cópia guardada neste aparelho
+     (antes cada abertura conferia ~60 arquivos na internet; com sinal fraco o app nem abria)
+   - versão nova: toda mudança no app muda CACHE_VERSION, então o navegador percebe que este
+     arquivo mudou, baixa tudo de novo em segundo plano e troca a versão; a página recarrega
+     sozinha num momento seguro (veja o index.html)
    - fontes do Google: usa a cópia guardada (elas não mudam)
-   Mude CACHE_VERSION quando quiser forçar todo mundo a baixar tudo de novo. */
-const CACHE_VERSION = 'mat-show-v163';
+   Mude CACHE_VERSION a cada mudança no app. */
+const CACHE_VERSION = 'mat-show-v165';
 const APP_SHELL = [
   './', './index.html', './manifest.json', './css/style.css', './js/base/ferramentas.js', './js/base/sons.js',
   './js/base/geometria.js', './js/assuntos/ensino-medio-visual.js', './js/assuntos/fundamental.js',
@@ -19,9 +22,17 @@ const APP_SHELL = [
 ];
 
 self.addEventListener('install', e=>{
-  e.waitUntil(caches.open(CACHE_VERSION).then(c=>c.addAll(APP_SHELL)).then(()=>self.skipWaiting()));
+  // cache:'reload' pula a cópia do navegador (o GitHub Pages guarda arquivos por 10 min),
+  // pra versão nova não nascer com algum arquivo velho misturado
+  e.waitUntil(caches.open(CACHE_VERSION).then(c=>c.addAll(APP_SHELL.map(u=> new Request(u, {cache:'reload'})))).then(()=>self.skipWaiting()));
+});
+// quando esta versão começou a valer (a página usa pra saber se abriu com a versão velha)
+let ACTIVATED_AT = 0;
+self.addEventListener('message', e=>{
+  if(e.data === 'activated-at' && e.source) e.source.postMessage({activatedAt: ACTIVATED_AT});
 });
 self.addEventListener('activate', e=>{
+  ACTIVATED_AT = Date.now();
   e.waitUntil(caches.keys()
     .then(keys=>Promise.all(keys.filter(k=>k!==CACHE_VERSION).map(k=>caches.delete(k))))
     .then(()=>self.clients.claim()));
@@ -39,10 +50,14 @@ self.addEventListener('fetch', e=>{
     return;
   }
   if(url.origin !== location.origin) return;
+  // abrir o app (com ou sem ?parâmetros) = index.html guardado desta versão
+  const key = req.mode==='navigate' ? './index.html' : req;
   e.respondWith(
-    // cache:'no-cache' confere com o servidor em vez de usar a cópia do navegador
-    // (o GitHub Pages deixa os arquivos guardados por 10 minutos e a versão nova demorava a chegar)
-    fetch(req, {cache:'no-cache'}).then(res=>saveCopy(req, res))
-      .catch(()=> caches.match(req, {ignoreSearch:true}).then(hit=> hit || (req.mode==='navigate' ? caches.match('./index.html') : undefined)))
+    caches.open(CACHE_VERSION).then(c=> c.match(key, {ignoreSearch:true})).then(hit=>{
+      if(hit) return hit;
+      // não está guardado: busca na internet e guarda (e, sem internet, tenta qualquer cópia antiga)
+      return fetch(req, {cache:'no-cache'}).then(res=>saveCopy(req, res))
+        .catch(()=> caches.match(key, {ignoreSearch:true}));
+    })
   );
 });

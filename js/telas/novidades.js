@@ -10,6 +10,10 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
+  {v:30, date:'2026-11-10', title:'Mais rápido e mais organizado', items:[
+    {ico:'⚡', t:'Abre na hora', d:'O app agora abre direto do celular, sem esperar a internet, até com sinal fraco. As atualizações chegam sozinhas em segundo plano.', go:'home'},
+    {ico:'🏠', t:'Início mais organizado', d:'A Trilha e o seu dia (meta, Desafio do Dia e missões) aparecem primeiro; o cartão do jogador e a frase do dia ficaram logo abaixo.', go:'home'},
+  ]},
   {v:29, date:'2026-11-08', title:'Trocou de celular? Leve sua conta', items:[
     {ico:'📲', t:'Levar pra outro celular', d:'Em Configurações → Seus dados, gere um código e mande pra você mesmo. No celular novo, toque em "Trazer conta de outro celular" e cole a mensagem: o progresso vem junto.', go:'settings'},
     {ico:'💡', t:'O app percebe quando você erra seguido', d:'Errou 3 seguidas do mesmo assunto? Aparece um atalho pra rever a explicação sem sair da questão.', go:'exercisesSubjects'},

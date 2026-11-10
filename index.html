@@ -90,8 +90,35 @@
 // simplesmente não faz nada — o app continua funcionando normal, só sem o modo offline.
 if('serviceWorker' in navigator){
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
+    navigator.serviceWorker.register('sw.js').then(reg=>{
+      // confere se tem versão nova ao abrir, ao voltar pro app e a cada 30 min
+      const check = ()=>{ try{ reg.update(); }catch(e){} };
+      check();
+      document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') check(); });
+      setInterval(check, 30*60*1000);
+    }).catch(() => {});
   });
+  // o app abre da cópia guardada; quando uma versão nova termina de baixar, a página
+  // recarrega sozinha, mas só num momento seguro (fora de fase, prova ou formulário)
+  const hadSW = !!navigator.serviceWorker.controller;
+  let swUpdated = false;
+  navigator.serviceWorker.addEventListener('controllerchange', ()=>{ if(hadSW) swUpdated = true; });
+  // a versão nova pode ter começado a valer enquanto esta página ainda carregava (aí o aviso
+  // acima já passou): pergunta ao service worker quando ele foi ativado
+  navigator.serviceWorker.addEventListener('message', e=>{
+    const t = e.data && e.data.activatedAt;
+    if(hadSW && t && t > performance.timeOrigin) swUpdated = true;
+  });
+  navigator.serviceWorker.ready.then(()=>{ const c = navigator.serviceWorker.controller; if(c) c.postMessage('activated-at'); }).catch(()=>{});
+  const SAFE = ['home','path','auth','arena','content','progress','profile','news','help'];
+  setInterval(()=>{
+    try{
+      if(!swUpdated) return;
+      const scr = (typeof state!=='undefined' && state) ? state.screen : 'auth';
+      const busy = document.querySelector('.gm-modal-bg, .tour-root, input:focus, textarea:focus');
+      if(!busy && (SAFE.includes(scr) || !currentUser)){ swUpdated = false; location.reload(); }
+    }catch(e){}
+  }, 2000);
 }
 </script>
 </body>
