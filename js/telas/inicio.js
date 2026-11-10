@@ -15,7 +15,8 @@ function homeScreen(){
   bar.appendChild(profileBtn);
   wrap.appendChild(bar);
 
-  // ordem da tela (só o essencial): saudação → cartão do jogador → Trilha → "Hoje" (meta, tarefas e missões).
+  // ordem da tela (no celular): saudação → Trilha (o principal) → "Hoje" (meta, tarefas e missões)
+  // → cartão do jogador → frase do dia. No computador, o css monta duas colunas.
   // Todo o resto mora nas abas de cada parte (Estudar, Arena, Progresso, Perfil).
   const firstName = currentUser ? currentUser.name.split(' ')[0] : '';
   const streakNow = gameStreakNow();
@@ -27,8 +28,6 @@ function homeScreen(){
     : `${saud}${who}! ` + pick(['Bora subir de nível hoje? 🚀', 'O palco é seu hoje! 🎤', 'Luzes, câmera... show! 🎬', 'Que tal uma fase da Trilha? ⭐']);
   wrap.appendChild(mascotBubble(hello, 'happy'));
   showStreakNote();
-  wrap.appendChild(dailyQuoteCard());
-  wrap.appendChild(playerCard());
   wrap.appendChild(pathHero());
 
   // avisos que só aparecem uma vez na vida da conta
@@ -111,6 +110,8 @@ function homeScreen(){
   mToggle.onclick = ()=>{ state.missionsOpen = card.classList.contains('collapsed'); setOpen(state.missionsOpen); };
   paintAllSet();
   wrap.appendChild(card);
+  wrap.appendChild(playerCard());
+  wrap.appendChild(dailyQuoteCard());
 
   // depois de uma atualização mostra as Novidades; senão, talvez o lembrete de backup (nunca os dois juntos)
   if(tutorialDone()) setTimeout(()=>{ if(state.screen==='home' && wrap.isConnected && !document.querySelector('.gm-modal-bg')){ if(!showNewsSheet()) maybeAskFeedback().then(shown=>{ if(!shown) maybeAskBackup(); }); } }, 1200);
