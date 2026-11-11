@@ -318,13 +318,9 @@ function lojaScreen(){
         const it = openMysteryBox();
         if(!it) return;
         const tier = shopTier(it);
-        const bg = document.createElement('div');
-        bg.className = 'gm-modal-bg';
-        bg.innerHTML = `<div class="gm-modal mb-modal"><div class="mb-show lj-show-${it.cat}">${shopPreview(it, true)}</div><h2></h2><p>Item <b>${tier.name}</b> · já é seu!</p><button type="button" class="mb-use">Usar agora</button><button type="button" class="mb-close" style="margin-top:10px;background:rgba(255,255,255,.1);color:#fff">Depois</button></div>`;
-        bg.querySelector('h2').textContent = `${it.ico} ${it.name}`;
-        bg.querySelector('.mb-use').onclick = ()=>{ bg.remove(); shopEquip(it.id); state.lojaCat = it.cat; state.lojaTry = null; render(); };
-        bg.querySelector('.mb-close').onclick = ()=>{ bg.remove(); render(); };
-        document.body.appendChild(bg);
+        showRewardReveal({hero:`<div class="mb-show lj-show-${it.cat}">${shopPreview(it, true)}</div>`, big: tier.id!=='comum', title:`${it.ico} ${it.name}`,
+          sub:`Item <b>${tier.name}</b> · já é seu!`, prizes:[],
+          actions:[{label:'Usar agora', cls:'rw-alt', fn:()=>{ shopEquip(it.id); state.lojaCat = it.cat; state.lojaTry = null; render(); }}, {label:'Depois', cls:'rw-ghost', fn:()=> render()}]});
       });
   };
   c.querySelector('.lj-frz .lj-frz-buy').onclick = ()=>{
