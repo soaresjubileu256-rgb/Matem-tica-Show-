@@ -23,25 +23,15 @@ async function progressScreen(){
   const achN = Object.keys(g.ach||{}).filter(k=> ACHIEVEMENTS.some(a=>a.id===k)).length;
   const R = 36, C = 2*Math.PI*R;
 
-  // topo: nível + XP
-  c.appendChild(h(`<div class="pg-hero">
-    <div class="pg-hero-top">
-      <div class="pg-lv" aria-label="Nível ${lv.level}">
-        <svg viewBox="0 0 84 84"><circle cx="42" cy="42" r="${R}" class="bg"/><circle cx="42" cy="42" r="${R}" class="fg" ${lv.into?'':'style="opacity:0"'} stroke-dasharray="${C}" stroke-dashoffset="${C*(1-lv.into/lv.need)}"/></svg>
-        <div class="pg-lv-in"><small>NÍVEL</small><b>${lv.level}</b></div>
-      </div>
-      <div class="pg-hero-t">
-        <small class="pg-kicker">${escHTML(currentUser && currentUser.name || 'Seu progresso')}</small>
-        <h2>${lv.title}</h2>
-        <div class="pg-xpbar"><i style="width:${lv.pct}%"></i></div>
-        <p>${lv.into}/${lv.need} XP · faltam <b>${lv.need-lv.into} XP</b> pro nível ${lv.level+1}</p>
-      </div>
-    </div>
+  // topo: cartão do jogador (nível, XP, ofensiva, moedas, vidas, medalhas) — veio do Início
+  c.appendChild(playerCard());
+  const daysPlayed = Object.keys(g.days||{}).filter(k=>g.days[k]===1).length;
+  c.appendChild(h(`<div class="pg-hero pg-hero-sm">
     <div class="pg-stats">
       <div><b>${totalAttempted.toLocaleString('pt-BR')}</b><span>questões</span></div>
       <div><b>${pct}%</b><span>de acerto</span></div>
-      <div><b>🔥 ${streak}</b><span>ofensiva</span></div>
-      <div><b>🏅 ${achN}</b><span>conquistas</span></div>
+      <div><b>📚 ${ids.length}</b><span>assuntos</span></div>
+      <div><b>📅 ${daysPlayed}</b><span>dias jogados</span></div>
     </div>
   </div>`));
 
@@ -118,6 +108,8 @@ async function progressScreen(){
     paint();
   }
 
+  // frase do dia, no fim da página (veio do Início)
+  c.appendChild(dailyQuoteCard());
   wrap.appendChild(c);
   return wrap;
 }
