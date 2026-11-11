@@ -13,7 +13,7 @@ const OPT_LETTERS = ['A','B','C','D','E'];
 const stepPlain = t=> String(t||'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
 function stepSetupScreen(){
   const wrap = document.createElement('div');
-  wrap.appendChild(topbar('🪜 Qual o próximo passo?', true, ()=>go('exercisesSubjects')));
+  wrap.appendChild(topbar('🪜 Qual o próximo passo?', true, ()=>go('practice')));
   const c = h(`<div class="content me-screen"></div>`);
   c.appendChild(h(`<div class="me-hero sg"><span class="me-hero-ico">🪜</span><div><b>Aprenda pelo exemplo resolvido</b><p>O Pi resolve uma questão com você, mas antes de cada passo <b>você tenta adivinhar qual vem a seguir</b>. Tentar lembrar o passo ajuda a fixar muito mais do que só ler a resolução. No fim, é sua vez de resolver uma parecida.</p></div></div>`));
   let diff = state.stepDiff || 'medio';

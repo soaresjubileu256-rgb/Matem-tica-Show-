@@ -39,7 +39,7 @@ function boltBests(g){
 }
 function lightningScreen(){
   const wrap = document.createElement('div');
-  wrap.appendChild(topbar('⚡ Modo Relâmpago', true, ()=>go('arena')));
+  wrap.appendChild(topbar('⚡ Modo Relâmpago', true, ()=>go('games')));
   const c = h(`<div class="content bolt-wrap"></div>`);
   wrap.appendChild(c);
   let type = 'mix';

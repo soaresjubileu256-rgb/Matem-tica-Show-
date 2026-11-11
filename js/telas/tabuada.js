@@ -45,7 +45,7 @@ function tabState(){
 function tabuadaScreen(){
   const st = tabState();
   const wrap = document.createElement('div');
-  wrap.appendChild(topbar('Tabuada', true, ()=>{ tabStopTrain(); go('exercisesSubjects'); }));
+  wrap.appendChild(topbar('Tabuada', true, ()=>{ tabStopTrain(); go('practice'); }));
   const c = h(`<div class="content tab-wrap"></div>`);
   const seg = h(`<div class="tab-seg" role="tablist">
     <button type="button" data-m="study">📖 Estudar</button>

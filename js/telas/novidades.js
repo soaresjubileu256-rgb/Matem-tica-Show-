@@ -10,6 +10,11 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
+  {v:31, date:'2026-11-11', title:'App mais organizado', items:[
+    {ico:'📚', t:'Estudar com 4 abas', d:'Aprender, Praticar, Provas e Erros. Em Praticar ficam juntos Exercícios, Treino, Desafios, Qual o próximo passo e Tabuada.', go:'practice'},
+    {ico:'🎮', t:'Arena com 4 abas', d:'Fases, Desafio do Dia, Jogos e Simulado. Em Jogos ficam Relâmpago, Contra o relógio, Quiz, Desafiar amigo e Duelo.', go:'games'},
+    {ico:'🔺', t:'Laboratório nas Ferramentas', d:'O Laboratório de Geometria agora fica junto do Resolver, da Calculadora e do Caderno.', go:'geoLab'},
+  ]},
   {v:30, date:'2026-11-10', title:'Mais rápido e mais organizado', items:[
     {ico:'⚡', t:'Abre na hora', d:'O app agora abre direto do celular, sem esperar a internet, até com sinal fraco. As atualizações chegam sozinhas em segundo plano.', go:'home'},
     {ico:'🏠', t:'Início mais organizado', d:'A Trilha e o seu dia (meta, Desafio do Dia e missões) aparecem primeiro; o cartão do jogador e a frase do dia ficaram logo abaixo.', go:'home'},

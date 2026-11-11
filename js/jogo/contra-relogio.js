@@ -42,7 +42,7 @@ function speedSubjectSections(){
 
 function speedRunScreen(){
   const wrap = document.createElement('div');
-  wrap.appendChild(topbar('⏱️ Contra o relógio', true, ()=>go('arena')));
+  wrap.appendChild(topbar('⏱️ Contra o relógio', true, ()=>go('games')));
   const c = h(`<div class="content sr-wrap"></div>`);
   wrap.appendChild(c);
   let {subj, diff} = speedLoadLast();

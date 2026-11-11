@@ -124,10 +124,10 @@ function arenaScreen(){
     c.appendChild(cont);
   }
 
-  // desafiar amigo
-  const fcb = h(`<button type="button" class="ar-next fc-entry"><span class="ar-sym">🎯</span><span class="ar-next-t"><small>NOVO</small><b>Desafiar amigo</b><span class="fc-entry-s">As mesmas perguntas pros dois. Quem acerta mais?</span></span><span class="ar-next-go">▶</span></button>`);
-  fcb.onclick = ()=> go('friendChallenge');
-  c.appendChild(fcb);
+  // jogos rápidos (Relâmpago, Quiz, Duelo, Desafiar amigo…) ficam na aba Jogos
+  const gb = h(`<button type="button" class="ar-next fc-entry"><span class="ar-sym">🎮</span><span class="ar-next-t"><small>JOGOS RÁPIDOS</small><b>Relâmpago, Quiz, Duelo e mais</b><span class="fc-entry-s">Partidas curtas, sozinho ou com os amigos</span></span><span class="ar-next-go">▶</span></button>`);
+  gb.onclick = ()=> go('games');
+  c.appendChild(gb);
 
   // fases com estrelas
   c.appendChild(h(`<h3 class="ar-label">Fases da Arena</h3>`));
@@ -1027,7 +1027,7 @@ function friendChallengeEnd(c, sess){
 }
 function friendChallengeScreen(){
   const wrap = document.createElement('div');
-  wrap.appendChild(topbar('🎯 Desafiar amigo', true, ()=>go('arena')));
+  wrap.appendChild(topbar('🎯 Desafiar amigo', true, ()=>go('games')));
   const c = h(`<div class="content fc-screen"></div>`);
   wrap.appendChild(c);
   const fc = fcData(), opts = fcOptions();

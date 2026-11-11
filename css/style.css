@@ -4785,3 +4785,16 @@ body::after{inset:0;
 .pg-screen > .player-card{margin:0 0 10px; width:100%; max-width:none;}
 .pg-hero.pg-hero-sm{padding:10px 12px;} .pg-hero.pg-hero-sm .pg-stats{margin-top:0;}
 .pg-screen > .dq-card{margin:14px 0 0;}
+
+/* páginas que juntam modos (Praticar, Jogos) */
+.hub-intro{margin:2px 2px 6px; font-size:14px; color:var(--ink-soft);}
+.hub-lbl{margin-top:14px !important;}
+.hub-card{display:flex; align-items:center; gap:14px; width:100%; margin:0 0 10px; padding:14px; border-radius:20px; text-align:left; cursor:pointer;
+  background:rgba(255,255,255,.05); border:1px solid var(--border-soft); color:var(--ink);
+  background:linear-gradient(135deg, color-mix(in srgb, var(--hc) 16%, transparent), rgba(255,255,255,.03)); border:1px solid color-mix(in srgb, var(--hc) 40%, transparent); color:var(--ink);}
+.hub-ico{display:grid; place-items:center; width:52px; height:52px; flex:none; border-radius:16px; font-size:26px; background:rgba(255,255,255,.08); background:color-mix(in srgb, var(--hc) 24%, transparent);}
+.hub-t{flex:1; min-width:0;} .hub-t b{display:block; font-size:16px;} .hub-t small{display:block; font-size:13px; color:var(--ink-soft); margin-top:2px; line-height:1.35;}
+.hub-t em{display:inline-block; margin-top:6px; font-style:normal; font-size:11px; font-weight:800; padding:3px 8px; border-radius:999px; background:rgba(255,255,255,.1); background:color-mix(in srgb, var(--hc) 22%, transparent); color:var(--ink);}
+.hub-go{flex:none; font-size:24px; color:var(--ink-soft);}
+
+.ar-screen > .fc-entry{margin-top:10px;}

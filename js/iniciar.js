@@ -24,6 +24,8 @@ const SCREENS = {
   achievements: achievementsScreen,
   duel: duelScreen,
   friendChallenge: friendChallengeScreen,
+  practice: practiceScreen,
+  games: gamesScreen,
   geoLab: geoLabScreen,
   notebook: notebookScreen,
   notePage: notePageScreen,

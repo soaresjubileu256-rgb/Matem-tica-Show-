@@ -273,7 +273,7 @@ function geoFormulaBox(title, lines, ico, kind, active){
 function geoTip(text){ return h(`<div class="gl-tip"><span aria-hidden="true">💡</span><p>${text}</p></div>`); }
 function geoLabScreen(){
   const wrap = document.createElement('div');
-  wrap.appendChild(topbar('🔺 Laboratório de Geometria', true, ()=>go(state.geoBack || 'content')));
+  wrap.appendChild(topbar('🔺 Laboratório de Geometria', true, ()=>go(state.geoBack || 'calculator')));
   const c = h(`<div class="content gl"></div>`);
   wrap.appendChild(c);
   const tab = state.geoTab || 'area';

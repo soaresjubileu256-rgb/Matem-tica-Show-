@@ -350,7 +350,7 @@ async function removeErrorEntry(id){
 }
 function errorsScreen(){
   const wrap = document.createElement('div');
-  wrap.appendChild(topbar('🔁 Caderno de erros', true, ()=>go('exercisesSubjects')));
+  wrap.appendChild(topbar('🔁 Caderno de erros', true, ()=>go('content')));
   const c = h(`<div class="content er-wrap"><div class="ar-muted" style="padding:20px 0;text-align:center">Carregando…</div></div>`);
   wrap.appendChild(c);
   Promise.all([loadErrors(), loadProgress()]).then(([errs, progress])=>{
