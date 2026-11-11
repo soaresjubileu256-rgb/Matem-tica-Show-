@@ -741,6 +741,7 @@ function lessonEnd(wrap, sess){
           gameUnlock('unit'); queueToast('📜', 'Certificado liberado!', `${node.subject.name}: veja em Certificados`);
           // prêmio do fim do episódio: medalha + baú
           gems += EPISODE_BONUS; sess.episodeDone = node.subject.name;
+          gameUnlock('boss1'); if(episodesDone()>=5) gameUnlock('boss5');
         }
       }
       g.lessonsDone = (g.lessonsDone||0) + 1;
@@ -1189,18 +1190,34 @@ function nodeSheet(n, color, isDone){
   bg.querySelector('.ns-learn').onclick = ()=>{ bg.remove(); go('subjectDetail', {subjectId:n.subject.id}); };
   document.body.appendChild(bg);
 }
+/* o prêmio surpresa sorteia: moedas (o mais comum), um baú grande, um protetor de ofensiva,
+   10 min de XP em dobro ou, mais raro, um item de visual que a pessoa ainda não tem */
+function rollChestPrize(){
+  const g = loadGame(), r = Math.random();
+  const coins = (lo,hi)=>{ const v = randInt(lo,hi); return {kind:'gems', gems:v, ico:'🪙', txt:`<b style="color:#FFD45C">${v} 🪙 moedas</b>`}; };
+  if(r < 0.05){
+    const pool = typeof mysteryCandidates==='function' ? mysteryCandidates().filter(it=>!it.rare) : [];
+    if(pool.length){ const it = pick(pool); shopData().owned[it.id] = 1; return {kind:'item', item:it, ico:it.ico, txt:`um item novo: <b style="color:#fff">${escHTML(it.ico+' '+it.name)}</b>`}; }
+  }
+  if(r < 0.18 && (g.freezes||0) < STREAK_FREEZE_MAX){ g.freezes = (g.freezes||0) + 1; return {kind:'freeze', ico:'🧊', txt:'<b style="color:#9FD8FF">1 protetor de ofensiva</b>'}; }
+  if(r < 0.30 && xpBoostLeft() <= 0){ g.boostUntil = Date.now() + 10*60*1000; return {kind:'boost', ico:'⚡', txt:'<b style="color:#FFD45C">XP em dobro por 10 minutos</b>'}; }
+  if(r < 0.42) return Object.assign(coins(60,90), {big:true});
+  return coins(20,40);
+}
 function openChest(n, isDone){
   if(isDone){ showFloat('✨ Prêmio já aberto!'); return; }
-  const gems = randInt(20,40);
   pathDone()[n.key] = true;
   const g = loadGame();
   g.chests = (g.chests||0) + 1;
   if(g.chests>=5) gameUnlock('chests');
-  saveGame(); addGems(gems);
+  const prize = rollChestPrize();
+  saveGame();
+  if(prize.gems) addGems(prize.gems);
   const bg = document.createElement('div');
   bg.className = 'gm-modal-bg';
-  bg.innerHTML = `<div class="gm-modal"><div class="big chest-open">🎁</div><h2>Prêmio surpresa!</h2><p>Você ganhou <b style="color:#FFD45C">${gems} 🪙 moedas</b></p><button type="button">Pegar!</button></div>`;
-  bg.querySelector('button').onclick = ()=>{ bg.remove(); render(); };
+  bg.innerHTML = `<div class="gm-modal"><div class="big chest-open">${prize.big ? '💰' : '🎁'}</div><h2>${prize.big ? 'Baú cheio!' : 'Prêmio surpresa!'}</h2><p>Você ganhou ${prize.txt}</p>${prize.kind==='item' ? '<button type="button" class="ch-use">Usar agora</button>' : ''}<button type="button" class="ch-ok">Pegar!</button></div>`;
+  const use = bg.querySelector('.ch-use'); if(use) use.onclick = ()=>{ shopEquip(prize.item.id); bg.remove(); render(); };
+  bg.querySelector('.ch-ok').onclick = ()=>{ bg.remove(); render(); };
   document.body.appendChild(bg);
   playTones([392,523,659,784,1047], 0.09, 'triangle', 0.1);
   launchConfetti(120);

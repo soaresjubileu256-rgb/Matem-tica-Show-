@@ -984,7 +984,7 @@ function friendChallengeEnd(c, sess){
       const w = me.ok > rival.ok || (me.ok === rival.ok && me.secs < rival.secs);
       sess.won = w;
       if(w){
-        fc.wins++;
+        fc.wins++; gameUnlock('friendWin');
         gameEnsureToday();
         if((g.today.fcWins||0) < FC_WIN_GEMS_PER_DAY){ g.today.fcWins = (g.today.fcWins||0) + 1; sess.gems = FC_WIN_GEMS; }
       }

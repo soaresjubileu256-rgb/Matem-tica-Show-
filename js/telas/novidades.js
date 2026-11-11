@@ -10,6 +10,11 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
+  {v:32, date:'2026-11-11', title:'Mais prêmios no jogo', items:[
+    {ico:'🎁', t:'Presente de nível', d:'Subiu de nível? Ganha moedas (mais a cada nível) e, a cada 5 níveis, um item de visual novo.', go:'progress'},
+    {ico:'💰', t:'Prêmio surpresa da Trilha', d:'O baú agora pode dar moedas, um baú cheio, protetor de ofensiva, XP em dobro ou até um item da Loja.', go:'path'},
+    {ico:'👾', t:'8 conquistas novas', d:'Caça-chefes, Domador de chefes, Desafiante, Semana completa, Salvo pelo gelo, Volta por cima, Colecionador e Estrela do show.', go:'achievements'},
+  ]},
   {v:31, date:'2026-11-11', title:'App mais organizado', items:[
     {ico:'📚', t:'Estudar com 4 abas', d:'Aprender, Praticar, Provas e Erros. Em Praticar ficam juntos Exercícios, Treino, Desafios, Qual o próximo passo e Tabuada.', go:'practice'},
     {ico:'🎮', t:'Arena com 4 abas', d:'Fases, Desafio do Dia, Jogos e Simulado. Em Jogos ficam Relâmpago, Contra o relógio, Quiz, Desafiar amigo e Duelo.', go:'games'},
