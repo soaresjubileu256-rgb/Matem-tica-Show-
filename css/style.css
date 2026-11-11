@@ -4573,8 +4573,8 @@ html.sp-open-lock, html.sp-open-lock body{overflow:hidden;}
   .home-scr .topbar .brand{visibility:hidden;}
   .home-scr > .player-card{grid-column:1; grid-row:3; width:auto; max-width:none; justify-self:stretch;}
   .home-scr > .dq-card{grid-column:2; grid-row:3; align-self:stretch; display:flex; flex-direction:column; justify-content:center;}
-  .home-scr > .path-hero{grid-column:1; grid-row:4;}
-  .home-scr > .hd-today{grid-column:2; grid-row:4 / span 3;}
+  .home-scr > .path-hero{grid-column:1; grid-row:3;}
+  .home-scr > .hd-today{grid-column:2; grid-row:3 / span 3;}
   .home-scr > .ar-import{grid-column:1;}
   .home-scr > .player-card, .home-scr > .path-hero, .home-scr > .dq-card, .home-scr > .hd-today{margin-left:0; margin-right:0;}
   .home-scr > .mascot-row{margin-left:0; margin-right:0;}
@@ -4780,3 +4780,8 @@ body::after{inset:0;
 .rep-sheet-h{display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;} .rep-sheet-h b{font-size:17px; color:var(--ink);}
 .rep-x{border:0; background:rgba(127,127,127,.15); color:var(--ink); width:34px; height:34px; border-radius:50%; font-size:16px; cursor:pointer;}
 .rep-sheet-c{overflow:auto; flex:1; margin-bottom:10px;}
+
+/* Progresso: cartão do jogador no topo + números do resumo */
+.pg-screen > .player-card{margin:0 0 10px; width:100%; max-width:none;}
+.pg-hero.pg-hero-sm{padding:10px 12px;} .pg-hero.pg-hero-sm .pg-stats{margin-top:0;}
+.pg-screen > .dq-card{margin:14px 0 0;}
