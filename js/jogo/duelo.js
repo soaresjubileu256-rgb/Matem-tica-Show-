@@ -58,7 +58,7 @@ function duelQuestion(type, level, round){
 
 function duelScreen(){
   const wrap = document.createElement('div');
-  wrap.appendChild(topbar('⚔️ Duelo a dois', true, ()=>go('arena')));
+  wrap.appendChild(topbar('⚔️ Duelo a dois', true, ()=>go('games')));
   const c = h(`<div class="content duel-setup"></div>`);
   wrap.appendChild(c);
   const d = duelData();

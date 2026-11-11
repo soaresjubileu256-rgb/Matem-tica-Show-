@@ -145,7 +145,8 @@ function loadGame(){
   if(gameCache && gameCacheUid===uid) return gameCache;
   let g = null;
   try{ const raw = localStorage.getItem(`${GAME_KEY_BASE}:${uid}`); g = raw ? JSON.parse(raw) : null; }catch(e){}
-  gameCache = Object.assign({xp:0, streak:0, lastDay:null, bestCombo:0, hits:0, hardHits:0, fixed:0, boltBest:0, subjectsHit:{}, ach:{}, today:null}, g||{});
+  // gems: as 20 moedas iniciais (antes só eram criadas quando o cartão do jogador aparecia)
+  gameCache = Object.assign({xp:0, gems:20, streak:0, lastDay:null, bestCombo:0, hits:0, hardHits:0, fixed:0, boltBest:0, subjectsHit:{}, ach:{}, today:null}, g||{});
   gameCacheUid = uid;
   gameEnsureToday();
   gameCheckStreak();

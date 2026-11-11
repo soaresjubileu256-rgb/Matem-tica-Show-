@@ -1209,7 +1209,7 @@ function openChest(n, isDone){
 /* ---------- escolha do quiz ---------- */
 function quizSetupScreen(){
   const wrap = document.createElement('div');
-  wrap.appendChild(topbar('🎤 Quiz do Show', true, ()=>go('arena')));
+  wrap.appendChild(topbar('🎤 Quiz do Show', true, ()=>go('games')));
   const c = h(`<div class="content quiz-setup"></div>`);
   const g = loadGame(); const best = g.quizBest || {};
   let pool = 'all';

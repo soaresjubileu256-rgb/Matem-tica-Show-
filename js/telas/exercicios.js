@@ -24,7 +24,7 @@ function exPlainText(ex, max){
 }
 function exercisesSubjectsScreen(){
   const wrap = document.createElement('div');
-  wrap.appendChild(topbar('Exercícios', true, ()=>go('home')));
+  wrap.appendChild(topbar('Exercícios', true, ()=>go('practice')));
   const c = h(`<div class="content"></div>`);
   // os modos (Treino, Desafios, Passo a passo, Tabuada, Erros) ficam nas abas do topo;
   // aqui fica a Mistura do dia em destaque, o "continuar" e a lista de assuntos com busca
@@ -630,7 +630,7 @@ function chPickSubject(sess){
 }
 function challengeDifficultyScreen(){
   const wrap = document.createElement('div');
-  wrap.appendChild(topbar('Desafios', true, ()=>go('exercisesSubjects')));
+  wrap.appendChild(topbar('Desafios', true, ()=>go('practice')));
   const c = h(`<div class="content ch-setup"></div>`);
   const d = chData(), cfg = d.cfg;
   const bestAll = Math.max(0, ...Object.values(d.best).map(x=>x.pct||0));
@@ -989,7 +989,7 @@ function genQuestionAvoidingRepeat(subject, difficulty, lastSignature){
 const PT_DIFF_INFO = {adaptativa:['🧠','Ajusta sozinha'], facil:['🟢','Pra aquecer'], medio:['🟡','O desafio certo'], dificil:['🔴','Pra quem é fera'], misturada:['🎲','Sorteia as três']};
 async function personalizedSetupScreen(){
   const wrap = document.createElement('div');
-  wrap.appendChild(topbar('Treino personalizado', true, ()=>go('exercisesSubjects')));
+  wrap.appendChild(topbar('Treino personalizado', true, ()=>go('practice')));
   const c = h(`<div class="content pt-setup"></div>`);
 
   const progress = await loadProgress();

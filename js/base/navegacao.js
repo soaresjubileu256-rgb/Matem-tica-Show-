@@ -109,31 +109,25 @@ const SECTION_TABS = [
     {screen:'achievements', ico:'🏅', label:'Conquistas'},
     {screen:'certificates', ico:'📜', label:'Certificados'},
   ]},
+  // Estudar: aprender → praticar → provas → revisar os erros
   {id:'study', tabs:[
     {screen:'content', ico:'📖', label:'Aprender'},
-    {screen:'exercisesSubjects', ico:'✎', label:'Exercícios'},
+    {screen:'practice', ico:'✎', label:'Praticar', match:['practice','exercisesSubjects','personalizedSetup','challengeDifficulty','stepSetup','tabuada']},
     {screen:'exams', ico:'🎓', label:'Provas'},
-    {screen:'personalizedSetup', ico:'🎯', label:'Treino'},
-    {screen:'challengeDifficulty', ico:'🏆', label:'Desafios'},
-    {screen:'stepSetup', ico:'🪜', label:'Passo a passo'},
-    {screen:'tabuada', ico:'✖️', label:'Tabuada'},
     {screen:'errors', ico:'🔁', label:'Erros'},
-    {screen:'geoLab', ico:'🔺', label:'Laboratório', extra:{geoBack:'content'}},
   ]},
+  // Arena: fases com estrelas, o desafio de hoje, os jogos rápidos e o simulado
   {id:'arena', tabs:[
-    {screen:'arena', ico:'⚔️', label:'Arena'},
+    {screen:'arena', ico:'⚔️', label:'Fases'},
     {screen:'dailyIntro', ico:'📅', label:'Desafio do Dia', match:['dailyIntro','arenaDaily','dailyReview']},
+    {screen:'games', ico:'🎮', label:'Jogos', match:['games','lightning','speedRun','quizSetup','duel','friendChallenge']},
     {screen:'examSetup', ico:'📝', label:'Simulado', match:['examSetup','examResult']},
-    {screen:'lightning', ico:'⚡', label:'Relâmpago'},
-    {screen:'speedRun', ico:'⏱️', label:'Contra o relógio'},
-    {screen:'quizSetup', ico:'🎤', label:'Quiz'},
-    {screen:'duel', ico:'🤝', label:'Duelo'},
-    {screen:'friendChallenge', ico:'🎯', label:'Desafiar amigo'},
   ]},
   {id:'tools', tabs:[
     {screen:'solve', ico:'🔎', label:'Resolver'},
     {screen:'calculator', ico:'🧮', label:'Calculadora'},
     {screen:'notebook', ico:'✏️', label:'Caderno'},
+    {screen:'geoLab', ico:'🔺', label:'Laboratório', extra:{geoBack:'calculator'}},
   ]},
   {id:'profile', tabs:[
     {screen:'profile', ico:'👤', label:'Perfil'},
@@ -189,7 +183,8 @@ function withSectionTabs(el){
 }
 
 /* ---------------- barra de navegação inferior ----------------
-   6 botões: Início, Trilha, Estudar (Aprender + Exercícios, em abas), Arena, Ferramentas e Progresso.
+   6 botões: Início, Trilha, Estudar (Aprender, Praticar, Provas, Erros), Arena (Fases, Desafio do Dia,
+   Jogos, Simulado), Ferramentas e Progresso.
    "Estudar" volta pra última aba usada. A Arena mostra uma bolinha se o Desafio do Dia não foi feito. */
 const BN_ICONS = {
   home:'<path d="M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
@@ -199,13 +194,13 @@ const BN_ICONS = {
   tools:'<rect x="5" y="2.5" width="14" height="19" rx="2.5"/><path d="M8 6.5h8v3H8z"/><path d="M8.5 13h.01M12 13h.01M15.5 13h.01M8.5 16.5h.01M12 16.5h.01M15.5 16.5h.01"/>',
   progress:'<path d="M3.5 20.5h17"/><path d="M6.5 20.5v-6M11.5 20.5V6M16.5 20.5v-9.5"/><path d="m5 10.5 5-5 4 3 5.5-5"/>',
 };
-const STUDY_SCREENS = ['content','subjectDetail','geoLab','cardsDeck','exercisesSubjects','exerciseDifficulty','exerciseSession','personalizedSetup','personalizedSession','challengeDifficulty','challengeSession','tabuada','errors','reviewErrorsSession','stepSetup','stepGuide','exams'];
+const STUDY_SCREENS = ['content','subjectDetail','practice','cardsDeck','exercisesSubjects','exerciseDifficulty','exerciseSession','personalizedSetup','personalizedSession','challengeDifficulty','challengeSession','tabuada','errors','reviewErrorsSession','stepSetup','stepGuide','exams'];
 const BOTTOM_NAV_ITEMS = [
   {id:'home', screen:'home', label:'Início', group:['home','help','news','profile','loja','settings','placement','plan']},
   {id:'path', screen:'path', label:'Trilha', group:['path']},
   {id:'study', screen:'content', label:'Estudar', group:STUDY_SCREENS},
-  {id:'arena', screen:'arena', label:'Arena', group:['arena','arenaDaily','dailyIntro','dailyReview','examSetup','examResult','lightning','speedRun','quizSetup','duel','friendChallenge']},
-  {id:'tools', screen:'calculator', label:'Ferramentas', group:['calculator','solve','notebook','notePage']},
+  {id:'arena', screen:'arena', label:'Arena', group:['arena','arenaDaily','dailyIntro','dailyReview','examSetup','examResult','lightning','speedRun','quizSetup','duel','friendChallenge','games']},
+  {id:'tools', screen:'calculator', label:'Ferramentas', group:['calculator','solve','notebook','notePage','geoLab']},
   {id:'progress', screen:'progress', label:'Progresso', group:['progress','ranking','report','history','achievements','certificates','certificate']},
 ];
 function bottomNav(){
@@ -225,7 +220,7 @@ function bottomNav(){
     const dot = item.id==='arena' && dailyPending && !active;
     const btn = h(`<button class="bn-item ${active?'active':''}" ${active?'aria-current="page"':''}><span class="bn-icon"><svg viewBox="0 0 24 24" aria-hidden="true">${BN_ICONS[item.id]}</svg>${dot?'<i class="bn-dot" title="Desafio do Dia esperando"></i>':''}</span><span class="bn-label">${item.label}</span></button>`);
     const target = item.id==='study' ? (state.lastStudy || item.screen) : item.id==='tools' ? (state.lastTool || item.screen) : item.screen;
-    btn.onclick = ()=>{ if(state.screen !== target) go(target, target==='geoLab' ? {geoBack:'content'} : {}); };
+    btn.onclick = ()=>{ if(state.screen !== target) go(target, target==='geoLab' ? {geoBack:'calculator'} : {}); };
     bar.appendChild(btn);
   });
   // rodapé da barra lateral (só no computador): perfil e atalhos do teclado
