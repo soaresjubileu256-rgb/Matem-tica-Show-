@@ -51,6 +51,14 @@ const ACHIEVEMENTS = [
   {id:'plan',      ico:'🗺️', name:'Estrategista',      desc:'Crie um plano de estudos'},
   {id:'solver10',  ico:'🔍', name:'Detetive',          desc:'Resolva 10 contas no Resolver', check:g=>(g.solves||0)>=10},
   {id:'duelist',   ico:'🤝', name:'Duelista',          desc:'Jogue um duelo a dois'},
+  {id:'boss1',     ico:'👾', name:'Caça-chefes',       desc:'Derrote o chefe de um episódio da Trilha', check:g=>episodesDone()>=1},
+  {id:'boss5',     ico:'🐉', name:'Domador de chefes', desc:'Derrote 5 chefes de episódio',             check:g=>episodesDone()>=5},
+  {id:'level15',   ico:'🌟', name:'Estrela do show',   desc:'Chegue ao nível 15',                       check:g=>levelInfo(g.xp||0).level>=15},
+  {id:'friendWin', ico:'🎯', name:'Desafiante',        desc:'Vença um desafio de amigo'},
+  {id:'weekDone',  ico:'🧰', name:'Semana completa',   desc:'Complete uma missão da semana'},
+  {id:'frozen',    ico:'🧊', name:'Salvo pelo gelo',   desc:'Um protetor salvou sua ofensiva'},
+  {id:'comeback',  ico:'❤️', name:'Volta por cima',    desc:'Ganhe uma vida revisando seus erros'},
+  {id:'collector', ico:'👑', name:'Colecionador',      desc:'Tenha 10 itens de visual da Loja',         check:g=>shopOwnedCount()>=10},
 ];
 function totalAnswered(){ return Object.values(progressSync()).reduce((a,d)=>a+((d&&d.attempted)||0),0); }
 /* confere as conquistas automáticas (as que têm check) */
@@ -124,6 +132,7 @@ function claimWeekMission(){
   if(!st.done || st.claimed) return false;
   const g = loadGame();
   weekMissionData().claimed = true;
+  gameUnlock('weekDone');
   g.gems = (g.gems||0) + WEEK_REWARD.gems;
   gameAddXP(WEEK_REWARD.xp);
   saveGame();
@@ -255,6 +264,7 @@ function showStreakNote(){
   const g = loadGame(), n = g.streakNote;
   if(!n) return;
   delete g.streakNote; saveGame();
+  if(n.type==='saved') gameUnlock('frozen');
   if(n.type==='saved') queueToast('🧊', n.used>1 ? `${n.used} protetores usados!` : 'Protetor usado!', `Sua ofensiva de ${n.streak} dia${n.streak===1?'':'s'} foi salva. Jogue hoje pra continuar!`);
   if(n.type==='lost' && n.streak>=2) queueToast('💔', 'A ofensiva apagou', `Você tinha ${n.streak} dias. Jogue hoje pra acender de novo!`);
 }
@@ -386,6 +396,26 @@ function levelInfo(xp){
 function escHTML(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
 
 /* dá XP e verifica se subiu de nível */
+/* episódios completos (chefe derrotado) e itens de visual comprados, pras conquistas */
+function episodesDone(){ try{ const pd = pathDone(); return allPathNodes().filter(n=>n.type==='trophy' && pd[n.key]).length; }catch(e){ return 0; } }
+function shopOwnedCount(){ try{ const sh = shopData(); return SHOP_ITEMS.filter(it=>it.price && sh.owned[it.id]).length; }catch(e){ return 0; } }
+
+/* ---------- presente de nível ----------
+   cada nível novo dá moedas (20 + 5 × nível); a cada 5 níveis vem também um item de visual
+   que a pessoa ainda não tem (se já tiver todos, vira +50 moedas) */
+function levelGift(from, to){
+  const g = loadGame(); let gems = 0, item = null;
+  for(let lv = from+1; lv <= to; lv++){
+    gems += 20 + 5*lv;
+    if(lv % 5 === 0){
+      const pool = (typeof mysteryCandidates==='function') ? mysteryCandidates() : [];
+      if(pool.length){ item = pick(pool.filter(it=>!it.rare).length ? pool.filter(it=>!it.rare) : pool); shopData().owned[item.id] = 1; }
+      else gems += 50;
+    }
+  }
+  g.gems = (g.gems||0) + gems;
+  return {gems, item};
+}
 function gameAddXP(amount){
   const g = loadGame();
   const before = levelInfo(g.xp).level;
@@ -395,7 +425,10 @@ function gameAddXP(amount){
   if(after.level > before){
     if(after.level>=5) gameUnlock('level5');
     if(after.level>=10) gameUnlock('level10');
-    setTimeout(()=>showLevelUp(after), 700);
+    if(after.level>=15) gameUnlock('level15');
+    const gift = levelGift(before, after.level);
+    saveGame();
+    setTimeout(()=>showLevelUp(after, gift), 700);
   }
 }
 function gameUnlock(id){
@@ -501,11 +534,18 @@ function nextToast(){
   playTones([784,1047,1319], 0.09, 'triangle');
   setTimeout(()=>{ el.remove(); nextToast(); }, 2800);
 }
-function showLevelUp(info){
+function showLevelUp(info, gift){
   const bg = document.createElement('div');
   bg.className = 'gm-modal-bg';
-  bg.innerHTML = `<div class="gm-modal"><div class="big">🏆</div><h2>Nível ${info.level}!</h2><p>Você subiu de nível e agora é<br><b style="color:#fff">${escHTML(info.title)}</b></p><button type="button">Bora continuar! 🚀</button></div>`;
-  bg.querySelector('button').onclick = ()=> bg.remove();
+  bg.innerHTML = `<div class="gm-modal"><div class="big">🏆</div><h2>Nível ${info.level}!</h2><p>Você subiu de nível e agora é<br><b style="color:#fff">${escHTML(info.title)}</b></p>
+    ${gift && (gift.gems || gift.item) ? `<div class="lv-gift"><span class="lv-gift-ico">🎁</span><div><b>Presente de nível</b><small>${gift.gems ? `+${gift.gems} 🪙 moedas` : ''}${gift.item ? `${gift.gems?' · ':''}novo item: <b class="lv-item"></b>` : ''}</small></div></div>` : ''}
+    ${gift && gift.item ? `<button type="button" class="lv-use">Usar ${escHTML(gift.item.ico)} agora</button>` : ''}
+    <button type="button" class="lv-ok">Bora continuar! 🚀</button></div>`;
+  if(gift && gift.item){
+    bg.querySelector('.lv-item').textContent = `${gift.item.ico} ${gift.item.name}`;
+    bg.querySelector('.lv-use').onclick = ()=>{ shopEquip(gift.item.id); bg.remove(); if(typeof render==='function') render(); };
+  }
+  bg.querySelector('.lv-ok').onclick = ()=> bg.remove();
   bg.addEventListener('click', e=>{ if(e.target===bg) bg.remove(); });
   document.body.appendChild(bg);
   playTones([523,659,784,1047,1319], 0.12, 'square', 0.07);
@@ -685,7 +725,8 @@ function missionsCard(){
 const ACH_GROUPS = [
   {id:'hits',   ico:'🎯', name:'Acertos e combos', ids:['first','ans10','ans100','hits50','hits200','hits500','combo5','combo10','hard10','perfect','explorer']},
   {id:'streak', ico:'🔥', name:'Constância',       ids:['streak3','streak7','streak14','streak30','goal','missions','level5','level10']},
-  {id:'arena',  ico:'⚔️', name:'Arena e jogos',    ids:['arenaWin','arenaPerfect','arenaStars30','daily1','daily7','exam1','exam10','bolt15','bolt30','quiz5000','duelist']},
+  {id:'arena',  ico:'⚔️', name:'Arena e jogos',    ids:['arenaWin','arenaPerfect','arenaStars30','daily1','daily7','exam1','exam10','bolt15','bolt30','quiz5000','duelist','friendWin']},
+  {id:'trilha', ico:'🗺️', name:'Trilha e prêmios', ids:['boss1','boss5','weekDone','frozen','comeback','collector','level15']},
   {id:'study',  ico:'📚', name:'Estudo',           ids:['fixer','notebook5','masterFrac','unit','chests','placement','plan','solver10']},
 ];
 function achProgress(id, g){
@@ -704,6 +745,7 @@ function achProgress(id, g){
     quiz5000:[Math.max(0, ...Object.values(g.quizBest||{})),10000],
     fixer:[g.fixed||0,10], notebook5:[g.errLearned||0,5], chests:[g.chests||0,5], solver10:[g.solves||0,10],
     duelist:[g.duels||0,1], daily1:[Object.keys(a.daily||{}).length,1],
+    boss1:[episodesDone(),1], boss5:[episodesDone(),5], collector:[shopOwnedCount(),10], level15:[levelInfo(g.xp).level,15],
   };
   const r = P[id];
   return r ? [Math.min(r[0]||0, r[1]), r[1]] : null;

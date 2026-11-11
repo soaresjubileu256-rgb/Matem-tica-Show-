@@ -4798,3 +4798,8 @@ body::after{inset:0;
 .hub-go{flex:none; font-size:24px; color:var(--ink-soft);}
 
 .ar-screen > .fc-entry{margin-top:10px;}
+
+/* presente de nível */
+.lv-gift{display:flex; align-items:center; gap:12px; margin:0 0 14px; padding:10px 12px; border-radius:16px; background:rgba(255,184,0,.14); border:1px solid rgba(255,184,0,.45); text-align:left;}
+.lv-gift-ico{font-size:30px;} .lv-gift b{display:block; color:#fff;} .lv-gift small{font-size:13px; color:#FFD45C;} .lv-gift small b{display:inline;}
+.gm-modal .lv-use, .gm-modal .ch-use{margin-bottom:8px; background:linear-gradient(135deg,#4C7DFF,#33D2E3); color:#fff;}

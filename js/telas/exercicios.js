@@ -474,7 +474,7 @@ function reviewErrorsSessionScreen(){
       if(sess.lifeOk === undefined){
         sess.lifeOk = sess.correct >= need && lifeReviewsLeft() > 0;
         if(sess.lifeOk){
-          const g = loadGame(); g.today.lifeReviews = (g.today.lifeReviews||0) + 1; saveGame();
+          const g = loadGame(); g.today.lifeReviews = (g.today.lifeReviews||0) + 1; gameUnlock('comeback'); saveGame();
           gainHeart(); playTones([523,659,784,1047], 0.09, 'triangle', 0.09); launchConfetti(90);
         }
       }
