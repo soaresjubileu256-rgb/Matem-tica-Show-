@@ -136,13 +136,8 @@ function claimWeekMission(){
   g.gems = (g.gems||0) + WEEK_REWARD.gems;
   gameAddXP(WEEK_REWARD.xp);
   saveGame();
-  playTones([523,659,784,1047,1319], 0.1, 'triangle', 0.09); launchConfetti(160);
-  const bg = document.createElement('div');
-  bg.className = 'gm-modal-bg';
-  bg.innerHTML = `<div class="gm-modal"><div class="big chest-open">🧰</div><h2>Baú da semana!</h2><p>Missão da semana completa!<br>Você ganhou <b style="color:#FFD45C">${WEEK_REWARD.gems} 🪙 moedas</b> e <b style="color:#fff">+${WEEK_REWARD.xp} XP</b></p><button type="button">Pegar!</button></div>`;
-  bg.querySelector('button').onclick = ()=> bg.remove();
-  bg.addEventListener('click', e=>{ if(e.target===bg) bg.remove(); });
-  document.body.appendChild(bg);
+  showRewardReveal({chest:'🧰', big:true, title:'Baú da semana!', sub:'Missão da semana completa 🎉',
+    prizes:[{kind:'gems', ico:'🪙', amount:WEEK_REWARD.gems, label:'moedas'}, {kind:'xp', ico:'⭐', amount:WEEK_REWARD.xp, label:'XP'}]});
   return true;
 }
 function todayMissions(){ return (loadGame().today.missions || []).map(id=> MISSION_POOL.find(m=>m.id===id)).filter(Boolean); }
@@ -535,21 +530,58 @@ function nextToast(){
   setTimeout(()=>{ el.remove(); nextToast(); }, 2800);
 }
 function showLevelUp(info, gift){
+  const prizes = [];
+  if(gift && gift.gems) prizes.push({kind:'gems', ico:'🪙', amount:gift.gems, label:'moedas', sub:'Presente de nível'});
+  if(gift && gift.item) prizes.push({kind:'item', ico:gift.item.ico, label:gift.item.name, sub:'Item novo pra você'});
+  const actions = [];
+  if(gift && gift.item) actions.push({label:`Usar ${gift.item.ico} agora`, cls:'rw-alt', fn:()=>{ shopEquip(gift.item.id); if(typeof render==='function') render(); }});
+  actions.push({label:'Bora continuar! 🚀', closeFn:false});
+  showRewardReveal({hero:`<div class="rw-level"><small>NÍVEL</small><b>${info.level}</b></div>`, big:true, title:`Nível ${info.level}!`,
+    sub:`Agora você é <b>${escHTML(info.title)}</b>`, prizes, actions});
+}
+/* ---------- revelação de prêmio (baús, presente de nível, baú misterioso) ----------
+   o baú treme com raios de luz atrás, abre, e os prêmios entram um por um em cartões
+   coloridos (moedas vão contando). Com "reduzir animações" ligado, aparece tudo pronto.
+   o = {chest:'🎁', title, sub, hero (html no lugar do baú, opcional), prizes:[{kind, ico, label, sub, amount}],
+        actions:[{label, cls, fn}]}  kind: gems | xp | freeze | boost | item | rare */
+const RW_KIND = {gems:'#FFB800', xp:'#7B5CFF', freeze:'#33B5FF', boost:'#FF8A00', item:'#B23FE0', rare:'#FF4FA3'};
+function showRewardReveal(o){
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   const bg = document.createElement('div');
-  bg.className = 'gm-modal-bg';
-  bg.innerHTML = `<div class="gm-modal"><div class="big">🏆</div><h2>Nível ${info.level}!</h2><p>Você subiu de nível e agora é<br><b style="color:#fff">${escHTML(info.title)}</b></p>
-    ${gift && (gift.gems || gift.item) ? `<div class="lv-gift"><span class="lv-gift-ico">🎁</span><div><b>Presente de nível</b><small>${gift.gems ? `+${gift.gems} 🪙 moedas` : ''}${gift.item ? `${gift.gems?' · ':''}novo item: <b class="lv-item"></b>` : ''}</small></div></div>` : ''}
-    ${gift && gift.item ? `<button type="button" class="lv-use">Usar ${escHTML(gift.item.ico)} agora</button>` : ''}
-    <button type="button" class="lv-ok">Bora continuar! 🚀</button></div>`;
-  if(gift && gift.item){
-    bg.querySelector('.lv-item').textContent = `${gift.item.ico} ${gift.item.name}`;
-    bg.querySelector('.lv-use').onclick = ()=>{ shopEquip(gift.item.id); bg.remove(); if(typeof render==='function') render(); };
-  }
-  bg.querySelector('.lv-ok').onclick = ()=> bg.remove();
-  bg.addEventListener('click', e=>{ if(e.target===bg) bg.remove(); });
+  bg.className = 'gm-modal-bg rw-bg';
+  bg.innerHTML = `<div class="gm-modal rw-modal ${reduce?'open':''}">
+    <div class="rw-stage"><div class="rw-rays" aria-hidden="true"></div><div class="rw-glow" aria-hidden="true"></div>
+      <div class="rw-chest">${o.hero || `<span>${o.chest||'🎁'}</span>`}</div></div>
+    <h2 class="rw-title"></h2><p class="rw-sub"></p>
+    <div class="rw-prizes"></div>
+    <div class="rw-actions"></div>
+  </div>`;
+  bg.querySelector('.rw-title').textContent = o.title || 'Prêmio!';
+  const sub = bg.querySelector('.rw-sub'); if(o.sub) sub.innerHTML = o.sub; else sub.remove();
+  const list = bg.querySelector('.rw-prizes');
+  (o.prizes||[]).forEach((p,i)=>{
+    const el = h(`<div class="rw-prize" style="--rc:${RW_KIND[p.kind]||RW_KIND.gems}; --d:${reduce?0:0.55+i*0.22}s"><span class="rw-p-ico">${p.ico}</span><div class="rw-p-t"><b></b>${p.sub?'<small></small>':''}</div></div>`);
+    const b = el.querySelector('b');
+    if(p.amount){ b.innerHTML = `+<span class="rw-n">${reduce ? p.amount : 0}</span> ${p.label}`; }
+    else b.textContent = p.label;
+    if(p.sub) el.querySelector('small').textContent = p.sub;
+    list.appendChild(el);
+    if(p.amount && !reduce) setTimeout(()=> animateCount(el.querySelector('.rw-n'), p.amount, null, 700), (0.55+i*0.22)*1000);
+  });
+  const acts = bg.querySelector('.rw-actions');
+  (o.actions && o.actions.length ? o.actions : [{label:'Pegar!'}]).forEach(a=>{
+    const btn = h(`<button type="button" class="${a.cls||''}"></button>`);
+    btn.textContent = a.label;
+    btn.onclick = ()=>{ bg.remove(); if(a.fn) a.fn(); };
+    acts.appendChild(btn);
+  });
+  bg.addEventListener('click', e=>{ if(e.target===bg){ bg.remove(); const last = (o.actions||[]).slice(-1)[0]; if(last && last.fn && last.closeFn!==false) last.fn(); } });
   document.body.appendChild(bg);
-  playTones([523,659,784,1047,1319], 0.12, 'square', 0.07);
-  launchConfetti(160);
+  if(!reduce){
+    playTones([392,440,392], 0.07, 'triangle', 0.05);
+    setTimeout(()=>{ const m = bg.querySelector('.rw-modal'); if(m) m.classList.add('open'); playTones([523,659,784,1047,1319], 0.09, 'triangle', 0.1); launchConfetti(o.big ? 180 : 120); }, 450);
+  }
+  return bg;
 }
 /* fxId: efeito da Loja do Pi (sem ele usa o que está em uso) */
 function launchConfetti(count, fxId){
