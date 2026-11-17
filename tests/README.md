@@ -29,6 +29,7 @@ node tests/rodar.js
 | `t-conta.js` | Criar conta, senha certa/errada e levar a conta pra outro celular |
 | `t-erros.js` | Aviso de "errou 3 seguidas" com a explicação |
 | `t-amigo.js` | Desafiar amigo: código, mesmas perguntas e partida completa entre duas contas |
+| `t-leve.js` | Gravação agrupada não perde respostas (recarregar, sair da conta), cópia automática só quando muda, confete não acumula |
 | `t-tour.js` | Tour do Pi e tela Como usar sem passo ou tópico faltando |
 
 ## Quando mexer no app

@@ -10,6 +10,9 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
+  {v:34, date:'2026-11-17', title:'App mais leve', items:[
+    {ico:'🪶', t:'Menos travadas', d:'O confete, a cópia automática e o salvamento das respostas ficaram bem mais leves. Em celular mais simples, o app trava muito menos.', go:'home'},
+  ]},
   {v:33, date:'2026-11-17', title:'Tour e ajuda atualizados', items:[
     {ico:'🎬', t:'Tour novo', d:'O tour do Pi agora mostra tudo o que chegou: chefe do episódio, prêmios, missão da semana, protetor, presente de nível e levar a conta pra outro celular. Reveja em Ajuda → Rever o tour guiado.', go:'help'},
     {ico:'📘', t:'Como usar', d:'Tópicos novos na Ajuda: Prêmios e baús, Desafiar amigo, Contra o relógio e Levar a conta pra outro celular.', go:'help'},

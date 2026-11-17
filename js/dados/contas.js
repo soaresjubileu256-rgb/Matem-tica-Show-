@@ -122,6 +122,7 @@ async function getSavedCurrentUserId(){
   try{ return localStorage.getItem(CURRENT_USER_KEY); }catch(e){ return null; }
 }
 function doLogout(){
+  if(typeof flushSaves==='function') flushSaves(); // grava o que estava na fila antes de trocar de conta
   // fecha tour/janelas abertas da conta que está saindo (o tour continua pendente pra ela)
   if(typeof _tourClose==='function') _tourClose(true);
   document.querySelectorAll('.gm-modal-bg, .tour-root, .gm-toast').forEach(n=>n.remove());
@@ -153,6 +154,7 @@ async function renameCurrentUser(newName){
   users[idx] = Object.assign({}, users[idx], {id:newId, name:newName});
   await saveUsers(users);
   if(newId !== oldId){
+    flushSaves(); // grava a fila antes de copiar os dados pro nome novo
     [PROGRESS_KEY_BASE, HISTORY_KEY_BASE, ERRORS_KEY_BASE, SETTINGS_KEY_BASE, GAME_KEY_BASE].forEach(base=>{
       const oldKey = `${base}:${oldId}`, newKey = `${base}:${newId}`;
       const val = localStorage.getItem(oldKey);
@@ -286,6 +288,7 @@ async function importProgressObject(data){
 async function resetCurrentUserProgress(){
   const uid = currentUserId();
   const keepAvatar = (()=>{ try{ return loadGame().avatar || null; }catch(e){ return null; } })(); // o avatar não é progresso: continua
+  flushSaves(); // a fila não pode regravar os dados depois de apagados
   [PROGRESS_KEY_BASE, HISTORY_KEY_BASE, ERRORS_KEY_BASE, GAME_KEY_BASE].forEach(base=>{
     try{ localStorage.removeItem(`${base}:${uid}`); }catch(e){}
   });

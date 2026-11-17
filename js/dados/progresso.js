@@ -16,6 +16,26 @@ const ERRORS_KEY_BASE = 'mathstudy-errors-v1';
 const HISTORY_LIMIT = 300; // guarda só as últimas N respostas por conta
 const ERRORS_LIMIT = 150;  // guarda só os últimos N erros ainda não revisados
 
+/* gravação agrupada: progresso, histórico e erros eram regravados inteiros (centenas de KB)
+   a cada resposta, o que travava o celular. Agora cada gravação fica na fila e é feita uma vez
+   só, logo depois (ou na hora em que o app vai pro fundo/fecha), sem perder nada. */
+const _pendingSaves = new Map(); let _saveTimer = null;
+function queueSave(key, obj){
+  _pendingSaves.set(key, obj);
+  // espera um pouco e grava quando o aparelho estiver livre (no máximo 3 s depois)
+  if(!_saveTimer) _saveTimer = setTimeout(()=>{ if(window.requestIdleCallback) requestIdleCallback(flushSaves, {timeout:3000}); else flushSaves(); }, 800);
+}
+function flushSaves(){
+  clearTimeout(_saveTimer); _saveTimer = null;
+  _pendingSaves.forEach((obj, key)=>{ try{ localStorage.setItem(key, JSON.stringify(obj)); }catch(e){ storageFullWarn(); } });
+  _pendingSaves.clear();
+}
+try{
+  addEventListener('pagehide', flushSaves);
+  addEventListener('beforeunload', flushSaves);
+  document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden') flushSaves(); });
+}catch(e){}
+
 let progressCache = null, progressCacheUid = null;
 let historyCache = null, historyCacheUid = null;
 let errorsCache = null, errorsCacheUid = null;
@@ -30,9 +50,7 @@ async function loadProgress(){
   progressCacheUid = uid;
   return progressCache;
 }
-async function saveProgress(){
-  try{ localStorage.setItem(`${PROGRESS_KEY_BASE}:${progressCacheUid}`, JSON.stringify(progressCache)); }catch(e){ storageFullWarn(); }
-}
+async function saveProgress(){ queueSave(`${PROGRESS_KEY_BASE}:${progressCacheUid}`, progressCache); }
 
 async function loadHistory(){
   const uid = currentUserId();
@@ -44,9 +62,7 @@ async function loadHistory(){
   historyCacheUid = uid;
   return historyCache;
 }
-async function saveHistory(){
-  try{ localStorage.setItem(`${HISTORY_KEY_BASE}:${historyCacheUid}`, JSON.stringify(historyCache)); }catch(e){ storageFullWarn(); }
-}
+async function saveHistory(){ queueSave(`${HISTORY_KEY_BASE}:${historyCacheUid}`, historyCache); }
 
 async function loadErrors(){
   const uid = currentUserId();
@@ -58,9 +74,7 @@ async function loadErrors(){
   errorsCacheUid = uid;
   return errorsCache;
 }
-async function saveErrors(){
-  try{ localStorage.setItem(`${ERRORS_KEY_BASE}:${errorsCacheUid}`, JSON.stringify(errorsCache)); }catch(e){ storageFullWarn(); }
-}
+async function saveErrors(){ queueSave(`${ERRORS_KEY_BASE}:${errorsCacheUid}`, errorsCache); }
 
 /* retrato leve e serializável da questão, pra poder mostrar de novo depois (histórico / revisão de erros) */
 function snapshotExercise(ex){
