@@ -49,10 +49,22 @@ async function listAutoBackups(uid){
 }
 
 /* salva a cópia de hoje (substitui a de hoje, se já houver) e apaga as mais velhas */
+/* assinatura barata do progresso: se não mudou desde a última cópia, não copia de novo
+   (copiar tudo travava o celular a cada 15 minutos, mesmo sem nada novo) */
+const _autoBkSig = {};
+async function autoBkSignature(){
+  try{
+    const g = loadGame(), [hist, errs] = await Promise.all([loadHistory(), loadErrors()]);
+    return [g.xp||0, g.gems||0, g.streak||0, hist.length, hist[0] && hist[0].ts, errs.length, errs[0] && errs[0].ts,
+      Object.keys(g.ach||{}).length, typeof notesIndex==='function' ? JSON.stringify(notesIndex()) : '', autoBkDay()].join('|');
+  }catch(e){ return String(Math.random()); }
+}
 async function autoBackupNow(reason){
   try{
     if(!currentUser) return false;
     const uid = currentUserId();
+    const sig = await autoBkSignature();
+    if(_autoBkSig[uid] === sig) return false; // nada mudou desde a última cópia
     const payload = JSON.parse(JSON.stringify(await buildBackupPayload()));
     const xp = (payload.game && payload.game.xp) || 0;
     const answered = autoBkAnswered(payload.progress);
@@ -72,6 +84,7 @@ async function autoBackupNow(reason){
       };
     });
     _autoBkLast = ts;
+    _autoBkSig[uid] = sig;
     return true;
   }catch(e){ return false; }
 }
@@ -172,5 +185,6 @@ try{
   document.addEventListener('visibilitychange', ()=>{
     if(document.visibilityState === 'hidden' && currentUser && Date.now() - _autoBkLast >= AUTO_BK_HIDDEN_GAP) autoBackupNow('hidden');
   });
-  setInterval(()=>{ if(currentUser) autoBackupNow('timer'); }, AUTO_BK_EVERY);
+  const idle = fn=> (window.requestIdleCallback ? requestIdleCallback(fn, {timeout:5000}) : setTimeout(fn, 200));
+  setInterval(()=>{ if(currentUser) idle(()=> autoBackupNow('timer')); }, AUTO_BK_EVERY);
 }catch(e){}

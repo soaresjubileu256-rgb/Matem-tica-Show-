@@ -584,19 +584,25 @@ function showRewardReveal(o){
   return bg;
 }
 /* fxId: efeito da Loja do Pi (sem ele usa o que está em uso) */
+/* confete leve: no máximo 90 papeizinhos, desenho na resolução normal da tela (não na
+   resolução máxima do celular, que fazia cada quadro custar várias vezes mais), sem dois
+   confetes ao mesmo tempo e terminando assim que tudo cai pra fora da tela.
+   Emojis da Loja são desenhados uma vez numa imagem e depois só copiados. */
+let _confettiOn = false;
 function launchConfetti(count, fxId){
   try{
     if(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    count = count || 110;
+    if(_confettiOn) return;
+    count = Math.min(count || 110, 90);
+    const W = innerWidth, H = innerHeight, dpr = Math.min(window.devicePixelRatio || 1, 1.25);
     const cv = document.createElement('canvas');
     cv.id = 'gm-confetti';
-    const dpr = window.devicePixelRatio || 1;
-    cv.width = innerWidth*dpr; cv.height = innerHeight*dpr;
+    cv.width = Math.round(W*dpr); cv.height = Math.round(H*dpr);
     document.body.appendChild(cv);
-    const ctx = cv.getContext('2d'); ctx.scale(dpr,dpr);
+    const ctx = cv.getContext('2d');
     const colors = ['#FFB800','#FF5C7A','#33D2E3','#4C7DFF','#B23FE0','#7CFF6B'];
     const parts = Array.from({length:count}, ()=>({
-      x: innerWidth/2 + (Math.random()-.5)*80, y: innerHeight*0.35,
+      x: W/2 + (Math.random()-.5)*80, y: H*0.35,
       vx: (Math.random()-.5)*14, vy: -Math.random()*14-4,
       w: 6+Math.random()*6, h: 8+Math.random()*8, r: Math.random()*6, vr: (Math.random()-.5)*.4,
       c: colors[Math.floor(Math.random()*colors.length)],
@@ -604,20 +610,30 @@ function launchConfetti(count, fxId){
     // efeito comprado na Loja do Pi: emojis no lugar dos papeizinhos
     const fx = typeof shopItem==='function' && currentUser ? shopItem(fxId || shopEquipped('fx')) : null;
     const emo = fx && fx.emo;
-    if(emo){ parts.forEach(p=>{ p.e = emo[Math.floor(Math.random()*emo.length)]; p.s = 16+Math.random()*12; p.vr *= .4; }); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; }
+    if(emo){
+      const sprites = emo.map(e=>{ const c = document.createElement('canvas'); c.width = c.height = 40; const x = c.getContext('2d');
+        x.font = '30px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(e, 20, 22); return c; });
+      parts.forEach(p=>{ p.img = sprites[Math.floor(Math.random()*sprites.length)]; p.s = 16+Math.random()*12; p.vr *= .4; });
+    }
+    _confettiOn = true;
     const start = performance.now();
+    const end = ()=>{ cv.remove(); _confettiOn = false; };
     (function frame(t){
-      ctx.clearRect(0,0,innerWidth,innerHeight);
-      parts.forEach(p=>{
+      if(!cv.isConnected){ _confettiOn = false; return; }
+      ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,cv.width,cv.height);
+      let alive = 0;
+      for(const p of parts){
         p.vy += .35; p.vx *= .99; p.x += p.vx; p.y += p.vy; p.r += p.vr;
-        ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.r); ctx.fillStyle = p.c;
-        if(p.e){ ctx.font = `${p.s}px sans-serif`; ctx.fillText(p.e, 0, 0); }
-        else ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
-        ctx.restore();
-      });
-      if(t-start < 3200) requestAnimationFrame(frame); else cv.remove();
+        if(p.y > H + 30) continue;
+        alive++;
+        const cs = Math.cos(p.r)*dpr, sn = Math.sin(p.r)*dpr;
+        ctx.setTransform(cs, sn, -sn, cs, p.x*dpr, p.y*dpr);
+        if(p.img) ctx.drawImage(p.img, -p.s/2, -p.s/2, p.s, p.s);
+        else { ctx.fillStyle = p.c; ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h); }
+      }
+      if(alive && t-start < 2800) requestAnimationFrame(frame); else end();
     })(start);
-  }catch(e){}
+  }catch(e){ _confettiOn = false; }
 }
 
 /* ---------- pedaços de interface reutilizados nas sessões ---------- */
