@@ -4835,3 +4835,33 @@ body::after{inset:0;
 @keyframes rwPopBig{0%{transform:scale(.7)}60%{transform:scale(1.18)}100%{transform:scale(1)}}
 @keyframes rwIn{to{opacity:1; transform:none}}
 @media (prefers-reduced-motion: reduce){ .rw-rays, .rw-chest, .rw-modal.open .rw-chest{animation:none;} .rw-prize{animation:none; opacity:1; transform:none;} .rw-rays{transition:none;} }
+
+/* ---------- listas no visual de cartão (o mesmo da página Praticar) ----------
+   fundo e borda com a cor de cada item, ícone grande num quadrado colorido e seta à direita.
+   Vale pras listas de assuntos (Aprender, Exercícios, Qual o próximo passo…), pro menu do
+   Perfil e pros botões de dados das Configurações. A linha sem color-mix é pra celular antigo. */
+.subject-row{--hc:var(--uc, #4C7DFF);}
+.pf-screen .pm-item{--hc:var(--pt, #8C7BFF);}
+.st-acts .st-act:nth-child(1){--hc:#4C7DFF;} .st-acts .st-act:nth-child(2){--hc:#2BE0A6;}
+.st-act.tf-act{--hc:#B23FE0;} .st-act.st-act-wide:not(.tf-act){--hc:#FF8A4C;}
+.subject-row, .pf-screen .pm-item, .st-act{
+  border:1px solid var(--border-soft); border-radius:20px; color:var(--ink);
+  background-color:rgba(255,255,255,.05) !important;
+  background-image:linear-gradient(135deg, color-mix(in srgb, var(--hc) 16%, transparent), rgba(255,255,255,.03)) !important;
+  border-color:color-mix(in srgb, var(--hc) 40%, transparent) !important;
+  box-shadow:none !important;}
+/* tema claro: fundo branco por baixo da cor */
+:root.theme-light .subject-row, :root.theme-light .pf-screen .pm-item, :root.theme-light .st-act{background-color:#fff !important;}
+.subject-row{padding:14px; gap:14px;}
+.subject-row .sym{width:52px !important; height:52px !important; border-radius:16px !important; font-size:17px !important;}
+.subject-row .txt .name{font-family:'Inter',sans-serif; font-size:16px; font-weight:800;}
+.subject-row .chev{font-size:24px;}
+.pf-screen .pm-item{padding:14px; gap:14px;}
+.pf-screen .pm-ico{width:52px; height:52px; border-radius:16px; font-size:24px; background:rgba(255,255,255,.08); background:color-mix(in srgb, var(--hc) 24%, transparent);}
+.pf-screen .pm-l{font-size:16px; font-weight:800;}
+.pf-screen .pm-item.danger{--hc:#FF5C7A;}
+.st-act{padding:14px; gap:4px;}
+.st-act > span{display:grid; place-items:center; width:46px; height:46px; border-radius:14px; font-size:22px; margin-bottom:4px; background:rgba(255,255,255,.08); background:color-mix(in srgb, var(--hc) 24%, transparent);}
+.st-act b{font-size:15px;}
+.st-act.st-act-wide{display:grid; grid-template-columns:auto 1fr; column-gap:14px; align-items:center;}
+.st-act.st-act-wide > span{grid-row:1 / span 2; margin-bottom:0;}

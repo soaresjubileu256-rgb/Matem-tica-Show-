@@ -10,6 +10,9 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
+  {v:35, date:'2026-11-17', title:'Listas com cara nova', items:[
+    {ico:'🎨', t:'Mesmo visual da página Praticar', d:'As listas de assuntos (Aprender, Exercícios, Qual o próximo passo), o menu do Perfil e os botões de dados das Configurações ganharam cartões coloridos, com ícone grande.', go:'content'},
+  ]},
   {v:34, date:'2026-11-17', title:'App mais leve', items:[
     {ico:'🪶', t:'Menos travadas', d:'O confete, a cópia automática e o salvamento das respostas ficaram bem mais leves. Em celular mais simples, o app trava muito menos.', go:'home'},
   ]},
