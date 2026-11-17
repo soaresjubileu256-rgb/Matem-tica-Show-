@@ -10,6 +10,9 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
+  {v:34, date:'2026-11-17', title:'Seus números no Início', items:[
+    {ico:'🪙', t:'Ofensiva, moedas e vidas à vista', d:'No topo do Início: toque no 🔥 pra ver sua semana, nas 🪙 pra abrir a Loja e nos ❤️ pra ver quando volta a próxima vida.', go:'home'},
+  ]},
   {v:33, date:'2026-11-17', title:'Tour e ajuda atualizados', items:[
     {ico:'🎬', t:'Tour novo', d:'O tour do Pi agora mostra tudo o que chegou: chefe do episódio, prêmios, missão da semana, protetor, presente de nível e levar a conta pra outro celular. Reveja em Ajuda → Rever o tour guiado.', go:'help'},
     {ico:'📘', t:'Como usar', d:'Tópicos novos na Ajuda: Prêmios e baús, Desafiar amigo, Contra o relógio e Levar a conta pra outro celular.', go:'help'},
