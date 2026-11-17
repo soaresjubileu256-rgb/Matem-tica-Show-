@@ -10,6 +10,10 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
+  {v:33, date:'2026-11-17', title:'Tour e ajuda atualizados', items:[
+    {ico:'🎬', t:'Tour novo', d:'O tour do Pi agora mostra tudo o que chegou: chefe do episódio, prêmios, missão da semana, protetor, presente de nível e levar a conta pra outro celular. Reveja em Ajuda → Rever o tour guiado.', go:'help'},
+    {ico:'📘', t:'Como usar', d:'Tópicos novos na Ajuda: Prêmios e baús, Desafiar amigo, Contra o relógio e Levar a conta pra outro celular.', go:'help'},
+  ]},
   {v:32, date:'2026-11-11', title:'Mais prêmios no jogo', items:[
     {ico:'🎁', t:'Presente de nível', d:'Subiu de nível? Ganha moedas (mais a cada nível) e, a cada 5 níveis, um item de visual novo.', go:'progress'},
     {ico:'💰', t:'Prêmio surpresa da Trilha', d:'O baú agora pode dar moedas, um baú cheio, protetor de ofensiva, XP em dobro ou até um item da Loja.', go:'path'},
