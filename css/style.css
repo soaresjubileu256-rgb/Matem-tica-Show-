@@ -4835,3 +4835,8 @@ body::after{inset:0;
 @keyframes rwPopBig{0%{transform:scale(.7)}60%{transform:scale(1.18)}100%{transform:scale(1)}}
 @keyframes rwIn{to{opacity:1; transform:none}}
 @media (prefers-reduced-motion: reduce){ .rw-rays, .rw-chest, .rw-modal.open .rw-chest{animation:none;} .rw-prize{animation:none; opacity:1; transform:none;} .rw-rays{transition:none;} }
+
+/* Início: ofensiva, moedas e vidas logo abaixo do título */
+.home-scr > .status-pills.home-pills{margin:2px 20px 6px; justify-content:flex-start; flex-wrap:wrap;}
+.home-pills .sp{font-size:14px; padding:7px 12px;}
+@media (min-width: 900px){ .home-scr > .status-pills.home-pills{grid-column:1 / -1; margin-left:0; margin-right:0;} }

@@ -885,11 +885,12 @@ function statusPills(){
   const bar = h(`<div class="status-pills">
     <button type="button" class="sp fire ${gameStreakNow()?'':'off'}" aria-label="Ver ofensiva">🔥 ${gameStreakNow()}</button>
     ${xpBoostLeft()>0 ? `<span class="sp boost" title="XP em dobro">⚡x2 <small>${Math.ceil(xpBoostLeft()/60000)}min</small></span>` : ''}
-    <span class="sp gem">🪙 ${gemsNow()}</span>
+    <button type="button" class="sp gem" aria-label="Moedas: abrir a Loja">🪙 ${gemsNow()}</button>
     <button type="button" class="sp heart" aria-label="Vidas">❤️ ${hearts}${hearts<HEARTS_MAX?` <small>${fmtMinSec(nextHeartIn())}</small>`:''}</button>
   </div>`);
   bar.querySelector('.heart').onclick = ()=>{ if(heartsNow()<HEARTS_MAX) showNoHearts(); else showFloat('Vidas cheias ❤️'); };
   bar.querySelector('.fire').onclick = ()=> showStreakPanel();
+  bar.querySelector('.gem').onclick = ()=> go('loja');
   return bar;
 }
 

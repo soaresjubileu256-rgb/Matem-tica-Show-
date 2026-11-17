@@ -13,7 +13,7 @@ A dona do projeto escreve em português: **responda sempre em português**.
 2. **Toda mudança aumenta `CACHE_VERSION` em `sw.js`.** Arquivo JS/CSS novo entra em `index.html` e na lista `APP_SHELL` do `sw.js`.
 3. **Fluxo de entrega:** commit no branch de trabalho → push → pull request para `main` → merge.
 4. **Não mude o visual (cores, logo, fontes) sem pedido.** Mudanças assim já foram recusadas antes.
-5. **Teste antes de entregar:** abra o app no navegador (Playwright com o Chromium em `/opt/pw-browsers/chromium`), confira a tela mexida no celular e no computador, e veja se não há erros de JavaScript. Diga o que foi testado de verdade e o que não foi.
+5. **Teste antes de entregar:** rode `node tests/rodar.js` (testes automáticos guardados em `tests/`, veja `tests/README.md`) e só publique com **✓ TUDO CERTO**. Funcionalidade nova ganha teste novo (ou atualiza um `tests/t-*.js`). Também abra a tela mexida no celular e no computador. Diga o que foi testado de verdade e o que não foi.
 
 ## Onde fica cada coisa
 
