@@ -24,7 +24,7 @@ node tests/rodar.js
 | `t-telas.js` | Abre as 36 telas no celular (tema escuro e claro) e no computador: sem erro, com conteúdo e sem nada saindo pra fora |
 | `t-questoes.js` | Gera ~43 mil questões de todos os assuntos: resposta válida, texto sem defeito, 4 alternativas com 1 certa; Desafio do Dia igual pra mesma data |
 | `t-navegacao.js` | Menu de baixo, abas de cada seção, páginas Praticar e Jogos, botão voltar |
-| `t-inicio.js` | Ordem do Início, ofensiva/moedas/vidas no topo, cartão do jogador no Progresso |
+| `t-inicio.js` | Ordem do Início (sem coração, moedas e ofensiva) e cartão do jogador no Progresso |
 | `t-jogo.js` | Protetor de ofensiva, vidas e revisão de erros, presente de nível, prêmio surpresa, missão da semana, Loja e conquistas |
 | `t-conta.js` | Criar conta, senha certa/errada e levar a conta pra outro celular |
 | `t-erros.js` | Aviso de "errou 3 seguidas" com a explicação |

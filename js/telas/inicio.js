@@ -26,9 +26,6 @@ function homeScreen(){
   const hello = streakNow>0 && loadGame().lastDay!==dayKey()
     ? `${saud}${who}! Jogue uma fase hoje pra não perder sua ofensiva de ${streakNow} dia${streakNow===1?'':'s'}! 🔥`
     : `${saud}${who}! ` + pick(['Bora subir de nível hoje? 🚀', 'O palco é seu hoje! 🎤', 'Luzes, câmera... show! 🎬', 'Que tal uma fase da Trilha? ⭐']);
-  // ofensiva, moedas e vidas sempre à vista (o cartão completo fica em Progresso)
-  const pills = statusPills(); pills.classList.add('home-pills');
-  wrap.appendChild(pills);
   wrap.appendChild(mascotBubble(hello, 'happy'));
   showStreakNote();
   wrap.appendChild(pathHero());
