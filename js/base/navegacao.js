@@ -218,7 +218,7 @@ function bottomNav(){
   BOTTOM_NAV_ITEMS.forEach(item=>{
     const active = item.group.includes(state.screen);
     const dot = item.id==='arena' && dailyPending && !active;
-    const btn = h(`<button class="bn-item ${active?'active':''}" ${active?'aria-current="page"':''}><span class="bn-icon"><svg viewBox="0 0 24 24" aria-hidden="true">${BN_ICONS[item.id]}</svg>${dot?'<i class="bn-dot" title="Desafio do Dia esperando"></i>':''}</span><span class="bn-label">${item.label}</span></button>`);
+    const btn = h(`<button class="bn-item ${active?'active':''}" data-nav="${item.id}" ${active?'aria-current="page"':''}><span class="bn-icon"><svg viewBox="0 0 24 24" aria-hidden="true">${BN_ICONS[item.id]}</svg>${dot?'<i class="bn-dot" title="Desafio do Dia esperando"></i>':''}</span><span class="bn-label">${item.label}</span></button>`);
     const target = item.id==='study' ? (state.lastStudy || item.screen) : item.id==='tools' ? (state.lastTool || item.screen) : item.screen;
     btn.onclick = ()=>{ if(state.screen !== target) go(target, target==='geoLab' ? {geoBack:'calculator'} : {}); };
     bar.appendChild(btn);
