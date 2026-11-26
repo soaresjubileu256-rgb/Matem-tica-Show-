@@ -230,6 +230,10 @@ function dailyQuestions(k, track){
     MQ_DESLIGADO = true;
     try{ return dailyQuestions(k, track); } finally { MQ_DESLIGADO = false; }
   }
+  if(typeof MQ_LOTE2_DESDE!=='undefined' && k < MQ_LOTE2_DESDE && !MQ_SEM_LOTE2 && !MQ_DESLIGADO){
+    MQ_SEM_LOTE2 = true;
+    try{ return dailyQuestions(k, track); } finally { MQ_SEM_LOTE2 = false; }
+  }
   return withSeed(dailySeed(k)*10 + (track==='em' ? 1 : 0), ()=>{
     const ids = shuffle(dailyTrackIds(track)).slice(0, DAILY_N);
     const diffs = ['facil','facil','medio','medio','medio','dificil','dificil'];
