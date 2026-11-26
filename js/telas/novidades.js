@@ -10,6 +10,9 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
+  {v:36, date:'2026-11-26', title:'Trilha virou mapa de aventura', items:[
+    {ico:'🗺️', t:'Mapa de aventura', d:'Cada episódio da Trilha agora é um mapa com cenário próprio (floresta, ilha, deserto, montanha…). As fases são pontos ligados por uma trilha, o caminho feito fica dourado e o Pi espera você em cima da fase atual.', go:'path'}
+  ]},
   {v:35, date:'2026-11-17', title:'Listas com cara nova', items:[
     {ico:'🎨', t:'Mesmo visual da página Praticar', d:'As listas de assuntos (Aprender, Exercícios, Qual o próximo passo), o menu do Perfil e os botões de dados das Configurações ganharam cartões coloridos, com ícone grande.', go:'content'},
   ]},

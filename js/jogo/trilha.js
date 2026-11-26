@@ -1035,6 +1035,50 @@ function pathCoachText(n){
   if(n.type==='trophy') return `Hora da Grande final de ${nome}. Vença e ganhe o certificado! 🎤`;
   return `Aprenda ${nome.charAt(0).toLowerCase()+nome.slice(1)}: ${n.label.replace(' · ', ', ').toLowerCase()}.`;
 }
+/* ---------- mapa de aventura (um por episódio) ----------
+   cada fase é um ponto do mapa; a trilha pontilhada liga os pontos (o trecho já feito fica cheio);
+   o Pi fica em cima da fase atual. Paisagem e um objeto de escola enfeitam os lados. */
+const MAP_X = [50, 76, 28, 70, 40];          // posição (%) de cada uma das 5 fases
+const MAP_TOP = 74, MAP_STEP = 122;          // altura (px) da 1ª fase e distância entre as fases
+const MAP_SCENERY = [['🌳','⛰️','🌲','🏕️'], ['🌴','🏝️','🐚','⛵'], ['🌵','🏜️','🦎','☀️'], ['🏔️','🌲','❄️','🦌'], ['🌋','🏞️','🦖','🌿'], ['🏰','🌳','🐉','🌈'], ['🍄','🌻','🐝','🌾']];
+const MAP_SLOTS = [{x:13, y:150}, {x:87, y:290}, {x:12, y:410}, {x:88, y:540}];
+function pathMapEl(u, unitNodes, all, done, cur, unitLocked, color, onCurrent){
+  const H = MAP_TOP + (unitNodes.length-1)*MAP_STEP + 96;
+  const map = h(`<div class="path-map ${unitLocked?'locked':''}" style="${color}; height:${H}px"></div>`);
+  const pts = unitNodes.map((n,k)=>({x: MAP_X[k % MAP_X.length], y: MAP_TOP + k*MAP_STEP}));
+  // trilha: um pedaço por ligação; o pedaço já percorrido fica cheio
+  let svg = `<svg class="pm-trail" viewBox="0 0 100 ${H}" preserveAspectRatio="none" aria-hidden="true">`;
+  for(let k=1;k<pts.length;k++){
+    const a = pts[k-1], b = pts[k], feito = !!done[unitNodes[k].key] || all.indexOf(unitNodes[k])===cur;
+    svg += `<path class="${feito?'on':''}" vector-effect="non-scaling-stroke" d="M${a.x} ${a.y} C${a.x} ${a.y+62} ${b.x} ${b.y-62} ${b.x} ${b.y}"/>`;
+  }
+  map.insertAdjacentHTML('beforeend', svg + '</svg>');
+  // paisagem e um objeto de escola
+  const cena = MAP_SCENERY[u % MAP_SCENERY.length];
+  MAP_SLOTS.forEach((p,i)=> map.insertAdjacentHTML('beforeend', `<span class="pm-scene" aria-hidden="true" style="left:${p.x}%; top:${p.y}px">${cena[i % cena.length]}</span>`));
+  map.insertAdjacentHTML('beforeend', `<img class="pm-deco" alt="" aria-hidden="true" decoding="async" style="left:84%; top:44px" src="${pathDecoURI(PATH_DECO[(u*5) % PATH_DECO.length])}">`);
+  unitNodes.forEach((n,k)=>{
+    const gi = all.indexOf(n), p = pts[k];
+    const isDone = !!done[n.key], isCur = gi===cur, locked = gi>cur && !isDone;
+    const ico = locked ? '🔒' : n.type==='chest' ? (isDone?'✨':'🎁') : n.type==='trophy' ? (isDone?'🏆':'👾') : escHTML(n.subject.sym);
+    const nome = n.type==='trophy' ? 'Chefe do episódio' : n.label;
+    const wrapN = h(`<div class="mnode-wrap ${isCur?'is-cur':''}" style="left:${p.x}%; top:${p.y}px"></div>`);
+    if(isCur) wrapN.appendChild(h(`<div class="mn-pi" aria-hidden="true">${mascotSVG('happy', 54)}</div>`));
+    const btn = h(`<button type="button" class="mnode ${n.type} ${isDone?'done':''} ${isCur?'cur':''} ${locked?'locked':''}" aria-label="${nome}${isDone?', concluída':locked?', bloqueada':''}"><span class="mn-ico">${ico}</span>${isDone && n.type!=='chest' ? '<span class="mn-ok">✓</span>' : ''}</button>`);
+    wrapN.appendChild(btn);
+    wrapN.appendChild(h(`<span class="mn-lbl">${escHTML(nome)}</span>`));
+    if(isCur) wrapN.appendChild(h(`<button type="button" class="mn-play">${n.type==='chest'?'🎁 ABRIR':n.type==='trophy'?'👾 ENFRENTAR':'▶ JOGAR'}</button>`));
+    btn.onclick = ()=>{
+      if(locked){ showFloat('🔒 Complete as fases anteriores', true); return; }
+      if(n.type==='chest') openChest(n, isDone);
+      else nodeSheet(n, color, isDone);
+    };
+    const play = wrapN.querySelector('.mn-play'); if(play) play.onclick = ()=> btn.onclick();
+    map.appendChild(wrapN);
+    if(isCur) onCurrent(wrapN);
+  });
+  return map;
+}
 function pathScreen(){
   const wrap = document.createElement('div');
   const bar = topbar('Trilha', true, ()=>go('home'));
@@ -1101,36 +1145,15 @@ function pathScreen(){
     if(collapsed) return;
     // episódios bloqueados mais à frente aparecem só com a faixa: desenhar os 58 tabuleiros de uma vez travava o celular
     if(unitLocked && (!curNode || u > curNode.unit + 1)) return;
-    // tabuleiro do episódio: as fases ficam nas casas, uma por linha, em zigue-zague
-    const col = h(`<div class="path-board ${unitLocked?'locked':''}" style="${color}"></div>`);
-    unitNodes.forEach((n,k)=>{
-      const gi = all.indexOf(n);
-      const isDone = !!done[n.key], isCur = gi===cur, locked = gi>cur && !isDone;
-      const ico = locked ? '🔒' : n.type==='chest' ? (isDone?'✨':'🎁') : n.type==='trophy' ? '🎤' : escHTML(n.subject.sym);
-      const z = PATH_ZIG[k % PATH_ZIG.length];
-      const wrapN = h(`<div class="pnode-wrap ${isCur?'is-cur':''}" style="--z:${z}"></div>`);
-      const btn = h(`<button type="button" class="pnode ${n.type} ${isDone?'done':''} ${isCur?'cur':''} ${locked?'locked':''}" aria-label="${n.label}${isDone?', concluída':locked?', bloqueada':''}">
-          <span class="pd-side"></span><span class="pd-top"></span><span class="pd-ico">${ico}</span>${isDone && n.type!=='chest' ? '<span class="pd-ok">✓</span>' : ''}</button>`);
-      wrapN.appendChild(btn);
-      if(isCur) wrapN.appendChild(h(`<button type="button" class="pnode-play">${n.type==='chest'?'🎁 ABRIR':'▶ JOGAR'}</button>`));
-      // enfeite: um objeto de escola desenhado na casa vazia do outro lado
-      if(z !== 0) wrapN.appendChild(h(`<img class="pd-deco" alt="" aria-hidden="true" decoding="async" src="${pathDecoURI(PATH_DECO[(u*5 + (k>2?3:0)) % PATH_DECO.length])}">`));
-      btn.onclick = ()=>{
-        if(locked){ showFloat('🔒 Complete as fases anteriores', true); return; }
-        if(n.type==='chest') openChest(n, isDone);
-        else nodeSheet(n, color, isDone);
-      };
-      const play = wrapN.querySelector('.pnode-play'); if(play) play.onclick = ()=> btn.onclick();
-      col.appendChild(wrapN);
-      if(isCur) currentEl = wrapN;
-    });
+    // mapa de aventura do episódio: as fases são pontos ligados por uma trilha, com paisagem em volta
+    const col = pathMapEl(u, unitNodes, all, done, cur, unitLocked, color, (wrapN)=>{ currentEl = wrapN; });
     c.appendChild(col);
   });
   // barra de baixo: lista dos episódios e "Próxima fase"
   if(curNode){
     const cta = h(`<div class="path-cta"><button type="button" class="pc-list" aria-label="Lista de episódios"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="6" r="1.6"/><circle cx="5" cy="12" r="1.6"/><circle cx="5" cy="18" r="1.6"/><path d="M9.5 6h10M9.5 12h10M9.5 18h10"/></svg></button>
       <button type="button" class="pc-next">${curNode.type==='chest' ? 'Abrir prêmio' : curNode.type==='trophy' ? 'Grande final' : 'Próxima fase'}</button></div>`);
-    cta.querySelector('.pc-next').onclick = ()=>{ const b = currentEl && currentEl.querySelector('.pnode'); if(b) b.onclick(); };
+    cta.querySelector('.pc-next').onclick = ()=>{ const b = currentEl && currentEl.querySelector('.mnode'); if(b) b.onclick(); };
     cta.querySelector('.pc-list').onclick = ()=> pathListSheet(all, done, cur, u=>{ const el = banners[u]; if(el) el.scrollIntoView({block:'start', behavior:'smooth'}); });
     wrap.appendChild(cta);
   }
