@@ -30,6 +30,7 @@ node tests/rodar.js
 | `t-erros.js` | Aviso de "errou 3 seguidas" com a explicação |
 | `t-amigo.js` | Desafiar amigo: código, mesmas perguntas e partida completa entre duas contas |
 | `t-leve.js` | Gravação agrupada não perde respostas (recarregar, sair da conta), cópia automática só quando muda, confete não acumula |
+| `t-trilha.js` | Trilha em mapa de aventura: fase feita, atual (com o Pi) e trancada, trilha dourada, Rever fases, cliques e tema claro |
 | `t-tour.js` | Tour do Pi e tela Como usar sem passo ou tópico faltando |
 
 ## Quando mexer no app
