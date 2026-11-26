@@ -1003,16 +1003,22 @@ Object.assign(MAIS_QUESTOES, {
    MQ_DESLIGADO = true os geradores usam só o tipo antigo (sem gastar sorteio). */
 const MQ_DESDE = '2026-11-08';
 let MQ_DESLIGADO = false;
+/* lote 2 (mais-questoes-2.js): Desafios do Dia de antes desta data são recriados sem ele */
+const MQ_LOTE2_DESDE = '2026-11-27';
+let MQ_SEM_LOTE2 = false;
 
 /* liga os tipos novos aos geradores de cada assunto */
 SUBJECTS.forEach(s=>{
-  const extra = MAIS_QUESTOES[s.id];
-  if(!extra || !s.gen) return;
+  if(!s.gen) return;
+  const e1 = MAIS_QUESTOES[s.id] || {}, e2 = (typeof MAIS_QUESTOES_2!=='undefined' && MAIS_QUESTOES_2[s.id]) || {};
   ['facil','medio','dificil'].forEach(lv=>{
-    const list = extra[lv], base = s.gen[lv];
-    if(!list || !list.length || !base) return;
+    const l1 = e1[lv] || [], todos = l1.concat(e2[lv] || []), base = s.gen[lv];
+    if(!todos.length || !base) return;
     s.gen[lv] = ()=>{
       if(MQ_DESLIGADO) return base();
+      // sem o lote 2, o sorteio é exatamente o de antes (mesmos números pra mesma semente)
+      const list = MQ_SEM_LOTE2 ? l1 : todos;
+      if(!list.length) return base();
       const k = randInt(0, list.length); // 0..n: o último é o gerador antigo
       if(k === list.length) return base();
       try{ return list[k](); }catch(e){ return base(); }

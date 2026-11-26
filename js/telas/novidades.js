@@ -10,6 +10,9 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
+  {v:37, date:'2026-11-27', title:'Muito mais questões', items:[
+    {ico:'📚', t:'124 tipos novos de pergunta', d:'Exercícios, Trilha, Treino e Desafio do Dia ganharam perguntas novas em quase todos os assuntos: problemas do dia a dia (ônibus, pizza, troco, terreno, juros, parcelas), regra de três composta, inequações, função quadrática, números complexos, probabilidade, sólidos e mais. Todas com passo a passo.', go:'exercisesSubjects'}
+  ]},
   {v:36, date:'2026-11-26', title:'Trilha virou mapa de aventura', items:[
     {ico:'🗺️', t:'Mapa de aventura', d:'Cada episódio da Trilha agora é um mapa com cenário próprio (floresta, ilha, deserto, montanha…). As fases são pontos ligados por uma trilha, o caminho feito fica dourado e o Pi espera você em cima da fase atual.', go:'path'}
   ]},

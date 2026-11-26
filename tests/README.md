@@ -22,7 +22,7 @@ node tests/rodar.js
 | Arquivo | O que testa |
 |---|---|
 | `t-telas.js` | Abre as 36 telas no celular (tema escuro e claro) e no computador: sem erro, com conteúdo e sem nada saindo pra fora |
-| `t-questoes.js` | Gera ~43 mil questões de todos os assuntos: resposta válida, texto sem defeito, 4 alternativas com 1 certa; Desafio do Dia igual pra mesma data |
+| `t-questoes.js` | Gera ~60 mil questões de todos os assuntos (incluindo o lote 2 de `mais-questoes-2.js`): resposta válida, texto sem defeito, 4 alternativas com 1 certa; Desafio do Dia igual pra mesma data e os de antes do lote 2 sem mudar |
 | `t-navegacao.js` | Menu de baixo, abas de cada seção, páginas Praticar e Jogos, botão voltar |
 | `t-inicio.js` | Ordem do Início (sem coração, moedas e ofensiva) e cartão do jogador no Progresso |
 | `t-jogo.js` | Protetor de ofensiva, vidas e revisão de erros, presente de nível, prêmio surpresa, missão da semana, Loja e conquistas |
