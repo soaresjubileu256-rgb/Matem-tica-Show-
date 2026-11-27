@@ -536,8 +536,35 @@ function showLevelUp(info, gift){
   const actions = [];
   if(gift && gift.item) actions.push({label:`Usar ${gift.item.ico} agora`, cls:'rw-alt', fn:()=>{ shopEquip(gift.item.id); if(typeof render==='function') render(); }});
   actions.push({label:'Bora continuar! 🚀', closeFn:false});
-  showRewardReveal({hero:`<div class="rw-level"><small>NÍVEL</small><b>${info.level}</b></div>`, big:true, title:`Nível ${info.level}!`,
-    sub:`Agora você é <b>${escHTML(info.title)}</b>`, prizes, actions});
+  // título: novo (acabou de trocar) ou o mesmo; e quanto falta pro próximo
+  const lv = info.level, novoTitulo = LEVEL_TITLES.some(([min])=> min===lv);
+  const prox = LEVEL_TITLES.find(([min])=> min>lv), antes = LEVEL_TITLES.filter(([min])=> min<=lv).slice(-1)[0];
+  let extra = `<div class="lu-title ${novoTitulo?'new':''}"><small>${novoTitulo?'✨ Título novo!':'Seu título'}</small><b>${escHTML(info.title)}</b></div>`;
+  if(prox){
+    const de = antes ? antes[0] : 1, pct = Math.round((lv-de)/(prox[0]-de)*100), falta = prox[0]-lv;
+    extra += `<div class="lu-next"><div class="lu-next-t"><span>Próximo: <b>${escHTML(prox[1])}</b></span><em>${falta} ${falta===1?'nível':'níveis'}</em></div><div class="lu-bar"><i style="width:${Math.max(6,pct)}%"></i></div></div>`;
+  } else extra += `<div class="lu-next lu-max">👑 Você chegou ao título mais alto!</div>`;
+  showRewardReveal({cls:'rw-lvup', hero:levelBadgeHTML(lv), big:true, ribbon:'⬆ SUBIU DE NÍVEL', title:`Nível ${lv}!`,
+    sub:`<span class="lu-from">${lv-1}</span><span class="lu-arrow">➜</span><span class="lu-to">${lv}</span>`, extra, prizes, actions});
+}
+/* medalha do nível: estrela dourada com louros e o número no meio (SVG, sem imagem) */
+function levelBadgeHTML(lv){
+  const pts = []; for(let i=0;i<24;i++){ const a = Math.PI*2*i/24 - Math.PI/2, r = i%2 ? 50 : 60; pts.push((70+r*Math.cos(a)).toFixed(1)+','+(70+r*Math.sin(a)).toFixed(1)); }
+  let louro = '';
+  for(let i=0;i<6;i++){ const a = (200 + i*22)*Math.PI/180, x = 70+64*Math.cos(a), y = 70+64*Math.sin(a), rot = (200+i*22)+90;
+    louro += `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="5" ry="11" transform="rotate(${rot} ${x.toFixed(1)} ${y.toFixed(1)})"/>`;
+    const x2 = 140-x; louro += `<ellipse cx="${x2.toFixed(1)}" cy="${y.toFixed(1)}" rx="5" ry="11" transform="rotate(${-rot} ${x2.toFixed(1)} ${y.toFixed(1)})"/>`; }
+  const big = String(lv).length>2 ? 34 : 46;
+  return `<div class="lu-badge"><svg viewBox="-6 -6 152 152" width="150" height="150" aria-hidden="true">
+    <defs><linearGradient id="luG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFF1B0"/><stop offset=".45" stop-color="#FFC93C"/><stop offset="1" stop-color="#E08A00"/></linearGradient>
+    <radialGradient id="luC" cx=".4" cy=".3" r=".8"><stop offset="0" stop-color="#7B5CFF"/><stop offset="1" stop-color="#2A1B6E"/></radialGradient></defs>
+    <g class="lu-louro" fill="#2BE0A6" opacity=".9">${louro}</g>
+    <polygon points="${pts.join(' ')}" fill="url(#luG)" stroke="#B35A00" stroke-width="2"/>
+    <circle cx="70" cy="70" r="40" fill="url(#luC)" stroke="#FFE08A" stroke-width="4"/>
+    <circle cx="70" cy="70" r="33" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="1.5" stroke-dasharray="3 4"/>
+    <text x="70" y="56" text-anchor="middle" font-size="9" font-weight="900" letter-spacing="2" fill="#FFE08A" font-family="Inter,sans-serif">NÍVEL</text>
+    <text x="70" y="${big>40?92:88}" text-anchor="middle" font-size="${big}" font-weight="800" fill="#FFFFFF" font-family="Fraunces,serif">${lv}</text>
+  </svg><i class="lu-spark s1">✦</i><i class="lu-spark s2">✦</i><i class="lu-spark s3">✧</i><i class="lu-spark s4">✦</i></div>`;
 }
 /* ---------- revelação de prêmio (baús, presente de nível, baú misterioso) ----------
    o baú treme com raios de luz atrás, abre, e os prêmios entram um por um em cartões
@@ -549,10 +576,12 @@ function showRewardReveal(o){
   const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   const bg = document.createElement('div');
   bg.className = 'gm-modal-bg rw-bg';
-  bg.innerHTML = `<div class="gm-modal rw-modal ${reduce?'open':''}">
+  bg.innerHTML = `<div class="gm-modal rw-modal ${o.cls||''} ${reduce?'open':''}">
+    ${o.ribbon ? `<div class="rw-ribbon">${escHTML(o.ribbon)}</div>` : ''}
     <div class="rw-stage"><div class="rw-rays" aria-hidden="true"></div><div class="rw-glow" aria-hidden="true"></div>
       <div class="rw-chest">${o.hero || `<span>${o.chest||'🎁'}</span>`}</div></div>
     <h2 class="rw-title"></h2><p class="rw-sub"></p>
+    ${o.extra || ''}
     <div class="rw-prizes"></div>
     <div class="rw-actions"></div>
   </div>`;

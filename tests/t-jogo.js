@@ -43,7 +43,9 @@ run(async b=>{
     return {lv: levelInfo(loadGame().xp).level, d: loadGame().gems - g0, item: shopOwnedCount() - own0}; });
   T('Nível', 'níveis 3, 4 e 5: 35 + 40 + 45 moedas e 1 item no nível 5', r.lv===5 && r.d===120 && r.item===1, JSON.stringify(r));
   await p.waitForTimeout(1600);
-  T('Nível', 'a janela do nível mostra o presente e o botão de usar o item', await p.evaluate(()=> !!document.querySelector('.rw-modal .rw-level') && document.querySelectorAll('.rw-prize').length===2 && !!document.querySelector('.rw-alt')));
+  T('Nível', 'a janela do nível mostra o presente e o botão de usar o item', await p.evaluate(()=> !!document.querySelector('.rw-modal .lu-badge') && document.querySelectorAll('.rw-prize').length===2 && !!document.querySelector('.rw-alt')));
+  const lj = await p.evaluate(()=>{ const m = document.querySelector('.rw-lvup'); return m && {fita:(m.querySelector('.rw-ribbon')||{}).textContent, num:m.querySelector('.lu-badge text:last-of-type').textContent, de:m.querySelector('.lu-from').textContent, novo:m.querySelector('.lu-title').classList.contains('new'), prox:(m.querySelector('.lu-next')||{}).textContent||''}; });
+  T('Nível', 'janela do nível 5: medalha, 4 → 5, título novo e o próximo título', !!lj && /SUBIU/.test(lj.fita) && lj.num==='5' && lj.de==='4' && lj.novo && /Mestre das Contas/.test(lj.prox) && /3 níveis/.test(lj.prox), JSON.stringify(lj));
   await clean(p);
 
   // ---------- prêmio surpresa ----------

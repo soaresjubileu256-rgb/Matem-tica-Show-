@@ -10,6 +10,9 @@
    maior que o anterior.
    ========================================================= */
 const NEWS = [
+  {v:38, date:'2026-11-27', title:'Subir de nível ficou mais bonito', items:[
+    {ico:'🏅', t:'Medalha de nível', d:'Ao subir de nível aparece uma medalha dourada com louros, o seu título (com aviso quando é um título novo) e quantos níveis faltam pro próximo.', go:'progress'}
+  ]},
   {v:37, date:'2026-11-27', title:'Muito mais questões', items:[
     {ico:'📚', t:'124 tipos novos de pergunta', d:'Exercícios, Trilha, Treino e Desafio do Dia ganharam perguntas novas em quase todos os assuntos: problemas do dia a dia (ônibus, pizza, troco, terreno, juros, parcelas), regra de três composta, inequações, função quadrática, números complexos, probabilidade, sólidos e mais. Todas com passo a passo.', go:'exercisesSubjects'}
   ]},
