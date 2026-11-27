@@ -4912,3 +4912,57 @@ body::after{inset:0;
 :root.theme-light .pm-trail path{stroke:rgba(40,40,90,.3);}
 :root.theme-light .pm-trail path.on{stroke:#F2A900;}
 :root.theme-light .mn-lbl{background:rgba(255,255,255,.85); color:#2A2550;}
+
+/* ---------- subiu de nível ---------- */
+.gm-modal.rw-modal.rw-lvup{padding-top:14px; border:1.5px solid rgba(255,212,92,.45);
+  background:radial-gradient(90% 55% at 50% 18%, rgba(255,201,60,.28), transparent 70%), radial-gradient(120% 70% at 50% 0%, #4A2A8C 0%, #2A1B5E 45%, #10183F 100%);
+  box-shadow:0 0 0 6px rgba(255,212,92,.08), 0 24px 60px rgba(0,0,0,.55);}
+.rw-lvup::before{content:""; position:absolute; inset:0; pointer-events:none; opacity:.55;
+  background-image:radial-gradient(1.5px 1.5px at 12% 20%, #fff, transparent), radial-gradient(1px 1px at 82% 14%, #fff, transparent), radial-gradient(1.5px 1.5px at 70% 46%, #FFE08A, transparent),
+    radial-gradient(1px 1px at 22% 62%, #fff, transparent), radial-gradient(1.5px 1.5px at 90% 70%, #fff, transparent), radial-gradient(1px 1px at 8% 86%, #FFE08A, transparent), radial-gradient(1px 1px at 50% 90%, #fff, transparent);
+  animation:luTwinkle 3s ease-in-out infinite;}
+.rw-ribbon{position:relative; display:inline-block; margin:0 auto 2px; padding:6px 16px; border-radius:999px; font-size:12px; font-weight:900; letter-spacing:.12em; color:#3A2200;
+  background:linear-gradient(135deg,#FFE08A,#FFB800); box-shadow:0 4px 0 #B35A00, 0 8px 18px rgba(255,184,0,.35);}
+.rw-lvup .rw-stage{height:176px;}
+.rw-lvup .rw-rays{width:320px; height:320px;}
+.rw-lvup .rw-glow{width:170px; height:170px;}
+.lu-badge{position:relative; width:150px; height:150px; filter:drop-shadow(0 12px 22px rgba(0,0,0,.45)) drop-shadow(0 0 18px rgba(255,201,60,.35));}
+.lu-badge svg{display:block;}
+.lu-spark{position:absolute; font-style:normal; color:#FFE08A; text-shadow:0 0 8px rgba(255,224,138,.9); animation:luSpark 1.8s ease-in-out infinite;}
+.lu-spark.s1{top:4px; left:2px; font-size:20px;} .lu-spark.s2{top:16px; right:-4px; font-size:14px; animation-delay:.5s;}
+.lu-spark.s3{bottom:12px; left:-8px; font-size:16px; animation-delay:.9s;} .lu-spark.s4{bottom:0; right:6px; font-size:22px; animation-delay:1.3s;}
+.gm-modal.rw-modal.rw-lvup h2.rw-title{font-size:32px; margin-top:0; text-shadow:0 2px 0 #8A4B00, 0 0 22px rgba(255,201,60,.45);}
+.gm-modal.rw-modal.rw-lvup p.rw-sub{display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:12px;}
+.lu-from, .lu-to{display:grid; place-items:center; min-width:34px; height:34px; padding:0 8px; border-radius:10px; font-weight:900; font-size:16px;}
+.lu-from{background:rgba(255,255,255,.08); color:#A9A4D8; border:1px solid rgba(255,255,255,.14);}
+.lu-to{background:linear-gradient(135deg,#FFE08A,#FFB800); color:#3A2200; box-shadow:0 3px 0 #B35A00;}
+.lu-arrow{color:#FFD45C; font-size:18px; animation:luArrow 1.2s ease-in-out infinite;}
+.lu-title{position:relative; margin:0 0 10px; padding:10px 14px; border-radius:16px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14);}
+.lu-title small{display:block; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:#C9C4F0;}
+.lu-title b{display:block; margin-top:2px; font-size:19px; color:#fff;}
+.lu-title.new{background:linear-gradient(135deg, rgba(43,224,166,.2), rgba(123,92,255,.2)); border-color:rgba(43,224,166,.55);}
+.lu-title.new small{color:#2BE0A6;}
+.lu-next{margin:0 0 12px; text-align:left; font-size:12px; color:#C9C4F0;}
+.lu-next-t{display:flex; justify-content:space-between; gap:8px; margin-bottom:6px;} .lu-next-t b{color:#fff;} .lu-next-t em{font-style:normal; font-weight:800; color:#FFD45C; white-space:nowrap;}
+.lu-bar{height:8px; border-radius:999px; background:rgba(255,255,255,.1); overflow:hidden;}
+.lu-bar i{display:block; height:100%; border-radius:999px; background:linear-gradient(90deg,#2BE0A6,#FFD45C);}
+.lu-next.lu-max{text-align:center; font-weight:800; color:#FFD45C;}
+.rw-lvup .rw-actions button:last-child{background:linear-gradient(135deg,#FFE08A,#FFB800 55%,#FF8A00); color:#3A2200; box-shadow:0 5px 0 #B35A00;}
+@keyframes luTwinkle{0%,100%{opacity:.35}50%{opacity:.8}}
+@keyframes luSpark{0%,100%{transform:scale(.6) rotate(0); opacity:.4}50%{transform:scale(1.15) rotate(20deg); opacity:1}}
+@keyframes luArrow{0%,100%{transform:translateX(0)}50%{transform:translateX(4px)}}
+@media (prefers-reduced-motion: reduce){ .rw-lvup::before, .lu-spark, .lu-arrow{animation:none;} }
+.gm-modal-bg.rw-bg{overflow-y:auto;}
+.gm-modal-bg.rw-bg .rw-modal{margin:auto;}
+@media (max-height:780px){
+  .rw-lvup .rw-stage{height:128px; margin:-6px 0 0;}
+  .lu-badge{transform:scale(.8);}
+  .rw-lvup .rw-rays{width:250px; height:250px;}
+  .gm-modal.rw-modal.rw-lvup h2.rw-title{font-size:26px;}
+  .gm-modal.rw-modal.rw-lvup p.rw-sub{margin-bottom:8px;}
+  .lu-from, .lu-to{height:28px; min-width:28px; font-size:14px;}
+  .lu-title{padding:7px 12px; margin-bottom:8px;} .lu-title b{font-size:16px;}
+  .lu-next{margin-bottom:8px;}
+  .rw-lvup .rw-prize{padding:6px 10px;} .rw-lvup .rw-p-ico{width:38px; height:38px; font-size:21px;} .rw-lvup .rw-p-t b{font-size:16px;}
+  .rw-lvup .rw-prizes{gap:6px; margin-bottom:10px;}
+}
